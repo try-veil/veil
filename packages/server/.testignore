@@ -1,0 +1,5 @@
+./cmd/api
+./internal/models
+./internal/server
+./internal/testutils
+./internal/middleware

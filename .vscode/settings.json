@@ -1,0 +1,22 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "files.associations": {
+    ".cursorrules": "markdown"
+  },
+  "go.toolsManagement.checkForUpdates": "local",
+  "go.useLanguageServer": true,
+  "go.gopath": "",
+  "go.goroot": "",
+  "go.toolsGopath": "",
+  "go.formatTool": "gofmt",
+  "go.lintTool": "golangci-lint",
+  "go.lintFlags": ["--fast"],
+  "[go]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "golang.go",
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "always"
+    }
+  }
+}
