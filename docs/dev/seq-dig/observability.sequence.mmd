@@ -1,0 +1,24 @@
+sequenceDiagram
+    participant Gateway
+    participant Logging
+    participant Loki
+    participant Metrics
+    participant Grafana
+    participant Alerts
+
+    title Observability Flow
+
+    Gateway->>Logging: Request/Response Data
+    Logging->>Loki: Stream Logs
+    
+    loop Every 5 minutes
+        Loki->>Metrics: Process Logs
+        Metrics->>Metrics: Calculate Usage Stats
+        Metrics->>Grafana: Update Dashboards
+        
+        alt Threshold Exceeded
+            Metrics->>Alerts: Trigger Alert
+        end
+    end
+
+    Note right of Metrics: Processed for:<br/>- API Usage<br/>- Rate Limits<br/>- Error Rates<br/>- Response Times<br/>- Billing Data 

@@ -1,0 +1,31 @@
+sequenceDiagram
+    participant Provider as API Provider
+    participant Platform
+    participant DB
+    participant Config as Gateway Config
+    participant Validator
+    participant API as Provider API
+
+    title API Onboarding Flow
+
+    Provider->>Platform: Submit API Specification
+    Platform->>DB: Store Draft API Details
+    
+    %% Validation Phase
+    Platform->>Validator: Initiate API Validation
+    loop For Each Endpoint
+        Validator->>API: Test Endpoint
+        API-->>Validator: Response
+        Validator->>Validator: Validate Response
+    end
+
+    alt Validation Successful
+        Validator-->>Platform: Validation Success
+        Platform->>DB: Update API Status to Active
+        Platform->>Config: Generate & Update Gateway Routes
+        Platform->>Provider: Success Response with Gateway URLs
+    else Validation Failed
+        Validator-->>Platform: Validation Errors
+        Platform->>DB: Update API Status to Failed
+        Platform->>Provider: Error Details & Suggestions
+    end 

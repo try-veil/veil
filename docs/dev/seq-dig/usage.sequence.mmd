@@ -1,0 +1,54 @@
+sequenceDiagram
+    participant User as API User
+    
+    box Gateway System
+        participant Gateway as Gateway Router
+        participant Auth as Auth Middleware
+        participant Rate as Rate Limiter
+        participant Transform as Request Transform
+        participant Logging as Logger
+    end
+    
+    participant API as Provider API
+
+    title API Usage Flow
+
+    User->>Gateway: API Request + API Key
+    activate Gateway
+    Gateway->>Auth: Forward to Auth
+    activate Auth
+    
+    alt Valid API Key
+        Auth->>Rate: Check Rate Limit
+        activate Rate
+        
+        alt Within Limit
+            Rate->>Transform: Forward Request
+            activate Transform
+            Transform->>Transform: Transform Headers
+            Transform->>API: Request + Provider Token
+            
+            API-->>Transform: Response
+            Transform->>Transform: Transform Response
+            Transform->>Gateway: Transformed Response
+            deactivate Transform
+            
+            Gateway->>Logging: Log Transaction
+            activate Logging
+            Logging-->>Gateway: Logged
+            deactivate Logging
+            
+            Gateway->>User: API Response
+        else Rate Limited
+            Rate->>Gateway: Rate Limit Error
+            Gateway->>User: 429 Too Many Requests
+        end
+        deactivate Rate
+    else Invalid API Key
+        Auth->>Gateway: Auth Error
+        Gateway->>User: 401 Unauthorized
+    end
+    deactivate Auth
+    deactivate Gateway
+
+    Note right of Gateway: All components are part of<br/>the Gateway system running<br/>as Caddy middleware

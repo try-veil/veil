@@ -1,0 +1,23 @@
+sequenceDiagram
+    participant User as API User
+    participant Platform
+    participant Validator
+    participant API as Provider API
+    participant Gateway
+
+    title API Testing Flow
+
+    User->>Platform: Request API Test
+    Platform->>Validator: Initialize Test Suite
+    
+    loop For Each Test Case
+        Validator->>API: Send Test Request
+        API-->>Validator: Response
+        Validator->>Validator: Validate Response
+    end
+
+    Validator->>Platform: Test Results
+    Platform->>Gateway: Generate Temp API Key
+    
+    Platform->>User: Test Report with:
+    Note right of User: - Test Results<br/>- Sample CURL Commands<br/>- Gateway URLs<br/>- Temp API Key 
