@@ -1,5 +1,9 @@
 # API Onboarding Specification
 
+## Overview
+
+The API onboarding endpoint allows providers to register their APIs with the marketplace platform.
+
 ## Base URL
 
 ```
@@ -135,3 +139,20 @@ POST /v1/apis/onboard
 5. The gateway will generate unique API keys for each client
 6. Provider's static token will never be exposed to clients
 7. Gateway will handle all client-side authentication
+
+## Prerequisites
+
+Before onboarding an API, ensure:
+
+1. API is publicly accessible via HTTPS
+2. OpenAPI/Swagger specification is available
+3. Authentication mechanism is supported
+4. Rate limiting configuration is defined
+
+## Endpoint Versions
+
+| Version | Status | Changes                           |
+| ------- | ------ | --------------------------------- |
+| v1      | Active | Initial release                   |
+| v2-beta | Beta   | Added OpenAPI 3.0 support         |
+| v1.1    | Active | Added rate limiting configuration |

@@ -178,3 +178,22 @@ POST /v1/apis/validate
 4. Response includes timing and performance metrics
 5. Detailed troubleshooting suggestions for common errors
 6. The temporary API key expires after 24 hours
+
+## Response Codes
+
+| Code | Description                  |
+| ---- | ---------------------------- |
+| 200  | Validation successful        |
+| 400  | Invalid request parameters   |
+| 401  | Authentication failed        |
+| 429  | Too many validation requests |
+
+## Authentication
+
+All validation endpoints require the following header:
+
+```
+Authorization: Bearer <api_token>
+```
+
+The API token must have the `validate:api` scope.
