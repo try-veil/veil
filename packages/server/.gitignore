@@ -37,3 +37,4 @@ dist/
 
 tmp/
 
+.testCoverage.txt

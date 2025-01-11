@@ -18,5 +18,20 @@
     "editor.codeActionsOnSave": {
       "source.organizeImports": "always"
     }
+  },
+  "json.schemas": [
+    {
+      "fileMatch": ["*.json5"],
+      "url": "https://json.schemastore.org/json5"
+    }
+  ],
+  "[json5]": {
+    "editor.defaultFormatter": "savh.json5-kit",
+    "editor.formatOnSave": true
+  },
+  "mermaid": {
+    "sequenceDiagram": {
+      "mirrorActors": false
+    }
   }
 }

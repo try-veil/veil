@@ -18,6 +18,7 @@ import (
 const (
 	defaultPort = "8080"
 	dbPath      = "./data/apis.db"
+	configPath  = "../../config/gateway"
 )
 
 func main() {
@@ -47,7 +48,7 @@ func main() {
 
 	// Initialize handlers
 	healthHandler := handlers.NewHealthHandler()
-	onboardingHandler := handlers.NewOnboardingHandler(apiRepo)
+	onboardingHandler := handlers.NewOnboardingHandler(apiRepo, configPath)
 	validateHandler := handlers.NewValidateHandler(apiRepo)
 
 	// Register routes

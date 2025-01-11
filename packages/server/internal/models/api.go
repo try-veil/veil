@@ -15,6 +15,7 @@ type APISpec struct {
 	Endpoints     []Endpoint        `json:"endpoints" validate:"required,min=1"`
 	Pricing       PricingSpec       `json:"pricing"`
 	Documentation DocumentationSpec `json:"documentation"`
+	Headers       []Header          `json:"headers"`
 }
 
 type AuthSpec struct {
@@ -110,4 +111,25 @@ type OnboardedAPI struct {
 	ID    string    `json:"id"`
 	API   APISpec   `json:"api"`
 	Owner OwnerSpec `json:"owner"`
+}
+
+type APIEndpoint struct {
+	Path        string         `json:"path"`
+	Method      string         `json:"method"`
+	Name        string         `json:"name"`
+	Description string         `json:"description"`
+	Parameters  []APIParameter `json:"parameters"`
+}
+
+type APIParameter struct {
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	Required    bool   `json:"required"`
+	Location    string `json:"location"`
+	Description string `json:"description"`
+}
+
+type Header struct {
+	Name  string `json:"name" validate:"required"`
+	Value string `json:"value" validate:"required"`
 }

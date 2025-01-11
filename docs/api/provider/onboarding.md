@@ -20,9 +20,15 @@ POST /v1/apis/onboard
     "description": "string",             // Detailed description of the API
     "baseUrl": "string",                 // Base URL of the API
     "category": "string",                // Category (e.g., "Weather", "Finance")
+    "headers": [                         // Provider-specific headers
+      {
+        "name": "string",                // Header name
+        "value": "string"                // Header value
+      }
+    ],
     "auth": {
       "staticToken": "string",           // Provider's static access token
-      "tokenLocation": "string",          // Where to send token: "header" or "query"
+      "tokenLocation": "string",         // Where to send token: "header" or "query"
       "tokenName": "string"              // Name of header/query parameter for token
     },
     "endpoints": [
@@ -34,87 +40,20 @@ POST /v1/apis/onboard
         "parameters": [
           {
             "name": "string",            // Parameter name
-            "type": "string",            // Data type
+            "type": "string",            // Parameter type
             "required": boolean,         // Is parameter required?
-            "location": "string",        // "query", "path", or "body"
+            "location": "string",        // Where parameter appears: "query", "path", "body"
             "description": "string"      // Parameter description
           }
-        ],
-        "responses": {
-          "200": {
-            "description": "string",     // Success response description
-            "schema": "object"           // Response schema
-          }
-        },
-        "rateLimit": {
-          "requests": number,           // Number of requests allowed
-          "period": "string"            // Time period (e.g., "per_second", "per_day")
-        }
-      }
-    ],
-    "pricing": {
-      "type": "string",                 // "free", "paid", "freemium"
-      "plans": [
-        {
-          "name": "string",             // Plan name
-          "price": number,              // Price per unit
-          "period": "string",           // "monthly", "yearly"
-          "features": ["string"]        // Array of features included
-        }
-      ]
-    },
-    "documentation": {
-      "swagger": "string",              // URL to Swagger/OpenAPI spec if available
-      "readme": "string"                // Markdown documentation
-    }
-  },
-  "owner": {
-    "name": "string",                   // API owner/company name
-    "email": "string",                  // Contact email
-    "website": "string"                 // Company website
-  }
-}
-```
-
-## Response
-
-### Success Response (200 OK)
-
-```json
-{
-  "apiId": "string", // Unique identifier for the API
-  "status": "success",
-  "message": "API successfully onboarded",
-  "onboardingDate": "string", // ISO 8601 datetime
-  "apiUrl": "string", // Marketplace URL for the API
-  "gatewayConfig": {
-    "clientApiKeyPrefix": "string", // Prefix for client API keys
-    "endpoints": [
-      // Generated gateway endpoints
-      {
-        "path": "string",
-        "method": "string",
-        "gatewayUrl": "string"
+        ]
       }
     ]
+  },
+  "owner": {
+    "name": "string",                    // API owner/company name
+    "email": "string",                   // Contact email
+    "website": "string"                  // Company website
   }
-}
-```
-
-### Error Response (400 Bad Request)
-
-```json
-{
-  "status": "error",
-  "code": "string", // Error code
-  "message": "string", // Error message
-  "details": [
-    // Array of validation errors
-    {
-      "field": "string",
-      "message": "string"
-    }
-  ]
 }
 ```
 
@@ -139,6 +78,7 @@ POST /v1/apis/onboard
 5. The gateway will generate unique API keys for each client
 6. Provider's static token will never be exposed to clients
 7. Gateway will handle all client-side authentication
+8. Provider-specific headers will be passed through to the upstream service
 
 ## Prerequisites
 
@@ -148,6 +88,7 @@ Before onboarding an API, ensure:
 2. OpenAPI/Swagger specification is available
 3. Authentication mechanism is supported
 4. Rate limiting configuration is defined
+5. Required headers are documented
 
 ## Endpoint Versions
 
