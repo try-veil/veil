@@ -1,0 +1,3 @@
+[submodule "packages/server/caddy"]
+	path = packages/server/caddy
+	url = https://github.com/try-veil/caddy
