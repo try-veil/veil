@@ -13,6 +13,9 @@ import (
 	"server/internal/middleware"
 	"server/internal/repositories"
 	"server/internal/server"
+
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 const (
@@ -34,11 +37,18 @@ func main() {
 	}
 
 	// Initialize database
-	db, err := database.NewDatabase(dbPath)
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
-	defer db.Close()
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("Failed to read the sql connection of gorm.DB")
+	}
+	defer sqlDB.Close()
+
+	// Run seed scripts
+	database.MigrateDB(db)
 
 	// Initialize repositories
 	apiRepo := repositories.NewAPIRepository(db)

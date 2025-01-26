@@ -98,10 +98,12 @@ func createTestAPI(t *testing.T, repo *repositories.APIRepository) *models.Onboa
 		Version: "1.0.0",
 		BaseURL: "https://api.test.com",
 		Spec: models.OnboardAPIRequest{
-			API: models.APISpec{
+			API: models.API{
 				Name:    "test-api",
 				Version: "1.0.0",
 				BaseURL: "https://api.test.com",
+			},
+			APISpec: models.APISpec{
 				Endpoints: []models.Endpoint{
 					{
 						Path:   "/test",
@@ -122,7 +124,7 @@ func createTestAPI(t *testing.T, repo *repositories.APIRepository) *models.Onboa
 
 	return &models.OnboardedAPI{
 		ID:    params.ID,
-		API:   params.Spec.API,
+		API:   params.Spec.APISpec,
 		Owner: params.Spec.Owner,
 	}
 }

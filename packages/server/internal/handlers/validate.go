@@ -78,7 +78,7 @@ func (h *ValidateHandler) validateEndpoints(api *models.OnboardAPIRequest, endpo
 		return validation
 	}
 
-	endpoints := api.API.Endpoints
+	endpoints := api.APISpec.Endpoints
 	if endpointPath != "" {
 		endpoints = filterEndpoints(endpoints, endpointPath)
 	}

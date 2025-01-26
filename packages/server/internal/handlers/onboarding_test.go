@@ -17,16 +17,19 @@ func TestOnboardingHandler_OnboardAPI(t *testing.T) {
 	defer cleanup()
 
 	repo := repositories.NewAPIRepository(db)
-	handler := NewOnboardingHandler(repo)
+	handler := NewOnboardingHandler(repo, "") // TODO: Fix this with actual `configDir`
 
 	// Test request
 	reqBody := models.OnboardAPIRequest{
-		API: models.APISpec{
+		API: models.API{
 			Name:        "Test API",
 			Version:     "1.0.0",
 			Description: "Test Description",
 			BaseURL:     "https://api.test.com",
 			Category:    "Test",
+		},
+		APISpec: models.APISpec{
+
 			Auth: models.AuthSpec{
 				StaticToken:   "test-token",
 				TokenLocation: "header",
@@ -93,7 +96,7 @@ func TestOnboardingHandler_OnboardAPI(t *testing.T) {
 }
 
 func TestOnboardingHandler_InvalidMethod(t *testing.T) {
-	handler := NewOnboardingHandler(nil) // Repository not needed for this test
+	handler := NewOnboardingHandler(nil, "") // Repository not needed for this test
 
 	req := httptest.NewRequest(http.MethodGet, "/v1/apis/onboard", nil)
 	w := httptest.NewRecorder()
@@ -106,7 +109,7 @@ func TestOnboardingHandler_InvalidMethod(t *testing.T) {
 }
 
 func TestOnboardingHandler_InvalidJSON(t *testing.T) {
-	handler := NewOnboardingHandler(nil) // Repository not needed for this test
+	handler := NewOnboardingHandler(nil, "") // Repository not needed for this test
 
 	req := httptest.NewRequest(http.MethodPost, "/v1/apis/onboard", bytes.NewBufferString("invalid json"))
 	w := httptest.NewRecorder()

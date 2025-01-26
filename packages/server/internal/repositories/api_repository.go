@@ -1,19 +1,18 @@
 package repositories
 
 import (
-	"database/sql"
-	"encoding/json"
-	"fmt"
-	"server/internal/database"
 	"server/internal/models"
+	applogger "server/utils"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type APIRepository struct {
-	db *database.Database
+	db *gorm.DB
 }
 
-func NewAPIRepository(db *database.Database) *APIRepository {
+func NewAPIRepository(db *gorm.DB) *APIRepository {
 	return &APIRepository{db: db}
 }
 
@@ -32,65 +31,50 @@ type SaveAPIParams struct {
 }
 
 func (r *APIRepository) SaveAPI(params SaveAPIParams) error {
-	tx, err := r.db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
+	// err := r.db.Transaction(func(tx *gorm.DB) error {
+	// tx.Create(&models.API{
+	// 	ID:          params.ID,
+	// 	Name:        params.Name,
+	// 	Version:     params.Version,
+	// 	Description: params.Description,
+	// 	BaseURL:     params.BaseURL,
+	// 	Category:    params.Category,
+	// 	// TODO: Figure out what is this `spec`
+	// })
 
-	specJSON, err := json.Marshal(params.Spec)
-	if err != nil {
-		return err
-	}
+	// 	var obj models.API
+	// 	tx.Model(&models.API{}).First(&obj)
+	// 	fmt.Printf("val :%v", obj)
 
-	// Insert API
-	_, err = tx.Exec(`
-		INSERT INTO apis (id, name, version, description, base_url, category, spec, created_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		params.ID,
-		params.Name,
-		params.Version,
-		params.Description,
-		params.BaseURL,
-		params.Category,
-		specJSON,
-		params.CreatedAt,
-	)
-	if err != nil {
-		return err
-	}
+	// 	tx.Create(&models.APIOwner{
+	// 		Name:    params.OwnerName,
+	// 		Email:   params.OwnerEmail,
+	// 		Website: params.OwnerWebsite,
+	// 	})
 
-	// Insert Owner
-	_, err = tx.Exec(`
-		INSERT INTO api_owners (api_id, name, email, website)
-		VALUES (?, ?, ?, ?)`,
-		params.ID,
-		params.OwnerName,
-		params.OwnerEmail,
-		params.OwnerWebsite,
-	)
-	if err != nil {
-		return err
-	}
+	// 	return nil
+	// })
+	tx := r.db.Create(&models.API{
+		ID:          params.ID,
+		Name:        params.Name,
+		Version:     params.Version,
+		Description: params.Description,
+		BaseURL:     params.BaseURL,
+		Category:    params.Category,
+		// TODO: Figure out what is this `spec`
+	})
+	tx.Commit()
+	// if err != nil {
+	// 	applogger.Error("[SaveAPI] err: " + err.Error())
+	// }
 
-	return tx.Commit()
+	applogger.Info("[SaveAPI] successfully served request.")
+	return nil
 }
 
-func (r *APIRepository) GetAPIByID(id string) (*models.OnboardAPIRequest, error) {
-	var specJSON []byte
-	err := r.db.QueryRow(`
-		SELECT spec FROM apis WHERE id = ?`, id).Scan(&specJSON)
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("api not found")
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	var spec models.OnboardAPIRequest
-	if err := json.Unmarshal(specJSON, &spec); err != nil {
-		return nil, err
-	}
+func (r *APIRepository) GetAPIByID(id string) (*models.API, error) {
+	var spec models.API
+	r.db.First(&spec, "id = ?", id)
 
 	return &spec, nil
 }

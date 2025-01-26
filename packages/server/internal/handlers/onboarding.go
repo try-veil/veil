@@ -15,6 +15,7 @@ import (
 	"server/internal/models"
 	"server/internal/repositories"
 	"server/pkg/validator"
+	applogger "server/utils"
 
 	"github.com/google/uuid"
 )
@@ -64,6 +65,7 @@ func (g *GatewayConfigManager) saveAPIConfig(apiID string, providerID string, re
 
 	mainConfig := make(map[string]interface{})
 	mainConfigData, err := os.ReadFile(mainConfigPath)
+	// TODO: Move this to use the caddy AST package for managing Caddyfile
 	if err != nil {
 		log.Printf("Error reading main config: %v", err)
 		// Initialize new config if file doesn't exist
@@ -96,12 +98,12 @@ func (g *GatewayConfigManager) saveAPIConfig(apiID string, providerID string, re
 	}
 
 	// Generate and save configs
-	for _, endpoint := range req.API.Endpoints {
-		config := generateCaddyConfig(endpoint, req.API, apiID)
+	for _, endpoint := range req.APISpec.Endpoints {
+		config := generateCaddyConfig(endpoint, req.APISpec, apiID)
 
 		// Save individual config file
 		configFile := filepath.Join(configPath, fmt.Sprintf("%s_%s.json", endpoint.Method, sanitizePath(endpoint.Path)))
-		log.Printf("Saving endpoint config to: %s", configFile)
+		applogger.Info(fmt.Sprintf("Saving endpoint config to: %s", configFile))
 		if err := os.WriteFile(configFile, config, 0644); err != nil {
 			return fmt.Errorf("failed to write config file: %w", err)
 		}
@@ -309,7 +311,7 @@ func (h *OnboardingHandler) OnboardAPI(w http.ResponseWriter, r *http.Request) {
 		APIURL:         "/apis/" + req.API.Name,
 		GatewayConfig: models.GatewayConfig{
 			ClientAPIKeyPrefix: "api_" + req.API.Name + "_",
-			Endpoints:          generateGatewayEndpoints(req.API),
+			Endpoints:          generateGatewayEndpoints(req.API, req.APISpec),
 		},
 	}
 
@@ -318,7 +320,7 @@ func (h *OnboardingHandler) OnboardAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *OnboardingHandler) validateOnboardingRequest(req *models.OnboardAPIRequest) error {
-	for _, endpoint := range req.API.Endpoints {
+	for _, endpoint := range req.APISpec.Endpoints {
 		if err := h.validator.ValidateEndpoint(endpoint.Path, endpoint.Method, req.API.BaseURL+endpoint.Path); err != nil {
 			return fmt.Errorf("invalid endpoint %s: %w", endpoint.Path, err)
 		}
@@ -326,9 +328,9 @@ func (h *OnboardingHandler) validateOnboardingRequest(req *models.OnboardAPIRequ
 	return nil
 }
 
-func generateGatewayEndpoints(api models.APISpec) []models.GatewayEndpoint {
-	endpoints := make([]models.GatewayEndpoint, len(api.Endpoints))
-	for i, endpoint := range api.Endpoints {
+func generateGatewayEndpoints(api models.API, apiSpec models.APISpec) []models.GatewayEndpoint {
+	endpoints := make([]models.GatewayEndpoint, len(apiSpec.Endpoints))
+	for i, endpoint := range apiSpec.Endpoints {
 		endpoints[i] = models.GatewayEndpoint{
 			Path:       endpoint.Path,
 			Method:     endpoint.Method,

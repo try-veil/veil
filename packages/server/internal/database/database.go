@@ -1,71 +1,37 @@
 package database
 
 import (
-	"database/sql"
+	"fmt"
+	"server/internal/models"
+	applogger "server/utils"
 
-	_ "github.com/mattn/go-sqlite3"
+	"gorm.io/gorm"
 )
 
-type Database struct {
-	db *sql.DB
-}
+// Migration function to automatically migrate the schemas using struct definitions
+func MigrateDB(db *gorm.DB) error {
+	// Auto migrations basis struct
+	err := db.Transaction(func(tx *gorm.DB) error {
+		err := tx.AutoMigrate(&models.API{})
+		if err != nil {
+			applogger.Error(fmt.Sprintf("[InitDB] error running migrations on models.API db schema | err %v", err.Error()))
+			return err
+		}
+		err = tx.AutoMigrate(&models.APIOwner{})
+		if err != nil {
+			applogger.Error(fmt.Sprintf("[InitDB] error while running migrations on models.APIOwner db schema | err %v", err.Error()))
+			return err
+		}
+		err = tx.AutoMigrate(&models.OnboardAPIRequest{})
+		if err != nil {
+			applogger.Error(fmt.Sprintf("[InitDB] error while running migrations on models.OnboardAPIRequest db schema | err %v", err.Error()))
+		}
 
-func NewDatabase(dbPath string) (*Database, error) {
-	db, err := sql.Open("sqlite3", dbPath)
+		return nil
+	})
+
 	if err != nil {
-		return nil, err
+		applogger.Error(fmt.Sprintf("[InitDB] Error migrating schemas to DB | err : %v", err.Error()))
 	}
-
-	if err := db.Ping(); err != nil {
-		return nil, err
-	}
-
-	database := &Database{db: db}
-	if err := database.createTables(); err != nil {
-		return nil, err
-	}
-
-	return database, nil
-}
-
-func (d *Database) createTables() error {
-	schema := `
-	CREATE TABLE IF NOT EXISTS apis (
-		id TEXT PRIMARY KEY,
-		name TEXT NOT NULL,
-		version TEXT NOT NULL,
-		description TEXT,
-		base_url TEXT NOT NULL,
-		category TEXT,
-		created_at DATETIME NOT NULL,
-		spec JSON NOT NULL
-	);
-
-	CREATE TABLE IF NOT EXISTS api_owners (
-		api_id TEXT NOT NULL,
-		name TEXT NOT NULL,
-		email TEXT NOT NULL,
-		website TEXT,
-		FOREIGN KEY (api_id) REFERENCES apis(id),
-		PRIMARY KEY (api_id)
-	);
-
-	CREATE INDEX IF NOT EXISTS idx_apis_name ON apis(name);
-	CREATE INDEX IF NOT EXISTS idx_api_owners_email ON api_owners(email);
-	`
-
-	_, err := d.db.Exec(schema)
-	return err
-}
-
-func (d *Database) Close() error {
-	return d.db.Close()
-}
-
-func (d *Database) Begin() (*sql.Tx, error) {
-	return d.db.Begin()
-}
-
-func (d *Database) QueryRow(query string, args ...interface{}) *sql.Row {
-	return d.db.QueryRow(query, args...)
+	return nil
 }
