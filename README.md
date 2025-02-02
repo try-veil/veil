@@ -4,7 +4,16 @@ Coming Soon
 
 ### Development Setup
 
-Coming Soon
+#### MacOS
+
+_Note: These commands assume that you are at the root of the cloned veil project._
+
+```bash
+chmod +x ./scripts/setup/mac.sh
+./scripts/setup/mac.sh
+```
+
+This should install `homebrew`, `go`, `caddy` and `xcaddy` since these are the hard dependencies for you to start developing with veil.
 
 ### TODO
 

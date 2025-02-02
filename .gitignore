@@ -1,2 +1,4 @@
 config/gateway/*
 caddy.json
+.idea
+.vscode
