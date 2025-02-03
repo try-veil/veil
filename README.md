@@ -49,3 +49,4 @@ This should install `homebrew`, `go`, `caddy` and `xcaddy` since these are the h
 ### Tools
 
 - [swaggest](https://github.com/orgs/swaggest/repositories) - Swagger and OpenAPI spec related tools written in go
+- [Writing a Caddy Plugin - Blog](https://moebuta.org/posts/writing-a-caddy-plugin-part-ii/)
