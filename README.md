@@ -42,3 +42,10 @@ This should install `homebrew`, `go`, `caddy` and `xcaddy` since these are the h
 - [ ] Optionality of features
   - [ ] Reverse Proxy Mode - Only use it a reverse proxy and monitoring of all traffic
   - [ ] Markeplatce Mode + Reverse Proxy Mode
+
+
+## References 
+
+### Tools
+
+- [swaggest](https://github.com/orgs/swaggest/repositories) - Swagger and OpenAPI spec related tools written in go
