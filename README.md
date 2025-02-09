@@ -1,44 +1,119 @@
-# veil
+# Veil - API Management Module for Caddy
 
-Coming Soon
+Veil is a Caddy module that provides API management capabilities, including subscription-based access control and request validation. It acts as a middleware that validates API requests based on subscription levels and required headers.
 
-### Development Setup
+## Features
 
-#### MacOS
+- Subscription-based access control
+- Request header validation
+- API usage statistics tracking
+- Dynamic API onboarding
+- SQLite database storage
 
-_Note: These commands assume that you are at the root of the cloned veil project._
+## Installation
+
+1. Build Caddy with the Veil module:
 
 ```bash
-chmod +x ./scripts/setup/mac.sh
-./scripts/setup/mac.sh
+xcaddy build --with github.com/techsavvyash/veil/packages/caddy
 ```
 
-This should install `homebrew`, `go`, `caddy` and `xcaddy` since these are the hard dependencies for you to start developing with veil.
+## Configuration
 
-### TODO
+### Caddyfile Syntax
 
-- [ ] Setup scripts for local development
-- [ ] Basic CI/CD pipeline using GitHub Actions
-  - [ ] Test - Unit, e2e
-  - [ ] Build Scripts
-  - [ ] Lint and Format
-- [ ] Auto generation of Swagger
-- [ ] Auto generation of Postman Collections
-- [ ] Closure of Onboarding and Validation API
-  - [ ] Support for Headers
-  - [ ] Support for Query Params
-  - [ ] Support for Body
-  - [ ] Support for Path Params
-  - [ ] Support for POST
-- [ ] Support for Generating API Keys for Users
-- [ ] Logging and Monitoring Design
-- [ ] Billing APIs
-- [ ] Consumer APIs
-- [ ] Analytics APIs
-- [ ] Ory Integration and Auth Setup
-- [ ] A Basic UI to validate the data for faster development
-- [ ] Auto generation of Client SDKs
-- [ ] Basic Home Page for the Platform
-- [ ] Optionality of features
-  - [ ] Reverse Proxy Mode - Only use it a reverse proxy and monitoring of all traffic
-  - [ ] Markeplatce Mode + Reverse Proxy Mode
+```caddy
+{
+    order veil_handler before reverse_proxy
+}
+
+:2020 {
+    veil_handler {
+        db_path "path/to/database.db"
+    }
+
+    handle /api/* {
+        reverse_proxy backend:8080
+    }
+}
+```
+
+### Configuration Options
+
+- `db_path`: Path to the SQLite database file (default: "veil.db")
+
+## API Onboarding
+
+To onboard a new API, send a POST request to the management endpoint:
+
+```bash
+curl -X POST http://localhost:2020/veil/api/onboard \
+  -H "Content-Type: application/json" \
+  -d '{
+    "path": "/api/v1/products/*",
+    "upstream": "http://localhost:8081",
+    "required_subscription": "premium",
+    "methods": ["GET", "POST"],
+    "required_headers": ["X-API-Key", "X-Request-ID"],
+    "parameters": [
+      {
+        "name": "category",
+        "type": "query",
+        "required": true
+      }
+    ]
+  }'
+```
+
+## Making API Requests
+
+When making requests to protected APIs, include the required headers:
+
+```bash
+curl http://localhost:2020/api/v1/products \
+  -H "X-Subscription-Key: premium" \
+  -H "X-API-Key: your-api-key" \
+  -H "X-Request-ID: request-123"
+```
+
+## Development
+
+### Project Structure
+
+```
+packages/caddy/
+├── internal/
+│   ├── config/     # Configuration types and parsing
+│   ├── handlers/   # HTTP handlers and middleware
+│   ├── models/     # Data models and types
+│   └── store/      # Database operations
+├── test/
+│   └── Caddyfile  # Test configuration
+├── module.go      # Main module registration
+└── README.md
+```
+
+### Building and Testing
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/techsavvyash/veil.git
+```
+
+2. Build the module:
+
+```bash
+cd veil/packages/caddy
+go build
+```
+
+3. Run tests:
+
+```bash
+go test ./...
+```
+
+## License
+
+MIT License
