@@ -12,10 +12,10 @@ import (
 )
 
 func init() {
-	// Register the VeilHandler with Caddy
+	// Register the VeilHandler
 	caddy.RegisterModule(handlers.VeilHandler{})
 
-	// Register the Caddyfile handler directive
+	// Register the handler directive for Caddyfile parsing
 	httpcaddyfile.RegisterHandlerDirective("veil_handler", parseVeilHandler)
 }
 
