@@ -12,27 +12,24 @@
         level DEBUG
     }
 
-    # Global Veil Handler Configuration
-    veil_handler {
-        database test.db
-        header X-Subscription-Key
-    }
+    # Global veil handler configuration with database path and subscription header
+    veil_handler test.db X-Subscription-Key
 
-    # Proxy API requests to appropriate backend services
-    handle /api/v1/users/* {
+    # Test Server Routes
+    handle_path /api/v1/users/* {
         reverse_proxy http://localhost:8080
     }
 
-    handle /api/v1/products/* {
+    handle_path /api/v1/products/* {
         reverse_proxy http://localhost:8081
     }
 
-    handle /api/v1/orders/* {
+    handle_path /api/v1/orders/* {
         reverse_proxy http://localhost:8082
     }
 
-    # Proxy Veil Management APIs back to Caddy (since Veil is a module)
-    handle /veil/api/* {
+    # Management API route
+    handle_path /veil/api/* {
         reverse_proxy http://localhost:2020
     }
 }
