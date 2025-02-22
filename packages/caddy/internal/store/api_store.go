@@ -31,12 +31,33 @@ func (s *APIStore) CreateAPI(config *models.APIConfig) error {
 		zap.String("subscription", config.RequiredSubscription),
 		zap.Int("api_keys", len(config.APIKeys)))
 
+	// Log API keys before creation
+	for _, key := range config.APIKeys {
+		s.logger.Debug("API key to be created",
+			zap.String("key_name", key.Name),
+			zap.String("key_value", key.Key),
+			zap.Bool("is_active", key.IsActive))
+	}
+
 	err := s.db.Create(config).Error
 	if err != nil {
 		s.logger.Error("failed to create API configuration",
 			zap.Error(err),
 			zap.String("path", config.Path))
 		return err
+	}
+
+	// Verify the creation by reading back
+	var savedConfig models.APIConfig
+	err = s.db.Preload("APIKeys").First(&savedConfig, config.ID).Error
+	if err != nil {
+		s.logger.Error("failed to verify API configuration creation",
+			zap.Error(err),
+			zap.String("path", config.Path))
+	} else {
+		s.logger.Info("verified API configuration creation",
+			zap.String("path", savedConfig.Path),
+			zap.Int("saved_api_keys", len(savedConfig.APIKeys)))
 	}
 
 	s.logger.Info("API configuration created successfully",
@@ -65,6 +86,21 @@ func (s *APIStore) GetAPIByPath(path string) (*models.APIConfig, error) {
 	s.logger.Debug("found API configurations",
 		zap.Int("count", len(configs)))
 
+	// Log all found configurations
+	for _, config := range configs {
+		s.logger.Debug("found configuration",
+			zap.String("path", config.Path),
+			zap.String("upstream", config.Upstream),
+			zap.Int("api_keys", len(config.APIKeys)))
+
+		for _, key := range config.APIKeys {
+			s.logger.Debug("found API key",
+				zap.String("key_name", key.Name),
+				zap.String("key_value", key.Key),
+				zap.Bool("is_active", key.IsActive))
+		}
+	}
+
 	// Find the best matching path
 	var bestMatch *models.APIConfig
 	bestMatchLen := 0
@@ -89,6 +125,13 @@ func (s *APIStore) GetAPIByPath(path string) (*models.APIConfig, error) {
 		s.logger.Debug("found matching API configuration",
 			zap.String("path", bestMatch.Path),
 			zap.Int("api_keys", len(bestMatch.APIKeys)))
+
+		for _, key := range bestMatch.APIKeys {
+			s.logger.Debug("matched configuration API key",
+				zap.String("key_name", key.Name),
+				zap.String("key_value", key.Key),
+				zap.Bool("is_active", key.IsActive))
+		}
 	} else {
 		s.logger.Debug("no matching API configuration found",
 			zap.String("path", path))

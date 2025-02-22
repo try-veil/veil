@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
@@ -84,6 +85,38 @@ func (h *VeilHandler) Provision(ctx caddy.Context) error {
 		return fmt.Errorf("failed to run database migrations: %v", err)
 	}
 
+	// Load existing APIs from database
+	if err := h.loadExistingAPIs(); err != nil {
+		return fmt.Errorf("failed to load existing APIs: %v", err)
+	}
+
+	return nil
+}
+
+// loadExistingAPIs loads all existing APIs from the database and updates the Caddy configuration
+func (h *VeilHandler) loadExistingAPIs() error {
+	h.logger.Info("loading existing APIs from database")
+
+	apis, err := h.store.ListAPIs()
+	if err != nil {
+		return fmt.Errorf("failed to list APIs: %v", err)
+	}
+
+	h.logger.Info("found existing APIs", zap.Int("count", len(apis)))
+
+	for _, api := range apis {
+		h.logger.Debug("loading API configuration",
+			zap.String("path", api.Path),
+			zap.String("upstream", api.Upstream))
+
+		if err := h.updateCaddyfile(&api); err != nil {
+			h.logger.Error("failed to load API configuration",
+				zap.Error(err),
+				zap.String("path", api.Path))
+			continue
+		}
+	}
+
 	return nil
 }
 
@@ -95,6 +128,33 @@ func (h *VeilHandler) Validate() error {
 	if h.SubscriptionKey == "" {
 		return fmt.Errorf("subscription_key header name is required")
 	}
+	return nil
+}
+
+// saveCaddyfile saves the current Caddy configuration to a file
+func (h *VeilHandler) saveCaddyfile(config map[string]interface{}) error {
+	// Create configs directory if it doesn't exist
+	configDir := "configs"
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		return fmt.Errorf("failed to create configs directory: %v", err)
+	}
+
+	// Save the config to a file with timestamp
+	timestamp := time.Now().Format("20060102-150405")
+	configPath := fmt.Sprintf("%s/caddy-config-%s.json", configDir, timestamp)
+
+	jsonConfig, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal config: %v", err)
+	}
+
+	if err := os.WriteFile(configPath, jsonConfig, 0644); err != nil {
+		return fmt.Errorf("failed to write config file: %v", err)
+	}
+
+	h.logger.Info("saved Caddy configuration",
+		zap.String("path", configPath))
+
 	return nil
 }
 
@@ -114,19 +174,15 @@ func (h *VeilHandler) updateCaddyfile(config *models.APIConfig) error {
 		},
 		"handle": []map[string]interface{}{
 			{
-				"handler": "subroute",
-				"routes": []map[string]interface{}{
+				"handler":          "veil_handler",
+				"db_path":          h.DBPath,
+				"subscription_key": h.SubscriptionKey,
+			},
+			{
+				"handler": "reverse_proxy",
+				"upstreams": []map[string]interface{}{
 					{
-						"handle": []map[string]interface{}{
-							{
-								"handler": "reverse_proxy",
-								"upstreams": []map[string]interface{}{
-									{
-										"dial": config.Upstream,
-									},
-								},
-							},
-						},
+						"dial": strings.TrimPrefix(config.Upstream, "http://"),
 					},
 				},
 			},
@@ -218,6 +274,13 @@ func (h *VeilHandler) updateCaddyfile(config *models.APIConfig) error {
 	// Update the routes in the config
 	srv2020["routes"] = newRoutes
 
+	// Save the updated config to a file
+	if err := h.saveCaddyfile(currentConfig); err != nil {
+		h.logger.Error("failed to save Caddy configuration",
+			zap.Error(err))
+		// Don't fail the update for file save failure
+	}
+
 	// Send the updated config back to Caddy
 	jsonConfig, err := json.Marshal(currentConfig)
 	if err != nil {
@@ -253,7 +316,7 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 	path := r.URL.Path
 
 	// Handle management API
-	if strings.HasPrefix(path, "/veil/api/onboard") {
+	if strings.HasPrefix(path, "/onboard") || strings.HasPrefix(path, "/veil/api/onboard") {
 		if r.Method != http.MethodPost {
 			h.logger.Warn("method not allowed for onboarding API",
 				zap.String("method", r.Method))
@@ -312,31 +375,13 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 				fmt.Errorf("failed to create API: %v", err))
 		}
 
-		// Update Caddyfile
+		// Update Caddy configuration via admin API
 		if err := h.updateCaddyfile(config); err != nil {
-			h.logger.Error("failed to update Caddyfile",
+			h.logger.Error("failed to update Caddy configuration",
 				zap.Error(err),
 				zap.String("path", req.Path))
 			return caddyhttp.Error(http.StatusInternalServerError,
-				fmt.Errorf("failed to update Caddyfile: %v", err))
-		}
-
-		// Reload Caddy configuration
-		caddyConfig, err := os.ReadFile("test/Caddyfile")
-		if err != nil {
-			h.logger.Error("failed to read Caddyfile for reload",
-				zap.Error(err),
-				zap.String("path", req.Path))
-			return caddyhttp.Error(http.StatusInternalServerError,
-				fmt.Errorf("failed to read Caddyfile for reload: %v", err))
-		}
-
-		if err := caddy.Load(caddyConfig, true); err != nil {
-			h.logger.Error("failed to reload Caddy configuration",
-				zap.Error(err),
-				zap.String("path", req.Path))
-			return caddyhttp.Error(http.StatusInternalServerError,
-				fmt.Errorf("failed to reload Caddy configuration: %v", err))
+				fmt.Errorf("failed to update Caddy configuration: %v", err))
 		}
 
 		h.logger.Info("API onboarded successfully",

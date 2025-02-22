@@ -20,6 +20,7 @@
         path /api/v1/users/*
     }
     handle @users {
+        veil_handler ./veil.db X-Subscription-Key
         reverse_proxy localhost:8080
     }
 
@@ -27,6 +28,7 @@
         path /api/v1/products/*
     }
     handle @products {
+        veil_handler ./veil.db X-Subscription-Key
         reverse_proxy localhost:8081
     }
 
@@ -34,6 +36,7 @@
         path /api/v1/orders/*
     }
     handle @orders {
+        veil_handler ./veil.db X-Subscription-Key
         reverse_proxy localhost:8082
     }
 
