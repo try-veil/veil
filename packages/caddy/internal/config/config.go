@@ -1,17 +1,22 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
+	"go.uber.org/zap"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 // VeilConfig represents the configuration for the Veil module
 type VeilConfig struct {
 	DBPath string `json:"db_path,omitempty"`
 	db     *gorm.DB
+	logger *zap.Logger
 }
 
 // UnmarshalCaddyfile implements caddyfile.Unmarshaler.
@@ -26,16 +31,28 @@ func (c *VeilConfig) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 
 // Provision implements caddy.Provisioner.
 func (c *VeilConfig) Provision(ctx caddy.Context) error {
-	if c.DBPath == "" {
-		c.DBPath = "veil.db"
+	c.logger = ctx.Logger()
+
+	c.logger.Info("initializing database connection",
+		zap.String("db_path", c.DBPath))
+
+	// Configure GORM with detailed logging
+	gormConfig := &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
 	}
 
-	db, err := gorm.Open(sqlite.Open(c.DBPath), &gorm.Config{})
+	var err error
+	c.db, err = gorm.Open(sqlite.Open(c.DBPath), gormConfig)
 	if err != nil {
-		return err
+		c.logger.Error("failed to connect to database",
+			zap.Error(err),
+			zap.String("db_path", c.DBPath))
+		return fmt.Errorf("failed to connect to database: %v", err)
 	}
 
-	c.db = db
+	c.logger.Info("successfully connected to database",
+		zap.String("db_path", c.DBPath))
+
 	return nil
 }
 

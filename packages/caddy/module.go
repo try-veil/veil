@@ -3,6 +3,7 @@ package veil
 import (
 	"fmt"
 
+	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
 	"github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
@@ -11,6 +12,9 @@ import (
 )
 
 func init() {
+	// Register the VeilHandler with Caddy
+	caddy.RegisterModule(handlers.VeilHandler{})
+
 	// Register the Caddyfile handler directive
 	httpcaddyfile.RegisterHandlerDirective("veil_handler", parseVeilHandler)
 }

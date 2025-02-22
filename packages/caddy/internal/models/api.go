@@ -6,6 +6,16 @@ import (
 	"gorm.io/gorm"
 )
 
+// APIKey represents an API key for accessing an API
+type APIKey struct {
+	gorm.Model
+	APIConfigID uint       `json:"api_config_id" gorm:"index"`
+	Key         string     `json:"key" gorm:"uniqueIndex;not null"`
+	Name        string     `json:"name" gorm:"not null"`
+	IsActive    bool       `json:"is_active" gorm:"default:true"`
+	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
+}
+
 // APIParameter represents a parameter configuration for an API
 type APIParameter struct {
 	gorm.Model
@@ -34,6 +44,7 @@ type APIConfig struct {
 	Methods              []APIMethod    `json:"methods" gorm:"foreignKey:APIConfigID"`
 	Parameters           []APIParameter `json:"parameters" gorm:"foreignKey:APIConfigID"`
 	RequiredHeaders      []string       `json:"required_headers" gorm:"serializer:json"`
+	APIKeys              []APIKey       `json:"api_keys" gorm:"foreignKey:APIConfigID"`
 }
 
 // APIOnboardRequest represents a request to onboard a new API
@@ -44,6 +55,7 @@ type APIOnboardRequest struct {
 	Methods              []string       `json:"methods"`
 	Parameters           []APIParameter `json:"parameters"`
 	RequiredHeaders      []string       `json:"required_headers"`
+	APIKeys              []APIKey       `json:"api_keys"`
 }
 
 // APIOnboardResponse represents the response from API onboarding
