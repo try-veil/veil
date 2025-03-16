@@ -1,10 +1,8 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -12,7 +10,6 @@ import (
 	"time"
 
 	"github.com/caddyserver/caddy/v2"
-	"github.com/caddyserver/caddy/v2/caddyconfig"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	"github.com/techsavvyash/veil/packages/caddy/internal/config"
@@ -152,7 +149,7 @@ func (h *VeilHandler) loadAPIs() error {
 			zap.Int("api_keys_count", len(api.APIKeys)),
 			zap.Int("methods_count", len(api.Methods)))
 
-		if err := h.updateCaddyfile(&api); err != nil {
+		if err := h.updateCaddyfile(api); err != nil {
 			h.logger.Error("failed to configure API route",
 				zap.Error(err),
 				zap.String("path", api.Path),
@@ -214,61 +211,56 @@ func (h *VeilHandler) validateAPIKey(path string, apiKey string) (*models.APICon
 }
 
 // updateCaddyfile updates the Caddy configuration with new API routes
-func (h *VeilHandler) updateCaddyfile(config *models.APIConfig) error {
-	h.logger.Debug("updating Caddy configuration",
-		zap.String("path", config.Path),
-		zap.String("upstream", config.Upstream))
-
-	// Create handlers chain
-	veilHandler := &VeilHandler{
-		DBPath:          h.DBPath,
-		SubscriptionKey: h.SubscriptionKey,
+func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
+	// Get current configuration
+	currentConfig, err := h.getCurrentConfig()
+	if err != nil {
+		h.logger.Error("failed to get current config",
+			zap.Error(err))
+		return fmt.Errorf("failed to get current config: %v", err)
 	}
 
-	h.logger.Debug("creating route configuration")
-
-	// Parse upstream URL to get hostname and scheme
-	upstreamURL, err := url.Parse(config.Upstream)
+	// Parse upstream URL to get scheme
+	upstreamURL, err := url.Parse(api.Upstream)
 	if err != nil {
 		h.logger.Error("failed to parse upstream URL",
 			zap.Error(err))
 		return fmt.Errorf("failed to parse upstream URL: %v", err)
 	}
 
-	h.logger.Debug("creating route configuration",
-		zap.String("scheme", upstreamURL.Scheme),
-		zap.String("host", upstreamURL.Host))
-
-	// Determine if we need to include port in dial address
-	dialAddr := upstreamURL.Host
-	if upstreamURL.Port() == "" {
-		// No port specified in URL, use default ports
-		switch upstreamURL.Scheme {
-		case "https":
-			dialAddr = upstreamURL.Hostname() + ":443"
-		case "http":
-			dialAddr = upstreamURL.Hostname() + ":80"
-		default:
-			h.logger.Error("unsupported scheme",
-				zap.String("scheme", upstreamURL.Scheme))
-			return fmt.Errorf("unsupported scheme: %s", upstreamURL.Scheme)
-		}
+	// Create transport config based on scheme
+	var transportConfig string
+	if upstreamURL.Scheme == "https" {
+		transportConfig = `"transport": {
+			"protocol": "http",
+			"tls": {
+				"insecure_skip_verify": true
+			}
+		},`
+	} else {
+		transportConfig = `"transport": {
+			"protocol": "http"
+		},`
 	}
 
-	// Create the route with raw JSON
-	routeJSON := fmt.Sprintf(`{
+	// Create the new route JSON
+	newRouteJSON := fmt.Sprintf(`{
+		"match": [{"path": ["%s"]}],
 		"handle": [
 			{
 				"handler": "subroute",
 				"routes": [
 					{
 						"handle": [
-							%s,
+							{
+								"handler": "veil_handler",
+								"db_path": "./veil.db",
+								"subscription_key": "X-Subscription-Key"
+							},
 							{
 								"handler": "reverse_proxy",
-								"upstreams": [{
-									"dial": "%s"
-								}],
+								%s
+								"upstreams": [{"dial": "%s"}],
 								"headers": {
 									"request": {
 										"set": {
@@ -282,53 +274,185 @@ func (h *VeilHandler) updateCaddyfile(config *models.APIConfig) error {
 				]
 			}
 		],
-		"match": [
-			{
-				"path": ["%s"]
-			}
-		],
 		"terminal": true
-	}`,
-		caddyconfig.JSONModuleObject(veilHandler, "handler", "veil_handler", nil),
-		dialAddr,
-		upstreamURL.Host,
-		config.Path)
+	}`, api.Path, transportConfig, h.getUpstreamDialAddress(api.Upstream), h.getUpstreamHost(api.Upstream))
 
-	var route caddyhttp.Route
-	if err := json.Unmarshal([]byte(routeJSON), &route); err != nil {
-		h.logger.Error("failed to create route",
+	var newRoute map[string]interface{}
+	if err := json.Unmarshal([]byte(newRouteJSON), &newRoute); err != nil {
+		h.logger.Error("failed to unmarshal new route",
 			zap.Error(err))
-		return fmt.Errorf("failed to create route: %v", err)
+		return fmt.Errorf("failed to unmarshal new route: %v", err)
 	}
 
-	h.logger.Debug("route configuration", zap.Any("route", route))
-
-	// Get current config
-	currentConfig, err := h.getCurrentConfig()
+	// Get the current config as a map
+	var currentConfigMap map[string]interface{}
+	configBytes, err := json.Marshal(currentConfig)
 	if err != nil {
-		h.logger.Error("failed to get current config", zap.Error(err))
-		return fmt.Errorf("failed to get current config: %v", err)
+		h.logger.Error("failed to marshal current config",
+			zap.Error(err))
+		return fmt.Errorf("failed to marshal current config: %v", err)
 	}
 
-	h.logger.Debug("updating routes")
-
-	// Update routes
-	if err := h.updateRoutes(currentConfig, route); err != nil {
-		h.logger.Error("failed to update routes", zap.Error(err))
-		return fmt.Errorf("failed to update routes: %v", err)
+	if err := json.Unmarshal(configBytes, &currentConfigMap); err != nil {
+		h.logger.Error("failed to unmarshal current config",
+			zap.Error(err))
+		return fmt.Errorf("failed to unmarshal current config: %v", err)
 	}
 
-	h.logger.Debug("applying config")
+	// Get the apps section
+	apps, ok := currentConfigMap["apps"].(map[string]interface{})
+	if !ok {
+		h.logger.Error("apps section not found in config")
+		return fmt.Errorf("apps section not found in config")
+	}
 
-	// Apply the updated config
-	if err := h.applyConfig(currentConfig); err != nil {
-		h.logger.Error("failed to apply config", zap.Error(err))
-		return fmt.Errorf("failed to apply config: %v", err)
+	// Get the http app
+	httpApp, ok := apps["http"].(map[string]interface{})
+	if !ok {
+		h.logger.Error("http app not found in config")
+		return fmt.Errorf("http app not found in config")
+	}
+
+	// Get the servers section
+	servers, ok := httpApp["servers"].(map[string]interface{})
+	if !ok {
+		h.logger.Error("servers section not found in config")
+		return fmt.Errorf("servers section not found in config")
+	}
+
+	// Get srv0
+	srv0, ok := servers["srv0"].(map[string]interface{})
+	if !ok {
+		h.logger.Error("srv0 not found in config")
+		return fmt.Errorf("srv0 not found in config")
+	}
+
+	// Get the routes array
+	routes, ok := srv0["routes"].([]interface{})
+	if !ok {
+		routes = make([]interface{}, 0)
+	}
+
+	// Find if a route with the same path already exists
+	routeExists := false
+	for i, route := range routes {
+		routeMap, ok := route.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		matchers, ok := routeMap["match"].([]interface{})
+		if !ok || len(matchers) == 0 {
+			continue
+		}
+
+		matcher, ok := matchers[0].(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		paths, ok := matcher["path"].([]interface{})
+		if !ok || len(paths) == 0 {
+			continue
+		}
+
+		if path, ok := paths[0].(string); ok && path == api.Path {
+			// Replace the existing route
+			routes[i] = newRoute
+			routeExists = true
+			break
+		}
+	}
+
+	// If route doesn't exist, append it
+	if !routeExists {
+		// Find the management API route index
+		mgmtRouteIndex := -1
+		for i, route := range routes {
+			routeMap, ok := route.(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			matchers, ok := routeMap["match"].([]interface{})
+			if !ok || len(matchers) == 0 {
+				continue
+			}
+
+			matcher, ok := matchers[0].(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			paths, ok := matcher["path"].([]interface{})
+			if !ok || len(paths) == 0 {
+				continue
+			}
+
+			if path, ok := paths[0].(string); ok && path == "/veil/api/*" {
+				mgmtRouteIndex = i
+				break
+			}
+		}
+
+		// Insert the new route after the management route
+		if mgmtRouteIndex != -1 {
+			// Create a new slice with one more capacity
+			newRoutes := make([]interface{}, len(routes)+1)
+			// Copy elements up to mgmtRouteIndex+1
+			copy(newRoutes, routes[:mgmtRouteIndex+1])
+			// Insert new route
+			newRoutes[mgmtRouteIndex+1] = newRoute
+			// Copy remaining elements
+			copy(newRoutes[mgmtRouteIndex+2:], routes[mgmtRouteIndex+1:])
+			routes = newRoutes
+		} else {
+			routes = append(routes, newRoute)
+		}
+	}
+
+	// Update the routes in the config
+	srv0["routes"] = routes
+	servers["srv0"] = srv0
+	httpApp["servers"] = servers
+	apps["http"] = httpApp
+	currentConfigMap["apps"] = apps
+
+	// Convert the updated config back to JSON
+	updatedConfig, err := json.Marshal(currentConfigMap)
+	if err != nil {
+		h.logger.Error("failed to marshal updated config",
+			zap.Error(err))
+		return fmt.Errorf("failed to marshal updated config: %v", err)
+	}
+
+	// Pretty print the current config for debugging
+	formattedConfig, err := json.MarshalIndent(currentConfigMap, "", "  ")
+	if err != nil {
+		h.logger.Error("failed to format config for debug",
+			zap.Error(err))
+	} else {
+		h.logger.Debug("updated configuration",
+			zap.ByteString("config", formattedConfig))
+	}
+
+	// Load the updated config
+	if err := caddy.Load(updatedConfig, false); err != nil {
+		h.logger.Error("failed to load config",
+			zap.Error(err))
+		return fmt.Errorf("failed to load config: %v", err)
 	}
 
 	h.logger.Info("successfully updated Caddy configuration",
-		zap.String("path", config.Path),
-		zap.String("upstream", config.Upstream))
+		zap.String("path", api.Path),
+		zap.String("upstream", api.Upstream))
+
+	// Save the updated config to a file
+	if err := h.saveCaddyfile(currentConfigMap); err != nil {
+		h.logger.Error("failed to save updated config",
+			zap.Error(err))
+		return fmt.Errorf("failed to save updated config: %v", err)
+	}
 
 	return nil
 }
@@ -385,141 +509,37 @@ func (h *VeilHandler) getCurrentConfig() (*caddy.Config, error) {
 	return &config, nil
 }
 
-// updateRoutes updates the routes in the config
-func (h *VeilHandler) updateRoutes(config *caddy.Config, newRoute caddyhttp.Route) error {
-	// Get HTTP app from raw config
-	httpAppRaw, ok := config.AppsRaw["http"]
-	if !ok {
-		return fmt.Errorf("HTTP app not found in config")
-	}
-
-	var httpApp struct {
-		Servers map[string]*caddyhttp.Server `json:"servers"`
-	}
-
-	if err := json.Unmarshal(httpAppRaw, &httpApp); err != nil {
-		return fmt.Errorf("failed to unmarshal HTTP app: %v", err)
-	}
-
-	// Get server
-	server, ok := httpApp.Servers["srv0"]
-	if !ok {
-		return fmt.Errorf("server srv0 not found")
-	}
-
-	// Find the management API route and existing routes
-	var managementRoute *caddyhttp.Route
-	var existingRoutes []caddyhttp.Route
-
-	for _, route := range server.Routes {
-		// Convert route to JSON to check its structure
-		routeJSON, err := json.Marshal(route)
-		if err != nil {
-			h.logger.Debug("failed to marshal route",
-				zap.Error(err))
-			continue
-		}
-
-		var routeMap map[string]interface{}
-		if err := json.Unmarshal(routeJSON, &routeMap); err != nil {
-			h.logger.Debug("failed to unmarshal route",
-				zap.Error(err))
-			continue
-		}
-
-		// Check if this is a route with path matcher
-		if match, ok := routeMap["match"].([]interface{}); ok && len(match) > 0 {
-			if matchMap, ok := match[0].(map[string]interface{}); ok {
-				if paths, ok := matchMap["path"].([]interface{}); ok && len(paths) > 0 {
-					if path, ok := paths[0].(string); ok {
-						if path == "/veil/api/*" {
-							managementRoute = &route
-							continue
-						}
-
-						// Check if this is a route we want to replace
-						newRouteJSON, _ := json.Marshal(newRoute)
-						var newRouteMap map[string]interface{}
-						_ = json.Unmarshal(newRouteJSON, &newRouteMap)
-						if newMatch, ok := newRouteMap["match"].([]interface{}); ok && len(newMatch) > 0 {
-							if newMatchMap, ok := newMatch[0].(map[string]interface{}); ok {
-								if newPaths, ok := newMatchMap["path"].([]interface{}); ok && len(newPaths) > 0 {
-									if newPath, ok := newPaths[0].(string); ok && path == newPath {
-										h.logger.Debug("found existing route to replace",
-											zap.String("path", path))
-										continue
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		existingRoutes = append(existingRoutes, route)
-	}
-
-	// Build new routes list
-	var newRoutes []caddyhttp.Route
-
-	// Add management route first if it exists
-	if managementRoute != nil {
-		newRoutes = append(newRoutes, *managementRoute)
-	}
-
-	// Add the new route
-	newRoutes = append(newRoutes, newRoute)
-
-	// Add other routes that don't have path matchers
-	for _, route := range existingRoutes {
-		routeJSON, _ := json.Marshal(route)
-		var routeMap map[string]interface{}
-		_ = json.Unmarshal(routeJSON, &routeMap)
-
-		// Only add routes that don't have path matchers
-		if _, ok := routeMap["match"]; !ok {
-			newRoutes = append(newRoutes, route)
-		}
-	}
-
-	// Update server routes
-	server.Routes = newRoutes
-
-	// Update the app in config
-	newAppRaw, err := json.Marshal(httpApp)
+// getUpstreamDialAddress returns the dial address for the given upstream URL
+func (h *VeilHandler) getUpstreamDialAddress(upstream string) string {
+	upstreamURL, err := url.Parse(upstream)
 	if err != nil {
-		return fmt.Errorf("failed to marshal HTTP app: %v", err)
+		return ""
 	}
-	config.AppsRaw["http"] = newAppRaw
 
-	return nil
+	// Determine if we need to include port in dial address
+	dialAddr := upstreamURL.Host
+	if upstreamURL.Port() == "" {
+		// No port specified in URL, use default ports
+		switch upstreamURL.Scheme {
+		case "https":
+			dialAddr = upstreamURL.Hostname() + ":443"
+		case "http":
+			dialAddr = upstreamURL.Hostname() + ":80"
+		default:
+			return ""
+		}
+	}
+
+	return dialAddr
 }
 
-// applyConfig applies the updated config to Caddy
-func (h *VeilHandler) applyConfig(config *caddy.Config) error {
-	buf := new(bytes.Buffer)
-	if err := json.NewEncoder(buf).Encode(config); err != nil {
-		return fmt.Errorf("failed to encode config: %v", err)
-	}
-
-	req, err := http.NewRequest(http.MethodPost, "http://localhost:2019/load", buf)
+// getUpstreamHost returns the host part of the given upstream URL
+func (h *VeilHandler) getUpstreamHost(upstream string) string {
+	upstreamURL, err := url.Parse(upstream)
 	if err != nil {
-		return fmt.Errorf("failed to create request: %v", err)
+		return ""
 	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to apply config: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("failed to apply config: %s", body)
-	}
-
-	return nil
+	return upstreamURL.Host
 }
 
 // Validate implements caddy.Validator.
@@ -534,7 +554,7 @@ func (h *VeilHandler) Validate() error {
 }
 
 // saveCaddyfile saves the current Caddy configuration to a file
-func (h *VeilHandler) saveCaddyfile(config map[string]interface{}) error {
+func (h *VeilHandler) saveCaddyfile(configMap map[string]interface{}) error {
 	// Create configs directory if it doesn't exist
 	configDir := "configs"
 	if err := os.MkdirAll(configDir, 0755); err != nil {
@@ -545,7 +565,7 @@ func (h *VeilHandler) saveCaddyfile(config map[string]interface{}) error {
 	timestamp := time.Now().Format("20060102-150405")
 	configPath := fmt.Sprintf("%s/caddy-config-%s.json", configDir, timestamp)
 
-	jsonConfig, err := json.MarshalIndent(config, "", "  ")
+	jsonConfig, err := json.MarshalIndent(configMap, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %v", err)
 	}
@@ -683,7 +703,7 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 	}
 
 	// Update Caddy configuration
-	if err := h.updateCaddyfile(config); err != nil {
+	if err := h.updateCaddyfile(*config); err != nil {
 		h.logger.Error("failed to update Caddy config",
 			zap.Error(err))
 		http.Error(w, "Failed to update Caddy configuration", http.StatusInternalServerError)

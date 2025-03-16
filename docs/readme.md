@@ -1,3 +1,5 @@
+# [This directory is not up to date yet, please refer to the root level README.md]
+
 # Veil API Marketplace Documentation
 
 ## Overview

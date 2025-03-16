@@ -10,33 +10,19 @@ Veil is a Caddy module that provides API management capabilities, including subs
 - Dynamic API onboarding
 - SQLite database storage
 
-## Installation
 
-1. Build Caddy with the Veil module:
+## Local Setup
 
-```bash
-xcaddy build --with github.com/techsavvyash/veil/packages/caddy
-```
+1. Clone the project
+2. Install the necessary dependencies, for macOS the script is present in [./scrips/setup/mac.sh](./scrips/setup/mac.sh)
+3. The [Makefile](./Makefile) has the commands required for you to get around to working with Veil.
+
 
 ## Configuration
 
 ### Caddyfile Syntax
 
-```caddy
-{
-    order veil_handler before reverse_proxy
-}
-
-:2020 {
-    veil_handler {
-        db_path "path/to/database.db"
-    }
-
-    handle /api/* {
-        reverse_proxy backend:8080
-    }
-}
-```
+Refer the base [Caddyfile](./Caddyfile) for the config around registering Veil at port 2020.
 
 ### Configuration Options
 
@@ -48,70 +34,15 @@ To onboard a new API, send a POST request to the management endpoint:
 
 ```bash
 curl -X POST http://localhost:2020/veil/api/onboard \
-  -H "Content-Type: application/json" \
-  -d '{
-    "path": "/api/v1/products/*",
-    "upstream": "http://localhost:8081",
-    "required_subscription": "premium",
-    "methods": ["GET", "POST"],
-    "required_headers": ["X-API-Key", "X-Request-ID"],
-    "parameters": [
-      {
-        "name": "category",
-        "type": "query",
-        "required": true
-      }
-    ]
-  }'
-```
-
-## Making API Requests
-
-When making requests to protected APIs, include the required headers:
-
-```bash
-curl http://localhost:2020/api/v1/products \
-  -H "X-Subscription-Key: premium" \
-  -H "X-API-Key: your-api-key" \
-  -H "X-Request-ID: request-123"
-```
-
-## Development
-
-### Project Structure
-
-```
-packages/caddy/
-├── internal/
-│   ├── config/     # Configuration types and parsing
-│   ├── handlers/   # HTTP handlers and middleware
-│   ├── models/     # Data models and types
-│   └── store/      # Database operations
-├── test/
-│   └── Caddyfile  # Test configuration
-├── module.go      # Main module registration
-└── README.md
-```
-
-### Building and Testing
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/techsavvyash/veil.git
-```
-
-2. Build the module:
-
-```bash
-cd veil/packages/caddy
-go build
-```
-
-3. Run tests:
-
-```bash
-go test ./...
+-H "Content-Type: application/json" \
+-d '{
+  "path": "/weather/*",
+  "upstream": "http://localhost:8082/weather",
+  "required_subscription": "weather-subscription",
+  "methods": ["GET"],
+  "required_headers": ["X-Test-Header"],
+  "api_keys": [{"key": "weather-test-key-2", "name": "Weather Test Key 2"}]
+}' | jq
 ```
 
 ## License

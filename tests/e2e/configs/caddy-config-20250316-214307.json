@@ -17,7 +17,31 @@
           },
           "routes": [
             {
-              "group": "group4",
+              "handle": [
+                {
+                  "handler": "subroute",
+                  "routes": [
+                    {
+                      "handle": [
+                        {
+                          "db_path": "./veil.db",
+                          "handler": "veil_handler",
+                          "subscription_key": "X-Subscription-Key"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "match": [
+                {
+                  "path": [
+                    "/veil/api/*"
+                  ]
+                }
+              ]
+            },
+            {
               "handle": [
                 {
                   "handler": "subroute",
@@ -31,9 +55,21 @@
                         },
                         {
                           "handler": "reverse_proxy",
+                          "headers": {
+                            "request": {
+                              "set": {
+                                "Host": [
+                                  "localhost:8083"
+                                ]
+                              }
+                            }
+                          },
+                          "transport": {
+                            "protocol": "http"
+                          },
                           "upstreams": [
                             {
-                              "dial": "localhost:8081"
+                              "dial": "localhost:8083"
                             }
                           ]
                         }
@@ -45,13 +81,13 @@
               "match": [
                 {
                   "path": [
-                    "/api/v1/products/*"
+                    "/ordr/*"
                   ]
                 }
-              ]
+              ],
+              "terminal": true
             },
             {
-              "group": "group4",
               "handle": [
                 {
                   "handler": "subroute",
@@ -65,6 +101,18 @@
                         },
                         {
                           "handler": "reverse_proxy",
+                          "headers": {
+                            "request": {
+                              "set": {
+                                "Host": [
+                                  "localhost:8082"
+                                ]
+                              }
+                            }
+                          },
+                          "transport": {
+                            "protocol": "http"
+                          },
                           "upstreams": [
                             {
                               "dial": "localhost:8082"
@@ -79,104 +127,18 @@
               "match": [
                 {
                   "path": [
-                    "/api/v1/orders/*"
-                  ]
-                }
-              ]
-            },
-            {
-              "group": "group4",
-              "handle": [
-                {
-                  "handler": "subroute",
-                  "routes": [
-                    {
-                      "handle": [
-                        {
-                          "db_path": "./veil.db",
-                          "handler": "veil_handler",
-                          "subscription_key": "X-Subscription-Key"
-                        },
-                        {
-                          "handler": "reverse_proxy",
-                          "upstreams": [
-                            {
-                              "dial": "localhost:8080"
-                            }
-                          ]
-                        }
-                      ]
-                    }
+                    "/weather/*"
                   ]
                 }
               ],
-              "match": [
-                {
-                  "path": [
-                    "/api/v1/users/*"
-                  ]
-                }
-              ]
+              "terminal": true
             },
             {
-              "group": "group4",
               "handle": [
                 {
                   "db_path": "./veil.db",
                   "handler": "veil_handler",
                   "subscription_key": "X-Subscription-Key"
-                },
-                {
-                  "handler": "reverse_proxy",
-                  "upstreams": [
-                    {
-                      "dial": "localhost:8081"
-                    }
-                  ]
-                }
-              ],
-              "match": [
-                {
-                  "path": [
-                    "/api/v1/echo/*"
-                  ]
-                }
-              ]
-            },
-            {
-              "group": "group4",
-              "handle": [
-                {
-                  "handler": "subroute",
-                  "routes": [
-                    {
-                      "handle": [
-                        {
-                          "handler": "rewrite",
-                          "strip_path_prefix": "/veil/api"
-                        }
-                      ]
-                    },
-                    {
-                      "handle": [
-                        {
-                          "handler": "reverse_proxy",
-                          "upstreams": [
-                            {
-                              "dial": "localhost:2020"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ],
-              "match": [
-                {
-                  "path": [
-                    "/veil/api/*"
-                  ]
                 }
               ]
             }
