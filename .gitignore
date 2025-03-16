@@ -1,0 +1,10 @@
+config/gateway/*
+caddy.json
+.idea
+.vscode
+.trash
+*.db
+.env
+
+## binaries
+caddy

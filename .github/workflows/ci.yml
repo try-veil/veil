@@ -1,0 +1,80 @@
+# Used as inspiration: https://github.com/mvdan/github-actions-golang
+
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+  test:
+    strategy:
+      # # Default is true, cancels jobs for other platforms in the matrix if one fails
+      fail-fast: false
+      matrix:
+        go:
+          - "1.22"
+          - "1.23"
+
+        include:
+          # Set the minimum Go patch version for the given Go minor
+          # Usable via ${{ matrix.GO_SEMVER }}
+          - go: "1.22"
+            GO_SEMVER: "~1.22.3"
+
+          - go: "1.23"
+            GO_SEMVER: "~1.23.0"
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.GO_SEMVER }}
+          check-latest: true
+
+      # These tools would be useful if we later decide to reinvestigate
+      # publishing test/coverage reports to some tool for easier consumption
+      # - name: Install test and coverage analysis tools
+      #   run: |
+      #     go get github.com/axw/gocov/gocov
+      #     go get github.com/AlekSi/gocov-xml
+      #     go get -u github.com/jstemmer/go-junit-report
+      #     echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: Print Go version and environment
+        id: vars
+        shell: bash
+        run: |
+          printf "Using go at: $(which go)\n"
+          printf "Go version: $(go version)\n"
+          printf "\n\nGo environment:\n\n"
+          go env
+          printf "\n\nSystem environment:\n\n"
+          env
+          printf "Git version: $(git version)\n\n"
+          # Calculate the short SHA1 hash of the git commit
+          echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Get dependencies
+        run: |
+          cd ./packages/caddy && go get -v -t -d ./...
+
+      # Commented bits below were useful to allow the job to continue
+      # even if the tests fail, so we can publish the report separately
+      # For info about set-output, see https://stackoverflow.com/questions/57850553/github-actions-check-steps-status
+      - name: Run tests
+        run: |
+          # (go test -v -coverprofile=cover-profile.out -race ./... 2>&1) > test-results/test-result.out
+          cd ./packages/caddy && go test -tags nobadger -v -coverprofile="cover-profile.out" -short -race ./...
+          # echo "status=$?" >> $GITHUB_OUTPUT
