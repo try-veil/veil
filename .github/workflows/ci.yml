@@ -68,7 +68,7 @@ jobs:
 
       - name: Get dependencies
         run: |
-          cd ./packages/server && go get -v -t -d ./...
+          cd ./packages/caddy && go get -v -t -d ./...
 
       # Commented bits below were useful to allow the job to continue
       # even if the tests fail, so we can publish the report separately
@@ -76,5 +76,5 @@ jobs:
       - name: Run tests
         run: |
           # (go test -v -coverprofile=cover-profile.out -race ./... 2>&1) > test-results/test-result.out
-          cd ./packages/server && go test -tags nobadger -v -coverprofile="cover-profile.out" -short -race ./...
+          cd ./packages/caddy && go test -tags nobadger -v -coverprofile="cover-profile.out" -short -race ./...
           # echo "status=$?" >> $GITHUB_OUTPUT
