@@ -2,3 +2,5 @@ config/gateway/*
 caddy.json
 .idea
 .vscode
+.trash
+*.db
