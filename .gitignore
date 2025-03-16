@@ -4,4 +4,7 @@ caddy.json
 .vscode
 .trash
 *.db
+.env
+
+## binaries
 caddy
