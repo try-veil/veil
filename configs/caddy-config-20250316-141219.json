@@ -130,7 +130,7 @@
                   "handler": "reverse_proxy",
                   "upstreams": [
                     {
-                      "dial": "localhost:8083"
+                      "dial": "localhost:8082/products"
                     }
                   ]
                 }
@@ -138,7 +138,7 @@
               "match": [
                 {
                   "path": [
-                    "/api/v1/wether/*"
+                    "/api/v1/products/*"
                   ]
                 }
               ]

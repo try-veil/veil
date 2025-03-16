@@ -15,33 +15,8 @@
     # Global veil handler configuration with database path and subscription header
     veil_handler ./veil.db X-Subscription-Key
 
-    # Test Server Routes with path matching
-    @users {
-        path /api/v1/users/*
-    }
-    handle @users {
-        veil_handler ./veil.db X-Subscription-Key
-        reverse_proxy localhost:8080
-    }
-
-    @products {
-        path /api/v1/products/*
-    }
-    handle @products {
-        veil_handler ./veil.db X-Subscription-Key
-        reverse_proxy localhost:8081
-    }
-
-    @orders {
-        path /api/v1/orders/*
-    }
-    handle @orders {
-        veil_handler ./veil.db X-Subscription-Key
-        reverse_proxy localhost:8082
-    }
-
     # Management API route - must be last
-    handle_path /veil/api/* {
-        reverse_proxy localhost:2020
+    handle /veil/api/* {
+        veil_handler ./veil.db X-Subscription-Key
     }
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
+	"github.com/techsavvyash/veil/packages/caddy/internal/models"
 	"go.uber.org/zap"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -52,6 +53,20 @@ func (c *VeilConfig) Provision(ctx caddy.Context) error {
 
 	c.logger.Info("successfully connected to database",
 		zap.String("db_path", c.DBPath))
+
+	// Run database migrations
+	if err := c.db.AutoMigrate(
+		&models.APIConfig{},
+		&models.APIKey{},
+		&models.APIMethod{},
+		&models.APIParameter{},
+	); err != nil {
+		c.logger.Error("failed to run database migrations",
+			zap.Error(err))
+		return fmt.Errorf("failed to run database migrations: %v", err)
+	}
+
+	c.logger.Info("successfully ran database migrations")
 
 	return nil
 }

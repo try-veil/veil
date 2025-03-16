@@ -2,12 +2,15 @@
 
 # Build the Caddy binary with Veil module
 build:
+	make clean
 	CGO_ENABLED=1 xcaddy build --with github.com/techsavvyash/veil/packages/caddy=./packages/caddy
 
 # Clean build artifacts
 clean:
 	rm -f caddy
 
+clean-db:
+	rm -f ./*.db
 # Run tests with coverage
 test:
 	go test -v -race -coverprofile=coverage.out ./...

@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/caddyserver/caddy/v2"
+	"github.com/caddyserver/caddy/v2/caddyconfig"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	"github.com/techsavvyash/veil/packages/caddy/internal/config"
@@ -179,155 +181,343 @@ func (h *VeilHandler) Stop() error {
 	return nil
 }
 
+// validateAPIKey checks if the provided API key is valid for the given path
+func (h *VeilHandler) validateAPIKey(path string, apiKey string) (*models.APIConfig, error) {
+	if apiKey == "" {
+		return nil, fmt.Errorf("no API key provided")
+	}
+
+	api, err := h.store.GetAPIByPath(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get API config: %v", err)
+	}
+
+	// Check if API exists and is active
+	if api == nil {
+		return nil, fmt.Errorf("API not found for path: %s", path)
+	}
+
+	// Validate API key
+	valid := false
+	for _, key := range api.APIKeys {
+		if key.Key == apiKey && key.IsActive {
+			valid = true
+			break
+		}
+	}
+
+	if !valid {
+		return nil, fmt.Errorf("invalid API key")
+	}
+
+	return api, nil
+}
+
 // updateCaddyfile updates the Caddy configuration with new API routes
 func (h *VeilHandler) updateCaddyfile(config *models.APIConfig) error {
 	h.logger.Debug("updating Caddy configuration",
 		zap.String("path", config.Path),
 		zap.String("upstream", config.Upstream))
 
-	// Create a new route for the API
-	newRoute := map[string]interface{}{
-		"group": "group4",
-		"match": []map[string]interface{}{
-			{
-				"path": []string{config.Path},
-			},
-		},
-		"handle": []map[string]interface{}{
-			{
-				"handler":          "veil_handler",
-				"db_path":          h.DBPath,
-				"subscription_key": h.SubscriptionKey,
-			},
-			{
-				"handler": "reverse_proxy",
-				"upstreams": []map[string]interface{}{
-					{
-						"dial": strings.TrimPrefix(config.Upstream, "http://"),
-					},
-				},
-			},
-		},
+	// Create handlers chain
+	veilHandler := &VeilHandler{
+		DBPath:          h.DBPath,
+		SubscriptionKey: h.SubscriptionKey,
 	}
 
-	// Get the current config via admin API
+	h.logger.Debug("creating route configuration")
+
+	// Parse upstream URL to get hostname and scheme
+	upstreamURL, err := url.Parse(config.Upstream)
+	if err != nil {
+		h.logger.Error("failed to parse upstream URL",
+			zap.Error(err))
+		return fmt.Errorf("failed to parse upstream URL: %v", err)
+	}
+
+	h.logger.Debug("creating route configuration",
+		zap.String("scheme", upstreamURL.Scheme),
+		zap.String("host", upstreamURL.Host))
+
+	// Determine if we need to include port in dial address
+	dialAddr := upstreamURL.Host
+	if upstreamURL.Port() == "" {
+		// No port specified in URL, use default ports
+		switch upstreamURL.Scheme {
+		case "https":
+			dialAddr = upstreamURL.Hostname() + ":443"
+		case "http":
+			dialAddr = upstreamURL.Hostname() + ":80"
+		default:
+			h.logger.Error("unsupported scheme",
+				zap.String("scheme", upstreamURL.Scheme))
+			return fmt.Errorf("unsupported scheme: %s", upstreamURL.Scheme)
+		}
+	}
+
+	// Create the route with raw JSON
+	routeJSON := fmt.Sprintf(`{
+		"handle": [
+			{
+				"handler": "subroute",
+				"routes": [
+					{
+						"handle": [
+							%s,
+							{
+								"handler": "reverse_proxy",
+								"upstreams": [{
+									"dial": "%s"
+								}],
+								"headers": {
+									"request": {
+										"set": {
+											"Host": ["%s"]
+										}
+									}
+								}
+							}
+						]
+					}
+				]
+			}
+		],
+		"match": [
+			{
+				"path": ["%s"]
+			}
+		],
+		"terminal": true
+	}`,
+		caddyconfig.JSONModuleObject(veilHandler, "handler", "veil_handler", nil),
+		dialAddr,
+		upstreamURL.Host,
+		config.Path)
+
+	var route caddyhttp.Route
+	if err := json.Unmarshal([]byte(routeJSON), &route); err != nil {
+		h.logger.Error("failed to create route",
+			zap.Error(err))
+		return fmt.Errorf("failed to create route: %v", err)
+	}
+
+	h.logger.Debug("route configuration", zap.Any("route", route))
+
+	// Get current config
+	currentConfig, err := h.getCurrentConfig()
+	if err != nil {
+		h.logger.Error("failed to get current config", zap.Error(err))
+		return fmt.Errorf("failed to get current config: %v", err)
+	}
+
+	h.logger.Debug("updating routes")
+
+	// Update routes
+	if err := h.updateRoutes(currentConfig, route); err != nil {
+		h.logger.Error("failed to update routes", zap.Error(err))
+		return fmt.Errorf("failed to update routes: %v", err)
+	}
+
+	h.logger.Debug("applying config")
+
+	// Apply the updated config
+	if err := h.applyConfig(currentConfig); err != nil {
+		h.logger.Error("failed to apply config", zap.Error(err))
+		return fmt.Errorf("failed to apply config: %v", err)
+	}
+
+	h.logger.Info("successfully updated Caddy configuration",
+		zap.String("path", config.Path),
+		zap.String("upstream", config.Upstream))
+
+	return nil
+}
+
+// getCurrentConfig retrieves the current Caddy config
+func (h *VeilHandler) getCurrentConfig() (*caddy.Config, error) {
 	resp, err := http.Get("http://localhost:2019/config/")
 	if err != nil {
-		return fmt.Errorf("failed to get current config: %v", err)
+		return nil, fmt.Errorf("failed to get current config: %v", err)
 	}
 	defer resp.Body.Close()
 
-	var currentConfig map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&currentConfig); err != nil {
-		return fmt.Errorf("failed to decode current config: %v", err)
+	var config caddy.Config
+	if err := json.NewDecoder(resp.Body).Decode(&config); err != nil {
+		return nil, fmt.Errorf("failed to decode current config: %v", err)
 	}
 
-	// Extract the apps.http section
-	apps, ok := currentConfig["apps"].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("apps section not found in config")
+	// Initialize HTTP app if it doesn't exist
+	if config.AppsRaw == nil {
+		config.AppsRaw = make(map[string]json.RawMessage)
 	}
 
-	httpApp, ok := apps["http"].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("http app not found in config")
+	// Get or create HTTP app
+	var httpApp struct {
+		Servers map[string]*caddyhttp.Server `json:"servers"`
 	}
 
-	servers, ok := httpApp["servers"].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("servers section not found in config")
-	}
-
-	// Find the server listening on port 2020
-	srv2020, ok := servers["srv0"].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("server srv0 not found in config")
-	}
-
-	// Get the current routes
-	routes, ok := srv2020["routes"].([]interface{})
-	if !ok {
-		routes = make([]interface{}, 0)
-	}
-
-	// Add the new route before the management API route
-	var newRoutes []interface{}
-	managementRouteFound := false
-
-	for _, r := range routes {
-		route, ok := r.(map[string]interface{})
-		if !ok {
-			continue
+	if rawApp, ok := config.AppsRaw["http"]; ok {
+		if err := json.Unmarshal(rawApp, &httpApp); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal HTTP app: %v", err)
 		}
-
-		match, ok := route["match"].([]interface{})
-		if !ok || len(match) == 0 {
-			continue
-		}
-
-		matcher, ok := match[0].(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		paths, ok := matcher["path"].([]interface{})
-		if !ok || len(paths) == 0 {
-			continue
-		}
-
-		path, ok := paths[0].(string)
-		if !ok {
-			continue
-		}
-
-		if !managementRouteFound && strings.Contains(path, "/veil/api/") {
-			newRoutes = append(newRoutes, newRoute)
-			managementRouteFound = true
-		}
-		newRoutes = append(newRoutes, r)
 	}
 
-	// If management route wasn't found, append at the end
-	if !managementRouteFound {
-		newRoutes = append(newRoutes, newRoute)
+	// Initialize servers if not present
+	if httpApp.Servers == nil {
+		httpApp.Servers = make(map[string]*caddyhttp.Server)
 	}
 
-	// Update the routes in the config
-	srv2020["routes"] = newRoutes
-
-	// Save the updated config to a file
-	if err := h.saveCaddyfile(currentConfig); err != nil {
-		h.logger.Error("failed to save Caddy configuration",
-			zap.Error(err))
-		// Don't fail the update for file save failure
+	// Get or create default server
+	if _, ok := httpApp.Servers["srv0"]; !ok {
+		httpApp.Servers["srv0"] = &caddyhttp.Server{
+			Listen: []string{":2020"},
+			Routes: []caddyhttp.Route{},
+		}
 	}
 
-	// Send the updated config back to Caddy
-	jsonConfig, err := json.Marshal(currentConfig)
+	// Update HTTP app in config
+	rawApp, err := json.Marshal(httpApp)
 	if err != nil {
-		return fmt.Errorf("failed to marshal updated config: %v", err)
+		return nil, fmt.Errorf("failed to marshal HTTP app: %v", err)
+	}
+	config.AppsRaw["http"] = rawApp
+
+	return &config, nil
+}
+
+// updateRoutes updates the routes in the config
+func (h *VeilHandler) updateRoutes(config *caddy.Config, newRoute caddyhttp.Route) error {
+	// Get HTTP app from raw config
+	httpAppRaw, ok := config.AppsRaw["http"]
+	if !ok {
+		return fmt.Errorf("HTTP app not found in config")
 	}
 
-	req, err := http.NewRequest(http.MethodPost, "http://localhost:2019/load", bytes.NewReader(jsonConfig))
+	var httpApp struct {
+		Servers map[string]*caddyhttp.Server `json:"servers"`
+	}
+
+	if err := json.Unmarshal(httpAppRaw, &httpApp); err != nil {
+		return fmt.Errorf("failed to unmarshal HTTP app: %v", err)
+	}
+
+	// Get server
+	server, ok := httpApp.Servers["srv0"]
+	if !ok {
+		return fmt.Errorf("server srv0 not found")
+	}
+
+	// Find the management API route and existing routes
+	var managementRoute *caddyhttp.Route
+	var existingRoutes []caddyhttp.Route
+
+	for _, route := range server.Routes {
+		// Convert route to JSON to check its structure
+		routeJSON, err := json.Marshal(route)
+		if err != nil {
+			h.logger.Debug("failed to marshal route",
+				zap.Error(err))
+			continue
+		}
+
+		var routeMap map[string]interface{}
+		if err := json.Unmarshal(routeJSON, &routeMap); err != nil {
+			h.logger.Debug("failed to unmarshal route",
+				zap.Error(err))
+			continue
+		}
+
+		// Check if this is a route with path matcher
+		if match, ok := routeMap["match"].([]interface{}); ok && len(match) > 0 {
+			if matchMap, ok := match[0].(map[string]interface{}); ok {
+				if paths, ok := matchMap["path"].([]interface{}); ok && len(paths) > 0 {
+					if path, ok := paths[0].(string); ok {
+						if path == "/veil/api/*" {
+							managementRoute = &route
+							continue
+						}
+
+						// Check if this is a route we want to replace
+						newRouteJSON, _ := json.Marshal(newRoute)
+						var newRouteMap map[string]interface{}
+						_ = json.Unmarshal(newRouteJSON, &newRouteMap)
+						if newMatch, ok := newRouteMap["match"].([]interface{}); ok && len(newMatch) > 0 {
+							if newMatchMap, ok := newMatch[0].(map[string]interface{}); ok {
+								if newPaths, ok := newMatchMap["path"].([]interface{}); ok && len(newPaths) > 0 {
+									if newPath, ok := newPaths[0].(string); ok && path == newPath {
+										h.logger.Debug("found existing route to replace",
+											zap.String("path", path))
+										continue
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		existingRoutes = append(existingRoutes, route)
+	}
+
+	// Build new routes list
+	var newRoutes []caddyhttp.Route
+
+	// Add management route first if it exists
+	if managementRoute != nil {
+		newRoutes = append(newRoutes, *managementRoute)
+	}
+
+	// Add the new route
+	newRoutes = append(newRoutes, newRoute)
+
+	// Add other routes that don't have path matchers
+	for _, route := range existingRoutes {
+		routeJSON, _ := json.Marshal(route)
+		var routeMap map[string]interface{}
+		_ = json.Unmarshal(routeJSON, &routeMap)
+
+		// Only add routes that don't have path matchers
+		if _, ok := routeMap["match"]; !ok {
+			newRoutes = append(newRoutes, route)
+		}
+	}
+
+	// Update server routes
+	server.Routes = newRoutes
+
+	// Update the app in config
+	newAppRaw, err := json.Marshal(httpApp)
+	if err != nil {
+		return fmt.Errorf("failed to marshal HTTP app: %v", err)
+	}
+	config.AppsRaw["http"] = newAppRaw
+
+	return nil
+}
+
+// applyConfig applies the updated config to Caddy
+func (h *VeilHandler) applyConfig(config *caddy.Config) error {
+	buf := new(bytes.Buffer)
+	if err := json.NewEncoder(buf).Encode(config); err != nil {
+		return fmt.Errorf("failed to encode config: %v", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, "http://localhost:2019/load", buf)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %v", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
 
-	resp, err = http.DefaultClient.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to send updated config: %v", err)
+		return fmt.Errorf("failed to apply config: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("failed to update config: %s", body)
+		return fmt.Errorf("failed to apply config: %s", body)
 	}
-
-	h.logger.Info("updated Caddy configuration with new API route",
-		zap.String("path", config.Path),
-		zap.String("upstream", config.Upstream))
 
 	return nil
 }
@@ -372,203 +562,141 @@ func (h *VeilHandler) saveCaddyfile(config map[string]interface{}) error {
 
 // ServeHTTP implements caddyhttp.MiddlewareHandler.
 func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
-	path := r.URL.Path
+	// Handle management API without validation
+	if strings.HasPrefix(r.URL.Path, "/veil/api/") {
+		h.logger.Debug("handling management API request",
+			zap.String("path", r.URL.Path),
+			zap.String("method", r.Method))
+		return h.handleManagementAPI(w, r)
+	}
 
-	h.logger.Info("handling request",
-		zap.String("path", path),
-		zap.String("method", r.Method),
-		zap.String("api_key", r.Header.Get("X-API-Key")),
-		zap.String("subscription", r.Header.Get(h.SubscriptionKey)))
+	// Extract API key from header
+	apiKey := r.Header.Get(h.SubscriptionKey)
 
-	// Handle management API
-	if strings.HasPrefix(path, "/onboard") || strings.HasPrefix(path, "/veil/api/onboard") {
-		if r.Method != http.MethodPost {
-			h.logger.Warn("method not allowed for onboarding API",
-				zap.String("method", r.Method))
-			return caddyhttp.Error(http.StatusMethodNotAllowed, fmt.Errorf("method not allowed"))
-		}
-
-		var req models.APIOnboardRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			h.logger.Error("failed to decode onboarding request body",
-				zap.Error(err))
-			return caddyhttp.Error(http.StatusBadRequest, err)
-		}
-
-		h.logger.Info("attempting to onboard new API",
-			zap.String("path", req.Path),
-			zap.String("upstream", req.Upstream),
-			zap.String("subscription", req.RequiredSubscription),
-			zap.Int("api_keys", len(req.APIKeys)),
-			zap.Strings("methods", req.Methods),
-			zap.Strings("required_headers", req.RequiredHeaders))
-
-		// Validate required fields
-		if req.Path == "" || req.Upstream == "" || req.RequiredSubscription == "" {
-			h.logger.Warn("missing required fields in onboarding request",
-				zap.String("path", req.Path),
-				zap.String("upstream", req.Upstream),
-				zap.String("subscription", req.RequiredSubscription))
-			return caddyhttp.Error(http.StatusBadRequest,
-				fmt.Errorf("path, upstream, and required_subscription are required"))
-		}
-
-		config := &models.APIConfig{
-			Path:                 req.Path,
-			Upstream:             req.Upstream,
-			RequiredSubscription: req.RequiredSubscription,
-			RequiredHeaders:      req.RequiredHeaders,
-		}
-
-		// Create API methods
-		for _, method := range req.Methods {
-			config.Methods = append(config.Methods, models.APIMethod{
-				Method: method,
-			})
-		}
-
-		// Create API parameters
-		config.Parameters = req.Parameters
-
-		// Create API keys
-		config.APIKeys = req.APIKeys
-
-		h.logger.Info("storing API configuration in database",
-			zap.String("path", config.Path))
-
-		// Store in database
-		if err := h.store.CreateAPI(config); err != nil {
-			h.logger.Error("failed to store API in database",
-				zap.Error(err),
-				zap.String("path", req.Path))
-			return caddyhttp.Error(http.StatusInternalServerError,
-				fmt.Errorf("failed to create API: %v", err))
-		}
-
-		h.logger.Info("updating Caddy configuration for new API",
-			zap.String("path", config.Path))
-
-		// Update Caddy configuration via admin API
-		if err := h.updateCaddyfile(config); err != nil {
-			h.logger.Error("failed to update Caddy configuration",
-				zap.Error(err),
-				zap.String("path", req.Path))
-			return caddyhttp.Error(http.StatusInternalServerError,
-				fmt.Errorf("failed to update Caddy configuration: %v", err))
-		}
-
-		h.logger.Info("API onboarded successfully",
-			zap.String("path", req.Path),
-			zap.String("upstream", req.Upstream),
-			zap.String("subscription", req.RequiredSubscription),
-			zap.Int("api_keys", len(req.APIKeys)))
-
-		response := models.APIOnboardResponse{
-			Status:  "success",
-			Message: "API onboarded successfully",
-			API:     *config,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			h.logger.Error("failed to encode response",
-				zap.Error(err))
-			return caddyhttp.Error(http.StatusInternalServerError, err)
-		}
+	// Validate API key
+	api, err := h.validateAPIKey(r.URL.Path, apiKey)
+	if err != nil {
+		h.logger.Debug("API key validation failed",
+			zap.String("path", r.URL.Path),
+			zap.Error(err))
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return nil
 	}
 
-	// Get API configuration for the requested path
-	apiConfig, err := h.store.GetAPIByPath(path)
-	if err != nil {
-		h.logger.Error("failed to get API config",
-			zap.Error(err),
-			zap.String("path", path))
-		return caddyhttp.Error(http.StatusInternalServerError, err)
-	}
-	if apiConfig == nil {
-		h.logger.Debug("no API config found for path",
-			zap.String("path", path))
-		return next.ServeHTTP(w, r)
-	}
-
-	h.logger.Debug("found API config",
-		zap.String("path", apiConfig.Path),
-		zap.String("subscription", apiConfig.RequiredSubscription),
-		zap.Int("api_keys", len(apiConfig.APIKeys)),
-		zap.Any("api_keys_detail", apiConfig.APIKeys))
-
-	// Validate API key
-	apiKey := r.Header.Get("X-API-Key")
-	if apiKey == "" {
-		h.logger.Warn("missing API key",
-			zap.String("path", path))
-		return caddyhttp.Error(http.StatusUnauthorized,
-			fmt.Errorf("API key is required"))
-	}
-
-	isValidKey := h.store.ValidateAPIKey(apiConfig, apiKey)
-	h.logger.Debug("API key validation result",
-		zap.String("path", path),
-		zap.String("api_key", apiKey),
-		zap.Bool("is_valid", isValidKey))
-
-	if !isValidKey {
-		h.logger.Warn("invalid API key",
-			zap.String("path", path),
-			zap.String("api_key", apiKey))
-		return caddyhttp.Error(http.StatusUnauthorized,
-			fmt.Errorf("invalid API key"))
-	}
-
-	// Validate subscription
-	subscriptionKey := r.Header.Get(h.SubscriptionKey)
-	if subscriptionKey == "" {
-		h.logger.Warn("missing subscription key",
-			zap.String("path", path))
-		return caddyhttp.Error(http.StatusUnauthorized,
-			fmt.Errorf("subscription key is required"))
-	}
-
-	h.logger.Debug("validating subscription",
-		zap.String("provided", subscriptionKey),
-		zap.String("required", apiConfig.RequiredSubscription))
-
-	if !strings.EqualFold(subscriptionKey, apiConfig.RequiredSubscription) {
-		h.logger.Warn("invalid subscription level",
-			zap.String("path", path),
-			zap.String("provided", subscriptionKey),
-			zap.String("required", apiConfig.RequiredSubscription))
-		return caddyhttp.Error(http.StatusForbidden,
-			fmt.Errorf("invalid subscription level"))
-	}
-
-	// Validate required headers
-	for _, header := range apiConfig.RequiredHeaders {
-		if r.Header.Get(header) == "" {
-			h.logger.Warn("missing required header",
-				zap.String("path", path),
-				zap.String("header", header))
-			return caddyhttp.Error(http.StatusBadRequest,
-				fmt.Errorf("missing required header: %s", header))
+	// Check if method is allowed
+	methodAllowed := false
+	for _, method := range api.Methods {
+		if method.Method == r.Method {
+			methodAllowed = true
+			break
 		}
 	}
 
-	// Update API stats
-	if err := h.store.UpdateAPIStats(path); err != nil {
-		h.logger.Error("failed to update API stats",
-			zap.Error(err),
-			zap.String("path", path))
-		// Don't fail the request for stats update failure
+	if !methodAllowed {
+		h.logger.Debug("method not allowed",
+			zap.String("path", r.URL.Path),
+			zap.String("method", r.Method))
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return nil
+	}
+
+	// Check required headers
+	for _, header := range api.RequiredHeaders {
+		if r.Header.Get(header) == "" {
+			h.logger.Debug("missing required header",
+				zap.String("path", r.URL.Path),
+				zap.String("header", header))
+			http.Error(w, fmt.Sprintf("Missing required header: %s", header), http.StatusBadRequest)
+			return nil
+		}
 	}
 
 	h.logger.Debug("request authorized",
-		zap.String("path", path),
-		zap.String("method", r.Method),
-		zap.String("api_key", apiKey),
-		zap.String("subscription", subscriptionKey))
+		zap.String("path", r.URL.Path),
+		zap.String("method", r.Method))
 
 	return next.ServeHTTP(w, r)
+}
+
+// handleManagementAPI handles the management API endpoints
+func (h *VeilHandler) handleManagementAPI(w http.ResponseWriter, r *http.Request) error {
+	switch {
+	case strings.HasSuffix(r.URL.Path, "/onboard"):
+		return h.handleOnboard(w, r)
+	default:
+		http.Error(w, "Not found", http.StatusNotFound)
+		return nil
+	}
+}
+
+// handleOnboard handles the API onboarding endpoint
+func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) error {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return nil
+	}
+
+	var req models.APIOnboardRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.logger.Error("failed to decode request body",
+			zap.Error(err))
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return nil
+	}
+
+	// Validate required fields
+	if req.Path == "" || req.Upstream == "" {
+		http.Error(w, "Path and upstream are required", http.StatusBadRequest)
+		return nil
+	}
+
+	// Create API config
+	config := &models.APIConfig{
+		Path:                 req.Path,
+		Upstream:             req.Upstream,
+		RequiredSubscription: req.RequiredSubscription,
+		RequiredHeaders:      req.RequiredHeaders,
+	}
+
+	// Create API methods
+	for _, method := range req.Methods {
+		config.Methods = append(config.Methods, models.APIMethod{
+			Method: method,
+		})
+	}
+
+	// Create API keys
+	for _, key := range req.APIKeys {
+		config.APIKeys = append(config.APIKeys, models.APIKey{
+			Key:      key.Key,
+			Name:     key.Name,
+			IsActive: true,
+		})
+	}
+
+	// Store in database
+	if err := h.store.CreateAPI(config); err != nil {
+		h.logger.Error("failed to store API config",
+			zap.Error(err))
+		http.Error(w, "Failed to store API configuration", http.StatusInternalServerError)
+		return nil
+	}
+
+	// Update Caddy configuration
+	if err := h.updateCaddyfile(config); err != nil {
+		h.logger.Error("failed to update Caddy config",
+			zap.Error(err))
+		http.Error(w, "Failed to update Caddy configuration", http.StatusInternalServerError)
+		return nil
+	}
+
+	// Return success response
+	w.WriteHeader(http.StatusCreated)
+	return json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  "success",
+		"message": "API onboarded successfully",
+		"api":     config,
+	})
 }
 
 // Interface guards ensure that VeilHandler implements the required interfaces.

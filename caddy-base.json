@@ -1,0 +1,91 @@
+{
+	"admin": {
+		"listen": "0.0.0.0:2019"
+	},
+	"logging": {
+		"logs": {
+			"default": {
+				"level": "DEBUG",
+				"exclude": [
+					"http.log.access.log0"
+				]
+			},
+			"log0": {
+				"writer": {
+					"output": "stderr"
+				},
+				"encoder": {
+					"format": "console"
+				},
+				"level": "DEBUG",
+				"include": [
+					"http.log.access.log0"
+				]
+			}
+		}
+	},
+	"apps": {
+		"http": {
+			"servers": {
+				"srv0": {
+					"listen": [
+						":2020"
+					],
+					"routes": [
+						{
+							"match": [
+								{
+									"path": [
+										"/veil/api/*"
+									]
+								}
+							],
+							"handle": [
+								{
+									"handler": "subroute",
+									"routes": [
+										{
+											"handle": [
+												{
+													"handler": "rewrite",
+													"strip_path_prefix": "/veil/api"
+												}
+											]
+										},
+										{
+											"handle": [
+												{
+													"handler": "reverse_proxy",
+													"upstreams": [
+														{
+															"dial": "localhost:2020"
+														}
+													]
+												}
+											]
+										}
+									]
+								}
+							]
+						},
+						{
+							"handle": [
+								{
+									"db_path": "./veil.db",
+									"handler": "veil_handler",
+									"subscription_key": "X-Subscription-Key"
+								}
+							]
+						}
+					],
+					"automatic_https": {
+						"disable": true
+					},
+					"logs": {
+						"default_logger_name": "log0"
+					}
+				}
+			}
+		}
+	}
+}
