@@ -5,6 +5,4 @@ caddy.json
 .trash
 *.db
 .env
-
-## binaries
-# caddy
+*.out
