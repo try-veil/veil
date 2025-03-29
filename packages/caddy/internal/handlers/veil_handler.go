@@ -12,11 +12,13 @@ import (
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
-	"github.com/techsavvyash/veil/packages/caddy/internal/config"
-	"github.com/techsavvyash/veil/packages/caddy/internal/models"
-	"github.com/techsavvyash/veil/packages/caddy/internal/store"
+	"github.com/try-veil/veil/packages/caddy/internal/config"
+	"github.com/try-veil/veil/packages/caddy/internal/dto"
+	"github.com/try-veil/veil/packages/caddy/internal/models"
+	"github.com/try-veil/veil/packages/caddy/internal/store"
 
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 // VeilHandler implements an HTTP handler that validates API subscriptions
@@ -643,6 +645,10 @@ func (h *VeilHandler) handleManagementAPI(w http.ResponseWriter, r *http.Request
 	switch {
 	case strings.HasSuffix(r.URL.Path, "/onboard"):
 		return h.handleOnboard(w, r)
+	case strings.HasSuffix(r.URL.Path, "/api-keys"):
+		return h.handleAddAPIKeys(w, r)
+	case strings.HasSuffix(r.URL.Path, "/api-keys/status"):
+		return h.handleUpdateAPIKeyStatus(w, r)
 	default:
 		http.Error(w, "Not found", http.StatusNotFound)
 		return nil
@@ -656,7 +662,7 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		return nil
 	}
 
-	var req models.APIOnboardRequest
+	var req dto.APIOnboardRequestDTO
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.logger.Error("failed to decode request body",
 			zap.Error(err))
@@ -712,10 +718,126 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 
 	// Return success response
 	w.WriteHeader(http.StatusCreated)
-	return json.NewEncoder(w).Encode(map[string]interface{}{
-		"status":  "success",
-		"message": "API onboarded successfully",
-		"api":     config,
+	return json.NewEncoder(w).Encode(dto.APIResponseDTO{
+		Status:  "success",
+		Message: "API onboarded successfully",
+		API:     config,
+	})
+}
+
+// handleAddAPIKeys handles adding new API keys to an existing API
+func (h *VeilHandler) handleAddAPIKeys(w http.ResponseWriter, r *http.Request) error {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return nil
+	}
+
+	var req dto.APIKeysRequestDTO
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.logger.Error("failed to decode request body",
+			zap.Error(err))
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return nil
+	}
+
+	// Validate required fields
+	if req.Path == "" || len(req.APIKeys) == 0 {
+		http.Error(w, "Path and at least one API key are required", http.StatusBadRequest)
+		return nil
+	}
+
+	// Convert request keys to model keys
+	newKeys := make([]models.APIKey, len(req.APIKeys))
+	for i, key := range req.APIKeys {
+		newKeys[i] = models.APIKey{
+			Key:      key.Key,
+			Name:     key.Name,
+			IsActive: true,
+		}
+	}
+
+	// Add new keys
+	if err := h.store.AddAPIKeys(req.Path, newKeys); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			http.Error(w, "API not found", http.StatusNotFound)
+			return nil
+		}
+		h.logger.Error("failed to add API keys",
+			zap.Error(err))
+		http.Error(w, "Failed to add API keys", http.StatusInternalServerError)
+		return nil
+	}
+
+	// Get updated API config for response
+	api, err := h.store.GetAPIWithKeys(req.Path)
+	if err != nil {
+		h.logger.Error("failed to get updated API config",
+			zap.Error(err))
+		http.Error(w, "Failed to get updated API configuration", http.StatusInternalServerError)
+		return nil
+	}
+
+	// Return success response
+	w.WriteHeader(http.StatusOK)
+	return json.NewEncoder(w).Encode(dto.APIResponseDTO{
+		Status:  "success",
+		Message: "API keys added successfully",
+		API:     api,
+	})
+}
+
+// handleUpdateAPIKeyStatus handles updating the active status of an API key
+func (h *VeilHandler) handleUpdateAPIKeyStatus(w http.ResponseWriter, r *http.Request) error {
+	if r.Method != http.MethodPut {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return nil
+	}
+
+	var req dto.APIKeyStatusRequestDTO
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.logger.Error("failed to decode request body",
+			zap.Error(err))
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return nil
+	}
+
+	// Validate required fields
+	if req.Path == "" || req.APIKey == "" {
+		http.Error(w, "Path and API key are required", http.StatusBadRequest)
+		return nil
+	}
+
+	// Update key status
+	if err := h.store.UpdateAPIKeyStatus(req.Path, req.APIKey, req.IsActive); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			http.Error(w, "API not found", http.StatusNotFound)
+			return nil
+		}
+		if err.Error() == "API key not found" {
+			http.Error(w, "API key not found", http.StatusNotFound)
+			return nil
+		}
+		h.logger.Error("failed to update API key status",
+			zap.Error(err))
+		http.Error(w, "Failed to update API key status", http.StatusInternalServerError)
+		return nil
+	}
+
+	// Get updated API config for response
+	api, err := h.store.GetAPIWithKeys(req.Path)
+	if err != nil {
+		h.logger.Error("failed to get updated API config",
+			zap.Error(err))
+		http.Error(w, "Failed to get updated API configuration", http.StatusInternalServerError)
+		return nil
+	}
+
+	// Return success response
+	w.WriteHeader(http.StatusOK)
+	return json.NewEncoder(w).Encode(dto.APIResponseDTO{
+		Status:  "success",
+		Message: "API key status updated successfully",
+		API:     api,
 	})
 }
 

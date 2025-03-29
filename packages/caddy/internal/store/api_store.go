@@ -1,10 +1,11 @@
 package store
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
-	"github.com/techsavvyash/veil/packages/caddy/internal/models"
+	"github.com/try-veil/veil/packages/caddy/internal/models"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -275,4 +276,195 @@ func (s *APIStore) AutoMigrate() error {
 
 	s.logger.Info("database migrations completed successfully")
 	return nil
+}
+
+// UpdateAPI updates an existing API configuration
+func (s *APIStore) UpdateAPI(config *models.APIConfig) error {
+	s.logger.Info("updating API configuration",
+		zap.String("path", config.Path),
+		zap.String("upstream", config.Upstream),
+		zap.String("subscription", config.RequiredSubscription),
+		zap.Int("api_keys", len(config.APIKeys)))
+
+	// Begin a transaction
+	tx := s.db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	// Update the API configuration
+	if err := tx.Save(config).Error; err != nil {
+		tx.Rollback()
+		s.logger.Error("failed to update API configuration",
+			zap.Error(err),
+			zap.String("path", config.Path))
+		return err
+	}
+
+	// Commit the transaction
+	if err := tx.Commit().Error; err != nil {
+		s.logger.Error("failed to commit transaction",
+			zap.Error(err),
+			zap.String("path", config.Path))
+		return err
+	}
+
+	s.logger.Info("API configuration updated successfully",
+		zap.String("path", config.Path),
+		zap.Uint("id", config.ID))
+
+	return nil
+}
+
+// AddAPIKeys adds new API keys to an existing API configuration
+func (s *APIStore) AddAPIKeys(path string, newKeys []models.APIKey) error {
+	s.logger.Info("adding new API keys",
+		zap.String("path", path),
+		zap.Int("key_count", len(newKeys)))
+
+	// Begin transaction
+	tx := s.db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	// Get API config ID
+	var apiConfig models.APIConfig
+	if err := tx.Where("path = ?", path).First(&apiConfig).Error; err != nil {
+		tx.Rollback()
+		s.logger.Error("failed to find API configuration",
+			zap.Error(err),
+			zap.String("path", path))
+		return err
+	}
+
+	// Get existing keys for duplicate check
+	var existingKeys []models.APIKey
+	if err := tx.Where("api_config_id = ?", apiConfig.ID).Find(&existingKeys).Error; err != nil {
+		tx.Rollback()
+		s.logger.Error("failed to fetch existing API keys",
+			zap.Error(err),
+			zap.String("path", path))
+		return err
+	}
+
+	// Check for duplicates and prepare new keys
+	var keysToAdd []models.APIKey
+	for _, newKey := range newKeys {
+		isDuplicate := false
+		for _, existingKey := range existingKeys {
+			if existingKey.Key == newKey.Key {
+				isDuplicate = true
+				break
+			}
+		}
+		if !isDuplicate {
+			newKey.APIConfigID = apiConfig.ID
+			newKey.IsActive = true
+			keysToAdd = append(keysToAdd, newKey)
+		}
+	}
+
+	// Add new keys if any
+	if len(keysToAdd) > 0 {
+		if err := tx.Create(&keysToAdd).Error; err != nil {
+			tx.Rollback()
+			s.logger.Error("failed to add new API keys",
+				zap.Error(err),
+				zap.String("path", path))
+			return err
+		}
+	}
+
+	// Commit transaction
+	if err := tx.Commit().Error; err != nil {
+		s.logger.Error("failed to commit transaction",
+			zap.Error(err),
+			zap.String("path", path))
+		return err
+	}
+
+	s.logger.Info("successfully added new API keys",
+		zap.String("path", path),
+		zap.Int("added_keys", len(keysToAdd)))
+
+	return nil
+}
+
+// UpdateAPIKeyStatus updates the status of an API key
+func (s *APIStore) UpdateAPIKeyStatus(path string, apiKey string, isActive bool) error {
+	s.logger.Info("updating API key status",
+		zap.String("path", path),
+		zap.String("key", apiKey),
+		zap.Bool("is_active", isActive))
+
+	// Begin transaction
+	tx := s.db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	// Get API config ID
+	var apiConfig models.APIConfig
+	if err := tx.Where("path = ?", path).First(&apiConfig).Error; err != nil {
+		tx.Rollback()
+		s.logger.Error("failed to find API configuration",
+			zap.Error(err),
+			zap.String("path", path))
+		return err
+	}
+
+	// Update key status
+	result := tx.Model(&models.APIKey{}).
+		Where("api_config_id = ? AND key = ?", apiConfig.ID, apiKey).
+		Update("is_active", isActive)
+
+	if result.Error != nil {
+		tx.Rollback()
+		s.logger.Error("failed to update API key status",
+			zap.Error(result.Error),
+			zap.String("path", path),
+			zap.String("key", apiKey))
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		tx.Rollback()
+		s.logger.Error("API key not found",
+			zap.String("path", path),
+			zap.String("key", apiKey))
+		return fmt.Errorf("API key not found")
+	}
+
+	// Commit transaction
+	if err := tx.Commit().Error; err != nil {
+		s.logger.Error("failed to commit transaction",
+			zap.Error(err),
+			zap.String("path", path))
+		return err
+	}
+
+	s.logger.Info("successfully updated API key status",
+		zap.String("path", path),
+		zap.String("key", apiKey),
+		zap.Bool("is_active", isActive))
+
+	return nil
+}
+
+// GetAPIWithKeys retrieves an API configuration with its keys
+func (s *APIStore) GetAPIWithKeys(path string) (*models.APIConfig, error) {
+	var apiConfig models.APIConfig
+	err := s.db.Preload("APIKeys").
+		Where("path = ?", path).
+		First(&apiConfig).Error
+
+	if err != nil {
+		s.logger.Error("failed to get API with keys",
+			zap.Error(err),
+			zap.String("path", path))
+		return nil, err
+	}
+
+	return &apiConfig, nil
 }

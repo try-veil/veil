@@ -1,8 +1,9 @@
-module github.com/techsavvyash/veil/packages/caddy
+module github.com/try-veil/veil/packages/caddy
 
 go 1.21
 
 require (
+	github.com/bytedance/mockey v1.2.14
 	github.com/caddyserver/caddy/v2 v2.7.6
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.25.0
@@ -20,7 +21,6 @@ require (
 	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230305170008-8188dc5388df // indirect
 	github.com/aryann/difflib v0.0.0-20210328193216-ff5ff6dc229b // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bytedance/mockey v1.2.14 // indirect
 	github.com/caddyserver/certmagic v0.20.0 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
@@ -61,7 +61,6 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/libdns/libdns v0.2.1 // indirect
 	github.com/manifoldco/promptui v0.9.0 // indirect
-	github.com/mastercactapus/proxyprotocol v0.0.4 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mattn/go-sqlite3 v1.14.24 // indirect
