@@ -7,8 +7,8 @@ import (
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
 	"github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
-	"github.com/techsavvyash/veil/packages/caddy/internal/config"
-	"github.com/techsavvyash/veil/packages/caddy/internal/handlers"
+	"github.com/try-veil/veil/packages/caddy/internal/config"
+	"github.com/try-veil/veil/packages/caddy/internal/handlers"
 )
 
 func init() {
