@@ -1,0 +1,47 @@
+name: Build Caddy Module and Run End-to-End Tests
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Cache Go modules
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"  # Specify the Go version you want to use
+
+      - name: Get dependencies
+        run: |
+          make setup  # Use the Makefile to set up dependencies
+
+      - name: Build Caddy Module
+        run: |
+          go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest  # Install xcaddy
+          make build  # Use the Makefile to build the Caddy module
+
+      - name: Run End-to-End Tests
+        run: |
+          make test-e2e  # Use the Makefile to run end-to-end tests

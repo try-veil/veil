@@ -6,3 +6,6 @@ caddy.json
 *.db
 .env
 *.out
+
+# generated config JSONs
+config/
