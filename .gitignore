@@ -9,3 +9,6 @@ caddy.json
 
 # generated config JSONs
 config/
+
+## compiled binary
+veil

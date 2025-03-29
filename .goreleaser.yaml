@@ -9,24 +9,51 @@ before:
     - go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 
 builds:
-  - no_main_check: true
+  - id: veil
+    no_main_check: true
     dir: ./packages/caddy
     env:
       - CGO_ENABLED=1
     goos:
       - linux
-      # - windows
       - darwin
+      - windows
     goarch:
       - amd64
       - arm64
-    binary: caddy
+    ignore:
+      - goos: windows
+        goarch: arm64
+    binary: veil
     hooks:
       pre: make build
     flags:
       - -tags=netgo
     ldflags:
+      - -s -w
       - -linkmode=external
+      - -X main.version={{.Version}}
+    overrides:
+      - goos: darwin
+        goarch: amd64
+        env:
+          - CC=o64-clang
+          - CXX=o64-clang++
+      - goos: darwin
+        goarch: arm64
+        env:
+          - CC=oa64-clang
+          - CXX=oa64-clang++
+      - goos: windows
+        goarch: amd64
+        env:
+          - CC=x86_64-w64-mingw32-gcc
+          - CXX=x86_64-w64-mingw32-g++
+      - goos: linux
+        goarch: arm64
+        env:
+          - CC=aarch64-linux-gnu-gcc
+          - CXX=aarch64-linux-gnu-g++
 
 nfpms:
   - id: packages
@@ -71,7 +98,7 @@ brews:
       name: goreleaserbot
       email: bot@goreleaser.com
     homepage: "https://github.com/try-veil/veil"
-    description: "Veil - Dynamic API Gateway Extension for Caddy"
+    description: "Veil - An opinionated, fully featured, modular observability stack for APIs. Allows you to sell, monitor, authenticate your APIs."
     license: "MIT"
     test: |
       system "#{bin}/veil version"
@@ -83,7 +110,7 @@ brews:
 aurs:
   - name: veil-bin
     homepage: "https://github.com/try-veil/veil"
-    description: "Veil - Dynamic API Gateway Extension for Caddy"
+    description: "Veil - An opinionated, fully featured, modular observability stack for APIs. Allows you to sell, monitor, authenticate your APIs."
     maintainers:
       - "Yash Mittal <yash@techsavvyash.dev>"
     license: "MIT"
