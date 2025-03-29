@@ -41,7 +41,10 @@ export class AuthService {
           family_name: response.response.user.lastName,
         });
 
-        return this.generateToken(user);
+        return {
+          fusion_auth_token: response.response.token,
+          ...this.generateToken(user)
+        };
       }
     } catch (error) {
       if (error.statusCode === 400) {
@@ -67,26 +70,55 @@ export class AuthService {
           family_name: response.response.user.lastName,
         });
 
-        return this.generateToken(user);
+        return {
+          fusion_auth_token: response.response.token,
+          ...this.generateToken(user)
+        };;
       }
     } catch (error) {
       throw new UnauthorizedException('Invalid credentials');
     }
   }
 
-  async validateUser(token: string) {
+  async validateFusionAuthToken(token: string) {
     try {
+      console.log("Validating FusionAuth token:", token.substring(0, 20) + "...");
       const response = await this.fusionAuthClient.validateJWT(token);
-      if (response.wasSuccessful()) {
-        if (response.response) {
-          const jwt = response.response.jwt;
-          return this.findOrCreateUser(jwt);
-        } else {
-          throw new UnauthorizedException('No success response received');
-        }
+      console.log("FusionAuth validation response status:", response.statusCode);
+      if (response.statusCode !== 200) {
+        throw new UnauthorizedException('Invalid FusionAuth token');
       }
+    
+      const jwtPayload = response.response.jwt;
+      console.log("JWT Payload:", jwtPayload);
+      const user = await this.findOrCreateUser(jwtPayload);
+      
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+      
+      return this.generateToken(user);
     } catch (error) {
-      throw new UnauthorizedException('Invalid token');
+      console.error("FusionAuth validation error:", error);
+      throw new UnauthorizedException('Invalid token: ' + error.message);
+    }
+  }
+  
+  async validateAppToken(token: string) {
+    try { 
+      const payload = this.jwtService.verify(token);
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        include: { roles: true },
+      });
+      
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+      
+      return user;
+    } catch (error) {
+      throw new UnauthorizedException('Invalid application token');
     }
   }
 
@@ -113,15 +145,24 @@ export class AuthService {
     return user;
   }
 
-  async generateToken(user: any) {
+
+
+  generateToken(user: any) {
     const payload = {
       sub: user.id,
       email: user.email,
       roles: user.roles.map(role => role.name),
     };
-
+    
     return {
       access_token: this.jwtService.sign(payload),
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        roles: user.roles.map(role => role.name),
+      },
     };
   }
 
