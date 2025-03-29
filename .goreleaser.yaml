@@ -3,18 +3,26 @@
 
 version: 2
 
+before:
+  hooks:
+    - cd packages/caddy && go mod tidy && cd ../..
+    - go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+
 builds:
-  - env:
+  - no_main_check: true
+    dir: ./packages/caddy
+    env:
       - CGO_ENABLED=1
     goos:
       - linux
-      - windows
+      # - windows
       - darwin
     goarch:
       - amd64
       - arm64
-    dir: .
     binary: caddy
+    hooks:
+      pre: make build
     flags:
       - -tags=netgo
     ldflags:
@@ -27,7 +35,7 @@ nfpms:
     vendor: TheFlywheel
     homepage: https://github.com/try-veil/veil
     maintainer: Yash Mittal <yash@techsavvyash.dev>
-    description: Veil - Dynamic API Gateway Extension for Caddy
+    description: Veil - An opionated Caddy extension to sell, monitor, and manage your APIs
     license: MIT
     formats:
       - deb
@@ -68,7 +76,7 @@ brews:
     test: |
       system "#{bin}/veil version"
     dependencies:
-      - name: caddy
+      - name: xcaddy
     install: |
       bin.install "veil"
 
