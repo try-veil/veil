@@ -3,11 +3,6 @@
 
 version: 2
 
-before:
-  hooks:
-    - cd packages/caddy && go mod tidy && cd ../..
-    - go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
-
 builds:
   - id: veil
     no_main_check: true
