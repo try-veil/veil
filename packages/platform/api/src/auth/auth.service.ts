@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
@@ -7,6 +7,7 @@ import { FusionAuthClient } from '@fusionauth/typescript-client';
 @Injectable()
 export class AuthService {
   private fusionAuthClient: FusionAuthClient;
+  private readonly logger = new Logger(AuthService.name);
 
   constructor(
     private readonly configService: ConfigService,
@@ -73,52 +74,41 @@ export class AuthService {
         return {
           fusion_auth_token: response.response.token,
           ...this.generateToken(user)
-        };;
+        };
       }
     } catch (error) {
       throw new UnauthorizedException('Invalid credentials');
     }
   }
 
-  async validateFusionAuthToken(token: string) {
+  async validateToken(token: string) {
     try {
-      console.log("Validating FusionAuth token:", token.substring(0, 20) + "...");
-      const response = await this.fusionAuthClient.validateJWT(token);
-      console.log("FusionAuth validation response status:", response.statusCode);
-      if (response.statusCode !== 200) {
-        throw new UnauthorizedException('Invalid FusionAuth token');
+      try {
+        const payload = this.jwtService.verify(token);
+        const user = await this.prisma.user.findUnique({
+          where: { id: payload.sub },
+          include: { roles: true },
+        });
+        
+        if (user) {
+          return this.generateToken(user);
+        }
+      } catch (jwtError) {
+        this.logger.debug('Not a valid local JWT, trying FusionAuth', jwtError);
       }
-    
+      const response = await this.fusionAuthClient.validateJWT(token);
+      if (response.statusCode !== 200) {
+        throw new UnauthorizedException('Invalid token');
+      }
       const jwtPayload = response.response.jwt;
-      console.log("JWT Payload:", jwtPayload);
       const user = await this.findOrCreateUser(jwtPayload);
-      
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
-      
       return this.generateToken(user);
     } catch (error) {
-      console.error("FusionAuth validation error:", error);
+      this.logger.error('Token validation error', error);
       throw new UnauthorizedException('Invalid token: ' + error.message);
-    }
-  }
-  
-  async validateAppToken(token: string) {
-    try { 
-      const payload = this.jwtService.verify(token);
-      const user = await this.prisma.user.findUnique({
-        where: { id: payload.sub },
-        include: { roles: true },
-      });
-      
-      if (!user) {
-        throw new UnauthorizedException('User not found');
-      }
-      
-      return user;
-    } catch (error) {
-      throw new UnauthorizedException('Invalid application token');
     }
   }
 
@@ -130,7 +120,6 @@ export class AuthService {
     });
 
     if (!user) {
-      // Create new user
       user = await this.prisma.user.create({
         data: {
           email: jwt.email,
@@ -144,8 +133,6 @@ export class AuthService {
 
     return user;
   }
-
-
 
   generateToken(user: any) {
     const payload = {

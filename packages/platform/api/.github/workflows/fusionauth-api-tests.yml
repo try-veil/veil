@@ -1,0 +1,124 @@
+name: FusionAuth API Tests
+
+on:
+  push:
+    branches: [ main, master, development ]
+  pull_request:
+    branches: [ main, master, development ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      # Setup PostgreSQL for Prisma
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      # Setup FusionAuth
+      fusionauth:
+        image: fusionauth/fusionauth-app:latest
+        env:
+          DATABASE_URL: jdbc:postgresql://postgres:5432/fusionauth
+          DATABASE_ROOT_USERNAME: postgres
+          DATABASE_ROOT_PASSWORD: postgres
+          DATABASE_USERNAME: postgres
+          DATABASE_PASSWORD: postgres
+          FUSIONAUTH_APP_MEMORY: 512M
+          SEARCH_TYPE: database
+        ports:
+          - 9011:9011
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'yarn'
+    
+    - name: Install dependencies
+      run: yarn install --frozen-lockfile
+    
+    - name: Wait for FusionAuth
+      run: |
+        echo "Waiting for FusionAuth to start up..."
+        timeout 300 bash -c 'until curl -s http://localhost:9011/api/status -o /dev/null; do sleep 5; done'
+        echo "FusionAuth is running!"
+    
+    - name: Setup FusionAuth API key and application
+      run: |
+        # Setup API key
+        curl -X POST http://localhost:9011/api/setup-wizard \
+          -H "Content-Type: application/json" \
+          -d '{
+            "apiKey": "your-api-key",
+            "superuser": {
+              "email": "admin@example.com",
+              "password": "password123"
+            }
+          }'
+        
+        # Create application
+        APP_ID=$(uuidgen)
+        echo "FUSION_AUTH_APPLICATION_ID=$APP_ID" >> $GITHUB_ENV
+        
+        curl -X POST http://localhost:9011/api/application \
+          -H "Content-Type: application/json" \
+          -H "Authorization: your-api-key" \
+          -d "{
+            \"application\": {
+              \"id\": \"$APP_ID\",
+              \"name\": \"Test Application\",
+              \"oauthConfiguration\": {
+                \"authorizedRedirectURLs\": [\"http://localhost:3000/callback\"],
+                \"clientId\": \"$APP_ID\",
+                \"clientSecret\": \"test-client-secret\",
+                \"enabledGrants\": [\"authorization_code\", \"refresh_token\"],
+                \"logoutBehavior\": \"AllApplications\"
+              }
+            }
+          }"
+    
+    - name: Create .env file
+      run: |
+        cat > .env << EOF
+        DATABASE_URL=postgresql://postgres:postgres@localhost:5432/testdb
+        JWT_SECRET=test-jwt-secret
+        FUSION_AUTH_URL=http://localhost:9011
+        FUSION_AUTH_API_KEY=your-api-key
+        FUSION_AUTH_APPLICATION_ID=${{ env.FUSION_AUTH_APPLICATION_ID }}
+        EOF
+    
+    - name: Build application
+      run: yarn build
+    
+    - name: Run Prisma migrations
+      run: npx prisma migrate deploy
+    
+    - name: Run unit tests
+      run: yarn test
+    
+    - name: Run e2e tests
+      run: yarn test:e2e
+    
+    - name: Run bash script tests
+      run: |
+        chmod +x scripts/test-auth-api.sh
+        ./scripts/test-auth-api.sh

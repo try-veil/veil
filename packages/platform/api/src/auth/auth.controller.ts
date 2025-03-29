@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Req, Headers, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Req, Headers, UnauthorizedException, Logger, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
@@ -6,10 +6,11 @@ import { Roles } from './decorators/roles.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { LoginDto, SignupDto, AssignRoleDto, CreateApiKeyDto } from './dto';
 
-
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(private readonly authService: AuthService) {}
 
   @ApiOperation({ summary: 'Sign up a new user' })
@@ -29,35 +30,26 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'User successfully logged in' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @Post('login')
+  @HttpCode(HttpStatus.OK) 
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto.email, loginDto.password);
   }
 
-  @ApiOperation({ summary: 'Validate FusionAuth token' })
+  @ApiOperation({ summary: 'Validate token' })
   @ApiResponse({ status: 200, description: 'Token successfully validated' })
   @ApiResponse({ status: 401, description: 'Invalid token' })
-  @Post('validate-fusion-token')
-  async validateFusionAuthToken(@Headers('authorization') authHeader: string) {
-    const token = authHeader && authHeader.split(' ')[1];
+  @Post('validate')
+  @HttpCode(HttpStatus.OK)
+  async validateToken(@Headers('authorization') authHeader: string) {
+    const token = authHeader?.split(' ')[1];
     if (!token) {
       throw new UnauthorizedException('No token provided');
     }
-    return this.authService.validateFusionAuthToken(token);
+    
+    this.logger.log('Validating token');
+    
+    return this.authService.validateToken(token);
   }
-
-  @ApiOperation({ summary: 'Validate application JWT token' })
-  @ApiResponse({ status: 200, description: 'Token successfully validated' })
-  @ApiResponse({ status: 401, description: 'Invalid token' })
-  @Post('validate-app-token')
-  async validateAppToken(@Headers('authorization') authHeader: string) {
-    const token = authHeader && authHeader.split(' ')[1];
-    if (!token) {
-      throw new UnauthorizedException('No token provided');
-    }
-    const user = await this.authService.validateAppToken(token);
-    return { valid: true, user };
-  }
-
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Assign role to user' })
@@ -77,10 +69,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @UseGuards(JwtAuthGuard)
   @Post('api-keys')
-  async createApiKey(
-    @Req() req: any,
-    @Body() createApiKeyDto: CreateApiKeyDto,
-  ) {
+  async createApiKey(@Req() req: any, @Body() createApiKeyDto: CreateApiKeyDto) {
     return this.authService.createApiKey(req.user.id, createApiKeyDto.name);
   }
 
@@ -93,4 +82,4 @@ export class AuthController {
   getProfile(@Req() req: any) {
     return req.user;
   }
-} 
+}

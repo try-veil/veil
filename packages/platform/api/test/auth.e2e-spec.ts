@@ -16,6 +16,9 @@ describe('AuthController (e2e)', () => {
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe());
     prisma = app.get<PrismaService>(PrismaService);
+    await prisma.apiKey.deleteMany();
+    await prisma.user.deleteMany();
+    
     await app.init();
   });
 
@@ -26,21 +29,30 @@ describe('AuthController (e2e)', () => {
 
   describe('Authentication', () => {
     const testUser = {
-      email: 'test@example.com',
+      email: `test-${Date.now()}@example.com`,
       password: 'password123',
       firstName: 'Test',
       lastName: 'User',
     };
 
+    let accessToken: string;
+    let userId: string;
+
+
     describe('POST /auth/signup', () => {
-      it('should create a new user', () => {
-        return request(app.getHttpServer())
+      it('should create a new user', async () => {
+        const response = await request(app.getHttpServer())
           .post('/auth/signup')
           .send(testUser)
-          .expect(201)
-          .expect((res) => {
-            expect(res.body.access_token).toBeDefined();
-          });
+          .expect(201);
+        
+        expect(response.body.access_token).toBeDefined();
+        expect(response.body.fusion_auth_token).toBeDefined();
+        expect(response.body.user).toBeDefined();
+        expect(response.body.user.email).toBe(testUser.email);
+        
+        accessToken = response.body.access_token;
+        userId = response.body.user.id;
       });
 
       it('should fail if email is already registered', () => {
@@ -59,17 +71,19 @@ describe('AuthController (e2e)', () => {
     });
 
     describe('POST /auth/login', () => {
-      it('should login successfully', () => {
-        return request(app.getHttpServer())
+      it('should login successfully', async () => {
+        const response = await request(app.getHttpServer())
           .post('/auth/login')
           .send({
             email: testUser.email,
             password: testUser.password,
           })
-          .expect(200)
-          .expect((res) => {
-            expect(res.body.access_token).toBeDefined();
-          });
+          .expect(200);
+        
+        expect(response.body.access_token).toBeDefined();
+        expect(response.body.fusion_auth_token).toBeDefined();
+        expect(response.body.user).toBeDefined();
+        expect(response.body.user.email).toBe(testUser.email);
       });
 
       it('should fail with wrong password', () => {
@@ -83,27 +97,39 @@ describe('AuthController (e2e)', () => {
       });
     });
 
-    describe('GET /auth/me', () => {
-      let token: string;
-
-      beforeAll(async () => {
+    describe('POST /auth/validate', () => {
+      it('should validate a valid token', async () => {
         const response = await request(app.getHttpServer())
-          .post('/auth/login')
-          .send({
-            email: testUser.email,
-            password: testUser.password,
-          });
-        token = response.body.access_token;
+          .post('/auth/validate')
+          .set('Authorization', `Bearer ${accessToken}`)
+          .expect(200);
+          
+        expect(response.body.access_token).toBeDefined();
       });
-
-      it('should get user profile', () => {
+      
+      it('should fail with invalid token', () => {
         return request(app.getHttpServer())
+          .post('/auth/validate')
+          .set('Authorization', 'Bearer invalid_token')
+          .expect(401);
+      });
+      
+      it('should fail without token', () => {
+        return request(app.getHttpServer())
+          .post('/auth/validate')
+          .expect(401);
+      });
+    });
+
+    describe('GET /auth/me', () => {
+      it('should get user profile', async () => {
+        const response = await request(app.getHttpServer())
           .get('/auth/me')
-          .set('Authorization', `Bearer ${token}`)
-          .expect(200)
-          .expect((res) => {
-            expect(res.body.email).toBe(testUser.email);
-          });
+          .set('Authorization', `Bearer ${accessToken}`)
+          .expect(200);
+          
+        expect(response.body.email).toBe(testUser.email);
+        expect(response.body.id).toBeDefined();
       });
 
       it('should fail without token', () => {
@@ -112,5 +138,26 @@ describe('AuthController (e2e)', () => {
           .expect(401);
       });
     });
+    
+    describe('POST /auth/api-keys', () => {
+      it('should create an API key', async () => {
+        const response = await request(app.getHttpServer())
+          .post('/auth/api-keys')
+          .set('Authorization', `Bearer ${accessToken}`)
+          .send({ name: 'Test API Key' })
+          .expect(201);
+          
+        expect(response.body.key).toBeDefined();
+        expect(response.body.name).toBe('Test API Key');
+        expect(response.body.userId).toBe(userId);
+      });
+      
+      it('should fail without token', () => {
+        return request(app.getHttpServer())
+          .post('/auth/api-keys')
+          .send({ name: 'Test API Key' })
+          .expect(401);
+      });
+    });
   });
-}); 
+});
