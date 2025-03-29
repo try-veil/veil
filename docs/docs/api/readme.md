@@ -61,10 +61,6 @@ APIs are versioned using URL path versioning:
 
 ## Related Resources
 
-- [Getting Started Guide](../setup.md)
-- [API Best Practices](../contribution/api-guidelines.md)
-- [Postman Collection](../contribution/postman/marketplace-apis.json)
-
 ## Error Codes
 
 | Code | Description         |

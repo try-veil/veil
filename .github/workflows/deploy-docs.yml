@@ -1,0 +1,42 @@
+name: Deploy Docusaurus Docs
+
+on:
+  workflow_dispatch:  # Allow manual triggering of the workflow
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'  # Trigger on changes in the docs folder
+      
+
+permissions:
+  contents: write  # Grant write permissions to the repository contents
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '22'  # Specify the Node.js version you want to use
+
+      - name: Install dependencies
+        working-directory: ./docs  # Change to the docs directory
+        run: |
+          npm install -g pnpm
+          pnpm install
+
+      - name: Build Docusaurus
+        working-directory: ./docs  # Change to the docs directory
+        run: pnpm build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/build  # Ensure the publish directory is correct 

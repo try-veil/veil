@@ -9,3 +9,13 @@ caddy.json
 
 # generated config JSONs
 config/
+
+## compiled binary
+veil
+
+## other build files
+dist
+osxcross
+
+.docusaurus
+node_modules

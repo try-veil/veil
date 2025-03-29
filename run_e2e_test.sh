@@ -7,7 +7,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Set the binary name and paths
-BINARY_NAME="caddy"
+BINARY_NAME="veil"
 BUILD_DIR="."
 TEST_DIR="./tests/e2e"
 

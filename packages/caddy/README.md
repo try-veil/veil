@@ -89,7 +89,7 @@ localhost:2019 {
 3. Start Caddy:
 
 ```bash
-./caddy run
+./veil run
 ```
 
 4. Make a request:
@@ -199,7 +199,7 @@ python test-orders.py
 2. Start Caddy with your test configuration:
 
 ```bash
-./caddy run --config Caddyfile
+./veil run --config Caddyfile
 ```
 
 ### 5. Test the API Gateway

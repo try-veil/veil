@@ -382,10 +382,8 @@ graph LR
 
 ## References
 
-1. [Sequence Diagrams](./seq-dig/)
-2. [Architecture Diagram](./arch.mmd)
-3. [API Documentation](../api/)
-4. [Deployment Guide](../deployment/)
+1. [Architecture Diagram](./arch.mmd)
+2. [API Documentation](../../api/)
 
 ## Technology Stack
 
