@@ -28,7 +28,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y rpm gcc g++ make gcc-mingw-w64 g++-mingw-w64 gcc-multilib
+          sudo apt-get install -y rpm gcc g++ make gcc-mingw-w64 g++-mingw-w64 gcc-multilib clang
           go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 
       - name: Install SSH key for AUR
