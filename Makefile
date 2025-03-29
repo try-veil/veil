@@ -1,5 +1,8 @@
 .PHONY: build clean test
 
+setup:
+	cd packages/caddy && go mod tidy
+
 # Build the Caddy binary with Veil module
 build:
 	make clean
@@ -15,6 +18,9 @@ clean-db:
 test:
 	go test -v -race -coverprofile=coverage.out ./...
 	go tool cover -func=coverage.out
+
+run:
+	./caddy run --config Caddyfile
 
 # Default target
 all: build
