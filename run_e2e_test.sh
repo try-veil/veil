@@ -44,13 +44,13 @@ go test ./... -v 2>&1 | while read -r line; do
     fi
 done
 
-# echo -e "${BLUE}Running API Keys Test${NC}"
-# go test -v api_keys_test.go 2>&1 | while read -r line; do
-#     if [[ $line == *"PASS"* ]]; then
-#         echo -e "${GREEN}$line${NC}"
-#     elif [[ $line == *"FAIL"* ]]; then
-#         echo -e "${RED}$line${NC}"
-#     else
-#         echo "$line"
-#     fi
-# done
+# Capture the exit status of the go test command
+TEST_EXIT_STATUS=$?
+
+# Return the exit status to indicate success or failure
+if [ $TEST_EXIT_STATUS -ne 0 ]; then
+    echo -e "${RED}One or more tests failed!${NC}"
+    exit $TEST_EXIT_STATUS
+else
+    echo -e "${GREEN}All tests passed!${NC}"
+fi

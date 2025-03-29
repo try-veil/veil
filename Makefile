@@ -1,11 +1,12 @@
 .PHONY: build clean test
 
 setup:
-	cd packages/caddy && go mod tidy
+	cd packages/caddy && go mod tidy && cd ../..
 
 # Build the Caddy binary with Veil module
 build:
 	make clean
+	make setup
 	CGO_ENABLED=1 xcaddy build --with github.com/try-veil/veil/packages/caddy=./packages/caddy
 
 # Clean build artifacts
