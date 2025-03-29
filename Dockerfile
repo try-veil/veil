@@ -20,10 +20,10 @@ RUN make setup
 RUN make build
 
 # Make the caddy binary executable
-RUN chmod +x ./caddy
+RUN chmod +x ./veil
 
 # Expose the port your application runs on
 EXPOSE 2020
 
 # Command to run the application
-CMD ["./caddy", "run", "--config", "Caddyfile"]
+CMD ["./veil", "run", "--config", "Caddyfile"]
