@@ -3,6 +3,10 @@
 
 version: 2
 
+hooks:
+  before:
+    - ""
+
 builds:
   - id: veil
     no_main_check: true
@@ -25,8 +29,7 @@ builds:
         goarch: amd64
     binary: veil
     hooks:
-      pre: 
-        - cmd: "{{ if eq .Os \"darwin\" }}export CC=o64-clang CXX=o64-clang++{{ end }}"
+      pre: make build
     flags:
       - -tags=netgo
     ldflags:
