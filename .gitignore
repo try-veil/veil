@@ -12,3 +12,7 @@ config/
 
 ## compiled binary
 veil
+
+## other build files
+dist
+osxcross
