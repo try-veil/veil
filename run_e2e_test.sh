@@ -7,7 +7,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Set the binary name and paths
-BINARY_NAME="caddy"
+BINARY_NAME="veil"
 BUILD_DIR="."
 TEST_DIR="./tests/e2e"
 
@@ -27,10 +27,14 @@ cp $BUILD_DIR/$BINARY_NAME $TEST_DIR/
 # Navigate to the test directory
 cd $TEST_DIR
 
+# clean up any existing .db files
+rm -f ./*.db
+
 # Run the test with verbose output
 echo -e "${BLUE}Starting End-to-End Test for Veil API Gateway${NC}\n"
 
-go test -v api_onboarding_test.go 2>&1 | while read -r line; do
+# echo -e "${BLUE}Running API Onboarding Test${NC}"
+go test ./... -v 2>&1 | while read -r line; do
     if [[ $line == *"PASS"* ]]; then
         echo -e "${GREEN}$line${NC}"
     elif [[ $line == *"FAIL"* ]]; then
@@ -40,4 +44,13 @@ go test -v api_onboarding_test.go 2>&1 | while read -r line; do
     fi
 done
 
-echo -e "\n${BLUE}Test Execution Complete${NC}" 
+# Capture the exit status of the go test command
+TEST_EXIT_STATUS=$?
+
+# Return the exit status to indicate success or failure
+if [ $TEST_EXIT_STATUS -ne 0 ]; then
+    echo -e "${RED}One or more tests failed!${NC}"
+    exit $TEST_EXIT_STATUS
+else
+    echo -e "${GREEN}All tests passed!${NC}"
+fi

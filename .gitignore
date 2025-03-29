@@ -5,6 +5,10 @@ caddy.json
 .trash
 *.db
 .env
+*.out
 
-## binaries
-caddy
+# generated config JSONs
+config/
+
+## compiled binary
+veil

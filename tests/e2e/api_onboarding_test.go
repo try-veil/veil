@@ -14,27 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type APIOnboardRequest struct {
-	Path                 string   `json:"path"`
-	Upstream             string   `json:"upstream"`
-	RequiredSubscription string   `json:"required_subscription"`
-	Methods              []string `json:"methods"`
-	RequiredHeaders      []string `json:"required_headers"`
-	APIKeys              []APIKey `json:"api_keys"`
-}
-
-type APIKey struct {
-	Key      string `json:"key"`
-	Name     string `json:"name"`
-	IsActive bool   `json:"is_active"`
-}
-
-type APIOnboardResponse struct {
-	Status  string      `json:"status"`
-	Message string      `json:"message"`
-	API     interface{} `json:"api"`
-}
-
 func TestAPIOnboardingAndValidation(t *testing.T) {
 	// Clean up any existing database and configs
 	os.Remove("./veil.db")
@@ -49,7 +28,7 @@ func TestAPIOnboardingAndValidation(t *testing.T) {
 	defer upstreamCmd.Process.Kill()
 
 	// Start Caddy server
-	caddyCmd := exec.Command("./caddy", "run", "--config", "Caddyfile")
+	caddyCmd := exec.Command("./veil", "run", "--config", "Caddyfile")
 	caddyCmd.Stdout = os.Stdout
 	caddyCmd.Stderr = os.Stderr
 	err = caddyCmd.Start()
@@ -64,7 +43,7 @@ func TestAPIOnboardingAndValidation(t *testing.T) {
 		// 1. Onboard the Weather API
 		weatherOnboardReq := APIOnboardRequest{
 			Path:                 "/weather/*",
-			Upstream:             "http://localhost:8082/weather",
+			Upstream:             "http://localhost:8083/weather",
 			RequiredSubscription: "weather-subscription",
 			Methods:              []string{"GET"},
 			RequiredHeaders:      []string{"X-Test-Header"},
