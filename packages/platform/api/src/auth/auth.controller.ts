@@ -1,10 +1,11 @@
-import { Controller, Post, Body, UseGuards, Get, Req } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Req, Headers, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { LoginDto, SignupDto, AssignRoleDto, CreateApiKeyDto } from './dto';
+
 
 @ApiTags('auth')
 @Controller('auth')
@@ -35,11 +36,28 @@ export class AuthController {
   @ApiOperation({ summary: 'Validate FusionAuth token' })
   @ApiResponse({ status: 200, description: 'Token successfully validated' })
   @ApiResponse({ status: 401, description: 'Invalid token' })
-  @Post('validate')
-  async validateToken(@Body('token') token: string) {
-    const user = await this.authService.validateUser(token);
-    return this.authService.generateToken(user);
+  @Post('validate-fusion-token')
+  async validateFusionAuthToken(@Headers('authorization') authHeader: string) {
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) {
+      throw new UnauthorizedException('No token provided');
+    }
+    return this.authService.validateFusionAuthToken(token);
   }
+
+  @ApiOperation({ summary: 'Validate application JWT token' })
+  @ApiResponse({ status: 200, description: 'Token successfully validated' })
+  @ApiResponse({ status: 401, description: 'Invalid token' })
+  @Post('validate-app-token')
+  async validateAppToken(@Headers('authorization') authHeader: string) {
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) {
+      throw new UnauthorizedException('No token provided');
+    }
+    const user = await this.authService.validateAppToken(token);
+    return { valid: true, user };
+  }
+
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Assign role to user' })
