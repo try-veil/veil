@@ -6,7 +6,7 @@ setup:
 # Build the Caddy binary with Veil module
 build:
 	make clean
-	CGO_ENABLED=1 xcaddy build --with github.com/techsavvyash/veil/packages/caddy=./packages/caddy
+	CGO_ENABLED=1 xcaddy build --with github.com/try-veil/veil/packages/caddy=./packages/caddy
 
 # Clean build artifacts
 clean:
@@ -16,8 +16,10 @@ clean-db:
 	rm -f ./*.db
 # Run tests with coverage
 test:
-	go test -v -race -coverprofile=coverage.out ./...
-	go tool cover -func=coverage.out
+	cd ./packages/caddy && go test -v -race -coverprofile=coverage.out ./... && go tool cover -func=coverage.out
+
+test-e2e:
+	./run_e2e_test.sh
 
 run:
 	./caddy run --config Caddyfile
