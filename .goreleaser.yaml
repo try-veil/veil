@@ -167,25 +167,6 @@ release:
     ---
     Released by [GoReleaser](https://github.com/goreleaser/goreleaser) on behalf of TheFlywheel.
 
-
-# Add this to your goreleaser.yml file
-dockers:
-  - image_templates:
-    - "ghcr.io/try-veil/veil:{{ .Version }}"
-    - "ghcr.io/try-veil/veil:latest"
-    - "ghcr.io/try-veil/veil:{{ .Major }}.{{ .Minor }}"
-    - "ghcr.io/try-veil/veil:{{ .Major }}"
-    # - "{{ .Env.DOCKERHUB_USERNAME }}/veil:{{ .Version }}"
-    # - "{{ .Env.DOCKERHUB_USERNAME }}/veil:latest"
-    # - "{{ .Env.DOCKERHUB_USERNAME }}/veil:{{ .Major }}.{{ .Minor }}"
-    # - "{{ .Env.DOCKERHUB_USERNAME }}/veil:{{ .Major }}"
-    dockerfile: Dockerfile
-    build_flag_templates:
-    - "--label=org.opencontainers.image.created={{.Date}}"
-    - "--label=org.opencontainers.image.title={{.ProjectName}}"
-    - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-    - "--label=org.opencontainers.image.version={{.Version}}"
-
 changelog:
   sort: asc
   filters:
