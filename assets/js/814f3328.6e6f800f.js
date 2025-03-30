@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs=self.webpackChunkdocs||[]).push([[7472],{55513:e=>{e.exports=JSON.parse('{"title":"Recent posts","items":[{"title":"Veil - Getting Started","permalink":"/veil/blog/getting-starting","unlisted":false,"date":"2025-03-25T00:00:00.000Z"}]}')}}]);
