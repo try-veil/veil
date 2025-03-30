@@ -3,8 +3,8 @@
 
 version: 2
 
-hooks:
-  before:
+before:
+  hooks:
     - ""
 
 builds:
