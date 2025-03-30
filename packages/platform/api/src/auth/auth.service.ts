@@ -116,7 +116,61 @@ export class AuthService {
 
   async loginWithGithub(code: string) {
     this.logger.log('Processing GitHub login through FusionAuth');
-    return this.handleGitHubCallback(code, null, null);
+    
+    // Exchange the code for a GitHub token
+    const tokenResponse = await this.exchangeCodeForToken(code);
+    const accessToken = tokenResponse.access_token;
+
+    if (!accessToken) {
+      throw new UnauthorizedException('Failed to get GitHub access token');
+    }
+
+    // Get user info from GitHub
+    const githubUser = await this.getGitHubUserInfo(accessToken);
+
+    if (!githubUser || !githubUser.id) {
+      throw new HttpException('Failed to get GitHub user info', HttpStatus.BAD_REQUEST);
+    }
+
+    // Process login with FusionAuth using the identity provider
+    const loginResponse = await this.fusionAuthClient.loginWithIdentityProvider({
+      applicationId: this.configService.get('FUSION_AUTH_APPLICATION_ID'),
+      identityProviderId: this.configService.get('GITHUB_IDENTITY_PROVIDER_ID'),
+      data: {
+        token: accessToken,
+        user: {
+          email: githubUser.email,
+          githubId: githubUser.id.toString(),
+          username: githubUser.login
+        }
+      }
+    });
+
+    if (!loginResponse.wasSuccessful()) {
+      this.logger.error(`FusionAuth identity provider login failed: ${loginResponse.statusCode}`);
+      throw new UnauthorizedException('GitHub authentication failed');
+    }
+
+    // Find or create local user from FusionAuth user
+    const user = await this.findOrCreateUser({
+      sub: loginResponse.response.user.id,
+      email: loginResponse.response.user.email || githubUser.email,
+      given_name: loginResponse.response.user.firstName || githubUser.name || '',
+      family_name: loginResponse.response.user.lastName || '',
+    });
+
+    // Store GitHub info in our database
+    await this.updateUserGitHubInfo(user.id, {
+      githubId: githubUser.id.toString(),
+      githubUsername: githubUser.login,
+      githubAccessToken: accessToken
+    });
+
+    // Generate and return tokens
+    return {
+      fusionAuthToken: loginResponse.response.token,
+      ...this.generateToken(user)
+    };
   }
 
   async login(email: string, password: string) {
@@ -229,6 +283,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       roles: user.roles.map(role => role.name),
+      fusionAuthId: user.fusionAuthId // Include FusionAuth ID in the token for GitHub connection
     };
 
     return {
@@ -280,95 +335,6 @@ export class AuthService {
     return 'veil_' + crypto.randomBytes(24).toString('base64').replace(/[+/=]/g, '');
   }
 
-  /**
-   * Initiates GitHub OAuth flow
-   * @returns The GitHub authorization URL
-   */
-  initiateGitHubOAuth() {
-    const applicationId = this.configService.get('FUSION_AUTH_APPLICATION_ID');
-    const idpId = this.configService.get('GITHUB_IDENTITY_PROVIDER_ID');
-    const redirectUri = this.configService.get('FUSION_AUTH_REDIRECT_URI');
-    const fusionAuthUrl = `${this.configService.get('FUSION_AUTH_URL')}/oauth2/authorize?client_id=${applicationId}&response_type=code&identity_provider_id=${idpId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
-
-    return {
-      url: fusionAuthUrl
-    };
-  }
-  
-  /**
-   * Handles GitHub OAuth callback and creates/updates user
-   * @param code Authorization code from GitHub
-   * @param state State parameter for CSRF protection
-   * @param expectedState The state we generated in initiateGitHubOAuth
-   */
-  async handleGitHubCallback(code: string, state: string, expectedState: string) {
-    try {
-      if (expectedState && state !== expectedState) {
-        this.logger.error(`State mismatch during GitHub callback. Expected: ${expectedState}, Received: ${state}`);
-        throw new UnauthorizedException('Invalid state parameter');
-      }
-
-      const tokenResponse = await this.exchangeCodeForToken(code);
-      const accessToken = tokenResponse.access_token;
-
-      if (!accessToken) {
-        throw new UnauthorizedException('Failed to get GitHub access token');
-      }
-
-      // Get user info from GitHub
-      const githubUser = await this.getGitHubUserInfo(accessToken);
-
-      if (!githubUser || !githubUser.id) {
-        throw new HttpException('Failed to get GitHub user info', HttpStatus.BAD_REQUEST);
-      }
-
-      // Process login with FusionAuth using the identity provider
-      const loginResponse = await this.fusionAuthClient.loginWithIdentityProvider({
-        applicationId: this.configService.get('FUSION_AUTH_APPLICATION_ID'),
-        identityProviderId: this.configService.get('GITHUB_IDENTITY_PROVIDER_ID'),
-        data: {
-          token: accessToken,
-          user: {
-            email: githubUser.email,
-            githubId: githubUser.id.toString(),
-            username: githubUser.login
-          }
-        }
-      });
-
-      if (!loginResponse.wasSuccessful()) {
-        this.logger.error(`FusionAuth identity provider login failed: ${loginResponse.statusCode}`);
-        throw new UnauthorizedException('GitHub authentication failed');
-      }
-
-      // Find or create local user from FusionAuth user
-      const user = await this.findOrCreateUser({
-        sub: loginResponse.response.user.id,
-        email: loginResponse.response.user.email || githubUser.email,
-        given_name: loginResponse.response.user.firstName || githubUser.name || '',
-        family_name: loginResponse.response.user.lastName || '',
-      });
-
-      // Store GitHub info in our database
-      await this.updateUserGitHubInfo(user.id, {
-        githubId: githubUser.id.toString(),
-        githubUsername: githubUser.login,
-        githubAccessToken: accessToken
-      });
-
-      // Generate and return tokens
-      return {
-        fusionAuthToken: loginResponse.response.token,
-        ...this.generateToken(user)
-      };
-    } catch (error) {
-      this.logger.error(`GitHub callback error: ${error.message || 'Unknown error'}`, error.stack || 'No stack trace');
-      throw new HttpException(
-        `GitHub authentication failed: ${error.message}`,
-        error.status || HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
-  }
   async exchangeCodeForToken(code: string) {
     try {
       const clientId = this.configService.get('GITHUB_CLIENT_ID');
@@ -414,7 +380,6 @@ export class AuthService {
           timeout: 5000
         });
 
-       
         const primaryEmail = emailsResponse.data.find(email => email.primary);
         if (primaryEmail) {
           response.data.email = primaryEmail.email;
@@ -427,7 +392,6 @@ export class AuthService {
       throw new HttpException('Failed to fetch GitHub user information', HttpStatus.BAD_GATEWAY);
     }
   }
-
 
   async updateUserGitHubInfo(userId: string, githubInfo: {
     githubId: string,

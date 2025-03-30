@@ -142,12 +142,12 @@ export class AuthController {
     return req.user;
   }
 
-  @ApiOperation({ summary: 'Initiate GitHub login flow' })
+  @ApiOperation({ summary: 'Initiate GitHub connection for logged-in user' })
   @ApiResponse({ status: 302, description: 'Redirects to GitHub' })
   @UseGuards(JwtAuthGuard)
-  @Get('github')
+  @Get('connect')
   @Redirect()
-  async initiateGithubConnect(@Req() req: any, @Res() res: Response) {
+  async initiateGithubConnect(@Req() req: any) {
     this.logger.log(`Initiating GitHub connection for user ${req.user.id}`);
 
     const state = require('crypto').randomBytes(16).toString('hex');
@@ -157,7 +157,7 @@ export class AuthController {
     }
     
     req.session.githubOAuthState = state;
-    req.session.fusionAuthId = req.user.id;
+    req.session.fusionAuthId = req.user.fusionAuthId;
 
     const clientId = this.configService.get('GITHUB_CLIENT_ID');
     const redirectUri = this.configService.get('GITHUB_REDIRECT_URI');
@@ -166,28 +166,44 @@ export class AuthController {
     return { url };
   }
 
-  @ApiOperation({ summary: 'Handle FusionAuth callback after GitHub login' })
-  @ApiResponse({ status: 302, description: 'Redirects after successful login' })
+  @ApiOperation({ summary: 'Universal authentication callback handler' })
+  @ApiResponse({ status: 302, description: 'Redirects after successful authentication' })
   @Get('callback')
   async authCallback(
     @Query('code') code: string,
-    @Query('userState') userState: string,
+    @Query('state') state: string,
+    @Query('error') error: string,
+    @Query('error_description') errorDescription: string,
     @Req() req: any,
     @Res() res: Response
   ) {
     try {
-      if (!code) {
-        this.logger.error('No code provided in callback');
-        res.redirect(`/auth/error?message=${encodeURIComponent('No authorization code received')}`);
-        return;
+      if (error) {
+        this.logger.error(`Authentication error: ${error} - ${errorDescription}`);
+        return res.redirect(`/auth/error?message=${encodeURIComponent(errorDescription || 'Authentication failed')}`);
       }
 
+      if (!code) {
+        this.logger.error('No code provided in callback');
+        return res.redirect(`/auth/error?message=${encodeURIComponent('No authorization code received')}`);
+      }
+
+     
+      if (state && req.session?.githubOAuthState) {
+        return this.handleGitHubCallback(code, state, req, res);
+      } else {
+        return this.handleFusionAuthCallback(code, req, res);
+      }
+    } catch (error) {
+      this.logger.error(`Authentication callback error: ${error.message}`, error.stack);
+      return res.redirect(`/auth/error?message=${encodeURIComponent('Authentication failed')}`);
+    }
+  }
+
+  private async handleFusionAuthCallback(code: string, req: any, res: Response) {
+    try {
       this.logger.log('Processing authentication code from FusionAuth');
-
-      // Exchange the code for tokens using FusionAuth's token endpoint
       const exchangeResponse = await this.authService.exchangeCodeForTokens(code);
-
-      // Get or create user based on the FusionAuth JWT
       const user = await this.authService.findOrCreateUser(exchangeResponse.jwt);
 
       // Set cookies
@@ -196,33 +212,16 @@ export class AuthController {
         secure: process.env.NODE_ENV === 'production',
         maxAge: 3600000
       });
-
-      // Redirect to frontend
       const frontendUrl = this.configService.get('FRONTEND_URL');
-      res.redirect(`${frontendUrl}/login-success?userId=${user.id}`);
-      return;
+      return res.redirect(`${frontendUrl}/login-success?userId=${user.id}`);
     } catch (error) {
-      this.logger.error(`Authentication callback error: ${error.message}`, error.stack);
-      res.redirect(`/auth/error?message=${encodeURIComponent('Authentication failed')}`);
-      return;
+      this.logger.error(`FusionAuth callback error: ${error.message}`, error.stack);
+      return res.redirect(`/auth/error?message=${encodeURIComponent('Authentication failed')}`);
     }
   }
 
-  @ApiOperation({ summary: 'Handle GitHub OAuth callback' })
-  @ApiResponse({ status: 302, description: 'Redirects after successful connection' })
-  @Get('github-callback')
-  async githubCallback(
-    @Query('code') code: string,
-    @Query('state') state: string,
-    @Req() req: any,
-    @Res() res: Response
-  ) {
+  private async handleGitHubCallback(code: string, state: string, req: any, res: Response) {
     try {
-      if (!code) {
-        this.logger.error('No code provided in GitHub callback');
-        return res.redirect(`/auth/error?message=${encodeURIComponent('No authorization code received')}`);
-      }
-
       // Verify state to prevent CSRF
       const expectedState = req.session?.githubOAuthState;
       const fusionAuthId = req.session?.fusionAuthId;
