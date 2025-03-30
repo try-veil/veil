@@ -169,7 +169,7 @@ period: string     // Billing period
 
 ## Notes
 
-1. All monetary amounts are in cents
+1. All monetary amounts are in indian rupees.
 2. Supported currencies defined in user preferences
 3. Invoices are generated monthly
 4. Payment terms are net 30 days

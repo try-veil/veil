@@ -1,6 +1,6 @@
 ---
 id: intro
-title: Welcome to Veil API Marketplace
+title: Veil - Documentation
 ---
 
 :::info
@@ -12,25 +12,24 @@ These docs are still a WIP, please open an [issue ticket](https://github.com/try
 
 ## Overview
 
-Veil is an API marketplace platform that enables API providers to publish their APIs and allows consumers to discover, subscribe to, and manage API access through a unified gateway. This documentation covers the platform architecture, specifications, and development guides.
+Veil is an opinionated, fully featured, modular observability stack for APIs. Allows you to sell, monitor, authenticate your APIs.
+
+The veil API marketplace platform enables API providers to publish their APIs and allows consumers to discover, subscribe to, and manage API access through a unified gateway. This documentation covers the platform architecture, specifications, and development guides.
 
 ## Core Components
 
 1. **Gateway Layer (Caddy-based)**
 
+This component is also called the `core` of caddy by maintainers. This is a modded caddy build with first class support for observability and API validation validation for non standard properties like API keys, granular rate limits, etc.
+
 2. **Platform Services**
 
-3. **Security**
+The Veil marketplace platform is a SaaS built using Veil and offered by [TheFlyWheel](https://theflywheel.in) where developers can come and host their APIs and get them behind a paywell very easily.
 
-## Getting Started
-
-1. **Development Setup**
-
-2. **API Documentation**
 
 ## Architecture
 
-1. **Core Design**
+1. **Design**
 
    - [Architecture Overview](./contribution/architecture/readme.md)
    - [System Components](./contribution/architecture/arch.mmd)
@@ -45,29 +44,35 @@ Veil is an API marketplace platform that enables API providers to publish their 
    - High availability design
 
 3. **Technology Stack**
-   - Go & Caddy for core services
-   - Ory.sh for authentication
-   - SQLite for data storage (v1)
-   - S3-compatible config storage
+
+   - Gateway Layer
+      - Go & Caddy for core services
+      - SQLite for data storage (v1)
+   - Platform Services
+      - FusionAuth for authentication 
+      - S3-compatible config storage (WIP)
 
 ## Contributing
 
 1. **Development Guidelines**
 
+   - [Development Setup](./contribution/setup.md)
    - [Code Style](./contribution/style.md)
    - [Git Workflow](./contribution/git.md)
    - [Testing Requirements](./contribution/testing.md)
 
 2. **Documentation**
-   - [API Documentation](./api/readme.md)
-   - [Architecture Updates](./contribution/architecture/readme.md)
+
+   - [Architecture Design Document](./contribution/architecture/readme.md)
+   - [API Desing Document](./api/readme.md)
+   - [OpenAPI Swagger Reference for implemented APIs](./swagger/veil-core-openapi-reference.info.mdx)
+
 
 ## Support
 
 - [Issue Tracking](https://github.com/try-veil/veil/issues)
-- [Security Policy](./security.md)
-- [Release Notes](./releases/releases.md)
+- [Release Notes](https://github.com/try-veil/veil/releases)
 
 ## License
 
-Veil is licensed under the [MIT License](https://github.com/try-veil/veil). 
+Veil is licensed under the [MIT License](https://github.com/try-veil/veil?tab=MIT-1-ov-file#readme). 

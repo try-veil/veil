@@ -24,12 +24,6 @@ The API Marketplace exposes several REST APIs for managing APIs, users, and anal
 - [Usage Analytics](./analytics/usage.md) - Query API usage metrics
 - [Rate Limits](./analytics/rate-limits.md) - View and configure rate limits
 
-### Billing APIs
-
-- [Billing Reports](./billing/reports.md) - Access billing information
-- [Invoices](./billing/invoices.md) - Manage and download invoices
-- [Payment Methods](./billing/payment-methods.md) - Manage payment options
-- [Usage Charges](./billing/charges.md) - View detailed usage charges
 
 ## Common Patterns
 

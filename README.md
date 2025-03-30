@@ -1,4 +1,4 @@
-# Veil - API Management Module for Caddy
+# Veil - Opinionated Caddy Module
 
 Veil is a Caddy module that provides API management capabilities, including subscription-based access control and request validation. It acts as a middleware that validates API requests based on subscription levels and required headers.
 
@@ -20,9 +20,11 @@ Below is a small recording of the terminal we onboard the [Dummy JSON](https://d
 ## Local Setup
 
 1. Clone the project
-2. Install the necessary dependencies, for macOS the script is present in [./scrips/setup/mac.sh](./scrips/setup/mac.sh)
+2. Veil depends on [go](https://go.dev), [xcaddy](https://github.com/caddyserver/xcaddy), and whatever platform specific `C` compilation tools you'll need to compile with `CGO_ENABLED=1`.
+  2.1 Setup scripts have been provided for some platforms - [macOS](./scripts/README.md)
 3. The [Makefile](./Makefile) has the commands required for you to get around to working with Veil.
 
+For a detailed setup guide please refer [setup docs](./docs/docs/contribution/setup.md)
 
 ## Configuration
 
@@ -34,23 +36,13 @@ Refer the base [Caddyfile](./Caddyfile) for the config around registering Veil a
 
 - `db_path`: Path to the SQLite database file (default: "veil.db")
 
-## API Onboarding
+## Reference
 
-To onboard a new API, send a POST request to the management endpoint:
+- [Veil Docs](https://try-veil.github.io/veil/)
+- OpenAPI swagger reference
+  - [Veil Core](https://try-veil.github.io/veil/docs/swagger/veil-api-management)
 
-```bash
-curl -X POST http://localhost:2020/veil/api/onboard \
--H "Content-Type: application/json" \
--d '{
-  "path": "/weather/*",
-  "upstream": "http://localhost:8082/weather",
-  "required_subscription": "weather-subscription",
-  "methods": ["GET"],
-  "required_headers": ["X-Test-Header"],
-  "api_keys": [{"key": "weather-test-key-2", "name": "Weather Test Key 2"}]
-}' | jq
-```
 
 ## License
 
-MIT License
+[MIT License](./LICENSE)

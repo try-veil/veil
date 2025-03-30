@@ -47,16 +47,6 @@ const sidebars: SidebarsConfig = {
             'api/analytics/rate-limits',
           ],
         },
-        {
-          type: 'category',
-          label: 'Billing APIs',
-          items: [
-            'api/billing/reports',
-            'api/billing/invoices',
-            'api/billing/payment-methods',
-            'api/billing/charges',
-          ],
-        },
       ],
     },
     {
