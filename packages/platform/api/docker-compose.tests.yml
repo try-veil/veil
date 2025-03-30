@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: testdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  fusionauth:
+    image: fusionauth/fusionauth-app:latest
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/fusionauth
+      DATABASE_ROOT_USERNAME: postgres
+      DATABASE_ROOT_PASSWORD: postgres
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
+      FUSIONAUTH_APP_MEMORY: 512M
+      SEARCH_TYPE: database
+    ports:
+      - "9011:9011"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9011/api/status || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/testdb
+      JWT_SECRET: test-jwt-secret
+      FUSION_AUTH_URL: http://fusionauth:9011
+      FUSION_AUTH_API_KEY: your-api-key
+      FUSION_AUTH_APPLICATION_ID: ${FUSION_AUTH_APPLICATION_ID:-00000000-0000-0000-0000-000000000000}
+    depends_on:
+      fusionauth:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./:/app
+      - ./dist:/app/dist 
+      - ./node_modules:/app/node_modules  
+      - ./.nest:/app/.nest 
+      - ./prisma:/app/prisma
+    ports:
+      - "3000:3000"  # API Service Port
+      - "9229:9229"  # Debugging Port for Node.js
+    command: >
+      sh -c "
+        echo 'Waiting for PostgreSQL...' &&
+        sleep 5 &&
+        echo 'Checking for Prisma schema...' &&
+        ls -la /app/prisma/ &&
+        echo 'Generating Prisma client...' &&
+        npx prisma generate &&
+        echo 'Running migrations...' &&
+        npx prisma migrate deploy &&
+        echo 'Running Jest E2E tests in debug mode...' &&
+        node --inspect-brk -r tsconfig-paths/register -r ts-node/register jest --config ./test/jest-e2e.json
+      "
+volumes:
+  postgres_data:

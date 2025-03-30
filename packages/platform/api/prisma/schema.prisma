@@ -23,6 +23,10 @@ model User {
   apiKeys       ApiKey[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  githubId          String?   @unique
+  githubUsername    String?
+  githubAccessToken String?
+  @@map("users")
 }
 
 model Role {
