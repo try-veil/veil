@@ -9,8 +9,9 @@ import { faGithub, faDiscord } from '@fortawesome/free-brands-svg-icons'
 import styles from './index.module.css';
 
 function HomepageHeader() {
+  const {siteConfig} = useDocusaurusContext();
   return (
-    <section className={clsx('hero hero--primary', styles.heroBanner)}>
+    <header className={clsx('hero hero--primary', styles.heroBanner)}>
       <div className="container">
         <Heading as="h1" className="hero__title">
           Documentation for Veil
@@ -39,7 +40,7 @@ function HomepageHeader() {
           </Link>
         </div>
       </div>
-    </section>
+    </header>
   );
 }
 

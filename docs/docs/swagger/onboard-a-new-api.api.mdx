@@ -1,0 +1,71 @@
+---
+id: onboard-a-new-api
+title: "Onboard a new API"
+description: "Register a new API with Veil for subscription-based access control"
+sidebar_label: "Onboard a new API"
+hide_title: true
+hide_table_of_contents: true
+api: eJztWFtvIjcU/iuWHysIkLbSijeaRd2oaTdKSHclhCIzY8C7M+Op7SGLRvz3Pceei4cZAtmmVSttHiD4cs53bt+xndOQ60CJ1AiZ0DG942uhDVeEkYQ/kcntNXkSZkP+5CIiK6mIzpbV+v6SaR4SFgRcaxLIxCgZ0R41bK3peE5x9+8sYWse88TQRY8q/lfGtflFhjs6zu1PoXhIx0ZlvEdRBK6EKZamkQgYqhl80ogtpzrY8Jjhf2aXckArl594YGjPEzSnKTMbGMpSbRRnsTf76IOH8ZibjQw1AkuVTLkygmsUb0XUakCQSNawoemr2YZbB+Fq/AC3JcRIEjMTIAL+hcVphAIGLBWD7WgAWsIsMHrwA917CM/SVK4mmqutCDh5uLtpKNkYk44Hg0gGLNpIbcZvhm9GqKfb/JNK74ptjZCTiG+5ywQX9gaEVPFYZDEqLX1bq2FKsV1LyySK5BMoeTeb3ZJyU48Kw2PdhZEnIB+i/Ot0Br9u39/brwf8fDu9mc6m+HMyu3pHF3sPWmPDwnfKhrOQq9NAK3cUOUzKjUfBNvV/7EOu9H/jKPlj/84J6V+/tWhSphgY/004vL1tKJ0VksB6LFNc0sp9O3kyOW5LpaQQVicBFC1fS7VD+52Q41EECxSa6HxJe67yFse1WUG+Nidh7xtYqVtKGXGWtMB/2ECeoTAoq8p7RGhSyfA0IDPt0RRhrMIKC8VRKOzHz3x3Omw3QKtErsiWRSK0tGG3nRmxzzZtClcL/cgCI7YdwcN1J2NXKEcoWdOZBlMSpvqjyx/Rp+flwh+wCk0zBR86sLXUD5xZd88wW7EA9r4NLwtXiR2CVex/JlSw2Ko7GHufLCVTYVGCOG3TR6cy0c6Nl8MRfrXdpjNLeqssinZEOjk2Xb65czXjpw0zWTfvVe4sMDiS1Rq66/PrEXcFtWEBdQl8Gtaxfvh3OtxrNq4XdqCz+Prl/eIfbgPfqf0/Q+3fOfvf5uwrmazEmh5jcsfdBZX/NBy22fs6cZ23PDUt4QpC4BQbC63BQVV+kJXgkT2CvhKlc6WkOh2QKS4jJaH7oehC3nCE3Xrgg5+7fYBXFBbZKwQEx0H7X1ta8TxyP/SOkmegI23hymrbUtH8YMrZjXfTnGYq6uo9l8PLYfvwhtMkxKuPTPEuW3iQ7hcoNMiUMDsrdZIKSN9JhhDmQOk5vfd6VzXubbtH7zoH+ptrzrGDSCGIpGJTV+ZeOwFPtFWdLcXf6sSBPEyAu/rGPi0DlVc+bnd9v+kf6exHG3vVvb3m3WzEXX34uZ7abKnzsgXWjazsY1W7aj5JYKDqPjAvyLrJuZUXW5zZoEwnDmk0WUkbmSKp7dPKwVNJF/3H1TRhycGt3NaNrdrqeQCv6FcsDBEGJr0TNLoYXgyLkgdk9anAwbjP0lQq1F+Xh4YIroXZZMuLQMYDo3Z9W1r4YdME6w7AebIKXq4fkQ4NymvOeaUnJxdFw7+YQRoxyPJ9YUOZrHNqAbsTb4+WpAABxszE+TxH4Q8q2u9x2GUEVCv4jynBlvYAhxEsyqfOhytnTH/mjjCuSY/bZIp84HZMwIDUPLt24VFb8c6xLN7NYhniHsWeMGPhc0zRJOshyyR2LKcRS9aZvSBQJxP/vgKvvdbV
+sidebar_class_name: "post api-method"
+info_path: docs/swagger/veil-api-management
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Onboard a new API"}
+>
+</Heading>
+
+
+<MethodEndpoint
+  method={"post"}
+  path={"/veil/api/onboard"}
+context={"endpoint"}
+/>
+
+
+
+
+Register a new API with Veil for subscription-based access control
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["path","upstream","required_subscription","methods"],"properties":{"path":{"type":"string","description":"The API path pattern to match","example":"/api/v1/products/*"},"upstream":{"type":"string","description":"The upstream service URL","example":"http://localhost:8081"},"required_subscription":{"type":"string","description":"Required subscription level for access","example":"premium"},"methods":{"type":"array","description":"Allowed HTTP methods","items":{"type":"string","enum":["GET","POST","PUT","DELETE","PATCH"]},"example":["GET","POST"]},"required_headers":{"type":"array","description":"Required request headers","items":{"type":"string"},"example":["X-API-Key","X-Request-ID"]},"parameters":{"type":"array","description":"Required request parameters","items":{"type":"object","required":["name","type"],"properties":{"name":{"type":"string","description":"Parameter name","example":"category"},"type":{"type":"string","enum":["query","header","path"],"description":"Parameter type","example":"query"},"required":{"type":"boolean","description":"Whether the parameter is required","example":true}},"title":"Parameter"}},"api_keys":{"type":"array","description":"List of valid API keys","items":{"type":"object","required":["key","name","is_active"],"properties":{"key":{"type":"string","description":"API key value","example":"test-key-123"},"name":{"type":"string","description":"Name of the API key","example":"Weather Test Key"},"is_active":{"type":"boolean","description":"Whether the API key is active","example":true}},"title":"APIKey"}}},"title":"APIOnboardRequest"}}}}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"201":{"description":"API successfully onboarded","content":{"application/json":{"schema":{"type":"object","properties":{"status":{"type":"string","example":"success"},"message":{"type":"string","example":"API onboarded successfully"},"api":{"type":"object","properties":{"path":{"type":"string","example":"/api/v1/products/*"},"upstream":{"type":"string","example":"http://localhost:8081"},"required_subscription":{"type":"string","example":"premium"},"methods":{"type":"array","items":{"type":"string"},"example":["GET","POST"]},"required_headers":{"type":"array","items":{"type":"string"},"example":["X-API-Key","X-Request-ID"]},"parameters":{"type":"array","items":{"type":"object","required":["name","type"],"properties":{"name":{"type":"string","description":"Parameter name","example":"category"},"type":{"type":"string","enum":["query","header","path"],"description":"Parameter type","example":"query"},"required":{"type":"boolean","description":"Whether the parameter is required","example":true}},"title":"Parameter"}},"api_keys":{"type":"array","items":{"type":"object","required":["key","name","is_active"],"properties":{"key":{"type":"string","description":"API key value","example":"test-key-123"},"name":{"type":"string","description":"Name of the API key","example":"Weather Test Key"},"is_active":{"type":"boolean","description":"Whether the API key is active","example":true}},"title":"APIKey"}}},"title":"APIConfig"}},"title":"APIOnboardResponse"}}}},"400":{"description":"Invalid request body or missing required fields","content":{"application/json":{"schema":{"type":"object","properties":{"error":{"type":"string","description":"Error message","example":"Invalid request body"}},"title":"ErrorResponse"}}}},"500":{"description":"Internal server error","content":{"application/json":{"schema":{"type":"object","properties":{"error":{"type":"string","description":"Error message","example":"Invalid request body"}},"title":"ErrorResponse"}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

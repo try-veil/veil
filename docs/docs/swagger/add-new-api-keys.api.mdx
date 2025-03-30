@@ -1,0 +1,69 @@
+---
+id: add-new-api-keys
+title: "Add new API keys"
+description: "Add new API keys to an existing API"
+sidebar_label: "Add new API keys"
+hide_title: true
+hide_table_of_contents: true
+api: eJzVVktv4jAQ/iuWjytoKNtTbmzVQ7WvqnQfEkKVkwzErRN7bQeKIv77zjiBhIKWarWXRSIEe+ab1zdj1zwDl1ppvNQlj/kky1gJaza5u2XPsHHMayZKBi/SeVkuaZ0PuBdLx+MZJ6nPohRLKKD0fD7gFn5V4PwHnW14XIe/0kLGY28rGPBUl54kcUsYo2QqyG705Mh4zV2aQyHozW8MoDs6eYLU80EPaMaN8DkuCSM/oodk1VhtwHoJjnTDfofhvEXPUeEw0occQpQkTVGuc5niC66GuNdSKZYAE1mGVgccXkRhFOFFa0AVsNE7vu286OwJa8UGNaSHwp2LBW3hSikKIA33KFIvV3AcE8mdDaktGlsJVcGBzx5rMsSt4eX4PXkdDJ7F+4JSTC9CUlrsA9QfTSLYA6IzzAIhdzF08InWCkR5hP8jh6Dfw2fSsVa/Z4nIs0VwL30wjMLBXPOhjDqjS9ekajwa0c/J1LimnsxVaQrOLSqlKKS/puVhkZwXvnKn8trlrLXcUuc8Jgo9Pr+NYCesYSs3Zd/lirJ1dSpBtyWyRmasbWCWYAczbVkhnaPG35GWLSSozP27pIG12p7n4g2JsQJTh9PmIMZTnvM+W4LqfUsRvsvB1WmSlNqzha7K7P+OEDcLbC6NQ4Yb7YJTYSzyaAVSRUgr+g4DtQbcgV2BpZle88oqFMu9N3EUKZ0KlSNAPB6NR0c+f6JtlsEKlDZ0BrAGiW/nBJpWVvpNQJ2EOTmpyIfZfDuo+bRK9lD79Z7alNLbZLCv3LVBWKQ+IE9yEBna3Y02/nOI1Ry2Q+nY1JtR+qoNHOIRA+67k+5mV6l6n+TujOgdEbN2jh+O472xo3F6ME3DDJzThC0XOgTQFv871pO9OolPnQzFfhtPdBqBXWAs8CuwOxRQpoBNYNk1Tktyg7jRAF1ejC5GbWugZ+RH631wY1oZoy3Z71jkkEZL6fMquUh1EXm7GQYK0iNkk/iJzvWwXt9CXsdTd6351htLU20PLz4ySmCxt62Pu5rNeHCoGcvh2TQHMpL4TwJ1nQgH36zabmkZ62+J3Pi6ElaKhMpB3N7RqCv4dePu8IHcIHE6oOPjqUJ90WhM8Jgw/o+y816P332dPqBw0t67Cp2RjhVrum/gM+b4okP6QkeFtZorUS4rGjcxbzDp8xsXbHLh
+sidebar_class_name: "post api-method"
+info_path: docs/swagger/veil-api-management
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Add new API keys"}
+>
+</Heading>
+
+
+<MethodEndpoint
+  method={"post"}
+  path={"/veil/api/api-keys"}
+  context={"endpoint"}
+/>
+
+
+Add new API keys to an existing API
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["path","apiKeys"],"properties":{"path":{"type":"string","description":"The API path to which the keys will be added","example":"/weather/*"},"apiKeys":{"type":"array","items":{"type":"object","required":["key","name","is_active"],"properties":{"key":{"type":"string","description":"API key value","example":"test-key-123"},"name":{"type":"string","description":"Name of the API key","example":"Weather Test Key"},"is_active":{"type":"boolean","description":"Whether the API key is active","example":true}},"title":"APIKey"}}}}}}}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"API keys added successfully","content":{"application/json":{"schema":{"type":"object","properties":{"status":{"type":"string","example":"success"},"api":{"type":"object","properties":{"api_keys":{"type":"array","items":{"type":"string","example":"new-key-1"}}}}}}}}},"400":{"description":"Invalid request body or missing required fields","content":{"application/json":{"schema":{"type":"object","properties":{"error":{"type":"string","description":"Error message","example":"Invalid request body"}},"title":"ErrorResponse"}}}},"404":{"description":"API not found","content":{"application/json":{"schema":{"type":"object","properties":{"error":{"type":"string","description":"Error message","example":"Invalid request body"}},"title":"ErrorResponse"}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

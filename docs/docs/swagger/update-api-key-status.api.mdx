@@ -1,0 +1,71 @@
+---
+id: update-api-key-status
+title: "Update API key status"
+description: "Update the status of an existing API key"
+sidebar_label: "Update API key status"
+hide_title: true
+hide_table_of_contents: true
+api: eJylVctu2zAQ/BWCx8KOnCAn3dwih6AtEORRFDB8oKS1zYQSWT7sGIL/vbukLMlOHylqIIpM7g6Hs7PrllfgSiuNl7rhOX8ylfDA/AaY88IHx/SKiYbBq3ReNms2v7tlL7DnE+7F2vF8wWnlq2jEGmpoPF9OuIUfAZz/qKs9z9v4VVqoeO5tgAkvdeMpEreEMUqWgg7Pnh0xaLkrN1ALevN7A8hJF89Qej4ZAS24EX6DS8LIz5GNdPPSyy3Q+cZqA9ZLcIQSIwc05y3eAzNOL/6IN6abUDQTzulSohAV20n8TnKkS8OrqI0inGwHGAo2+8APPY93H4NozGsWotwnuA3sprg7vSTY/lYDcKG1AtH8EhlzR2Xzw1njE1ZCOTjED0nqjG5cUupqNqN/p7hHth1uYlwxF8oSnFsFpfbE9Hp2/fvcRnu20qGp+H9U/7SqYK22f9f7hsJYjUzRnyc63zZboWTFOrOygtxKknjpY0BMve/04Z1eNfiNRgNyEyKn6C2ebUGqDD1Af1Q9lyW5MMSB3YKlTml5sAqjN96bPMuULoXaaOfzq9nV7A3zL7TNKtiC0oY6iyUkflgSaBms9PuIOo/emweislgeJi1/CEUP1a+P0h5I5KTjOLkXc+gqYrIBUeG5E96Imna/T7GuUwpAQd4e9W6UcWqCQzzywf0wP26O9Wp7rYe+G9pu1DXjpklWJwIrHYl1pf2G5WJnc+tcf9qu+22cgeT5gTCL7onejYWRJaDFLfskqoruTDVPQJcXs4tZZ3xRRuN3EkQaD8EYben8wR0O7bHGwROKi1LXmbf7aXQYPaJKBm2D5EZY3eA+7dbzS7VD9/3TpE/19PDqM6MElvPQsT1WZcEjtViQ9IxdQPZPRNB8ZHWKbNtCOHiy6nCgZSy1JR/j61ZYKQqqENn46Biy+Ess8qdEfvpIfChcheSzszFCLZAy5jikjP9j7HLU1HdPjxhbdL9bta4oxYod/fbgM+f4oqOWsXfiWsuVaNaBxkvOEyR9fgKjPYRP
+sidebar_class_name: "put api-method"
+info_path: docs/swagger/veil-api-management
+custom_edit_url: null
+---
+
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import ParamsDetails from "@theme/ParamsDetails";
+import RequestSchema from "@theme/RequestSchema";
+import StatusCodes from "@theme/StatusCodes";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+import Heading from "@theme/Heading";
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Update API key status"}
+>
+</Heading>
+
+<MethodEndpoint
+  method={"put"}
+  path={"/veil/api/api-keys/status"}
+  context={"endpoint"}
+>
+  
+</MethodEndpoint>
+
+
+
+Update the status of an existing API key
+
+<Heading
+  id={"request"}
+  as={"h2"}
+  className={"openapi-tabs__heading"}
+  children={"Request"}
+>
+</Heading>
+
+<ParamsDetails
+  parameters={undefined}
+>
+  
+</ParamsDetails>
+
+<RequestSchema
+  title={"Body"}
+  body={{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["path","apiKey","isActive"],"properties":{"path":{"type":"string","description":"The API path associated with the key","example":"/weather/*"},"apiKey":{"type":"string","description":"The API key to update","example":"new-key-1"},"isActive":{"type":"boolean","description":"The new status of the API key","example":false}}}}}}}
+>
+  
+</RequestSchema>
+
+<StatusCodes
+  id={undefined}
+  label={undefined}
+  responses={{"200":{"description":"API key status updated successfully"},"404":{"description":"API key not found","content":{"application/json":{"schema":{"type":"object","properties":{"error":{"type":"string","description":"Error message","example":"Invalid request body"}},"title":"ErrorResponse"}}}}}}
+>
+  
+</StatusCodes>
+
+
+      

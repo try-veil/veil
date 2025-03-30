@@ -1,4 +1,5 @@
 import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
+import sidebar from './docs/swagger/sidebar';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -55,6 +56,42 @@ const sidebars: SidebarsConfig = {
             'api/billing/payment-methods',
             'api/billing/charges',
           ],
+        },
+      ],
+    },
+    {
+      type: "category",
+      label: "OpenAPI Reference",
+      items: [
+        {
+          type: "category",
+          label: "Veil Core",
+          items: [
+
+
+            {
+              type: "doc",
+              id: "swagger/veil-api-management",
+            },
+            {
+              type: "doc",
+              id: "swagger/onboard-a-new-api",
+              label: "Onboard a new API",
+              className: "api-method post",
+            },
+            {
+              type: "doc",
+              id: "swagger/add-new-api-keys",
+              label: "Add new API keys",
+              className: "api-method post",
+            },
+            {
+              type: "doc",
+              id: "swagger/update-api-key-status",
+              label: "Update API key status",
+              className: "api-method put",
+            },
+          ]
         },
       ],
     },
