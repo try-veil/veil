@@ -132,9 +132,20 @@ publishers:
     env:
       - CLOUDSMITH_API_KEY={{ .Env.CLOUDSMITH_API_KEY }}
     cmd: |
-      curl -f -X POST "https://upload.cloudsmith.io/try-veil/veil/{{ if eq .Format "deb" }}debian/{{ else if eq .Format "rpm" }}rpm/{{ end }}main/" \
-        -H "X-Api-Key: $CLOUDSMITH_API_KEY" \
-        -F "package=@{{ .ArtifactPath }}"
+      for file in dist/*.deb; do
+        if [ -f "$file" ]; then
+          curl -f -X POST "https://upload.cloudsmith.io/try-veil/veil/debian/main/" \
+            -H "X-Api-Key: $CLOUDSMITH_API_KEY" \
+            -F "package=@$file"
+        fi
+      done
+      for file in dist/*.rpm; do
+        if [ -f "$file" ]; then
+          curl -f -X POST "https://upload.cloudsmith.io/try-veil/veil/rpm/main/" \
+            -H "X-Api-Key: $CLOUDSMITH_API_KEY" \
+            -F "package=@$file"
+        fi
+      done
 
 release:
   github:
