@@ -1,0 +1,230 @@
+{
+    "info": {
+      "name": "Auth API",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+      "description": "Tests for the NestJS FusionAuth integration"
+    },
+    "item": [
+      {
+        "name": "Authentication",
+        "item": [
+          {
+            "name": "Signup",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 201\", function () {",
+                    "    pm.response.to.have.status(201);",
+                    "});",
+                    "",
+                    "pm.test(\"Response has access_token\", function () {",
+                    "    const responseJson = pm.response.json();",
+                    "    pm.expect(responseJson.access_token).to.exist;",
+                    "    pm.environment.set(\"access_token\", responseJson.access_token);",
+                    "});",
+                    "",
+                    "pm.test(\"Response has fusion_auth_token\", function () {",
+                    "    const responseJson = pm.response.json();",
+                    "    pm.expect(responseJson.fusion_auth_token).to.exist;",
+                    "    pm.environment.set(\"fusion_auth_token\", responseJson.fusion_auth_token);",
+                    "});",
+                    "",
+                    "pm.test(\"Response has user data\", function () {",
+                    "    const responseJson = pm.response.json();",
+                    "    pm.expect(responseJson.user).to.exist;",
+                    "    pm.expect(responseJson.user.email).to.equal(pm.environment.get(\"test_email\"));",
+                    "    pm.environment.set(\"user_id\", responseJson.user.id);",
+                    "});"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n    \"email\": \"{{test_email}}\",\n    \"password\": \"{{test_password}}\",\n    \"firstName\": \"Test\",\n    \"lastName\": \"User\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/auth/signup",
+                "host": ["{{base_url}}"],
+                "path": ["auth", "signup"]
+              }
+            }
+          },
+          {
+            "name": "Login",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test(\"Response has access_token\", function () {",
+                    "    const responseJson = pm.response.json();",
+                    "    pm.expect(responseJson.access_token).to.exist;",
+                    "    pm.environment.set(\"access_token\", responseJson.access_token);",
+                    "});",
+                    "",
+                    "pm.test(\"Response has fusion_auth_token\", function () {",
+                    "    const responseJson = pm.response.json();",
+                    "    pm.expect(responseJson.fusion_auth_token).to.exist;",
+                    "    pm.environment.set(\"fusion_auth_token\", responseJson.fusion_auth_token);",
+                    "});"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n    \"email\": \"{{test_email}}\",\n    \"password\": \"{{test_password}}\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/auth/login",
+                "host": ["{{base_url}}"],
+                "path": ["auth", "login"]
+              }
+            }
+          },
+          {
+            "name": "Validate Token",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test(\"Response has new access_token\", function () {",
+                    "    const responseJson = pm.response.json();",
+                    "    pm.expect(responseJson.access_token).to.exist;",
+                    "});"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{access_token}}"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/auth/validate",
+                "host": ["{{base_url}}"],
+                "path": ["auth", "validate"]
+              }
+            }
+          },
+          {
+            "name": "Get User Profile",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test(\"User profile is valid\", function () {",
+                    "    const responseJson = pm.response.json();",
+                    "    pm.expect(responseJson.id).to.exist;",
+                    "    pm.expect(responseJson.email).to.exist;",
+                    "    pm.expect(responseJson.roles).to.be.an('array');",
+                    "});"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{access_token}}"
+                }
+              ],
+              "url": {
+                "raw": "{{base_url}}/auth/me",
+                "host": ["{{base_url}}"],
+                "path": ["auth", "me"]
+              }
+            }
+          },
+          {
+            "name": "Create API Key",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 201\", function () {",
+                    "    pm.response.to.have.status(201);",
+                    "});",
+                    "",
+                    "pm.test(\"API key is valid\", function () {",
+                    "    const responseJson = pm.response.json();",
+                    "    pm.expect(responseJson.key).to.exist;",
+                    "    pm.expect(responseJson.key).to.include('veil_');",
+                    "    pm.environment.set(\"api_key\", responseJson.key);",
+                    "});"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{access_token}}"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n    \"name\": \"Test API Key\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/auth/api-keys",
+                "host": ["{{base_url}}"],
+                "path": ["auth", "api-keys"]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }

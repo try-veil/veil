@@ -1,0 +1,26 @@
+# Use Node.js 18 Alpine as the base image
+FROM node:18-alpine
+
+# Set the working directory
+WORKDIR /app
+
+# Copy package.json and yarn.lock first for better caching
+COPY package.json yarn.lock ./
+
+# Install dependencies
+RUN yarn install --frozen-lockfile
+
+# Copy the entire project (including prisma directory)
+COPY . .
+
+# Verify that the Prisma directory exists
+RUN ls -la prisma/ || echo "Prisma directory missing!"
+
+# Build the application
+RUN yarn build
+
+# Expose ports for the app and debugger
+EXPOSE 3000 9229
+
+# Default command (overridden in docker-compose)
+CMD ["yarn", "start:dev"]

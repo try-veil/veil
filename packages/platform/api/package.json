@@ -17,7 +17,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:e2e:debug": "yarn jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
     "@fusionauth/typescript-client": "^1.56.0",
@@ -31,9 +32,11 @@
     "@nestjs/swagger": "^11.1.0",
     "@prisma/client": "^6.5.0",
     "axios": "^1.8.4",
+    "@types/express-session": "^1.18.1",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "express-session": "^1.18.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.1.13",
@@ -57,7 +60,7 @@
     "prisma": "^6.5.0",
     "source-map-support": "^0.5.21",
     "supertest": "^7.1.0",
-    "ts-jest": "^29.1.0",
+    "ts-jest": "^29.3.0",
     "ts-loader": "^9.4.3",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
