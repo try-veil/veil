@@ -1,6 +1,14 @@
-# [This directory is not up to date yet, please refer to the root level README.md]
+---
+id: intro
+title: Welcome to Veil API Marketplace
+---
 
-# Veil API Marketplace Documentation
+:::info
+
+These docs are still a WIP, please open an [issue ticket](https://github.com/try-veil/veil/issues) if you see any discrepancies.
+
+:::
+
 
 ## Overview
 
@@ -103,4 +111,4 @@ Veil is an API marketplace platform that enables API providers to publish their 
 
 ## License
 
-Veil is licensed under the [MIT License](./LICENSE).
+Veil is licensed under the [MIT License](./LICENSE). 
