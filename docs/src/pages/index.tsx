@@ -9,14 +9,15 @@ import { faGithub, faDiscord } from '@fortawesome/free-brands-svg-icons'
 import styles from './index.module.css';
 
 function HomepageHeader() {
+  const {siteConfig} = useDocusaurusContext();
   return (
-    <section className={clsx('hero hero--primary', styles.heroBanner)}>
+    <header className={clsx('hero hero--primary', styles.heroBanner)}>
       <div className="container">
         <Heading as="h1" className="hero__title">
           Documentation for Veil
         </Heading>
         <p className="hero__subtitle">An opionated Caddy extension to sell, monitor, and manage your APIs.</p>
-        <div className={styles.buttons}>
+        <div className={clsx("hero", styles.buttons)}>
             <Link
               className="button button--secondary button--lg"
               to="/docs/intro">
@@ -39,7 +40,7 @@ function HomepageHeader() {
           </Link>
         </div>
       </div>
-    </section>
+    </header>
   );
 }
 

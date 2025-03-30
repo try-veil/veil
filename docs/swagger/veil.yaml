@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
-  title: Veil API Management
-  description: API management and subscription validation service for Caddy
+  title: Veil Core - OpenAPI Reference
+  description: API reference for the veil core module which is an extension with our custom module.
   version: 1.0.0
   contact:
     name: Veil Support
