@@ -1,0 +1,74 @@
+graph TB
+    subgraph Client ["API Consumers"]
+        C[Client Application]
+    end
+
+    subgraph Gateway ["API Gateway (Caddy)"]
+        GW[Caddy Gateway]
+        Auth[Authentication]
+        Rate[Rate Limiting]
+        Log[Logging]
+        Transform[Request Transform]
+        Config[Gateway Config]
+    end
+
+    subgraph Platform ["API Marketplace Platform"]
+        direction TB
+        DB[(SQLite DB)]
+        
+        subgraph Core ["Core Services"]
+            Onboard[API Onboarding]
+            Validate[API Validation]
+            Health[Health Check]
+        end
+    end
+
+    subgraph Observability ["Observability Stack"]
+        Loki[Loki Log Aggregator]
+        Grafana[Grafana Dashboard]
+        
+        subgraph Metrics ["Usage Metrics"]
+            UserMetrics[User Level Usage]
+            APIMetrics[API Level Usage]
+        end
+    end
+
+    subgraph Providers ["API Providers"]
+        API[API Service]
+    end
+
+    %% Gateway Request Flow
+    C --> GW
+    GW --> Auth
+    Auth --> Rate
+    Rate --> Transform
+    Transform --> API
+
+    %% Response and Logging Flow
+    API --> Transform
+    Transform --> Log
+    Log --> C
+
+    %% Observability Flow
+    Log --> Loki
+    Loki --> Metrics
+    Metrics --> Grafana
+
+    %% Platform Management Flow
+    Providers <--> Platform
+    Platform <--> DB
+    Platform --> Config
+    Config --> GW
+    
+    %% Styling
+    classDef platform fill:#f9f,stroke:#333,stroke-width:2px
+    classDef gateway fill:#bbf,stroke:#333,stroke-width:2px
+    classDef provider fill:#bfb,stroke:#333,stroke-width:2px
+    classDef client fill:#fbb,stroke:#333,stroke-width:2px
+    classDef observability fill:#ffd,stroke:#333,stroke-width:2px
+    
+    class Core platform
+    class GW,Auth,Rate,Log,Transform,Config gateway
+    class API provider
+    class C client
+    class Loki,Grafana,Metrics observability

@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-current docs-doc-page docs-doc-id-contribution/architecture/readme" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.7.0">
+<title data-rh="true">Veil Architecture Design Document | Veil - Documentation</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://veil.theflywheel.in/docs/contribution/architecture/"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Veil Architecture Design Document | Veil - Documentation"><meta data-rh="true" name="description" content="Overview"><meta data-rh="true" property="og:description" content="Overview"><link data-rh="true" rel="icon" href="/img/favicon.ico"><link data-rh="true" rel="canonical" href="https://veil.theflywheel.in/docs/contribution/architecture/"><link data-rh="true" rel="alternate" href="https://veil.theflywheel.in/docs/contribution/architecture/" hreflang="en"><link data-rh="true" rel="alternate" href="https://veil.theflywheel.in/docs/contribution/architecture/" hreflang="x-default"><link rel="alternate" type="application/rss+xml" href="/blog/rss.xml" title="Veil - Documentation RSS Feed">
+<link rel="alternate" type="application/atom+xml" href="/blog/atom.xml" title="Veil - Documentation Atom Feed"><link rel="stylesheet" href="/assets/css/styles.3bf42080.css">
+<script src="/assets/js/runtime~main.f69b10cd.js" defer="defer"></script>
+<script src="/assets/js/main.e6dc1ad9.js" defer="defer"></script>
+</head>
+<body class="navigation-with-keyboard">
+<script>!function(){function t(t){document.documentElement.setAttribute("data-theme",t)}var e=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();null!==e?t(e):window.matchMedia("(prefers-color-scheme: dark)").matches?t("dark"):(window.matchMedia("(prefers-color-scheme: light)").matches,t("light"))}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><link rel="preload" as="image" href="/img/logo.svg"><div role="region" aria-label="Skip to main content"><a class="skipToContent_tgMN" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="navbar navbar--fixed-top"><div class="navbar__inner"><div class="navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a href="https://veil.theflywheel.in" target="_blank" rel="noopener noreferrer" class="navbar__brand"><div class="navbar__logo"><img src="/img/logo.svg" alt="Veil Logo" class="themedComponent_ER4m themedComponent--light_deX_"><img src="/img/logo.svg" alt="Veil Logo" class="themedComponent_ER4m themedComponent--dark_PEfg"></div></a><a class="navbar__item navbar__link" href="/docs/intro">Docs</a><a class="navbar__item navbar__link" href="/blog">Blog</a></div><div class="navbar__items navbar__items--right"><a href="https://github.com/try-veil/veil" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-hidden="true" viewBox="0 0 24 24" class="iconExternalLink_fCg5"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"></path></svg></a><div class="toggle_txzw colorModeToggle_v5t9"><button class="clean-btn toggleButton_pqUp toggleButtonDisabled__sMU" type="button" disabled="" title="Switch between dark and light mode (currently light mode)" aria-label="Switch between dark and light mode (currently light mode)" aria-live="polite" aria-pressed="false"><svg viewBox="0 0 24 24" width="24" height="24" class="lightToggleIcon_j0Un"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" class="darkToggleIcon_fZqb"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg></button></div><div class="navbarSearchContainer_MJfR"></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="main-wrapper mainWrapper_alUu"><div class="docsWrapper_R4Sx"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_ctaV" type="button"></button><div class="docRoot_bLbQ"><main class="docMainContainer_GYlK docMainContainerEnhanced_zuDj"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_KbmF"><div class="docItemContainer_y1Ro"><article><div class="tocCollapsible_Ms1s theme-doc-toc-mobile tocMobile_wh3X"><button type="button" class="clean-btn tocCollapsibleButton_hBE5">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>Veil Architecture Design Document</h1></header>
+<h2 class="anchor anchorWithStickyNavbar_OWo9" id="overview">Overview<a href="#overview" class="hash-link" aria-label="Direct link to Overview" title="Direct link to Overview">​</a></h2>
+<p>Veil is an API marketplace platform that enables API providers to publish their APIs and allows consumers to discover, subscribe to, and manage API access through a unified gateway.</p>
+<h2 class="anchor anchorWithStickyNavbar_OWo9" id="core-components">Core Components<a href="#core-components" class="hash-link" aria-label="Direct link to Core Components" title="Direct link to Core Components">​</a></h2>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="1-gateway-layer-caddy-based">1. Gateway Layer (Caddy-based)<a href="#1-gateway-layer-caddy-based" class="hash-link" aria-label="Direct link to 1. Gateway Layer (Caddy-based)" title="Direct link to 1. Gateway Layer (Caddy-based)">​</a></h3>
+<h4 class="anchor anchorWithStickyNavbar_OWo9" id="components">Components<a href="#components" class="hash-link" aria-label="Direct link to Components" title="Direct link to Components">​</a></h4>
+<ul>
+<li><strong>Authentication Middleware</strong>: Validates API keys and JWT tokens</li>
+<li><strong>Rate Limiting</strong>: Enforces usage quotas and throttling</li>
+<li><strong>Request Transform</strong>: Handles header manipulation and request routing</li>
+<li><strong>Logging</strong>: Captures detailed request/response metrics</li>
+<li><strong>Health Check</strong>: Monitors API endpoint availability</li>
+</ul>
+<h4 class="anchor anchorWithStickyNavbar_OWo9" id="key-features">Key Features<a href="#key-features" class="hash-link" aria-label="Direct link to Key Features" title="Direct link to Key Features">​</a></h4>
+<ul>
+<li>Real-time request validation</li>
+<li>Automatic header transformation</li>
+<li>Traffic shaping and throttling</li>
+<li>Request/response logging</li>
+<li>Error handling and retry logic</li>
+</ul>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="2-platform-core">2. Platform Core<a href="#2-platform-core" class="hash-link" aria-label="Direct link to 2. Platform Core" title="Direct link to 2. Platform Core">​</a></h3>
+<h4 class="anchor anchorWithStickyNavbar_OWo9" id="services">Services<a href="#services" class="hash-link" aria-label="Direct link to Services" title="Direct link to Services">​</a></h4>
+<ul>
+<li>
+<p><strong>API Management</strong></p>
+<ul>
+<li>Onboarding service</li>
+<li>Validation service</li>
+<li>Update service</li>
+<li>Deletion service</li>
+<li>Version management</li>
+</ul>
+</li>
+<li>
+<p><strong>User Management</strong></p>
+<ul>
+<li>Authentication service</li>
+<li>Authorization service</li>
+<li>Profile management</li>
+<li>API key management</li>
+</ul>
+</li>
+<li>
+<p><strong>Subscription Management</strong></p>
+<ul>
+<li>Plan management</li>
+<li>Quota tracking</li>
+<li>Usage analytics</li>
+<li>Billing integration</li>
+</ul>
+</li>
+</ul>
+<h4 class="anchor anchorWithStickyNavbar_OWo9" id="data-store">Data Store<a href="#data-store" class="hash-link" aria-label="Direct link to Data Store" title="Direct link to Data Store">​</a></h4>
+<ul>
+<li><strong>SQLite Database</strong>
+<ul>
+<li>User data</li>
+<li>API configurations</li>
+<li>Subscription data</li>
+<li>Usage metrics</li>
+<li>Audit logs</li>
+</ul>
+</li>
+</ul>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="3-observability-stack">3. Observability Stack<a href="#3-observability-stack" class="hash-link" aria-label="Direct link to 3. Observability Stack" title="Direct link to 3. Observability Stack">​</a></h3>
+<h4 class="anchor anchorWithStickyNavbar_OWo9" id="components-1">Components<a href="#components-1" class="hash-link" aria-label="Direct link to Components" title="Direct link to Components">​</a></h4>
+<ul>
+<li>
+<p><strong>Logging (Loki)</strong></p>
+<ul>
+<li>Request/response logs</li>
+<li>Error logs</li>
+<li>Audit logs</li>
+<li>Performance metrics</li>
+</ul>
+</li>
+<li>
+<p><strong>Metrics (Prometheus)</strong></p>
+<ul>
+<li>Usage statistics</li>
+<li>Performance metrics</li>
+<li>Error rates</li>
+<li>Response times</li>
+</ul>
+</li>
+<li>
+<p><strong>Visualization (Grafana)</strong></p>
+<ul>
+<li>Usage dashboards</li>
+<li>Performance monitoring</li>
+<li>Alerting</li>
+<li>Trend analysis</li>
+</ul>
+</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_OWo9" id="system-architecture">System Architecture<a href="#system-architecture" class="hash-link" aria-label="Direct link to System Architecture" title="Direct link to System Architecture">​</a></h2>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="request-flow">Request Flow<a href="#request-flow" class="hash-link" aria-label="Direct link to Request Flow" title="Direct link to Request Flow">​</a></h3>
+<ol>
+<li>
+<p><strong>Client Request</strong></p>
+<div class="codeBlockContainer_qYzv theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_vZ_R"><pre tabindex="0" class="prism-code language-text codeBlock_YuAD thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_sx_d"><span class="token-line" style="color:#393A34"><span class="token plain">Client -&gt; Gateway -&gt; Auth -&gt; Rate Limit -&gt; Transform -&gt; API</span><br></span></code></pre><div class="buttonGroup__kON"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_Zljn" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_AAqt"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_Huln"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+</li>
+<li>
+<p><strong>Response Flow</strong></p>
+<div class="codeBlockContainer_qYzv theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_vZ_R"><pre tabindex="0" class="prism-code language-text codeBlock_YuAD thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_sx_d"><span class="token-line" style="color:#393A34"><span class="token plain">API -&gt; Transform -&gt; Logging -&gt; Metrics -&gt; Client</span><br></span></code></pre><div class="buttonGroup__kON"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_Zljn" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_AAqt"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_Huln"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+</li>
+<li>
+<p><strong>Error Flow</strong></p>
+<div class="codeBlockContainer_qYzv theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_vZ_R"><pre tabindex="0" class="prism-code language-text codeBlock_YuAD thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_sx_d"><span class="token-line" style="color:#393A34"><span class="token plain">Error -&gt; Error Handler -&gt; Logging -&gt; Metrics -&gt; Client</span><br></span></code></pre><div class="buttonGroup__kON"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_Zljn" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_AAqt"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_Huln"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+</li>
+</ol>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="data-flow">Data Flow<a href="#data-flow" class="hash-link" aria-label="Direct link to Data Flow" title="Direct link to Data Flow">​</a></h3>
+<!-- -->
+<h2 class="anchor anchorWithStickyNavbar_OWo9" id="security-architecture">Security Architecture<a href="#security-architecture" class="hash-link" aria-label="Direct link to Security Architecture" title="Direct link to Security Architecture">​</a></h2>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="authentication">Authentication<a href="#authentication" class="hash-link" aria-label="Direct link to Authentication" title="Direct link to Authentication">​</a></h3>
+<ol>
+<li>
+<p><strong>API Key Authentication</strong></p>
+<ul>
+<li>Format: <code>veil_live_[base58]</code></li>
+<li>Rotation policy: 90 days</li>
+<li>Scope-based access control</li>
+</ul>
+</li>
+<li>
+<p><strong>JWT Tokens</strong></p>
+<ul>
+<li>Short-lived (1 hour)</li>
+<li>Refresh token support</li>
+<li>Role-based access control</li>
+</ul>
+</li>
+</ol>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="authorization">Authorization<a href="#authorization" class="hash-link" aria-label="Direct link to Authorization" title="Direct link to Authorization">​</a></h3>
+<ol>
+<li>
+<p><strong>Scopes</strong></p>
+<div class="language-json codeBlockContainer_qYzv theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_vZ_R"><pre tabindex="0" class="prism-code language-json codeBlock_YuAD thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_sx_d"><span class="token-line" style="color:#393A34"><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;api:read&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;Read API metadata&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;api:write&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;Modify API configuration&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;keys:manage&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;Manage API keys&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;usage:read&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;View usage statistics&quot;</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre><div class="buttonGroup__kON"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_Zljn" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_AAqt"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_Huln"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+</li>
+<li>
+<p><strong>Roles</strong></p>
+<ul>
+<li>API Provider</li>
+<li>API Consumer</li>
+<li>Administrator</li>
+<li>Billing Manager</li>
+</ul>
+</li>
+</ol>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="data-protection">Data Protection<a href="#data-protection" class="hash-link" aria-label="Direct link to Data Protection" title="Direct link to Data Protection">​</a></h3>
+<ol>
+<li>
+<p><strong>At Rest</strong></p>
+<ul>
+<li>Database encryption</li>
+<li>Sensitive field encryption</li>
+<li>Key rotation</li>
+</ul>
+</li>
+<li>
+<p><strong>In Transit</strong></p>
+<ul>
+<li>TLS 1.3 required</li>
+<li>Certificate pinning</li>
+<li>Perfect forward secrecy</li>
+</ul>
+</li>
+</ol>
+<h2 class="anchor anchorWithStickyNavbar_OWo9" id="scalability-design">Scalability Design<a href="#scalability-design" class="hash-link" aria-label="Direct link to Scalability Design" title="Direct link to Scalability Design">​</a></h2>
+<p>Veil&#x27;s architecture is designed for horizontal scalability across all components. The gateway layer employs a stateless design that allows for seamless scaling through load balancers and regional deployments. This approach enables the platform to handle increasing traffic loads by simply adding more gateway instances.</p>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="gateway-configuration-management">Gateway Configuration Management<a href="#gateway-configuration-management" class="hash-link" aria-label="Direct link to Gateway Configuration Management" title="Direct link to Gateway Configuration Management">​</a></h3>
+<p>Veil takes a unique approach to Caddy configuration management, treating configuration as versioned, immutable objects. Each API&#x27;s gateway configuration is stored as an individual JSON file, enabling granular updates and efficient change tracking:</p>
+<div class="language-json codeBlockContainer_qYzv theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_vZ_R"><pre tabindex="0" class="prism-code language-json codeBlock_YuAD thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_sx_d"><span class="token-line" style="color:#393A34"><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;configVersion&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;2024.1&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;apiId&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;api_123&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;routes&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;handle&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">        </span><span class="token property" style="color:#36acaa">&quot;handler&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;subroute&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">        </span><span class="token property" style="color:#36acaa">&quot;routes&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">          </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">            </span><span class="token property" style="color:#36acaa">&quot;handle&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">              </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">                </span><span class="token property" style="color:#36acaa">&quot;handler&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;reverse_proxy&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">                </span><span class="token property" style="color:#36acaa">&quot;upstreams&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">[</span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"> </span><span class="token property" style="color:#36acaa">&quot;dial&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;api.provider.com:443&quot;</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">}</span><span class="token punctuation" style="color:#393A34">]</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">                </span><span class="token property" style="color:#36acaa">&quot;headers&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">                  </span><span class="token property" style="color:#36acaa">&quot;request&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">                    </span><span class="token property" style="color:#36acaa">&quot;set&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">                      </span><span class="token property" style="color:#36acaa">&quot;Authorization&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">[</span><span class="token string" style="color:#e3116c">&quot;{http.request.header.X-Api-Key}&quot;</span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">                    </span><span class="token punctuation" style="color:#393A34">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">                  </span><span class="token punctuation" style="color:#393A34">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">                </span><span class="token punctuation" style="color:#393A34">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">              </span><span class="token punctuation" style="color:#393A34">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">            </span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">          </span><span class="token punctuation" style="color:#393A34">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">        </span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token punctuation" style="color:#393A34">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre><div class="buttonGroup__kON"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_Zljn" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_AAqt"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_Huln"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>Configuration changes are managed through a delta-based system:</p>
+<ol>
+<li>New configurations are stored as separate JSON files</li>
+<li>Only changed routes are updated in Caddy</li>
+<li>Version history is maintained for rollback capability</li>
+<li>Configurations are validated before deployment</li>
+</ol>
+<p>The platform uses an S3-compatible storage system for configuration management:</p>
+<div class="codeBlockContainer_qYzv theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_vZ_R"><pre tabindex="0" class="prism-code language-text codeBlock_YuAD thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_sx_d"><span class="token-line" style="color:#393A34"><span class="token plain">s3://veil-config/</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  ├── apis/</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  │   ├── api_123/</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  │   │   ├── v1/config.json</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  │   │   ├── v2/config.json</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  │   │   └── current -&gt; v2/config.json</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  │   └── api_456/</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  │       └── v1/config.json</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  ├── global/</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  │   └── middleware/</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  │       ├── auth.json</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  │       └── metrics.json</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  └── versions.lock</span><br></span></code></pre><div class="buttonGroup__kON"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_Zljn" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_AAqt"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_Huln"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>This approach provides several benefits:</p>
+<ul>
+<li>Atomic updates to individual API configurations</li>
+<li>Easy rollback to previous versions</li>
+<li>Efficient diff-based change detection</li>
+<li>Improved debugging through version history</li>
+<li>Configuration auditability</li>
+</ul>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="horizontal-scaling">Horizontal Scaling<a href="#horizontal-scaling" class="hash-link" aria-label="Direct link to Horizontal Scaling" title="Direct link to Horizontal Scaling">​</a></h3>
+<ol>
+<li>
+<p><strong>Gateway Layer</strong></p>
+<ul>
+<li>Stateless design</li>
+<li>Load balancer support</li>
+<li>Regional deployment</li>
+</ul>
+</li>
+<li>
+<p><strong>Platform Layer</strong></p>
+<ul>
+<li>Microservices architecture</li>
+<li>Independent scaling</li>
+<li>Resource isolation</li>
+</ul>
+</li>
+</ol>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="performance-optimization">Performance Optimization<a href="#performance-optimization" class="hash-link" aria-label="Direct link to Performance Optimization" title="Direct link to Performance Optimization">​</a></h3>
+<ol>
+<li>
+<p><strong>Caching Strategy</strong></p>
+<div class="language-json codeBlockContainer_qYzv theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_vZ_R"><pre tabindex="0" class="prism-code language-json codeBlock_YuAD thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_sx_d"><span class="token-line" style="color:#393A34"><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;apiConfig&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"> </span><span class="token property" style="color:#36acaa">&quot;ttl&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;5m&quot;</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">}</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;authTokens&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"> </span><span class="token property" style="color:#36acaa">&quot;ttl&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;1m&quot;</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">}</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;rateLimits&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"> </span><span class="token property" style="color:#36acaa">&quot;ttl&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;1s&quot;</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre><div class="buttonGroup__kON"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_Zljn" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_AAqt"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_Huln"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+</li>
+<li>
+<p><strong>Rate Limiting</strong></p>
+<ul>
+<li>Token bucket algorithm</li>
+<li>Distributed rate limiting</li>
+<li>Burst handling</li>
+</ul>
+</li>
+</ol>
+<h2 class="anchor anchorWithStickyNavbar_OWo9" id="monitoring-and-alerting">Monitoring and Alerting<a href="#monitoring-and-alerting" class="hash-link" aria-label="Direct link to Monitoring and Alerting" title="Direct link to Monitoring and Alerting">​</a></h2>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="key-metrics">Key Metrics<a href="#key-metrics" class="hash-link" aria-label="Direct link to Key Metrics" title="Direct link to Key Metrics">​</a></h3>
+<ol>
+<li>
+<p><strong>Platform Health</strong></p>
+<ul>
+<li>Gateway latency</li>
+<li>Error rates</li>
+<li>CPU/Memory usage</li>
+<li>Database connections</li>
+</ul>
+</li>
+<li>
+<p><strong>Business Metrics</strong></p>
+<ul>
+<li>Active subscriptions</li>
+<li>API usage</li>
+<li>Revenue</li>
+<li>Customer satisfaction</li>
+</ul>
+</li>
+</ol>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="alert-thresholds">Alert Thresholds<a href="#alert-thresholds" class="hash-link" aria-label="Direct link to Alert Thresholds" title="Direct link to Alert Thresholds">​</a></h3>
+<div class="language-json codeBlockContainer_qYzv theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_vZ_R"><pre tabindex="0" class="prism-code language-json codeBlock_YuAD thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_sx_d"><span class="token-line" style="color:#393A34"><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;critical&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;errorRate&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;&gt;5%&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;latency&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;&gt;500ms&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;availability&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;&lt;99.9%&quot;</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">}</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;warning&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;errorRate&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;&gt;1%&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;latency&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;&gt;200ms&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;availability&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;&lt;99.95%&quot;</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre><div class="buttonGroup__kON"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_Zljn" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_AAqt"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_Huln"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h2 class="anchor anchorWithStickyNavbar_OWo9" id="disaster-recovery">Disaster Recovery<a href="#disaster-recovery" class="hash-link" aria-label="Direct link to Disaster Recovery" title="Direct link to Disaster Recovery">​</a></h2>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="backup-strategy">Backup Strategy<a href="#backup-strategy" class="hash-link" aria-label="Direct link to Backup Strategy" title="Direct link to Backup Strategy">​</a></h3>
+<ol>
+<li>
+<p><strong>Database</strong></p>
+<ul>
+<li>Full backup: Daily</li>
+<li>Incremental: Hourly</li>
+<li>Retention: 90 days</li>
+</ul>
+</li>
+<li>
+<p><strong>Configuration</strong></p>
+<ul>
+<li>Version controlled</li>
+<li>Infrastructure as Code</li>
+<li>Automated recovery</li>
+</ul>
+</li>
+</ol>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="recovery-procedures">Recovery Procedures<a href="#recovery-procedures" class="hash-link" aria-label="Direct link to Recovery Procedures" title="Direct link to Recovery Procedures">​</a></h3>
+<ol>
+<li>
+<p><strong>Gateway Failure</strong></p>
+<ul>
+<li>Automatic failover</li>
+<li>Regional redundancy</li>
+<li>Blue-green deployment</li>
+</ul>
+</li>
+<li>
+<p><strong>Data Recovery</strong></p>
+<ul>
+<li>Point-in-time recovery</li>
+<li>Cross-region replication</li>
+<li>Automated verification</li>
+</ul>
+</li>
+</ol>
+<h2 class="anchor anchorWithStickyNavbar_OWo9" id="development-workflow">Development Workflow<a href="#development-workflow" class="hash-link" aria-label="Direct link to Development Workflow" title="Direct link to Development Workflow">​</a></h2>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="cicd-pipeline">CI/CD Pipeline<a href="#cicd-pipeline" class="hash-link" aria-label="Direct link to CI/CD Pipeline" title="Direct link to CI/CD Pipeline">​</a></h3>
+<!-- -->
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="testing-strategy">Testing Strategy<a href="#testing-strategy" class="hash-link" aria-label="Direct link to Testing Strategy" title="Direct link to Testing Strategy">​</a></h3>
+<ol>
+<li>
+<p><strong>Unit Tests</strong></p>
+<ul>
+<li>Service layer</li>
+<li>Data access</li>
+<li>Utilities</li>
+</ul>
+</li>
+<li>
+<p><strong>Integration Tests</strong></p>
+<ul>
+<li>API endpoints</li>
+<li>Gateway configuration</li>
+<li>Authentication flow</li>
+</ul>
+</li>
+<li>
+<p><strong>Performance Tests</strong></p>
+<ul>
+<li>Load testing</li>
+<li>Stress testing</li>
+<li>Failover scenarios</li>
+</ul>
+</li>
+</ol>
+<h2 class="anchor anchorWithStickyNavbar_OWo9" id="future-roadmap">Future Roadmap<a href="#future-roadmap" class="hash-link" aria-label="Direct link to Future Roadmap" title="Direct link to Future Roadmap">​</a></h2>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="phase-1-core-platform">Phase 1: Core Platform<a href="#phase-1-core-platform" class="hash-link" aria-label="Direct link to Phase 1: Core Platform" title="Direct link to Phase 1: Core Platform">​</a></h3>
+<ul>
+<li>Gateway implementation</li>
+<li>Basic API management</li>
+<li>Usage tracking</li>
+</ul>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="phase-2-enhanced-features">Phase 2: Enhanced Features<a href="#phase-2-enhanced-features" class="hash-link" aria-label="Direct link to Phase 2: Enhanced Features" title="Direct link to Phase 2: Enhanced Features">​</a></h3>
+<ul>
+<li>Advanced analytics</li>
+<li>Billing integration</li>
+<li>Documentation portal</li>
+</ul>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="phase-3-enterprise-features">Phase 3: Enterprise Features<a href="#phase-3-enterprise-features" class="hash-link" aria-label="Direct link to Phase 3: Enterprise Features" title="Direct link to Phase 3: Enterprise Features">​</a></h3>
+<ul>
+<li>Multi-region support</li>
+<li>Custom domains</li>
+<li>SSO integration</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_OWo9" id="references">References<a href="#references" class="hash-link" aria-label="Direct link to References" title="Direct link to References">​</a></h2>
+<ol>
+<li><a href="/assets/files/arch-3e8b197f743ad0c32ab80ac96478c1f6.mmd" target="_blank">Architecture Diagram</a></li>
+<li><a href="/docs/api/">API Documentation</a></li>
+</ol>
+<h2 class="anchor anchorWithStickyNavbar_OWo9" id="technology-stack">Technology Stack<a href="#technology-stack" class="hash-link" aria-label="Direct link to Technology Stack" title="Direct link to Technology Stack">​</a></h2>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="core-technologies">Core Technologies<a href="#core-technologies" class="hash-link" aria-label="Direct link to Core Technologies" title="Direct link to Core Technologies">​</a></h3>
+<ol>
+<li>
+<p><strong>Backend</strong></p>
+<ul>
+<li>
+<p><strong>Go</strong></p>
+<ul>
+<li>Primary development language</li>
+<li>Native integration with Caddy</li>
+<li>High performance and concurrency</li>
+<li>Strong type system</li>
+<li>Built-in testing support</li>
+</ul>
+</li>
+<li>
+<p><strong>Caddy</strong></p>
+<ul>
+<li>Core gateway implementation</li>
+<li>Custom middleware development</li>
+<li>Native HTTPS support</li>
+<li>Dynamic configuration</li>
+<li>High performance proxy</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Authentication &amp; Authorization</strong></p>
+<ul>
+<li><strong>Ory Stack</strong>
+<ul>
+<li>Kratos: Identity management</li>
+<li>Hydra: OAuth2 &amp; OpenID Connect</li>
+<li>Oathkeeper: Zero-trust networking</li>
+<li>Keto: Fine-grained permissions</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Data Storage</strong></p>
+<ul>
+<li><strong>SQLite</strong>
+<ul>
+<li>Embedded database</li>
+<li>ACID compliance</li>
+<li>Zero configuration</li>
+<li>Single file storage</li>
+<li>Serverless operation</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="component-integration">Component Integration<a href="#component-integration" class="hash-link" aria-label="Direct link to Component Integration" title="Direct link to Component Integration">​</a></h3>
+<!-- -->
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="development-tools">Development Tools<a href="#development-tools" class="hash-link" aria-label="Direct link to Development Tools" title="Direct link to Development Tools">​</a></h3>
+<ol>
+<li>
+<p><strong>Build &amp; Development</strong></p>
+<ul>
+<li>Go 1.23+</li>
+<li>Air (Live reload)</li>
+</ul>
+</li>
+<li>
+<p><strong>Testing</strong></p>
+<ul>
+<li>Go testing framework</li>
+<li>Testcontainers</li>
+<li>k6 (Performance testing)</li>
+<li>Newman (API testing)</li>
+</ul>
+</li>
+</ol>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="infrastructure">Infrastructure<a href="#infrastructure" class="hash-link" aria-label="Direct link to Infrastructure" title="Direct link to Infrastructure">​</a></h3>
+<ol>
+<li>
+<p><strong>Container Runtime</strong></p>
+<ul>
+<li>Docker</li>
+<li>Docker Compose (development)</li>
+<li>Kubernetes (production)</li>
+</ul>
+</li>
+<li>
+<p><strong>Service Mesh</strong></p>
+<ul>
+<li>Istio<!-- -->
+<ul>
+<li>Traffic management</li>
+<li>Security policies</li>
+<li>Observability</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="technology-selection-criteria">Technology Selection Criteria<a href="#technology-selection-criteria" class="hash-link" aria-label="Direct link to Technology Selection Criteria" title="Direct link to Technology Selection Criteria">​</a></h3>
+<ol>
+<li>
+<p><strong>Go</strong></p>
+<ul>
+<li>Native Caddy integration capabilities</li>
+<li>Strong standard library</li>
+<li>Excellent performance characteristics</li>
+<li>Built-in concurrency support</li>
+<li>Simple deployment (single binary)</li>
+<li>Strong community and ecosystem</li>
+</ul>
+</li>
+<li>
+<p><strong>Ory.sh</strong></p>
+<ul>
+<li>Enterprise-grade security</li>
+<li>OAuth2 and OIDC compliance</li>
+<li>Zero-trust architecture</li>
+<li>Cloud-native design</li>
+<li>Active development and community</li>
+<li>Comprehensive documentation</li>
+</ul>
+</li>
+<li>
+<p><strong>SQLite</strong></p>
+<ul>
+<li>Simplified operations</li>
+<li>No separate database server</li>
+<li>Excellent performance for our scale</li>
+<li>Easy backup and recovery</li>
+<li>Native Go support</li>
+</ul>
+</li>
+</ol>
+<h2 class="anchor anchorWithStickyNavbar_OWo9" id="consistency-model">Consistency Model<a href="#consistency-model" class="hash-link" aria-label="Direct link to Consistency Model" title="Direct link to Consistency Model">​</a></h2>
+<p>Veil employs a hybrid consistency model that prioritizes user experience while maintaining system reliability. At its core, the platform makes a deliberate trade-off between immediate consistency for critical operations and eventual consistency for analytical and billing functions.</p>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="real-time-vs-delayed-operations">Real-time vs. Delayed Operations<a href="#real-time-vs-delayed-operations" class="hash-link" aria-label="Direct link to Real-time vs. Delayed Operations" title="Direct link to Real-time vs. Delayed Operations">​</a></h3>
+<p>Critical path operations such as API key validation, authentication checks, and per-second rate limiting are processed with immediate consistency. These operations happen directly in the gateway layer, ensuring minimal latency and maximum reliability for API consumers. Every request is validated in real-time before being proxied to the provider&#x27;s API.</p>
+<p>However, for usage tracking and billing calculations, Veil adopts a log-based analytics approach. This design decision means that while all requests are logged immediately, the processing of these logs for usage metrics and billing calculations happens asynchronously. Usage statistics typically have a 5-minute delay, while billing calculations may take up to an hour to fully reconcile.</p>
+<!-- -->
+<p>This eventual consistency model has important implications for business operations. Usage limits may be temporarily exceeded during the processing window, potentially leading to &quot;soft&quot; overlimit situations. Similarly, billing calculations might show temporary negative balances until all usage data is processed. To mitigate these effects, Veil implements several safeguards:</p>
+<ul>
+<li>Conservative initial rate limits with built-in buffers</li>
+<li>Proactive notification system for approaching limits</li>
+<li>Grace periods for quota enforcement</li>
+<li>Automatic credit holds for high-risk scenarios</li>
+<li>Regular reconciliation jobs to catch and correct discrepancies</li>
+</ul>
+<p>The consistency windows are carefully tuned based on operational requirements:</p>
+<div class="language-json codeBlockContainer_qYzv theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_vZ_R"><pre tabindex="0" class="prism-code language-json codeBlock_YuAD thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_sx_d"><span class="token-line" style="color:#393A34"><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;usageMetrics&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;delay&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;5m&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;accuracy&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;99.9%&quot;</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">}</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;billing&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;delay&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;1h&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;accuracy&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;100%&quot;</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">}</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;quotas&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;delay&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;5m&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;overage&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;allowed&quot;</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre><div class="buttonGroup__kON"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_Zljn" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_AAqt"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_Huln"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>To maintain system integrity, certain operations always maintain strong consistency guarantees: API key status changes, authentication token validation, basic rate limits, and configuration updates. These operations are handled synchronously to ensure immediate effect across the platform.</p>
+<p>For recovery and reconciliation, Veil maintains comprehensive audit trails and provides both automatic and manual adjustment capabilities. The system includes built-in dispute resolution mechanisms and regular reconciliation jobs to handle any discrepancies that may arise from the eventual consistency model.</p>
+<p>This hybrid approach allows Veil to maintain high performance and reliability while ensuring accurate usage tracking and billing, even at scale. The small trade-off in immediate consistency for analytical functions is balanced against the benefits of improved system performance and reliability.</p>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="data-storage">Data Storage<a href="#data-storage" class="hash-link" aria-label="Direct link to Data Storage" title="Direct link to Data Storage">​</a></h3>
+<h4 class="anchor anchorWithStickyNavbar_OWo9" id="v1-sqlite">V1: SQLite<a href="#v1-sqlite" class="hash-link" aria-label="Direct link to V1: SQLite" title="Direct link to V1: SQLite">​</a></h4>
+<p>For the initial release, Veil uses SQLite as its primary datastore, chosen for its simplicity and embedded nature:</p>
+<ul>
+<li>Embedded database requiring no separate server</li>
+<li>ACID compliance with WAL mode</li>
+<li>Single file storage simplifying backups</li>
+<li>Excellent performance for initial scale</li>
+<li>Native Go support</li>
+</ul>
+<div class="language-json codeBlockContainer_qYzv theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_vZ_R"><pre tabindex="0" class="prism-code language-json codeBlock_YuAD thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_sx_d"><span class="token-line" style="color:#393A34"><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;database&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;path&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;/data/veil.db&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;mode&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;wal&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;timeout&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;5s&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;maxOpenConns&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token number" style="color:#36acaa">1</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;busyTimeout&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;1s&quot;</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre><div class="buttonGroup__kON"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_Zljn" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_AAqt"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_Huln"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h4 class="anchor anchorWithStickyNavbar_OWo9" id="high-availability-features">High Availability Features<a href="#high-availability-features" class="hash-link" aria-label="Direct link to High Availability Features" title="Direct link to High Availability Features">​</a></h4>
+<p>V1 (SQLite):</p>
+<ul>
+<li>Regular backups to S3</li>
+<li>Point-in-time recovery via WAL</li>
+<li>Read-only replicas for analytics</li>
+<li>Hot backup support</li>
+</ul>
+<p>V2 (PostgreSQL):</p>
+<ul>
+<li>Automated failover with streaming replication</li>
+<li>Connection pooling via PgBouncer</li>
+<li>Read-write splitting</li>
+<li>Continuous archiving</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_OWo9" id="security-architecture-1">Security Architecture<a href="#security-architecture-1" class="hash-link" aria-label="Direct link to Security Architecture" title="Direct link to Security Architecture">​</a></h2>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="api-key-management">API Key Management<a href="#api-key-management" class="hash-link" aria-label="Direct link to API Key Management" title="Direct link to API Key Management">​</a></h3>
+<div class="language-json codeBlockContainer_qYzv theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_vZ_R"><pre tabindex="0" class="prism-code language-json codeBlock_YuAD thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_sx_d"><span class="token-line" style="color:#393A34"><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;keyFormat&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;prefix&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;veil_&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;entropy&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token number" style="color:#36acaa">256</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;encoding&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;base58&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;rotation&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;90d&quot;</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">}</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;rateLimits&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;ipBased&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token property" style="color:#36acaa">&quot;window&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;1m&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token property" style="color:#36acaa">&quot;max&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token number" style="color:#36acaa">1000</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token property" style="color:#36acaa">&quot;burst&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token number" style="color:#36acaa">50</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token punctuation" style="color:#393A34">}</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;keyBased&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token property" style="color:#36acaa">&quot;window&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;1s&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token property" style="color:#36acaa">&quot;max&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token number" style="color:#36acaa">100</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token property" style="color:#36acaa">&quot;burst&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token number" style="color:#36acaa">10</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token punctuation" style="color:#393A34">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre><div class="buttonGroup__kON"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_Zljn" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_AAqt"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_Huln"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="tls-configuration">TLS Configuration<a href="#tls-configuration" class="hash-link" aria-label="Direct link to TLS Configuration" title="Direct link to TLS Configuration">​</a></h3>
+<div class="language-json codeBlockContainer_qYzv theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_vZ_R"><pre tabindex="0" class="prism-code language-json codeBlock_YuAD thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_sx_d"><span class="token-line" style="color:#393A34"><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;minimumVersion&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;1.3&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;preferredCipherSuites&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token string" style="color:#e3116c">&quot;TLS_AES_256_GCM_SHA384&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token string" style="color:#e3116c">&quot;TLS_CHACHA20_POLY1305_SHA256&quot;</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">]</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;certificatePolicy&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;provider&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;Let&#x27;s Encrypt&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;renewBefore&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;30d&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;ocspStapling&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token boolean" style="color:#36acaa">true</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre><div class="buttonGroup__kON"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_Zljn" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_AAqt"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_Huln"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="cors-policy">CORS Policy<a href="#cors-policy" class="hash-link" aria-label="Direct link to CORS Policy" title="Direct link to CORS Policy">​</a></h3>
+<div class="language-json codeBlockContainer_qYzv theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_vZ_R"><pre tabindex="0" class="prism-code language-json codeBlock_YuAD thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_sx_d"><span class="token-line" style="color:#393A34"><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;allowedOrigins&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">[</span><span class="token string" style="color:#e3116c">&quot;https://*.veil.sh&quot;</span><span class="token punctuation" style="color:#393A34">]</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;allowedMethods&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">[</span><span class="token string" style="color:#e3116c">&quot;GET&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;POST&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;PUT&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;DELETE&quot;</span><span class="token punctuation" style="color:#393A34">]</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;allowedHeaders&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">[</span><span class="token string" style="color:#e3116c">&quot;Authorization&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;Content-Type&quot;</span><span class="token punctuation" style="color:#393A34">]</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;maxAge&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token number" style="color:#36acaa">3600</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;requireSecure&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token boolean" style="color:#36acaa">true</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre><div class="buttonGroup__kON"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_Zljn" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_AAqt"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_Huln"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h2 class="anchor anchorWithStickyNavbar_OWo9" id="high-availability-design">High Availability Design<a href="#high-availability-design" class="hash-link" aria-label="Direct link to High Availability Design" title="Direct link to High Availability Design">​</a></h2>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="regional-deployment">Regional Deployment<a href="#regional-deployment" class="hash-link" aria-label="Direct link to Regional Deployment" title="Direct link to Regional Deployment">​</a></h3>
+<!-- -->
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="circuit-breaker-configuration">Circuit Breaker Configuration<a href="#circuit-breaker-configuration" class="hash-link" aria-label="Direct link to Circuit Breaker Configuration" title="Direct link to Circuit Breaker Configuration">​</a></h3>
+<div class="language-json codeBlockContainer_qYzv theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_vZ_R"><pre tabindex="0" class="prism-code language-json codeBlock_YuAD thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_sx_d"><span class="token-line" style="color:#393A34"><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;upstreamAPIs&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;failureThreshold&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token number" style="color:#36acaa">0.5</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;samplingPeriod&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;1m&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;minimumRequests&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token number" style="color:#36acaa">100</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;recoveryTime&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;30s&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;backoffPolicy&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token property" style="color:#36acaa">&quot;initial&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;1s&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token property" style="color:#36acaa">&quot;max&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;30s&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">      </span><span class="token property" style="color:#36acaa">&quot;multiplier&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token number" style="color:#36acaa">2</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token punctuation" style="color:#393A34">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre><div class="buttonGroup__kON"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_Zljn" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_AAqt"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_Huln"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h3 class="anchor anchorWithStickyNavbar_OWo9" id="service-level-objectives">Service Level Objectives<a href="#service-level-objectives" class="hash-link" aria-label="Direct link to Service Level Objectives" title="Direct link to Service Level Objectives">​</a></h3>
+<div class="language-json codeBlockContainer_qYzv theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_vZ_R"><pre tabindex="0" class="prism-code language-json codeBlock_YuAD thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_sx_d"><span class="token-line" style="color:#393A34"><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;availability&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;target&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;99.99%&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;measurement&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;rolling-30d&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;excludedEvents&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">[</span><span class="token string" style="color:#e3116c">&quot;planned-maintenance&quot;</span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">}</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;latency&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;p95&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;100ms&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;p99&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;200ms&quot;</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">}</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;errorBudget&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;monthly&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;0.01%&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;alertThreshold&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;75%&quot;</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre><div class="buttonGroup__kON"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_Zljn" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_AAqt"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_Huln"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col"><a href="https://github.com/try-veil/veil/tree/main/docs/docs/contribution/architecture/readme.md" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_ErWG" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Edit this page</a></div><div class="col lastUpdated_iPGV"></div></div></footer></article><nav class="pagination-nav docusaurus-mt-lg" aria-label="Docs pages"></nav></div></div><div class="col col--3"><div class="tableOfContents_UW26 thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#overview" class="table-of-contents__link toc-highlight">Overview</a></li><li><a href="#core-components" class="table-of-contents__link toc-highlight">Core Components</a><ul><li><a href="#1-gateway-layer-caddy-based" class="table-of-contents__link toc-highlight">1. Gateway Layer (Caddy-based)</a></li><li><a href="#2-platform-core" class="table-of-contents__link toc-highlight">2. Platform Core</a></li><li><a href="#3-observability-stack" class="table-of-contents__link toc-highlight">3. Observability Stack</a></li></ul></li><li><a href="#system-architecture" class="table-of-contents__link toc-highlight">System Architecture</a><ul><li><a href="#request-flow" class="table-of-contents__link toc-highlight">Request Flow</a></li><li><a href="#data-flow" class="table-of-contents__link toc-highlight">Data Flow</a></li></ul></li><li><a href="#security-architecture" class="table-of-contents__link toc-highlight">Security Architecture</a><ul><li><a href="#authentication" class="table-of-contents__link toc-highlight">Authentication</a></li><li><a href="#authorization" class="table-of-contents__link toc-highlight">Authorization</a></li><li><a href="#data-protection" class="table-of-contents__link toc-highlight">Data Protection</a></li></ul></li><li><a href="#scalability-design" class="table-of-contents__link toc-highlight">Scalability Design</a><ul><li><a href="#gateway-configuration-management" class="table-of-contents__link toc-highlight">Gateway Configuration Management</a></li><li><a href="#horizontal-scaling" class="table-of-contents__link toc-highlight">Horizontal Scaling</a></li><li><a href="#performance-optimization" class="table-of-contents__link toc-highlight">Performance Optimization</a></li></ul></li><li><a href="#monitoring-and-alerting" class="table-of-contents__link toc-highlight">Monitoring and Alerting</a><ul><li><a href="#key-metrics" class="table-of-contents__link toc-highlight">Key Metrics</a></li><li><a href="#alert-thresholds" class="table-of-contents__link toc-highlight">Alert Thresholds</a></li></ul></li><li><a href="#disaster-recovery" class="table-of-contents__link toc-highlight">Disaster Recovery</a><ul><li><a href="#backup-strategy" class="table-of-contents__link toc-highlight">Backup Strategy</a></li><li><a href="#recovery-procedures" class="table-of-contents__link toc-highlight">Recovery Procedures</a></li></ul></li><li><a href="#development-workflow" class="table-of-contents__link toc-highlight">Development Workflow</a><ul><li><a href="#cicd-pipeline" class="table-of-contents__link toc-highlight">CI/CD Pipeline</a></li><li><a href="#testing-strategy" class="table-of-contents__link toc-highlight">Testing Strategy</a></li></ul></li><li><a href="#future-roadmap" class="table-of-contents__link toc-highlight">Future Roadmap</a><ul><li><a href="#phase-1-core-platform" class="table-of-contents__link toc-highlight">Phase 1: Core Platform</a></li><li><a href="#phase-2-enhanced-features" class="table-of-contents__link toc-highlight">Phase 2: Enhanced Features</a></li><li><a href="#phase-3-enterprise-features" class="table-of-contents__link toc-highlight">Phase 3: Enterprise Features</a></li></ul></li><li><a href="#references" class="table-of-contents__link toc-highlight">References</a></li><li><a href="#technology-stack" class="table-of-contents__link toc-highlight">Technology Stack</a><ul><li><a href="#core-technologies" class="table-of-contents__link toc-highlight">Core Technologies</a></li><li><a href="#component-integration" class="table-of-contents__link toc-highlight">Component Integration</a></li><li><a href="#development-tools" class="table-of-contents__link toc-highlight">Development Tools</a></li><li><a href="#infrastructure" class="table-of-contents__link toc-highlight">Infrastructure</a></li><li><a href="#technology-selection-criteria" class="table-of-contents__link toc-highlight">Technology Selection Criteria</a></li></ul></li><li><a href="#consistency-model" class="table-of-contents__link toc-highlight">Consistency Model</a><ul><li><a href="#real-time-vs-delayed-operations" class="table-of-contents__link toc-highlight">Real-time vs. Delayed Operations</a></li><li><a href="#data-storage" class="table-of-contents__link toc-highlight">Data Storage</a></li></ul></li><li><a href="#security-architecture-1" class="table-of-contents__link toc-highlight">Security Architecture</a><ul><li><a href="#api-key-management" class="table-of-contents__link toc-highlight">API Key Management</a></li><li><a href="#tls-configuration" class="table-of-contents__link toc-highlight">TLS Configuration</a></li><li><a href="#cors-policy" class="table-of-contents__link toc-highlight">CORS Policy</a></li></ul></li><li><a href="#high-availability-design" class="table-of-contents__link toc-highlight">High Availability Design</a><ul><li><a href="#regional-deployment" class="table-of-contents__link toc-highlight">Regional Deployment</a></li><li><a href="#circuit-breaker-configuration" class="table-of-contents__link toc-highlight">Circuit Breaker Configuration</a></li><li><a href="#service-level-objectives" class="table-of-contents__link toc-highlight">Service Level Objectives</a></li></ul></li></ul></div></div></div></div></main></div></div></div><footer class="footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="col footer__col"><div class="footer__title">Docs</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/intro">Tutorial</a></li></ul></div><div class="col footer__col"><div class="footer__title">Community</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://discord.gg/UTnAR6UpvS" target="_blank" rel="noopener noreferrer" class="footer__link-item">Discord<svg width="13.5" height="13.5" aria-hidden="true" viewBox="0 0 24 24" class="iconExternalLink_fCg5"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"></path></svg></a></li></ul></div><div class="col footer__col"><div class="footer__title">More</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://github.com/try-veil/veil/tree/main/examples" target="_blank" rel="noopener noreferrer" class="footer__link-item">Examples<svg width="13.5" height="13.5" aria-hidden="true" viewBox="0 0 24 24" class="iconExternalLink_fCg5"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"></path></svg></a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2025 TheFlywheel. Built with Docusaurus.</div></div></div></footer></div>
+</body>
+</html>
