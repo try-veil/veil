@@ -500,3 +500,89 @@ func CreateAPI(t *testing.T, path, upstream, subscription string, methods, heade
 	}
 	return apiConfig
 }
+
+func TestVeilHandler_getUpstreamDialAddress(t *testing.T) {
+	handler := &VeilHandler{}
+
+	tests := []struct {
+		name     string
+		upstream string
+		want     string
+	}{
+		{
+			name:     "HTTPS URL without port",
+			upstream: "https://httpbin.org",
+			want:     "httpbin.org:443",
+		},
+		{
+			name:     "HTTPS URL with port",
+			upstream: "https://httpbin.org:8443",
+			want:     "httpbin.org:8443",
+		},
+		{
+			name:     "HTTP URL without port",
+			upstream: "http://localhost",
+			want:     "localhost:80",
+		},
+		{
+			name:     "HTTP URL with port",
+			upstream: "http://localhost:8080",
+			want:     "localhost:8080",
+		},
+		{
+			name:     "Invalid URL",
+			upstream: "://invalid",
+			want:     "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := handler.getUpstreamDialAddress(tt.upstream)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestVeilHandler_getUpstreamHost(t *testing.T) {
+	handler := &VeilHandler{}
+
+	tests := []struct {
+		name     string
+		upstream string
+		want     string
+	}{
+		{
+			name:     "HTTPS URL without port",
+			upstream: "https://httpbin.org",
+			want:     "httpbin.org",
+		},
+		{
+			name:     "HTTPS URL with port",
+			upstream: "https://httpbin.org:8443",
+			want:     "httpbin.org",
+		},
+		{
+			name:     "HTTP URL without port",
+			upstream: "http://localhost",
+			want:     "localhost",
+		},
+		{
+			name:     "HTTP URL with port",
+			upstream: "http://localhost:8080",
+			want:     "localhost:8080",
+		},
+		{
+			name:     "Invalid URL",
+			upstream: "://invalid",
+			want:     "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := handler.getUpstreamHost(tt.upstream)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

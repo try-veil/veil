@@ -322,15 +322,15 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 		return fmt.Errorf("servers section not found in config")
 	}
 
-	// Get srv0
-	srv0, ok := servers["srv0"].(map[string]interface{})
+	// Get srv1 (onboarded APIs server)
+	srv1, ok := servers["srv1"].(map[string]interface{})
 	if !ok {
-		h.logger.Error("srv0 not found in config")
-		return fmt.Errorf("srv0 not found in config")
+		h.logger.Error("srv1 not found in config")
+		return fmt.Errorf("srv1 not found in config")
 	}
 
 	// Get the routes array
-	routes, ok := srv0["routes"].([]interface{})
+	routes, ok := srv1["routes"].([]interface{})
 	if !ok {
 		routes = make([]interface{}, 0)
 	}
@@ -368,54 +368,12 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 
 	// If route doesn't exist, append it
 	if !routeExists {
-		// Find the management API route index
-		mgmtRouteIndex := -1
-		for i, route := range routes {
-			routeMap, ok := route.(map[string]interface{})
-			if !ok {
-				continue
-			}
-
-			matchers, ok := routeMap["match"].([]interface{})
-			if !ok || len(matchers) == 0 {
-				continue
-			}
-
-			matcher, ok := matchers[0].(map[string]interface{})
-			if !ok {
-				continue
-			}
-
-			paths, ok := matcher["path"].([]interface{})
-			if !ok || len(paths) == 0 {
-				continue
-			}
-
-			if path, ok := paths[0].(string); ok && path == "/veil/api/*" {
-				mgmtRouteIndex = i
-				break
-			}
-		}
-
-		// Insert the new route after the management route
-		if mgmtRouteIndex != -1 {
-			// Create a new slice with one more capacity
-			newRoutes := make([]interface{}, len(routes)+1)
-			// Copy elements up to mgmtRouteIndex+1
-			copy(newRoutes, routes[:mgmtRouteIndex+1])
-			// Insert new route
-			newRoutes[mgmtRouteIndex+1] = newRoute
-			// Copy remaining elements
-			copy(newRoutes[mgmtRouteIndex+2:], routes[mgmtRouteIndex+1:])
-			routes = newRoutes
-		} else {
-			routes = append(routes, newRoute)
-		}
+		routes = append(routes, newRoute)
 	}
 
 	// Update the routes in the config
-	srv0["routes"] = routes
-	servers["srv0"] = srv0
+	srv1["routes"] = routes
+	servers["srv1"] = srv1
 	httpApp["servers"] = servers
 	apps["http"] = httpApp
 	currentConfigMap["apps"] = apps
@@ -493,10 +451,18 @@ func (h *VeilHandler) getCurrentConfig() (*caddy.Config, error) {
 		httpApp.Servers = make(map[string]*caddyhttp.Server)
 	}
 
-	// Get or create default server
+	// Get or create management API server (srv0) - Port 2020
 	if _, ok := httpApp.Servers["srv0"]; !ok {
 		httpApp.Servers["srv0"] = &caddyhttp.Server{
 			Listen: []string{":2020"},
+			Routes: []caddyhttp.Route{},
+		}
+	}
+
+	// Get or create onboarded APIs server (srv1) - Port 2021
+	if _, ok := httpApp.Servers["srv1"]; !ok {
+		httpApp.Servers["srv1"] = &caddyhttp.Server{
+			Listen: []string{":2021"},
 			Routes: []caddyhttp.Route{},
 		}
 	}
@@ -530,6 +496,7 @@ func (h *VeilHandler) getUpstreamDialAddress(upstream string) string {
 		default:
 			return ""
 		}
+		return dialAddr
 	}
 
 	return dialAddr
@@ -541,6 +508,13 @@ func (h *VeilHandler) getUpstreamHost(upstream string) string {
 	if err != nil {
 		return ""
 	}
+
+	// Return just the hostname for HTTPS URLs
+	if upstreamURL.Scheme == "https" {
+		return upstreamURL.Hostname()
+	}
+
+	// For other schemes, return the full host (including port if specified)
 	return upstreamURL.Host
 }
 

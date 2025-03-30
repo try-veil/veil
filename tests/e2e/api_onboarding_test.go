@@ -119,7 +119,7 @@ func TestAPIOnboardingAndValidation(t *testing.T) {
 		t.Run("Weather API Access", func(t *testing.T) {
 			// Test with valid API key and headers
 			t.Run("Valid API Key and Headers", func(t *testing.T) {
-				req, _ := http.NewRequest("GET", "http://localhost:2020/weather/current", nil)
+				req, _ := http.NewRequest("GET", "http://localhost:2021/weather/current", nil)
 				req.Header.Set("X-Subscription-Key", "weather-test-key-2")
 				req.Header.Set("X-Test-Header", "test")
 
@@ -136,7 +136,7 @@ func TestAPIOnboardingAndValidation(t *testing.T) {
 
 			// Test with invalid API key
 			t.Run("Invalid API Key", func(t *testing.T) {
-				req, _ := http.NewRequest("GET", "http://localhost:2020/weather/current", nil)
+				req, _ := http.NewRequest("GET", "http://localhost:2021/weather/current", nil)
 				req.Header.Set("X-Subscription-Key", "invalid-key")
 				req.Header.Set("X-Test-Header", "test")
 
@@ -148,7 +148,7 @@ func TestAPIOnboardingAndValidation(t *testing.T) {
 
 			// Test with missing required header
 			t.Run("Missing Required Header", func(t *testing.T) {
-				req, _ := http.NewRequest("GET", "http://localhost:2020/weather/current", nil)
+				req, _ := http.NewRequest("GET", "http://localhost:2021/weather/current", nil)
 				req.Header.Set("X-Subscription-Key", "weather-test-key-2")
 
 				resp, err := http.DefaultClient.Do(req)
@@ -162,7 +162,7 @@ func TestAPIOnboardingAndValidation(t *testing.T) {
 		t.Run("Ordr API Access", func(t *testing.T) {
 			// Test with valid API key and headers
 			t.Run("Valid API Key and Headers", func(t *testing.T) {
-				req, _ := http.NewRequest("GET", "http://localhost:2020/ordr/current", nil)
+				req, _ := http.NewRequest("GET", "http://localhost:2021/ordr/current", nil)
 				req.Header.Set("X-Subscription-Key", "ordr-test-key-2")
 				req.Header.Set("X-Test-Header", "test")
 
@@ -179,7 +179,7 @@ func TestAPIOnboardingAndValidation(t *testing.T) {
 
 			// Test with invalid API key
 			t.Run("Invalid API Key", func(t *testing.T) {
-				req, _ := http.NewRequest("GET", "http://localhost:2020/ordr/current", nil)
+				req, _ := http.NewRequest("GET", "http://localhost:2021/ordr/current", nil)
 				req.Header.Set("X-Subscription-Key", "invalid-key")
 				req.Header.Set("X-Test-Header", "test")
 
@@ -191,7 +191,7 @@ func TestAPIOnboardingAndValidation(t *testing.T) {
 
 			// Test with missing required header
 			t.Run("Missing Required Header", func(t *testing.T) {
-				req, _ := http.NewRequest("GET", "http://localhost:2020/ordr/current", nil)
+				req, _ := http.NewRequest("GET", "http://localhost:2021/ordr/current", nil)
 				req.Header.Set("X-Subscription-Key", "ordr-test-key-2")
 
 				resp, err := http.DefaultClient.Do(req)
@@ -224,14 +224,14 @@ func TestAPIOnboardingAndValidation(t *testing.T) {
 			servers, ok := httpApp["servers"].(map[string]interface{})
 			assert.True(t, ok, "Servers section not found in config")
 
-			srv0, ok := servers["srv0"].(map[string]interface{})
-			assert.True(t, ok, "srv0 not found in config")
+			srv1, ok := servers["srv1"].(map[string]interface{})
+			assert.True(t, ok, "srv1 not found in config")
 
-			routes, ok := srv0["routes"].([]interface{})
+			routes, ok := srv1["routes"].([]interface{})
 			assert.True(t, ok, "Routes not found in config")
 
 			// Verify that we have at least 3 routes (management API, weather API, and ordr API)
-			assert.GreaterOrEqual(t, len(routes), 3, "Expected at least 3 routes in config")
+			assert.GreaterOrEqual(t, len(routes), 2, "Expected at least 2 routes in config")
 		})
 	})
 }

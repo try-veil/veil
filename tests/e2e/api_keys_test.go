@@ -263,4 +263,72 @@ func TestAPIKeyManagement(t *testing.T) {
 			})
 		})
 	})
+
+	t.Run("Add API Keys", func(t *testing.T) {
+		// First onboard an API
+		onboardRequest := APIOnboardRequest{
+			Path:                 "/weather/*",
+			Upstream:             "http://localhost:8080",
+			RequiredSubscription: "weather-subscription",
+			Methods:              []string{"GET"},
+			RequiredHeaders:      []string{"X-Test-Header"},
+			APIKeys: []APIKey{
+				{
+					Key:  "weather-key-1",
+					Name: "Weather Key 1",
+				},
+			},
+		}
+
+		requestBody, err := json.Marshal(onboardRequest)
+		assert.NoError(t, err, "Failed to marshal request")
+
+		// Use port 2020 for management API
+		resp, err := http.Post("http://localhost:2020/veil/api/onboard",
+			"application/json",
+			bytes.NewBuffer(requestBody))
+		assert.NoError(t, err, "Failed to send onboard request")
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusCreated, resp.StatusCode, "Expected status created")
+
+		// Add new API keys
+		addKeysRequest := APIKeyRequest{
+			Path: "/weather/*",
+			APIKeys: []APIKey{
+				{
+					Key:  "weather-key-2",
+					Name: "Weather Key 2",
+				},
+			},
+		}
+
+		requestBody, err = json.Marshal(addKeysRequest)
+		assert.NoError(t, err, "Failed to marshal request")
+
+		// Use port 2020 for management API
+		resp, err = http.Post("http://localhost:2020/veil/api/api-keys",
+			"application/json",
+			bytes.NewBuffer(requestBody))
+		assert.NoError(t, err, "Failed to send add keys request")
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode, "Expected status OK")
+
+		// Test access with new API key using port 2021
+		t.Run("Test API Access with New Key", func(t *testing.T) {
+			client := &http.Client{}
+			req, err := http.NewRequest("GET", "http://localhost:2021/weather/current", nil)
+			assert.NoError(t, err, "Failed to create request")
+
+			req.Header.Set("X-Subscription-Key", "weather-key-2")
+			req.Header.Set("X-Test-Header", "test")
+
+			resp, err := client.Do(req)
+			assert.NoError(t, err, "Failed to send request")
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusOK, resp.StatusCode, "Expected status OK")
+		})
+	})
 }
