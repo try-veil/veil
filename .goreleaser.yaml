@@ -5,7 +5,7 @@ version: 2
 
 before:
   hooks:
-    - ""
+    - go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 
 builds:
   - id: veil
@@ -77,7 +77,7 @@ nfpms:
       - caddy
 
 archives:
-  - format: tar.gz
+  - formats: ['tar.gz']
     name_template: >-
       {{ .ProjectName }}_{{ .Version }}_
       {{- title .Os }}_
@@ -86,7 +86,7 @@ archives:
       {{- else }}{{ .Arch }}{{ end }}
     format_overrides:
       - goos: windows
-        format: zip
+        formats: ['zip']
     files:
       - README*
       - LICENSE*
