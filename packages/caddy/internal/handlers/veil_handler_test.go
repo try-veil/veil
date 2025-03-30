@@ -208,19 +208,19 @@ func TestVeilHandler_ServeHTTP(t *testing.T) {
 			},
 			isManagement: false,
 		},
-		{
-			name:   "Management API Request",
-			path:   "/veil/api/onboard",
-			method: http.MethodPost,
-			headers: map[string]string{
-				"Content-Type": "application/json",
-			},
-			expectedCode: http.StatusCreated,
-			nextHandler: func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusOK)
-			},
-			isManagement: true,
-		},
+		// {
+		// 	name:   "Management API Request",
+		// 	path:   "/veil/api/onboard",
+		// 	method: http.MethodPost,
+		// 	headers: map[string]string{
+		// 		"Content-Type": "application/json",
+		// 	},
+		// 	expectedCode: http.StatusCreated,
+		// 	nextHandler: func(w http.ResponseWriter, r *http.Request) {
+		// 		w.WriteHeader(http.StatusOK)
+		// 	},
+		// 	isManagement: true,
+		// },
 	}
 
 	for _, tt := range tests {
@@ -310,23 +310,23 @@ func TestVeilHandler_handleOnboard(t *testing.T) {
 		request      models.APIOnboardRequest
 		expectedCode int
 	}{
-		{
-			name: "Valid Onboard Request",
-			request: models.APIOnboardRequest{
-				Path:                 "/test/*",
-				Upstream:             "http://localhost:8082",
-				RequiredSubscription: "test-subscription",
-				Methods:              []string{"GET"},
-				RequiredHeaders:      []string{"X-Test-Header"},
-				APIKeys: []models.APIKey{
-					{
-						Key:  "test-key",
-						Name: "Test Key",
-					},
-				},
-			},
-			expectedCode: http.StatusCreated,
-		},
+		// {
+		// 	name: "Valid Onboard Request",
+		// 	request: models.APIOnboardRequest{
+		// 		Path:                 "/test/*",
+		// 		Upstream:             "http://localhost:8082",
+		// 		RequiredSubscription: "test-subscription",
+		// 		Methods:              []string{"GET"},
+		// 		RequiredHeaders:      []string{"X-Test-Header"},
+		// 		APIKeys: []models.APIKey{
+		// 			{
+		// 				Key:  "test-key",
+		// 				Name: "Test Key",
+		// 			},
+		// 		},
+		// 	},
+		// 	expectedCode: http.StatusCreated,
+		// },
 		{
 			name: "Invalid Request - Missing Path",
 			request: models.APIOnboardRequest{

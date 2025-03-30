@@ -17,7 +17,7 @@ function HomepageHeader() {
           Documentation for Veil
         </Heading>
         <p className="hero__subtitle">An opionated Caddy extension to sell, monitor, and manage your APIs.</p>
-        <div className={styles.buttons}>
+        <div className={clsx("hero", styles.buttons)}>
             <Link
               className="button button--secondary button--lg"
               to="/docs/intro">
