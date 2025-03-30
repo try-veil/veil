@@ -37,11 +37,4 @@ curl localhost:2019/config/
 
 ## Next Steps
 
-1. Review the [API Documentation](./api/readme.md)
-2. Set up your first API using the [Provider Guide](./api/provider/onboarding.md)
-3. Explore [Consumer APIs](./api/consumer/readme.md)
-
 ## Related Documentation
-
-- [Architecture Overview](./contribution/architecture/arch.mmd)
-- [API Documentation](./api/readme.md)

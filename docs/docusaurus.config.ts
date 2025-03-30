@@ -12,7 +12,6 @@ const config: Config = {
     mermaid: true,
   },
   themes: ['@docusaurus/theme-mermaid'],
-  // Set the production url of your site here
   url: 'https://veil.theflywheel.in',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
@@ -71,10 +70,10 @@ const config: Config = {
       theme: { light: 'neutral', dark: 'forest' },
     },
     navbar: {
-      title: 'Home',
       logo: {
         alt: 'Veil Logo',
         src: 'img/logo.svg',
+        href: 'https://veil.theflywheel.in',
       },
       items: [
         {
@@ -108,7 +107,7 @@ const config: Config = {
           items: [
             {
               label: 'Discord',
-              href: 'https://discordapp.com/invite/docusaurus',
+              href: 'https://discord.gg/UTnAR6UpvS',
             },
           ],
         },
