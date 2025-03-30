@@ -1,29 +1,70 @@
-# Use the official Golang image
-FROM golang:1.23
+# Build stage
+FROM golang:1.23-alpine AS builder
 
-# Set the working directory inside the container
-WORKDIR /app
+# Install build dependencies for CGO
+RUN apk add --no-cache \
+    git \
+    make \
+    gcc \
+    g++ \
+    musl-dev \
+    pkgconfig \
+    sqlite-dev \
+    build-base \
+    libc-dev
 
 # Install xcaddy
 RUN go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 
-# Ensure Go bin directory is in PATH
-ENV PATH="${PATH}:/go/bin"
+# Set the working directory
+WORKDIR /build
 
-# Copy the entire project to the working directory
-COPY . .
+# Copy only the necessary files for building
+COPY packages/caddy/ ./packages/caddy/
 
-# Setup the project
-RUN make setup
+# Build the custom Caddy binary with Veil module
+RUN CGO_ENABLED=1 xcaddy build \
+    --with github.com/try-veil/veil/packages/caddy=./packages/caddy \
+    --output veil
 
-# Build the project
-RUN make build
+# Final stage
+FROM alpine:latest
 
-# Make the caddy binary executable
-RUN chmod +x ./veil
+# Install runtime dependencies
+RUN apk add --no-cache \
+    ca-certificates \
+    sqlite-libs \
+    tzdata
 
-# Expose the port your application runs on
-EXPOSE 2020
+# Create a non-root user
+RUN adduser -D -u 1000 caddy
 
-# Command to run the application
-CMD ["./veil", "run", "--config", "Caddyfile"]
+# Create necessary directories
+RUN mkdir -p /data/caddy /config \
+    && chown -R caddy:caddy /data /config
+
+# Copy the binary from builder
+COPY --from=builder /build/veil /usr/bin/veil
+
+# Copy Caddyfile
+COPY Caddyfile /etc/caddy/Caddyfile
+
+# Set working directory
+WORKDIR /data
+
+# Switch to non-root user
+USER caddy
+
+# Expose necessary ports
+EXPOSE 2019 2020 2021
+
+# Set environment variables
+ENV XDG_CONFIG_HOME=/config \
+    XDG_DATA_HOME=/data
+
+# Define volumes
+VOLUME ["/data", "/config"]
+
+# Command to run the server
+ENTRYPOINT ["/usr/bin/veil"]
+CMD ["run", "--config", "/etc/caddy/Caddyfile"]

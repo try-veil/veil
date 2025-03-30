@@ -2,7 +2,11 @@
 
 Veil is a Caddy module that provides API management capabilities, including subscription-based access control and request validation. It acts as a middleware that validates API requests based on subscription levels and required headers.
 
-A demo of veil in action could be found [here](https://drive.google.com/file/d/1Zf-i77I-eknaKq5_Rd8AfNz2zpd9FNaG/view?usp=drive_link)
+## Demo
+
+Below is a small recording of the terminal we onboard the [Dummy JSON](https://dummyjson.com/todos) API and put it behind veil.
+
+![Veil Demo](./demo.gif)
 
 ## Features
 
