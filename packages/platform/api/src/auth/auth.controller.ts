@@ -208,17 +208,27 @@ export class AuthController {
         );
       }
 
+      this.logger.log(`Received auth callback with code: ${code}`);
+      this.logger.log(
+        `Full callback query parameters: code=${code}, state=${state}`,
+      );
+
       this.logger.log('Processing authentication code from FusionAuth');
+
       const tokensResponse = await this.authService.exchangeCodeForTokens(code);
-      const user = await this.authService.findOrCreateUser(tokensResponse.jwt);
+      const user = await this.authService.findOrCreateUser(tokensResponse);
       res.cookie('access_token', tokensResponse.access_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         maxAge: 3600000,
       });
 
-      const frontendUrl = this.configService.get('FRONTEND_URL');
-      return res.redirect(`${frontendUrl}/login-success?userId=${user.id}`);
+      return {
+        fusion_auth_token: tokensResponse.access_token,
+        ...this.authService.generateToken(user),
+      };
+      // const frontendUrl = this.configService.get('FRONTEND_URL');
+      // return res.redirect(`${frontendUrl}/login-success?userId=${user.id}`);
     } catch (error) {
       this.logger.error(
         `Authentication callback error: ${error.message}`,

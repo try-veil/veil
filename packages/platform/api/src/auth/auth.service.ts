@@ -68,15 +68,33 @@ export class AuthService {
         'FUSION_AUTH_REDIRECT_URI',
       );
 
+      if (!clientId || !clientSecret || !defaultRedirectUri) {
+        this.logger.error('Missing OAuth configuration for exchanging code');
+        throw new HttpException(
+          'OAuth configuration error',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+      this.logger.debug(
+        `FusionAuth Client: ${JSON.stringify(this.fusionAuthClient)}`,
+      );
+      this.logger.debug(
+        `Attempting to exchange code: ${code.substring(0, 5)}... for token using redirect: ${redirectUri || defaultRedirectUri}`,
+      );
       const response =
         await this.fusionAuthClient.exchangeOAuthCodeForAccessToken(
+          code, 
           clientId,
           clientSecret,
-          code,
           redirectUri || defaultRedirectUri,
         );
-
+      this.logger.log(`FusionAuth response: ${JSON.stringify(response)}`);
       if (!response.wasSuccessful()) {
+        this.logger.error(
+          `FusionAuth token exchange failed with status: ${response.statusCode}, error: ${
+            response.exception?.message || 'Unknown error'
+          }`,
+        );
         throw new HttpException(
           'Failed to complete authentication',
           HttpStatus.BAD_REQUEST,
@@ -85,10 +103,19 @@ export class AuthService {
 
       return response.response;
     } catch (error) {
-      this.logger.error(
-        `Failed to exchange code for tokens: ${error.message}`,
-        error.stack,
-      );
+      const errorMessage = error.message || 'Unknown error';
+      const errorStack = error.stack || 'No stack trace available';
+      const errorResponse = error.response
+        ? JSON.stringify(error.response)
+        : 'No response data';
+
+      this.logger.error(`Failed to exchange code for tokens: ${errorMessage}`);
+      this.logger.error(`Error stack: ${errorStack}`);
+      this.logger.error(`Error response: ${errorResponse}`);
+      if (error.statusCode) {
+        this.logger.error(`FusionAuth status code: ${error.statusCode}`);
+      }
+
       throw new HttpException(
         'Failed to complete authentication',
         HttpStatus.BAD_REQUEST,
@@ -161,8 +188,6 @@ export class AuthService {
 
       if (response.wasSuccessful()) {
         this.logger.debug(`FusionAuth login successful for ${email}`);
-
-        // Check if we have a valid user object
         if (!response.response.user || !response.response.user.id) {
           throw new Error('FusionAuth returned success but no valid user data');
         }
@@ -236,36 +261,72 @@ export class AuthService {
     }
   }
 
-  async findOrCreateUser(jwt: any) {
-    const fusionAuthUser = jwt.sub;
+  async findOrCreateUser(tokenResponse: any) {
+    let userInfo: {
+      sub: any;
+      email: any;
+      given_name: any;
+      name: any;
+      family_name: any;
+      github_id: any;
+      github_login: any;
+    };
+
+    if (tokenResponse.userInfo) {
+      userInfo = tokenResponse.userInfo;
+    } else {
+      try {
+        const jwt = this.jwtService.decode(tokenResponse.access_token);
+        userInfo = jwt;
+        if (!userInfo.email && tokenResponse.userId) {
+          const userResponse = await this.fusionAuthClient.retrieveUser(
+            tokenResponse.userId,
+          );
+          if (userResponse.wasSuccessful()) {
+            userInfo.email = userResponse.response.user.email;
+            userInfo.given_name = userResponse.response.user.firstName;
+            userInfo.family_name = userResponse.response.user.lastName;
+          }
+        }
+      } catch (error) {
+        this.logger.error(
+          `Failed to decode JWT or retrieve user: ${error.message}`,
+        );
+        throw new HttpException('Invalid token format', HttpStatus.BAD_REQUEST);
+      }
+    }
+
+    const fusionAuthUserId = userInfo.sub || tokenResponse.userId;
+
+    if (!fusionAuthUserId) {
+      this.logger.error('No user ID found in token response');
+      throw new HttpException(
+        'Invalid token: missing user ID',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    if (!userInfo.email) {
+      this.logger.error('No email found for user in token response');
+      throw new HttpException(
+        'Missing required user information: email',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     let user = await this.prisma.user.findUnique({
-      where: { fusionAuthId: fusionAuthUser },
+      where: { fusionAuthId: fusionAuthUserId },
       include: { roles: true },
     });
 
     if (!user) {
-      // Create the user in our database
       user = await this.prisma.user.create({
         data: {
-          email: jwt.email,
-          fusionAuthId: fusionAuthUser,
-          firstName: jwt.given_name || jwt.name,
-          lastName: jwt.family_name,
-          // If the jwt contains GitHub info, store it
-          githubId: jwt.github_id,
-          githubUsername: jwt.github_login,
-        },
-        include: { roles: true },
-      });
-    } else if (jwt.github_id && (!user.githubId || !user.githubUsername)) {
-      // Update GitHub info if it's in the JWT but not in our user record
-      user = await this.prisma.user.update({
-        where: { id: user.id },
-        data: {
-          githubId: jwt.github_id,
-          githubUsername: jwt.github_login,
-          updatedAt: new Date(),
+          email: userInfo.email,
+          fusionAuthId: fusionAuthUserId,
+          firstName: userInfo.given_name || userInfo.name,
+          lastName: userInfo.family_name,
+          githubId: userInfo.github_id,
+          githubUsername: userInfo.github_login,
         },
         include: { roles: true },
       });
@@ -289,7 +350,7 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        roles: user.roles.map((role) => role.name),
+        roles: user.roles.map((role: { name: any }) => role.name),
         githubUsername: user.githubUsername,
       },
     };
