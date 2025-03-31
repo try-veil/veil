@@ -7,9 +7,10 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: veil_api
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: always
 
   fusionauth:
     image: fusionauth/fusionauth-app:latest
@@ -26,10 +27,11 @@ services:
       FUSIONAUTH_APP_URL: http://fusionauth:9011
       SEARCH_TYPE: database
     ports:
-      - "9011:9011"
+      - '9011:9011'
     volumes:
       - fusionauth_config:/usr/local/fusionauth/config
+    restart: always
 
 volumes:
   postgres_data:
-  fusionauth_config: 
+  fusionauth_config:

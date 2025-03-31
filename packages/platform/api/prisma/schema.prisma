@@ -13,50 +13,77 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum HttpMethod {
+  GET
+  POST
+  PUT
+  DELETE
+  PATCH
+}
+
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  fusionAuthId  String    @unique
-  firstName     String?
-  lastName      String?
-  roles         Role[]
-  apiKeys       ApiKey[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  githubId          String?   @unique
+  id                String   @id @default(uuid())
+  email             String   @unique
+  fusionAuthId      String   @unique
+  firstName         String?
+  lastName          String?
+  roles             Role[]
+  apiKeys           ApiKey[]
+  apis              Api[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  githubId          String?  @unique
   githubUsername    String?
   githubAccessToken String?
+
   @@map("users")
 }
 
 model Role {
-  id          String    @id @default(uuid())
-  name        String    @unique
+  id          String   @id @default(uuid())
+  name        String   @unique
   description String?
   users       User[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model ApiKey {
-  id          String    @id @default(uuid())
-  key         String    @unique
-  name        String
-  userId      String
-  user        User      @relation(fields: [userId], references: [id])
-  apis        API[]
-  isActive    Boolean   @default(true)
-  expiresAt   DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        String    @id @default(uuid())
+  key       String    @unique
+  name      String
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  isActive  Boolean   @default(true)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  apiPathId String?
+  apiPath   ApiPath?  @relation(fields: [apiPathId], references: [id])
 }
 
-model API {
+model Api {
   id          String    @id @default(uuid())
-  name        String    @unique
+  name        String
   description String?
   baseUrl     String
-  apiKeys     ApiKey[]
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  paths       ApiPath[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, name])
+}
+
+model ApiPath {
+  id          String     @id @default(uuid())
+  apiId       String
+  api         Api        @relation(fields: [apiId], references: [id])
+  path        String
+  method      HttpMethod
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  apiKeys     ApiKey[]
 }

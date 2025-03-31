@@ -7,7 +7,9 @@ import {
   IsOptional,
   IsString,
   ValidateNested,
+  IsEnum,
 } from 'class-validator';
+import { HttpMethod } from '@prisma/client';
 
 export class ApiKey {
   @IsString()
@@ -19,7 +21,14 @@ export class ApiKey {
 
 export class OnboardingDto {
   @IsString()
+  name: string;
+
+  @IsString()
   path: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
 
   // TODO :: explore more options
   @IsUrl({ require_tld: false }) // allows localhost
@@ -28,8 +37,8 @@ export class OnboardingDto {
   @IsArray()
   @ArrayMinSize(1)
   @Transform(({ value }) => value.map((method: string) => method.toUpperCase()))
-  @IsIn(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], { each: true })
-  allowedMethods: string[];
+  @IsEnum(HttpMethod, { each: true })
+  allowedMethods: HttpMethod[];
 
   @IsOptional()
   @IsString()
