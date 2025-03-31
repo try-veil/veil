@@ -1,5 +1,5 @@
 -- CreateTable
-CREATE TABLE "User" (
+CREATE TABLE "users" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "fusionAuthId" TEXT NOT NULL,
@@ -7,8 +7,11 @@ CREATE TABLE "User" (
     "lastName" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "githubId" TEXT,
+    "githubUsername" TEXT,
+    "githubAccessToken" TEXT,
 
-    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -65,10 +68,13 @@ CREATE TABLE "_APIToApiKey" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_fusionAuthId_key" ON "User"("fusionAuthId");
+CREATE UNIQUE INDEX "users_fusionAuthId_key" ON "users"("fusionAuthId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_githubId_key" ON "users"("githubId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Role_name_key" ON "Role"("name");
@@ -86,13 +92,13 @@ CREATE INDEX "_RoleToUser_B_index" ON "_RoleToUser"("B");
 CREATE INDEX "_APIToApiKey_B_index" ON "_APIToApiKey"("B");
 
 -- AddForeignKey
-ALTER TABLE "ApiKey" ADD CONSTRAINT "ApiKey_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ApiKey" ADD CONSTRAINT "ApiKey_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_RoleToUser" ADD CONSTRAINT "_RoleToUser_A_fkey" FOREIGN KEY ("A") REFERENCES "Role"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "_RoleToUser" ADD CONSTRAINT "_RoleToUser_B_fkey" FOREIGN KEY ("B") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_RoleToUser" ADD CONSTRAINT "_RoleToUser_B_fkey" FOREIGN KEY ("B") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_APIToApiKey" ADD CONSTRAINT "_APIToApiKey_A_fkey" FOREIGN KEY ("A") REFERENCES "API"("id") ON DELETE CASCADE ON UPDATE CASCADE;

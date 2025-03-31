@@ -6,4 +6,4 @@ export class CreateApiKeyDto {
   @IsString()
   @MinLength(3)
   name: string;
-} 
+}

@@ -1,0 +1,24 @@
+{
+    "name": "NestJS Auth Debug",
+    "image": "mcr.microsoft.com/devcontainers/typescript-node:18",
+    "features": {
+      "ghcr.io/devcontainers/features/node:1": {}
+    },
+    "forwardPorts": [3000, 9229],
+    "postCreateCommand": "npm install",
+    "customizations": {
+      "vscode": {
+        "extensions": [
+          "dbaeumer.vscode-eslint",
+          "ms-vscode.vscode-typescript-next",
+          "firsttris.vscode-jest-runner",
+          "ms-vscode.js-debug-nightly"
+        ],
+        "settings": {
+          "editor.formatOnSave": true,
+          "typescript.preferences.importModuleSpecifier": "relative"
+        }
+      }
+    },
+    "remoteUser": "node"
+  }

@@ -89,7 +89,10 @@ describe('AuthService', () => {
     it('should assign a role to a user', async () => {
       const mockRole = { id: 'role-123', name: 'admin' };
       mockPrismaService.role.findUnique.mockResolvedValue(mockRole);
-      mockPrismaService.user.update.mockResolvedValue({ ...mockUser, roles: [mockRole] });
+      mockPrismaService.user.update.mockResolvedValue({
+        ...mockUser,
+        roles: [mockRole],
+      });
 
       const result = await service.assignRole(mockUser.id, 'admin');
 
@@ -102,7 +105,9 @@ describe('AuthService', () => {
     it('should throw error if role not found', async () => {
       mockPrismaService.role.findUnique.mockResolvedValue(null);
 
-      await expect(service.assignRole(mockUser.id, 'nonexistent')).rejects.toThrow();
+      await expect(
+        service.assignRole(mockUser.id, 'nonexistent'),
+      ).rejects.toThrow();
     });
   });
 
@@ -127,4 +132,4 @@ describe('AuthService', () => {
       });
     });
   });
-}); 
+});
