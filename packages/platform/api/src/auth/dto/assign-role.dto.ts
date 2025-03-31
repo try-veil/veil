@@ -9,4 +9,4 @@ export class AssignRoleDto {
   @ApiProperty({ example: 'admin' })
   @IsString()
   roleName: string;
-} 
+}

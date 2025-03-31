@@ -11,10 +11,10 @@ async function bootstrap() {
       secret: process.env.JWT_SECRET,
       resave: false,
       saveUninitialized: true,
-      cookie: { 
+      cookie: {
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 60000 * 30 // 30 minutes
-      }
+        maxAge: 60000 * 30, // 30 minutes
+      },
     }),
   );
 

@@ -20,4 +20,4 @@ export class SignupDto {
   @IsString()
   @IsOptional()
   lastName?: string;
-} 
+}

@@ -21,7 +21,9 @@ describe('AuthController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     prisma = app.get<PrismaService>(PrismaService);
 
     await app.init();
@@ -95,7 +97,9 @@ describe('AuthController (e2e)', () => {
           .send({ email: testUser.email, password: testUser.password });
         console.log('Login Response:', response.body);
         token = response.body.access_token;
-        token ? console.log('Token acquired successfully.') : console.error('Failed to obtain token!');
+        token
+          ? console.log('Token acquired successfully.')
+          : console.error('Failed to obtain token!');
       });
 
       it('should retrieve user profile', () => {
@@ -106,9 +110,7 @@ describe('AuthController (e2e)', () => {
       });
 
       it('should fail without token', () => {
-        return request(app.getHttpServer())
-          .get('/auth/me')
-          .expect(401);
+        return request(app.getHttpServer()).get('/auth/me').expect(401);
       });
     });
   });

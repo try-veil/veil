@@ -1,8 +1,8 @@
-
-
 export class MockFusionAuthClient {
   constructor(apiKey: string, url: string) {
-    console.log(`Mock FusionAuth client created with API Key: ${apiKey.substring(0, 3)}... and URL: ${url}`);
+    console.log(
+      `Mock FusionAuth client created with API Key: ${apiKey.substring(0, 3)}... and URL: ${url}`,
+    );
   }
 
   register(userId: string, request: any) {
@@ -40,7 +40,9 @@ export class MockFusionAuthClient {
   }
 
   validateJWT(token: string) {
-    console.log(`Mock validateJWT called with token: ${token.substring(0, 10)}...`);
+    console.log(
+      `Mock validateJWT called with token: ${token.substring(0, 10)}...`,
+    );
     return {
       statusCode: 200,
       response: {

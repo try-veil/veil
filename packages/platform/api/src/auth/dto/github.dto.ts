@@ -1,6 +1,6 @@
-import { IsNotEmpty, IsString, } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 export class GithubLoginDto {
-    @IsString()
-    @IsNotEmpty()
-    code: string;
-  }
+  @IsString()
+  @IsNotEmpty()
+  code: string;
+}
