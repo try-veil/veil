@@ -75,20 +75,26 @@ export class AuthService {
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
+
       this.logger.debug(
         `FusionAuth Client: ${JSON.stringify(this.fusionAuthClient)}`,
       );
       this.logger.debug(
         `Attempting to exchange code: ${code.substring(0, 5)}... for token using redirect: ${redirectUri || defaultRedirectUri}`,
       );
+
       const response =
         await this.fusionAuthClient.exchangeOAuthCodeForAccessToken(
-          code, 
+          code,
           clientId,
           clientSecret,
           redirectUri || defaultRedirectUri,
         );
-      this.logger.log(`FusionAuth response: ${JSON.stringify(response)}`);
+
+      this.logger.debug(
+        `Complete FusionAuth token exchange response: ${JSON.stringify(response)}`,
+      );
+
       if (!response.wasSuccessful()) {
         this.logger.error(
           `FusionAuth token exchange failed with status: ${response.statusCode}, error: ${
@@ -100,7 +106,6 @@ export class AuthService {
           HttpStatus.BAD_REQUEST,
         );
       }
-
       return response.response;
     } catch (error) {
       const errorMessage = error.message || 'Unknown error';
@@ -109,9 +114,6 @@ export class AuthService {
         ? JSON.stringify(error.response)
         : 'No response data';
 
-      this.logger.error(`Failed to exchange code for tokens: ${errorMessage}`);
-      this.logger.error(`Error stack: ${errorStack}`);
-      this.logger.error(`Error response: ${errorResponse}`);
       if (error.statusCode) {
         this.logger.error(`FusionAuth status code: ${error.statusCode}`);
       }
@@ -133,6 +135,17 @@ export class AuthService {
       this.logger.log(
         `Attempting to register new user with FusionAuth: ${email}`,
       );
+      if (!this.fusionAuthClient) {
+        this.logger.error('FusionAuth client is not initialized');
+        throw new HttpException(
+          'Authentication service unavailable',
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
+      }
+
+      this.logger.log(
+        `Calling FusionAuth register with application ID: ${this.configService.get('FUSION_AUTH_APPLICATION_ID')}`,
+      );
 
       const response = await this.fusionAuthClient.register(null, {
         registration: {
@@ -147,14 +160,7 @@ export class AuthService {
       });
 
       if (response.wasSuccessful()) {
-        this.logger.debug(`FusionAuth registration successful for ${email}`);
-
-        const user = await this.findOrCreateUser({
-          sub: response.response.user.id,
-          email: response.response.user.email,
-          given_name: response.response.user.firstName,
-          family_name: response.response.user.lastName,
-        });
+        const user = await this.findOrCreateUser(response.response);
 
         return {
           fusion_auth_token: response.response.token,
@@ -166,13 +172,22 @@ export class AuthService {
     } catch (error) {
       if (
         error.statusCode === 400 &&
-        error.response?.fieldErrors?.user?.email?.code ===
+        error.response &&
+        error.response.fieldErrors &&
+        error.response.fieldErrors.user &&
+        error.response.fieldErrors.user.email &&
+        error.response.fieldErrors.user.email[0].code ===
           '[duplicate]user.email'
       ) {
         throw new ConflictException('User with this email already exists');
+      } else if (error instanceof ConflictException) {
+        throw error;
+      } else {
+        throw new HttpException(
+          `Registration failed: ${error.message || 'Unknown error'}`,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
       }
-
-      throw error;
     }
   }
 
@@ -192,21 +207,13 @@ export class AuthService {
           throw new Error('FusionAuth returned success but no valid user data');
         }
 
-        const user = await this.findOrCreateUser({
-          sub: response.response.user.id,
-          email: response.response.user.email,
-          given_name: response.response.user.firstName,
-          family_name: response.response.user.lastName,
-        });
+        const user = await this.findOrCreateUser(response.response);
 
         return {
           fusion_auth_token: response.response.token,
           ...this.generateToken(user),
         };
       } else {
-        this.logger.error(
-          `FusionAuth login returned non-success status: ${response.statusCode}`,
-        );
         throw new UnauthorizedException('Invalid credentials');
       }
     } catch (error) {
@@ -262,6 +269,10 @@ export class AuthService {
   }
 
   async findOrCreateUser(tokenResponse: any) {
+    this.logger.debug(
+      `Raw token response in findOrCreateUser: ${JSON.stringify(tokenResponse)}`,
+    );
+
     let userInfo: {
       sub: any;
       email: any;
@@ -274,24 +285,38 @@ export class AuthService {
 
     if (tokenResponse.userInfo) {
       userInfo = tokenResponse.userInfo;
+    } else if (tokenResponse.user) {
+      userInfo = {
+        sub: tokenResponse.user.id,
+        email: tokenResponse.user.email,
+        given_name: tokenResponse.user.firstName,
+        name: tokenResponse.user.firstName,
+        family_name: tokenResponse.user.lastName,
+        github_id: null,
+        github_login: null,
+      };
+
+      if (tokenResponse.user.identities) {
+        const githubIdentity = tokenResponse.user.identities.find(
+          (i: { identityProviderId: string | string[] }) =>
+            i.identityProviderId && i.identityProviderId.includes('github'),
+        );
+        if (githubIdentity) {
+          userInfo.github_id = githubIdentity.userId;
+          userInfo.github_login = githubIdentity.username;
+        }
+      }
     } else {
       try {
-        const jwt = this.jwtService.decode(tokenResponse.access_token);
-        userInfo = jwt;
-        if (!userInfo.email && tokenResponse.userId) {
-          const userResponse = await this.fusionAuthClient.retrieveUser(
-            tokenResponse.userId,
-          );
-          if (userResponse.wasSuccessful()) {
-            userInfo.email = userResponse.response.user.email;
-            userInfo.given_name = userResponse.response.user.firstName;
-            userInfo.family_name = userResponse.response.user.lastName;
-          }
+        const tokenToUse = tokenResponse.access_token || tokenResponse.token;
+        if (!tokenToUse) {
+          throw new Error('No token found in response');
         }
+
+        // Decode JWT
+        userInfo = this.jwtService.decode(tokenToUse);
       } catch (error) {
-        this.logger.error(
-          `Failed to decode JWT or retrieve user: ${error.message}`,
-        );
+        this.logger.error(`Failed to decode JWT: ${error.message}`);
         throw new HttpException('Invalid token format', HttpStatus.BAD_REQUEST);
       }
     }
@@ -305,12 +330,46 @@ export class AuthService {
         HttpStatus.BAD_REQUEST,
       );
     }
+
+    const isGitHubAuth =
+      userInfo.github_id || tokenResponse.identityProvider?.includes('github');
+
     if (!userInfo.email) {
-      this.logger.error('No email found for user in token response');
-      throw new HttpException(
-        'Missing required user information: email',
-        HttpStatus.BAD_REQUEST,
-      );
+      if (isGitHubAuth && (tokenResponse.access_token || tokenResponse.token)) {
+        try {
+          const token = tokenResponse.access_token || tokenResponse.token;
+          if (token && token.startsWith('gho_')) {
+            const githubResponse = await fetch(
+              'https://api.github.com/user/emails',
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  Accept: 'application/json',
+                },
+              },
+            );
+
+            if (githubResponse.ok) {
+              const emails = await githubResponse.json();
+              const primaryEmail = emails.find((email) => email.primary);
+              if (primaryEmail) {
+                userInfo.email = primaryEmail.email;
+                this.logger.log(
+                  `Retrieved email from GitHub: ${userInfo.email}`,
+                );
+              }
+            }
+          }
+        } catch (error) {
+          this.logger.error(`Failed to fetch GitHub email: ${error.message}`);
+        }
+      }
+
+      // If still no email, use placeholder
+      if (!userInfo.email) {
+        userInfo.email = `user_${fusionAuthUserId}@placeholder.com`;
+        this.logger.debug(`Using placeholder email: ${userInfo.email}`);
+      }
     }
 
     let user = await this.prisma.user.findUnique({
@@ -318,18 +377,51 @@ export class AuthService {
       include: { roles: true },
     });
 
-    if (!user) {
-      user = await this.prisma.user.create({
-        data: {
-          email: userInfo.email,
-          fusionAuthId: fusionAuthUserId,
-          firstName: userInfo.given_name || userInfo.name,
-          lastName: userInfo.family_name,
-          githubId: userInfo.github_id,
-          githubUsername: userInfo.github_login,
-        },
+    if (!user && userInfo.github_id) {
+      user = await this.prisma.user.findFirst({
+        where: { githubId: userInfo.github_id.toString() },
         include: { roles: true },
       });
+
+      if (user && user.fusionAuthId !== fusionAuthUserId) {
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { fusionAuthId: fusionAuthUserId },
+          include: { roles: true },
+        });
+        this.logger.log(`Updated FusionAuth ID for GitHub user: ${user.email}`);
+      }
+    }
+
+    if (!user) {
+      try {
+        user = await this.prisma.user.create({
+          data: {
+            email: userInfo.email,
+            fusionAuthId: fusionAuthUserId,
+            firstName: userInfo.given_name || userInfo.name,
+            lastName: userInfo.family_name,
+            githubId: userInfo.github_id?.toString(),
+            githubUsername: userInfo.github_login,
+          },
+          include: { roles: true },
+        });
+      } catch (prismaError) {
+        this.logger.error(
+          `Database error creating user: ${prismaError.message}`,
+          prismaError.stack,
+        );
+        if (
+          prismaError.code === 'P2002' &&
+          prismaError.meta?.target?.includes('email')
+        ) {
+          throw new ConflictException('User with this email already exists');
+        }
+        throw new HttpException(
+          'Failed to create user record',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
     }
 
     return user;
@@ -417,7 +509,9 @@ export class AuthService {
     const redirectUri = this.configService.get('FUSION_AUTH_REDIRECT_URI');
     const fusionAuthUrl = this.configService.get('FUSION_AUTH_URL');
     const state = crypto.randomBytes(16).toString('hex');
-    const url = `${fusionAuthUrl}/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}${idpHint ? `&idp_hint=${idpHint}` : ''}`;
+    const additionalParams = idpHint === 'github' ? '&scope=email' : '';
+
+    const url = `${fusionAuthUrl}/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}${idpHint ? `&idp_hint=${idpHint}` : ''}${additionalParams}`;
 
     return { url, state };
   }
