@@ -1,0 +1,42 @@
+name: FusionAuth API Tests
+
+on:
+  push:
+    branches: [main, master, development]
+  pull_request:
+    branches: [main, master, development]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x]
+        
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'yarn'
+    
+    - name: Install dependencies
+      run: yarn install --frozen-lockfile
+    
+    - name: Setup and run tests with Docker Compose
+      run: |
+        # Start services
+        docker-compose -f docker-compose.tests.yml up -d
+        
+        # Run migrations
+        docker-compose -f docker-compose.tests.yml exec api npx prisma migrate deploy
+        
+        # Run tests
+        docker-compose -f docker-compose.tests.yml exec api yarn test
+        docker-compose -f docker-compose.tests.yml exec api yarn test:e2e
+    
+    - name: Cleanup
+      run: docker-compose -f docker-compose.tests.yml down
