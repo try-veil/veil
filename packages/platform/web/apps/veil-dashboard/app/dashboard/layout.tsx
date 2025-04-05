@@ -1,10 +1,8 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
 import {
   BarChart3,
   Code2,
@@ -13,10 +11,12 @@ import {
   LayoutDashboard,
   List,
   LogOut,
+  Menu,
   Package,
   PlusCircle,
   Settings,
   User,
+  X,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -63,11 +63,6 @@ const providerNavItems: NavItem[] = [
 
 const userNavItems: NavItem[] = [
   {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
     title: "API Catalog",
     href: "/dashboard/api-catalog",
     icon: List,
@@ -84,19 +79,32 @@ const userNavItems: NavItem[] = [
   },
 ]
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const [userType, setUserType] = useState<"provider" | "user">("provider")
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
   const pathname = usePathname()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  const initialUserType = pathname.includes("api-catalog") ? "user" : "provider"
+  const [userType, setUserType] = useState<"provider" | "user">(initialUserType)
+
+  useEffect(() => {
+    if (userType === "provider") {
+      router.push("/dashboard")
+    } else {
+      router.push("/dashboard/api-catalog")
+    }
+  }, [userType, router])
 
   const navItems = userType === "provider" ? providerNavItems : userNavItems
 
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background px-6">
+        {/* Hamburger button for mobile */}
+        <button className="lg:hidden p-2 rounded-md" onClick={() => setSidebarOpen(!sidebarOpen)}>
+          {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
+
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
           <Code2 className="h-6 w-6 text-veil-blue" />
           <span className="text-xl font-bold">veil</span>
@@ -149,8 +157,11 @@ export default function DashboardLayout({
         </div>
       </header>
       <div className="flex flex-1">
-        <aside className="w-64 border-r bg-background">
-          <nav className="flex flex-col gap-2 p-4">
+        <aside
+          className={`fixed inset-y-0 left-0 z-40 w-64 bg-background border-r p-4 transition-transform duration-300 ease-in-out
+            ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:static`}
+        >
+          <nav className="flex flex-col gap-2">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -159,6 +170,7 @@ export default function DashboardLayout({
                   "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   pathname === item.href ? "bg-veil-blue text-white" : "hover:bg-veil-beige hover:text-veil-blue",
                 )}
+                onClick={() => setSidebarOpen(false)} 
               >
                 <item.icon className="h-4 w-4" />
                 {item.title}
@@ -171,4 +183,3 @@ export default function DashboardLayout({
     </div>
   )
 }
-

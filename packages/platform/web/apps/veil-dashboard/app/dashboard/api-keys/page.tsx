@@ -81,20 +81,20 @@ export default function ApiKeysPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-6 p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight">API Keys</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">API Keys</h1>
           <p className="text-muted-foreground">Manage your API keys for accessing Veil APIs.</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Generate New Key
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Generate New API Key</DialogTitle>
               <DialogDescription>Create a new API key to access Veil APIs.</DialogDescription>
@@ -134,75 +134,75 @@ export default function ApiKeysPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>API Key</TableHead>
-                <TableHead>API</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Last Used</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {apiKeys.map((apiKey) => (
-                <TableRow key={apiKey.id}>
-                  <TableCell className="font-medium">{apiKey.name}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <code className="rounded bg-muted px-1 py-0.5 font-mono text-sm">
-                        {showKeys[apiKey.id]
-                          ? apiKey.key
-                          : `${apiKey.key.substring(0, 8)}...${apiKey.key.substring(apiKey.key.length - 4)}`}
-                      </code>
-                      <Button variant="ghost" size="icon" onClick={() => toggleKeyVisibility(apiKey.id)}>
-                        {showKeys[apiKey.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                  <TableCell>{apiKey.api}</TableCell>
-                  <TableCell>
-                    <Badge variant={apiKey.status === "active" ? "default" : "secondary"}>
-                      {apiKey.status === "active" ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{apiKey.created}</TableCell>
-                  <TableCell>{apiKey.lastUsed}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>
-                          <Copy className="mr-2 h-4 w-4" />
-                          Copy
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <RefreshCw className="mr-2 h-4 w-4" />
-                          Regenerate
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash className="mr-2 h-4 w-4" />
-                          Revoke
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>API Key</TableHead>
+                  <TableHead>API</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Last Used</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {apiKeys.map((apiKey) => (
+                  <TableRow key={apiKey.id}>
+                    <TableCell className="font-medium">{apiKey.name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <code className="rounded bg-muted px-1 py-0.5 font-mono text-sm">
+                          {showKeys[apiKey.id]
+                            ? apiKey.key
+                            : `${apiKey.key.substring(0, 8)}...${apiKey.key.substring(apiKey.key.length - 4)}`}
+                        </code>
+                        <Button variant="ghost" size="icon" onClick={() => toggleKeyVisibility(apiKey.id)}>
+                          {showKeys[apiKey.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                        <Button variant="ghost" size="icon">
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell>{apiKey.api}</TableCell>
+                    <TableCell>
+                      <Badge variant={apiKey.status === "active" ? "default" : "secondary"}>
+                        {apiKey.status === "active" ? "Active" : "Inactive"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{apiKey.created}</TableCell>
+                    <TableCell>{apiKey.lastUsed}</TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem>
+                            <Copy className="mr-2 h-4 w-4" />
+                            Copy
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Regenerate
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive">
+                            <Trash className="mr-2 h-4 w-4" />
+                            Revoke
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
         </CardContent>
       </Card>
     </div>
