@@ -107,27 +107,31 @@ export default function ApiCatalogPage() {
         </Select>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {filteredApis.map((api) => (
-          <Card key={api.id} className="flex flex-col">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle>{api.name}</CardTitle>
-                  <CardDescription className="mt-1">{api.category}</CardDescription>
+          <Card key={api.id} className="flex flex-col h-full">
+            <CardHeader className="pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                <div className="space-y-1">
+                  <CardTitle className="text-base sm:text-lg line-clamp-1">{api.name}</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">{api.category}</CardDescription>
                 </div>
-                <Badge variant="outline">{api.popularity} Usage</Badge>
+                <Badge variant="outline" className="self-start whitespace-nowrap text-xs">
+                  {api.popularity} Usage
+                </Badge>
               </div>
             </CardHeader>
-            <CardContent className="flex-1">
-              <p className="text-sm text-muted-foreground">{api.description}</p>
-              <p className="mt-4 text-sm font-medium">{api.pricing}</p>
+            <CardContent className="flex-1 pb-4">
+              <p className="text-xs sm:text-sm text-muted-foreground line-clamp-3">{api.description}</p>
+              <p className="mt-3 text-xs sm:text-sm font-medium">{api.pricing}</p>
             </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" asChild>
+            <CardFooter className="pt-2 flex flex-col xs:flex-row gap-3 xs:justify-between">
+              <Button variant="outline" size="sm" className="w-full xs:w-auto" asChild>
                 <Link href={`/dashboard/api-catalog/${api.id}`}>View Details</Link>
               </Button>
-              <Button>Get API Key</Button>
+              <Button size="sm" className="w-full xs:w-auto">
+                Get API Key
+              </Button>
             </CardFooter>
           </Card>
         ))}

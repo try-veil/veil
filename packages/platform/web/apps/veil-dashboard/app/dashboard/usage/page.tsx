@@ -70,13 +70,13 @@ const usageHistory = [
 
 export default function UsagePage() {
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6 p-4 sm:p-6">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Usage & Balance</h1>
         <p className="text-muted-foreground">Monitor your API usage and manage your balance.</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Current Balance</CardTitle>
@@ -128,10 +128,16 @@ export default function UsagePage() {
       </div>
 
       <Tabs defaultValue="usage" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="usage">Usage</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
-          <TabsTrigger value="billing">Billing</TabsTrigger>
+        <TabsList className="w-full sm:w-auto overflow-auto">
+          <TabsTrigger value="usage" className="flex-1 sm:flex-none">
+            Usage
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex-1 sm:flex-none">
+            History
+          </TabsTrigger>
+          <TabsTrigger value="billing" className="flex-1 sm:flex-none">
+            Billing
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="usage" className="space-y-4">
           <Card>
@@ -139,38 +145,40 @@ export default function UsagePage() {
               <CardTitle>API Usage</CardTitle>
               <CardDescription>Your API usage over the last 14 days.</CardDescription>
             </CardHeader>
-            <CardContent className="pl-2">
-              <ChartContainer
-                config={{
-                  calls: {
-                    label: "API Calls",
-                    color: "hsl(var(--primary))",
-                  },
-                }}
-                className="h-[300px]"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={usageData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis
-                      dataKey="date"
-                      tickFormatter={(value) => {
-                        const date = new Date(value)
-                        return `${date.getMonth() + 1}/${date.getDate()}`
-                      }}
-                    />
-                    <YAxis />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="calls" fill="var(--color-calls)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartContainer>
+            <CardContent className="pl-0 sm:pl-2">
+              <div className="w-full overflow-x-auto">
+                <ChartContainer
+                  config={{
+                    calls: {
+                      label: "API Calls",
+                      color: "hsl(var(--primary))",
+                    },
+                  }}
+                  className="h-[300px] min-w-[500px]"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={usageData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="date"
+                        tickFormatter={(value) => {
+                          const date = new Date(value)
+                          return `${date.getMonth() + 1}/${date.getDate()}`
+                        }}
+                      />
+                      <YAxis />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar dataKey="calls" fill="var(--color-calls)" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
         <TabsContent value="history" className="space-y-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 sm:gap-0">
               <div>
                 <CardTitle>Usage History</CardTitle>
                 <CardDescription>A record of your API usage and associated costs.</CardDescription>
@@ -180,27 +188,29 @@ export default function UsagePage() {
                 Export
               </Button>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>API</TableHead>
-                    <TableHead className="text-right">Calls</TableHead>
-                    <TableHead className="text-right">Cost</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {usageHistory.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.date}</TableCell>
-                      <TableCell>{item.api}</TableCell>
-                      <TableCell className="text-right">{item.calls}</TableCell>
-                      <TableCell className="text-right">{item.cost}</TableCell>
+            <CardContent className="px-0 sm:px-6">
+              <div className="overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>API</TableHead>
+                      <TableHead className="text-right">Calls</TableHead>
+                      <TableHead className="text-right">Cost</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {usageHistory.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.date}</TableCell>
+                        <TableCell>{item.api}</TableCell>
+                        <TableCell className="text-right">{item.calls}</TableCell>
+                        <TableCell className="text-right">{item.cost}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -212,14 +222,14 @@ export default function UsagePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="rounded-lg border p-4">
-                  <div className="flex items-start justify-between">
+                <div className="rounded-lg border p-3 sm:p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0">
                     <div>
                       <h3 className="font-medium">Credit Card</h3>
                       <p className="text-sm text-muted-foreground">**** **** **** 4242</p>
                       <p className="text-sm text-muted-foreground">Expires 12/25</p>
                     </div>
-                    <Badge>Default</Badge>
+                    <Badge className="w-fit">Default</Badge>
                   </div>
                   <div className="mt-4 flex gap-2">
                     <Button variant="outline" size="sm">
