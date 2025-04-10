@@ -13,10 +13,12 @@ import {
   LayoutDashboard,
   List,
   LogOut,
+  Menu,
   Package,
   PlusCircle,
   Settings,
   User,
+  X,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -92,11 +94,16 @@ export default function DashboardLayout({
   const [userType, setUserType] = useState<"provider" | "user">("provider")
   const pathname = usePathname()
 
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
   const navItems = userType === "provider" ? providerNavItems : userNavItems
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background px-6">
+      <header className="sticky top-0 z-50 flex h-16 items-center gap-0 lg:gap-4 border-b bg-background px-2 lg:px-6">
+      <button className="lg:hidden p-2 rounded-md" onClick={() => setSidebarOpen(!sidebarOpen)}>
+          {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
           <Code2 className="h-6 w-6 text-veil-blue" />
           <span className="text-xl font-bold">veil</span>
@@ -113,7 +120,9 @@ export default function DashboardLayout({
               <DropdownMenuItem onClick={() => setUserType("user")}>User View</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <ModeToggle />
+          <div className="hidden lg:flex">
+          <ModeToggle/>
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -149,8 +158,14 @@ export default function DashboardLayout({
         </div>
       </header>
       <div className="flex flex-1">
-        <aside className="w-64 border-r bg-background">
-          <nav className="flex flex-col gap-2 p-4">
+      <aside
+          className={cn(
+            "fixed h-[calc(100vh-4rem)] top-16 w-64 bg-background border-r overflow-y-auto transition-transform duration-300 ease-in-out",
+            sidebarOpen ? "translate-x-0" : "-translate-x-full",
+            "lg:sticky lg:top-16 lg:translate-x-0"
+          )}
+        >
+            <nav className="flex flex-col gap-2 p-4">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -159,6 +174,7 @@ export default function DashboardLayout({
                   "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   pathname === item.href ? "bg-veil-blue text-white" : "hover:bg-veil-beige hover:text-veil-blue",
                 )}
+                onClick={() => setSidebarOpen(false)}
               >
                 <item.icon className="h-4 w-4" />
                 {item.title}
