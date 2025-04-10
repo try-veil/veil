@@ -97,8 +97,8 @@ export default function DashboardPage() {
           {userType === "provider" && <TabsTrigger value="subscribers">Subscribers</TabsTrigger>}
         </TabsList>
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+            <Card className="col-span-3">
               <CardHeader>
                 <CardTitle>API Usage</CardTitle>
                 <CardDescription>
@@ -113,7 +113,7 @@ export default function DashboardPage() {
                       color: "hsl(var(--primary))",
                     },
                   }}
-                  className="h-[300px]"
+                  className="max-h-[300px]"
                 >
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={apiUsageData}>
@@ -142,7 +142,7 @@ export default function DashboardPage() {
                       color: "#4DB9E8",
                     },
                   }}
-                  className="h-[300px]"
+                  className="max-h-[300px]"
                 >
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={revenueData}>

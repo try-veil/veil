@@ -253,6 +253,7 @@ export default function ApiOnboardingPage() {
               <CardDescription>Define the endpoints for your API.</CardDescription>
             </CardHeader>
             <CardContent>
+            <Form {...form}>
               <div className="space-y-4">
                 <div className="rounded-lg border p-4">
                   <div className="grid gap-4 md:grid-cols-3">
@@ -328,6 +329,7 @@ export default function ApiOnboardingPage() {
                   <Button>Save & Continue</Button>
                 </div>
               </div>
+              </Form>
             </CardContent>
           </Card>
         </TabsContent>
@@ -339,6 +341,7 @@ export default function ApiOnboardingPage() {
               <CardDescription>Define pricing plans for your API.</CardDescription>
             </CardHeader>
             <CardContent>
+            <Form {...form}>
               <div className="space-y-4">
                 <div className="rounded-lg border p-4">
                   <div className="grid gap-4 md:grid-cols-2">
@@ -365,6 +368,7 @@ export default function ApiOnboardingPage() {
                   <Button>Save & Publish API</Button>
                 </div>
               </div>
+              </Form>
             </CardContent>
           </Card>
         </TabsContent>
