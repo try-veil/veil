@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 
-export default function APIWorkflowComponent() {
+export default function About() {
   const [activeArrow, setActiveArrow] = useState(0);
   
   useEffect(() => {
@@ -12,9 +12,9 @@ export default function APIWorkflowComponent() {
   }, []);
 
   return (
-    <div className="w-full bg-gray-100 py-12 px-4">
+    <div className="w-full bg-white pt-32 py-12 px-4 text-black">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl md:text-4xl font-bold text-center mb-3">Manage & Monetize Your APIs</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-black text-center mb-3">Manage & Monetize Your APIs</h1>
         
         <p className="text-center text-gray-600 mb-16 max-w-3xl mx-auto">
           It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout.
