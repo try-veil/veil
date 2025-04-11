@@ -1,7 +1,7 @@
 import NextAuth from "next-auth"
 import FusionAuthProvider from "next-auth/providers/fusionauth"
 
-const fusionAuthIssuer = process.env.FUSIONAUTH_ISSUER;
+const fusionAuthIssuer = process.env.FUSIONAUTH_ISSUER || "";
 const fusionAuthClientId = process.env.FUSIONAUTH_CLIENT_ID;
 const fusionAuthClientSecret = process.env.FUSIONAUTH_CLIENT_SECRET;
 const fusionAuthUrl = process.env.FUSIONAUTH_URL;
