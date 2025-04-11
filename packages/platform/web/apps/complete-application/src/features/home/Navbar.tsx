@@ -78,12 +78,7 @@ export default function Navbar({ session }: { session: any }) {
               >
                 Documentation
               </Link>
-              <Link
-                href="/dashboard"
-                className="text-white px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-900 shadow-md transition-all duration-200"
-              >
-                Register
-              </Link>
+             
               <LoginButton session={session} />
             </div>
 
