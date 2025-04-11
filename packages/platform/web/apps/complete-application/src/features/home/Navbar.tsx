@@ -2,15 +2,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import LoginButton from "@/components/LoginButton";
-import { getServerSession } from 'next-auth';
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-export default async function Navbar() {
+export default function Navbar({ session }: { session: any }) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-
-  const session = await getServerSession(authOptions);
-
 
   useEffect(() => {
     const handleScroll = () => {
