@@ -22,6 +22,9 @@ export default {
       minHeight: {
         svh: '100svh',
       },
+      height:{
+        svh: '100svh',
+      },
       fontFamily: {
         inter: ['Inter', ...fontFamily.sans],
         manrope: ['Manrope', ...fontFamily.sans],
