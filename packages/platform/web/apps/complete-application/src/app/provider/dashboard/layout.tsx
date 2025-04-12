@@ -5,7 +5,7 @@ import { SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import SkipToMain from '@/components/skip-to-main'
 
-export default function RouteComponent({ children }: {
+export default function DashboardLayout({ children }: {
   children: React.ReactNode
 }) {
   const defaultOpen = Cookies.get('sidebar:state') !== 'false'

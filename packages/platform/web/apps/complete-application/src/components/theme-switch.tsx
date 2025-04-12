@@ -1,3 +1,4 @@
+"use client"
 import { useEffect } from 'react'
 import { IconCheck, IconMoon, IconSun } from '@tabler/icons-react'
 import { cn } from '@/lib/utils'
