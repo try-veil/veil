@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import AuthLayout from '../auth-layout'
 import { ForgotForm } from './components/forgot-password-form'
@@ -20,7 +20,7 @@ export default function ForgotPassword() {
         <p className='mt-4 px-8 text-center text-sm text-muted-foreground'>
           Don't have an account?{' '}
           <Link
-            to='/sign-up'
+            href='/sign-up'
             className='underline underline-offset-4 hover:text-primary'
           >
             Sign up

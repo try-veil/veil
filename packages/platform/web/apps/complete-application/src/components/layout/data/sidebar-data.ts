@@ -32,7 +32,7 @@ export const sidebarData: SidebarData = {
     {
       name: 'Shadcn Admin',
       logo: Command,
-      plan: 'Vite + ShadcnUI',
+      plan: 'NEXT.JS + ShadcnUI',
     },
     {
       name: 'Acme Inc',
