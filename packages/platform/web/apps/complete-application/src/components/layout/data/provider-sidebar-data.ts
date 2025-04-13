@@ -32,17 +32,17 @@ export const providerSidebarData: ProviderSidebarData = {
     {
       name: "Weather API",
       logo: Command,
-      plan: "NEXT.JS + ShadcnUI",
+      plan: "Basic",
     },
     {
       name: "Typesense API",
       logo: GalleryVerticalEnd,
-      plan: "Enterprise",
+      plan: "Pro",
     },
     {
       name: "Gemini API",
       logo: AudioWaveform,
-      plan: "Startup",
+      plan: "Premium",
     },
   ],
   navGroups: [
