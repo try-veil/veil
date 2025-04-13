@@ -10,6 +10,12 @@ interface Team {
   plan: string
 }
 
+interface Project {
+  name: string
+  logo: React.ElementType
+  plan: string
+}
+
 interface BaseNavItem {
   title: string
   badge?: string
@@ -39,4 +45,10 @@ interface SidebarData {
   navGroups: NavGroup[]
 }
 
-export type { SidebarData, NavGroup, NavItem, NavCollapsible, NavLink }
+interface ProviderSidebarData {
+  user: User
+  projects: Project[]
+  navGroups: NavGroup[]
+}
+
+export type { SidebarData, NavGroup, NavItem, NavCollapsible, NavLink, ProviderSidebarData }
