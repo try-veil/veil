@@ -1,8 +1,9 @@
+"use client"
 import { HTMLAttributes, useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useNavigate } from '@tanstack/react-router'
+import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
@@ -24,7 +25,7 @@ const formSchema = z.object({
 })
 
 export function OtpForm({ className, ...props }: OtpFormProps) {
-  const navigate = useNavigate()
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [disabledBtn, setDisabledBtn] = useState(true)
 
@@ -46,7 +47,7 @@ export function OtpForm({ className, ...props }: OtpFormProps) {
 
     setTimeout(() => {
       setIsLoading(false)
-      navigate({ to: '/' })
+      router.push('/')
     }, 1000)
   }
 
