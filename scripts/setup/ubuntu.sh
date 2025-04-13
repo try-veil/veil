@@ -10,11 +10,12 @@ print_status() {
     echo "→ $1"
 }
 
-# Check and install Homebrew if not present
+sudo apt update
+
 if ! command_exists curl; then
     print_status "curl not found. Installing curl..."
     apt install curl
-    
+
     if [ $? -ne 0 ]; then
         echo "Error: Failed to install curl. Please install it manually."
         exit 1
@@ -26,8 +27,9 @@ fi
 
 # Check and install Go if not present
 if ! command_exists go; then
-    print_status "Go not found. Installing Go using Homebrew..."
-    apt install golang
+    print_status "Go not found. Installing Go ..."
+    sudo add-apt-repository ppa:longsleep/golang-backports
+    sudo apt install golang-go
     
     if [ $? -ne 0 ]; then
         echo "Error: Failed to install Go. Please install it manually."
@@ -41,14 +43,13 @@ fi
 # Check and install Caddy if not present
 if ! command_exists caddy; then
     print_status "Installing Caddy using apt..."
-    apt update
+    sudo apt update
 
     sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
     curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
     curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
-    sudo apt update
     sudo apt install caddy
-    
+
     if [ $? -ne 0 ]; then
         echo "Error: Failed to install Caddy. Please try installing it manually."
         exit 1
