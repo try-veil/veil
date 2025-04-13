@@ -9,21 +9,23 @@ import {
 import { NavGroup } from '@/components/layout/nav-group'
 import { NavUser } from '@/components/layout/nav-user'
 import { TeamSwitcher } from '@/components/layout/team-switcher'
-import { providerSidebarData } from './data/provider-sidebar-data'
+import { getProviderSidebarData } from './data/provider-sidebar-data'
 
 export function ProviderAppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const sidebarData = getProviderSidebarData();
+  
   return (
     <Sidebar collapsible='icon' variant='floating' {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={providerSidebarData.projects} />
+        <TeamSwitcher teams={sidebarData.projects} />
       </SidebarHeader>
       <SidebarContent>
-        {providerSidebarData.navGroups.map((props) => (
+        {sidebarData.navGroups.map((props) => (
           <NavGroup key={props.title} {...props} />
         ))}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={providerSidebarData.user} />
+        <NavUser user={sidebarData.user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
