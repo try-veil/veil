@@ -23,9 +23,9 @@ export default function UsersProvider({ children }: Props) {
   const [currentRow, setCurrentRow] = useState<User | null>(null)
 
   return (
-    <UsersContext value={{ open, setOpen, currentRow, setCurrentRow }}>
-      {children}
-    </UsersContext>
+    <UsersContext.Provider value={{ open, setOpen, currentRow, setCurrentRow }}>
+    {children}
+  </UsersContext.Provider>
   )
 }
 
