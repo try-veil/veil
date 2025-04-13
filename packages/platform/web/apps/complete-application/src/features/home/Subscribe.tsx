@@ -17,7 +17,7 @@ export default function Subscribe() {
           placeholder="Enter your email..."
           className="bg-[#F5F5F5] placeholder:text-sm p-4 lg:p-8 lg:px-12 lg:w-2xl border-0"
         />
-        <Button variant={"hero-secondary"} className="p-4 lg:p-8 lg:px-12">
+        <Button variant={"primary-scale"} className="p-4 lg:p-8 lg:px-12">
           Subscribe
         </Button>
       </div>

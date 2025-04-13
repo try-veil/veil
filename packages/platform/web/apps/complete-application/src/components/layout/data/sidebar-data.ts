@@ -148,7 +148,7 @@ export const sidebarData: SidebarData = {
           items: [
             {
               title: 'Profile',
-              url: '/provider/dashboard/settings',
+              url: '/provider/dashboard/settings/profile',
               icon: IconUserCog,
             },
             {

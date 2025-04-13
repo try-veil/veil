@@ -7,9 +7,9 @@ export default function DashboardLayout({ children }: {
   }) {
     return (
         <ThemeProvider defaultTheme='light' storageKey='vite-ui-theme'>
-        {/* <FontProvider> */}
+        <FontProvider>
          {children}
-        {/* </FontProvider> */}
+        </FontProvider>
       </ThemeProvider>
     )
   }

@@ -14,8 +14,8 @@ export default function Hero() {
         ipsum lorem
       </p>
       <div className="flex justify-center items-center gap-4">
-        <Button variant={"hero-primary"}>Get a Demo</Button>
-        <Button variant={"hero-secondary"}>Try For Free</Button>
+        <Button variant={"secondary-scale"}>Get a Demo</Button>
+        <Button variant={"primary-scale"}>Try For Free</Button>
       </div>
       <div className="relative h-full w-[90vw] lg:h-[500px] lg:w-full">
         <Image

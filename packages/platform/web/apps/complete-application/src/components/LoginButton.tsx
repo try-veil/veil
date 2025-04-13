@@ -10,14 +10,14 @@ export default function LoginButton({ session }: { session: any }) {
     const router = useRouter()
     return (
       <>
-        <Button onClick={() => signOut()} variant={"hero-secondary"}>Sign out</Button>
-        <Button onClick={() => router.push('/dashboard')} variant={"hero-secondary"}>Dashboard</Button>
+        <Button onClick={() => signOut()} variant={"primary-scale"}>Sign out</Button>
+        <Button onClick={() => router.push('/provider/dashboard')} variant={"primary-scale"}>Dashboard</Button>
       </>
     );
   }
   return (
     <>
-      <Button variant={"hero-secondary"} onClick={() => signIn()}>Sign in</Button>
+      <Button variant={"primary-scale"} onClick={() => signIn()}>Sign in</Button>
     </>
   );
 }

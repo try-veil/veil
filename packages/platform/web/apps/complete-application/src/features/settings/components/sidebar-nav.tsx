@@ -1,6 +1,7 @@
+"use client"
 import { useState, type JSX } from 'react'
-import { useLocation, useNavigate } from '@tanstack/react-router'
-import { Link } from '@tanstack/react-router'
+import { usePathname, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -25,13 +26,13 @@ export default function SidebarNav({
   items,
   ...props
 }: SidebarNavProps) {
-  const { pathname } = useLocation()
-  const navigate = useNavigate()
+  const router = useRouter()
+  const pathname = usePathname()
   const [val, setVal] = useState(pathname ?? '/settings')
 
   const handleSelect = (e: string) => {
     setVal(e)
-    navigate({ to: e })
+    router.push(e)
   }
 
   return (
@@ -69,7 +70,7 @@ export default function SidebarNav({
           {items.map((item) => (
             <Link
               key={item.href}
-              to={item.href}
+              href={item.href}
               className={cn(
                 buttonVariants({ variant: 'ghost' }),
                 pathname === item.href

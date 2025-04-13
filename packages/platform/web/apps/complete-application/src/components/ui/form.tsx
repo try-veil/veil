@@ -1,3 +1,4 @@
+"use client"
 import * as React from 'react'
 import {
   Controller,
@@ -12,7 +13,9 @@ import { Slot } from '@radix-ui/react-slot'
 import { cn } from '@/lib/utils'
 import { Label } from '@/components/ui/label'
 
-const Form = FormProvider
+const Form =({ children, ...methods }: React.PropsWithChildren<any>) => (
+  <FormProvider {...methods}>{children}</FormProvider>
+)
 
 type FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
