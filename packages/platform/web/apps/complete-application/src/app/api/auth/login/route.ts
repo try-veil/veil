@@ -13,7 +13,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const clientId = process.env.FUSIONAUTH_CLIENT_ID;
+    const clientId = process.env.NEXT_PUBLIC_FUSIONAUTH_CLIENT_ID;
     const clientSecret = process.env.FUSIONAUTH_CLIENT_SECRET;
     const tokenUrl = `${process.env.NEXT_PUBLIC_FUSIONAUTH_URL}/oauth2/token`;
 

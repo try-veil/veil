@@ -88,7 +88,7 @@ export default function Login() {
           Log in with Google
         </button>
         <button
-          onClick={() => handleSocialLogin('fed4d07b-db11-455a-b4f5-a1e7c9a3ee6d')}
+          onClick={() => handleSocialLogin(process.env.NEXT_PUBLIC_GITHUB_IDENTITY_PROVIDER_ID || "")}
           style={{ padding: '10px 20px', margin: '5px', backgroundColor: '#333', color: 'white' }}
         >
           Log in with GitHub

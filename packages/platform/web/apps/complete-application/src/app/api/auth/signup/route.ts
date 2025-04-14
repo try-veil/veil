@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     typeof role !== "string" ||
     !email ||
     !password ||
-    !["0bced966-1cd5-44ad-8c0a-d8f902b870d7", "03326aa0-232c-4881-8e8a-bcfe68dec391"].includes(role)
+    ![process.env.NEXT_PUBLIC_ROLE_CONSUMER_ID, process.env.NEXT_PUBLIC_ROLE_PROVIDER_ID].includes(role)
   ) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }

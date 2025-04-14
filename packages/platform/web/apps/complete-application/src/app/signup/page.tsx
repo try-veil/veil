@@ -6,11 +6,14 @@ import { useRouter } from "next/navigation";
 export default function SignupPage() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [role, setRole] = useState<string>("0bced966-1cd5-44ad-8c0a-d8f902b870d7"); // Default to consumer
+  const [role, setRole] = useState<string>(process.env.NEXT_PUBLIC_ROLE_CONSUMER_ID || ""); // Default to consumer
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
-
+  const consumerRoleId = process.env.NEXT_PUBLIC_ROLE_CONSUMER_ID;
+  const providerRoleId = process.env.NEXT_PUBLIC_ROLE_PROVIDER_ID;
+  const githubIdentityProviderId = process.env.NEXT_PUBLIC_GITHUB_IDENTITY_PROVIDER_ID;
+  const googleIdentityProviderId = process.env.NEXT_PUBLIC_GOOGLE_IDENTITY_PROVIDER_ID;
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -38,7 +41,7 @@ export default function SignupPage() {
     }
   };
 
-  const handleSocialLogin = (provider: "82339786-3dff-42a6-aac6-1f1ceecb6c46" | "fed4d07b-db11-455a-b4f5-a1e7c9a3ee6d") => {
+  const handleSocialLogin = (provider: string) => {
     const clientId = process.env.NEXT_PUBLIC_FUSIONAUTH_CLIENT_ID;
     const fusionAuthUrl = process.env.NEXT_PUBLIC_FUSIONAUTH_URL;
     const redirectUri = encodeURIComponent("http://localhost:3000/callback");
@@ -82,8 +85,8 @@ export default function SignupPage() {
             onChange={(e) => setRole(e.target.value)}
             style={{ width: "100%", padding: "8px", marginTop: "5px" }}
           >
-            <option value="0bced966-1cd5-44ad-8c0a-d8f902b870d7">Consumer</option>
-            <option value="03326aa0-232c-4881-8e8a-bcfe68dec391">Provider</option>
+            <option value={consumerRoleId}>Consumer</option>
+            <option value={providerRoleId}>Provider</option>
           </select>
         </div>
         {error && <p style={{ color: "red" }}>{error}</p>}
@@ -98,13 +101,13 @@ export default function SignupPage() {
       <div style={{ marginTop: "20px" }}>
         <p>Or sign up with:</p>
         <button
-          onClick={() => handleSocialLogin("82339786-3dff-42a6-aac6-1f1ceecb6c46")}
+          onClick={() => handleSocialLogin(googleIdentityProviderId || "")}
           style={{ padding: "10px 20px", margin: "5px", backgroundColor: "#4285F4", color: "white" }}
         >
           Sign up with Google
         </button>
         <button
-          onClick={() => handleSocialLogin("fed4d07b-db11-455a-b4f5-a1e7c9a3ee6d")}
+          onClick={() => handleSocialLogin(githubIdentityProviderId || "")}
           style={{ padding: "10px 20px", margin: "5px", backgroundColor: "#333", color: "white" }}
         >
           Sign up with GitHub
