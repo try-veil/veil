@@ -6,10 +6,6 @@ export default function DashboardLayout({ children }: {
     children: React.ReactNode
   }) {
     return (
-        <ThemeProvider defaultTheme='light' storageKey='vite-ui-theme'>
-        <FontProvider>
          {children}
-        </FontProvider>
-      </ThemeProvider>
     )
   }

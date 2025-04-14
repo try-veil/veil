@@ -78,13 +78,13 @@ export default function page() {
               minConstraints={[Infinity, 200]}
               maxConstraints={[Infinity, viewportHeight - 100]}
               axis="y"
-              className="bg-white rounded-lg shadow-md overflow-hidden"
+              className="rounded-lg shadow-md overflow-hidden"
             >
               <Request />
             </ResizableBox>
           </div>
           
-          <div className="bg-white rounded-lg shadow-md overflow-hidden mt-4">
+          <div className="bg-muted rounded-lg shadow-md overflow-hidden mt-4">
             <button
               onClick={() => setIsCodePreviewExpanded(!isCodePreviewExpanded)}
               className="w-full p-4 flex items-center justify-between hover:bg-gray-50"
@@ -131,7 +131,7 @@ export default function page() {
           minConstraints={[300, 100]}
           maxConstraints={[Infinity, Infinity]}
           axis="x"
-          className="bg-white rounded-lg shadow-md overflow-hidden"
+          className="bg-muted rounded-lg shadow-md overflow-hidden"
         >
           <ResponseViewer 
             isLoading={isLoading}
