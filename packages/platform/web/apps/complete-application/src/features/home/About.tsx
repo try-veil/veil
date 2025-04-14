@@ -12,11 +12,11 @@ export default function About() {
   }, []);
 
   return (
-    <div className="w-full bg-white pt-32 py-12 px-4 text-black">
+    <div className="w-full bg-background pt-32 py-12 px-4">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl md:text-4xl font-bold text-black text-center mb-3">Manage & Monetize Your APIs</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-center mb-3">Manage & Monetize Your APIs</h1>
         
-        <p className="text-center text-gray-600 mb-16 max-w-3xl mx-auto">
+        <p className="text-center text-gray-600 dark:text-gray-200 mb-16 max-w-3xl mx-auto">
           It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout.
         </p>
 
@@ -24,42 +24,42 @@ export default function About() {
         <div className="hidden md:flex justify-between items-start relative">
           {/* Publish APIs */}
           <div className="flex flex-col items-center w-1/3 px-4 z-10">
-            <div className="bg-white rounded-lg p-6 shadow-md w-32 h-32 flex items-center justify-center mb-4">
+            <div className="dark:bg-white rounded-lg p-6 shadow-md w-32 h-32 flex items-center justify-center mb-4">
               <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M5 13C5 10.7909 6.79086 9 9 9H15C17.2091 9 19 10.7909 19 13V14.5C19 15.3284 18.3284 16 17.5 16H6.5C5.67157 16 5 15.3284 5 14.5V13Z" fill="black" />
                 <path d="M12 4L15 8H9L12 4Z" fill="black" />
               </svg>
             </div>
             <h3 className="text-lg font-semibold mb-2 text-center">Publish APIs</h3>
-            <p className="text-center text-sm text-gray-500">
+            <p className="text-center text-sm text-gray-500 dark:text-gray-200">
               Lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum
             </p>
           </div>
 
           {/* Manage APIs */}
           <div className="flex flex-col items-center w-1/3 px-4 z-10">
-            <div className="bg-white rounded-lg p-6 shadow-md w-32 h-32 flex items-center justify-center mb-4">
+            <div className="dark:bg-white rounded-lg p-6 shadow-md w-32 h-32 flex items-center justify-center mb-4">
               <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="4" y="6" width="16" height="12" rx="1" stroke="black" strokeWidth="2" />
                 <circle cx="16" cy="12" r="2" fill="black" />
               </svg>
             </div>
             <h3 className="text-lg font-semibold mb-2 text-center">Manage APIs</h3>
-            <p className="text-center text-sm text-gray-500">
+            <p className="text-center text-sm text-gray-500 dark:text-gray-200">
               Lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum
             </p>
           </div>
 
           {/* Monetize Your APIs */}
           <div className="flex flex-col items-center w-1/3 px-4 z-10">
-            <div className="bg-white rounded-lg p-6 shadow-md w-32 h-32 flex items-center justify-center mb-4 border-2 border-blue-500">
+            <div className="dark:bg-white rounded-lg p-6 shadow-md w-32 h-32 flex items-center justify-center mb-4 border-2 border-blue-500">
               <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="5" y="5" width="14" height="14" rx="2" stroke="#0066CC" strokeWidth="2" />
                 <path d="M12 8V16M9 12H15" stroke="#0066CC" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </div>
             <h3 className="text-lg font-semibold mb-2 text-center">Monetize Your APIs</h3>
-            <p className="text-center text-sm text-gray-500">
+            <p className="text-center text-sm text-gray-500 dark:text-gray-200">
               Lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum
             </p>
           </div>
