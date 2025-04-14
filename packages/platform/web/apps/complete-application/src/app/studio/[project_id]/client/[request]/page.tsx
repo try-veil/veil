@@ -11,14 +11,60 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select"
+import ResponseViewer from '@/features/studio/request/components/response-viewer'
 
 export default function page() {
   const [isCodePreviewExpanded, setIsCodePreviewExpanded] = useState(false)
   const viewportHeight = typeof window !== 'undefined' ? window.innerHeight - 200 : 600 // 32px for padding
   const requestHeight = isCodePreviewExpanded ? Math.floor(viewportHeight * 0.5) : viewportHeight - 100 // 100px for code preview header
 
-  const [codeType, setCodeType] = useState("curl");
+  const [codeType, setCodeType] = useState("curl")
+  const [isLoading, setIsLoading] = useState(false)
+  const [response, setResponse] = useState<any>(null)
+
+  const handleSendRequest = () => {
+    setIsLoading(true)
+    // Simulated API call
+    setTimeout(() => {
+      setResponse({
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          'content-type': 'application/json',
+          'x-powered-by': 'Express',
+        },
+        data: {
+          message: 'Hello World',
+          timestamp: new Date().toISOString(),
+        },
+        info: {
+          date: new Date().toISOString(),
+          url: 'https://echo.paw.cloud',
+          status: '200 OK',
+          library: 'Paw Cloud Proxy',
+          headersResponseTime: '489 ms',
+          totalResponseTime: '1419 ms',
+          responseBodySize: '4.51 KiB',
+        },
+        request: {
+          method: 'GET',
+          url: 'https://echo.paw.cloud',
+          path: '/',
+          clientIP: '172.70.85.125',
+          headers: {
+            'Accept-Encoding': 'gzip',
+            'Cdn-Loop': 'cloudflare; loops=1; subreqs=1',
+            'Cf-Connecting-Ip': '2a06:98c0:3600::103',
+            'Cf-Visitor': '{"scheme":"https"}',
+            'Cf-Worker': 'paw.app',
+            'Host': 'echo.paw.cloud',
+          }
+        }
+      })
+      setIsLoading(false)
+    }, 1000)
+  }
 
   return (
     <div className="h-[calc(100vh-7rem)] w-full p-4">
@@ -60,7 +106,6 @@ export default function page() {
               </Select>
               {isCodePreviewExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
               </div>
-              
             </button>
             {isCodePreviewExpanded && (
               <ResizableBox
@@ -88,10 +133,11 @@ export default function page() {
           axis="x"
           className="bg-white rounded-lg shadow-md overflow-hidden"
         >
-          <div className="p-4 h-full overflow-auto">
-            <h2 className="text-lg font-semibold mb-2">Request Response</h2>
-            {/* Add your request response component here */}
-          </div>
+          <ResponseViewer 
+            isLoading={isLoading}
+            response={response}
+            onSend={handleSendRequest}
+          />
         </ResizableBox>
       </div>
     </div>
