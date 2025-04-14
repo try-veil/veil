@@ -51,4 +51,9 @@ interface ProviderSidebarData {
   navGroups: NavGroup[]
 }
 
-export type { SidebarData, NavGroup, NavItem, NavCollapsible, NavLink, ProviderSidebarData }
+interface ConsumerSidebarData {
+  user: User
+  navGroups: NavGroup[]
+}
+
+export type { SidebarData, NavGroup, NavItem, NavCollapsible, NavLink, ProviderSidebarData, ConsumerSidebarData }
