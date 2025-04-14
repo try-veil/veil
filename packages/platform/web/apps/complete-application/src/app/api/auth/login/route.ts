@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
   try {
@@ -34,18 +35,32 @@ export async function POST(request: Request) {
         grant_type: 'password',
         username,
         password,
-        scope: 'openid offline_access',
+        scope: 'openid email profile offline_access',
       } as Record<string, string>),
     });
 
     const data = await response.json();
 
     if (response.ok) {
-      return NextResponse.json({
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
-        expires_in: data.expires_in,
+      // Set HTTP-only cookies for tokens
+      const cookieStore = cookies();
+      cookieStore.set('access_token', data.access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: data.expires_in
       });
+
+      if (data.refresh_token) {
+        cookieStore.set('refresh_token', data.refresh_token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 30 * 24 * 60 * 60 // 30 days
+        });
+      }
+
+      return NextResponse.json({ success: true });
     } else {
       return NextResponse.json({
         error: data.error,

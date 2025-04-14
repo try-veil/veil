@@ -9,7 +9,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handlePasswordSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -19,32 +19,35 @@ export default function Login() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
-        cache: 'no-store'
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error_description || errorData.error || 'Login failed');
-      }
-
       const data = await response.json();
-      localStorage.setItem('access_token', data.access_token);
-      if (data.refresh_token) {
-        localStorage.setItem('refresh_token', data.refresh_token);
+
+      if (response.ok) {
+        // Store the access token in a cookie (HTTP-only, set in API route)
+        router.push('/dashboard');
+      } else {
+        setError(data.error_description || 'Login failed');
       }
-      router.push('/dashboard');
     } catch (err) {
-      console.error('Login error:', err);
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+      setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSocialLogin = (provider: string) => {
+    const clientId = process.env.NEXT_PUBLIC_FUSIONAUTH_CLIENT_ID;
+    const fusionAuthUrl = process.env.NEXT_PUBLIC_FUSIONAUTH_URL;
+    const redirectUri = encodeURIComponent('http://localhost:3000/callback'); // Update for production
+    const authUrl = `${fusionAuthUrl}/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid%20email%20profile&identityProviderId=${provider}`;
+    router.push(authUrl);
+  };
+
   return (
     <div style={{ maxWidth: '400px', margin: '50px auto', textAlign: 'center' }}>
       <h1>Log In</h1>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handlePasswordSubmit}>
         <div style={{ marginBottom: '15px' }}>
           <label htmlFor="username">Username or Email</label>
           <input
@@ -76,6 +79,21 @@ export default function Login() {
           {loading ? 'Logging in...' : 'Log In'}
         </button>
       </form>
+      <div style={{ marginTop: '20px' }}>
+        <p>Or log in with:</p>
+        <button
+          onClick={() => handleSocialLogin('82339786-3dff-42a6-aac6-1f1ceecb6c46')}
+          style={{ padding: '10px 20px', margin: '5px', backgroundColor: '#4285F4', color: 'white' }}
+        >
+          Log in with Google
+        </button>
+        <button
+          onClick={() => handleSocialLogin('fed4d07b-db11-455a-b4f5-a1e7c9a3ee6d')}
+          style={{ padding: '10px 20px', margin: '5px', backgroundColor: '#333', color: 'white' }}
+        >
+          Log in with GitHub
+        </button>
+      </div>
     </div>
   );
 }
