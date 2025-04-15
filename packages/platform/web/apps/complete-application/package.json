@@ -57,11 +57,14 @@
     "recharts": "^2.15.2",
     "tailwind-merge": "^3.2.0",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "5.1.6"
+    "typescript": "5.1.6",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/js-cookie": "^3.0.6",
+    "@types/jsonwebtoken": "^9.0.9",
     "autoprefixer": "^10.4.16",
+    "jsonwebtoken": "^9.0.2",
     "postcss": "^8.4.31",
     "postcss-nested": "^7.0.2",
     "tailwindcss": "^3.3.0"
