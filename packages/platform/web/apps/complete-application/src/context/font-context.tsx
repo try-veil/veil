@@ -1,3 +1,4 @@
+"use client"
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { fonts } from '@/config/fonts'
 
@@ -14,8 +15,12 @@ export const FontProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [font, _setFont] = useState<Font>(() => {
-    const savedFont = localStorage.getItem('font')
-    return fonts.includes(savedFont as Font) ? (savedFont as Font) : fonts[0]
+    // Safe check for localStorage in case of SSR
+    if (typeof window !== 'undefined') {
+      const savedFont = localStorage.getItem('font')
+      return fonts.includes(savedFont as Font) ? (savedFont as Font) : fonts[0]
+    }
+    return fonts[0]
   })
 
   useEffect(() => {
@@ -35,7 +40,11 @@ export const FontProvider: React.FC<{ children: React.ReactNode }> = ({
     _setFont(font)
   }
 
-  return <FontContext value={{ font, setFont }}>{children}</FontContext>
+  return (
+    <FontContext.Provider value={{ font, setFont }}>
+      {children}
+    </FontContext.Provider>
+  )
 }
 
 // eslint-disable-next-line react-refresh/only-export-components

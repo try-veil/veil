@@ -24,12 +24,12 @@ export default function Navbar({ session }: { session: any }) {
     <div className="flex items-center justify-center w-full">
       <nav
         className={`fixed top-4 left-1/2 -translate-x-1/2 rounded-3xl z-50 transition-all duration-300 ease-in-out 
-        bg-[#ffffffe9] border border-[#0000001A]
+        bg-[#ffffffe9] dark:bg-[#020817] border border-[#0000001A]
         w-[90vw] max-w-6xl
       ${
         scrolled
-          ? "shadow-lg"
-          : " shadow-[6px_6px_12px_rgba(0,0,0,0.05),-6px_-6px_12px_rgba(255,255,255,0.7)]"
+        ? "shadow-lg dark:shadow-[0_4px_12px_rgba(255,255,255,0.08)]"
+        : "shadow-[6px_6px_12px_rgba(0,0,0,0.05),-6px_-6px_12px_rgba(255,255,255,0.7)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.4),-6px_-6px_12px_rgba(255,255,255,0.05)]"
       }`}
         style={{ backdropFilter: "blur(12px)" }}
       >
@@ -38,9 +38,9 @@ export default function Navbar({ session }: { session: any }) {
             {/* Logo */}
             <div className="flex-shrink-0 flex items-center">
               <Link href="/" className="flex items-center">
-                <div className="w-8 h-8 bg-black rounded-md flex items-center justify-center mr-2">
+                <div className="w-8 h-8 bg-black dark:bg-white rounded-md flex items-center justify-center mr-2">
                 </div>
-                <span className="text-gray-800 font-semibold text-xl">
+                <span className="text-gray-800 dark:text-white font-semibold text-xl">
                   Veil
                 </span>
               </Link>
@@ -50,40 +50,35 @@ export default function Navbar({ session }: { session: any }) {
             <div className="hidden md:flex md:justify-center md:items-center md:space-x-8">
               <Link
                 href="/"
-                className="text-gray-700 hover:text-orange-500 transition-colors duration-200"
+                className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
               >
                 Home
               </Link>
               <Link
                 href="#about"
-                className="text-gray-700 hover:text-orange-500 transition-colors duration-200"
+                className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
               >
                 About
               </Link>
               <Link
                 href="/why-us"
-                className="text-gray-700 hover:text-orange-500 transition-colors duration-200"
+                className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
               >
                 Why Us
               </Link>
               <Link
                 href="/pricing"
-                className="text-gray-700 hover:text-orange-500 transition-colors duration-200"
+                className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
               >
                 Pricing
               </Link>
               <Link
                 href="/docs"
-                className="text-gray-700 hover:text-orange-500 transition-colors duration-200"
+                className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
               >
                 Documentation
               </Link>
-              <Link
-                href="/dashboard"
-                className="text-white px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-900 shadow-md transition-all duration-200"
-              >
-                Register
-              </Link>
+             
               <LoginButton session={session} />
             </div>
 
@@ -91,7 +86,7 @@ export default function Navbar({ session }: { session: any }) {
             <div className="md:hidden flex items-center">
               <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-orange-500 focus:outline-none"
+                className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 dark:text-white hover:text-black focus:outline-none"
                 aria-expanded="false"
               >
                 <div className="relative w-6 h-5">
@@ -127,31 +122,31 @@ export default function Navbar({ session }: { session: any }) {
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-50 shadow-inner">
             <Link
               href="/resources"
-              className="text-gray-700 hover:text-orange-500 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+              className="text-gray-700 dark:text-white hover:text-black block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
             >
               Resources
             </Link>
             <Link
               href="/solutions"
-              className="text-gray-700 hover:text-orange-500 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+              className="text-gray-700 dark:text-white hover:text-black block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
             >
               Solutions
             </Link>
             <Link
               href="/blog"
-              className="text-gray-700 hover:text-orange-500 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+              className="text-gray-700 dark:text-white hover:text-black block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
             >
               Blog
             </Link>
             <Link
               href="/pricing"
-              className="text-gray-700 hover:text-orange-500 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+              className="text-gray-700 dark:text-white hover:text-black block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
             >
               Pricing
             </Link>
             <Link
               href="/docs"
-              className="text-gray-700 hover:text-orange-500 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+              className="text-gray-700 dark:text-white hover:text-black block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
             >
               Docs
             </Link>

@@ -1,3 +1,4 @@
+"use client"
 import * as React from 'react'
 import {
   ColumnDef,
@@ -61,6 +62,11 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      pagination: {
+        pageSize: 5,
+      },
+    },
   })
 
   return (

@@ -1,7 +1,8 @@
+"use client"
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Link } from '@tanstack/react-router'
+import Link from 'next/link'
 import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -207,7 +208,7 @@ export function NotificationsForm() {
                 <FormDescription>
                   You can manage your mobile notifications in the{' '}
                   <Link
-                    to='/settings'
+                    href='/settings'
                     className='underline decoration-dashed underline-offset-4 hover:decoration-solid'
                   >
                     mobile settings

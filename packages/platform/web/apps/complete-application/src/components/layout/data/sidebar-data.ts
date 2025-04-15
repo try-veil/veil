@@ -32,7 +32,7 @@ export const sidebarData: SidebarData = {
     {
       name: 'Shadcn Admin',
       logo: Command,
-      plan: 'Vite + ShadcnUI',
+      plan: 'NEXT.JS + ShadcnUI',
     },
     {
       name: 'Acme Inc',
@@ -51,28 +51,28 @@ export const sidebarData: SidebarData = {
       items: [
         {
           title: 'Dashboard',
-          url: '/',
+          url: '/provider/dashboard',
           icon: IconLayoutDashboard,
         },
         {
           title: 'Tasks',
-          url: '/tasks',
+          url: '/provider/dashboard/tasks',
           icon: IconChecklist,
         },
         {
           title: 'Apps',
-          url: '/apps',
+          url: '/provider/dashboard/apps',
           icon: IconPackages,
         },
         {
           title: 'Chats',
-          url: '/chats',
+          url: '/provider/dashboard/chats',
           badge: '3',
           icon: IconMessages,
         },
         {
           title: 'Users',
-          url: '/users',
+          url: '/provider/dashboard/users',
           icon: IconUsers,
         },
       ],
@@ -148,34 +148,34 @@ export const sidebarData: SidebarData = {
           items: [
             {
               title: 'Profile',
-              url: '/settings',
+              url: '/provider/dashboard/settings/profile',
               icon: IconUserCog,
             },
             {
               title: 'Account',
-              url: '/settings/account',
+              url: '/provider/dashboard/settings/account',
               icon: IconTool,
             },
             {
               title: 'Appearance',
-              url: '/settings/appearance',
+              url: '/provider/dashboard/settings/appearance',
               icon: IconPalette,
             },
             {
               title: 'Notifications',
-              url: '/settings/notifications',
+              url: '/provider/dashboard/settings/notifications',
               icon: IconNotification,
             },
             {
               title: 'Display',
-              url: '/settings/display',
+              url: '/provider/dashboard/settings/display',
               icon: IconBrowserCheck,
             },
           ],
         },
         {
           title: 'Help Center',
-          url: '/help-center',
+          url: '/provider/dashboard/help-center',
           icon: IconHelp,
         },
       ],

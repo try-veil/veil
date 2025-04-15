@@ -1,3 +1,4 @@
+"use client"
 import React, { useState } from 'react'
 import useDialogState from '@/hooks/use-dialog-state'
 import { Task } from '../data/schema'
@@ -21,9 +22,9 @@ export default function TasksProvider({ children }: Props) {
   const [open, setOpen] = useDialogState<TasksDialogType>(null)
   const [currentRow, setCurrentRow] = useState<Task | null>(null)
   return (
-    <TasksContext value={{ open, setOpen, currentRow, setCurrentRow }}>
+    <TasksContext.Provider value={{ open, setOpen, currentRow, setCurrentRow }}>
       {children}
-    </TasksContext>
+    </TasksContext.Provider>
   )
 }
 
