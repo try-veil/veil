@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { v4 as uuidv4 } from "uuid";
 
 export async function POST(req: Request) {
   const { email, password, role }: { email?: string; password?: string; role?: string } =
     await req.json();
+  const userId = uuidv4();
+
 
   if (
     typeof email !== "string" ||
@@ -15,60 +18,61 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
 
-  const clientId = process.env.NEXT_PUBLIC_FUSIONAUTH_CLIENT_ID;
-  const clientSecret = process.env.FUSIONAUTH_CLIENT_SECRET;
-  const fusionAuthUrl = process.env.NEXT_PUBLIC_FUSIONAUTH_URL;
-  const apiKey = process.env.FUSIONAUTH_API_KEY; // Add this to .env.local
+
+  const clientId = process.env.NEXT_PUBLIC_FUSIONAUTH_CLIENT_ID!;
+  const clientSecret = process.env.FUSIONAUTH_CLIENT_SECRET!;
+  const fusionAuthUrl = process.env.NEXT_PUBLIC_FUSIONAUTH_URL!;
+  const apiKey = process.env.FUSIONAUTH_API_KEY!;
+  const tenantId = process.env.FUSIONAUTH_TENANT_ID || ""; 
+
   try {
-    // Step 1: Register the user
-    console.log("Register Request:", {
-      url: `${fusionAuthUrl}/api/user/register`,
-      headers: { Authorization: `Bearer ${apiKey}` },
-      body: {
-        user: { email, password, roles: [role] },
-        registration: { applicationId: clientId },
-      },
-    });
-    const registerResponse = await fetch(`${fusionAuthUrl}/api/user/register`, {
+
+    const registerResponse = await fetch(`${fusionAuthUrl}/api/user/registration`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${Buffer.from(`${apiKey}`).toString("base64")}`,
+        Authorization: `${apiKey}`, 
+        "X-FusionAuth-TenantId": tenantId, 
       },
       body: JSON.stringify({
         user: {
-          email,
+          email: email.toLowerCase(), 
           password,
-          roles: [role], // Assign the selected role
+          username: email, 
+          firstName: email.split("@")[0] || "User", 
+          lastName: "User", 
         },
         registration: {
           applicationId: clientId,
+          roles: [role === process.env.NEXT_PUBLIC_ROLE_CONSUMER_ID ? "consumer" : "provider"], 
+          username: email,
         },
+        skipVerification: true, 
       }),
     });
-    const registerData: {
-      user?: { id?: string };
-      token?: string;
-      refreshToken?: string;
-      error?: string;
-      fieldErrors?: { [key: string]: { code: number; message: string }[] };
-    } = await registerResponse.json();
-    console.log("Register Response:", registerData);
+
+    const registerData = await registerResponse.json().catch(() => ({})); 
 
     if (!registerResponse.ok) {
-      const errorMessage = registerData.error || registerData.fieldErrors?.email?.[0]?.message || "Registration failed";
-      return NextResponse.json({ error: errorMessage }, { status: registerResponse.status });
+      const fieldError = registerData?.fieldErrors;
+      const firstErrorMessage =
+        fieldError?.["user.email"]?.[0]?.message ||
+        fieldError?.["userId"]?.[0]?.message ||
+        registerData?.error ||
+        "Registration failed";
+      console.error("Registration error:", firstErrorMessage);
+      return NextResponse.json({ error: firstErrorMessage }, { status: registerResponse.status });
     }
 
-    // Step 2: Exchange for tokens using password grant
+
     const tokenResponse = await fetch(`${fusionAuthUrl}/oauth2/token`, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        client_id: clientId!,
-        client_secret: clientSecret!,
+        client_id: clientId,
+        client_secret: clientSecret,
         grant_type: "password",
         username: email,
         password,
@@ -76,22 +80,16 @@ export async function POST(req: Request) {
       }),
     });
 
-    const tokenData: {
-      access_token?: string;
-      refresh_token?: string;
-      expires_in?: number;
-      error?: string;
-      error_description?: string;
-    } = await tokenResponse.json();
+    const tokenData = await tokenResponse.json().catch(() => ({}));
 
     if (!tokenResponse.ok) {
       return NextResponse.json(
-        { error: tokenData.error_description || "Token exchange failed" },
+        { error: tokenData?.error_description || "Token exchange failed" },
         { status: tokenResponse.status }
       );
     }
 
-    // Step 3: Set cookies
+
     const headers = new Headers();
     headers.append(
       "Set-Cookie",
