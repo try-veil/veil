@@ -1,6 +1,6 @@
 "use client"
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { fonts } from '@/config/fonts'
+import { fonts } from '@/fonts/fonts'
 
 type Font = (typeof fonts)[number]
 
