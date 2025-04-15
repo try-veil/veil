@@ -60,7 +60,7 @@ export default function CallbackPage() {
       .then((data: { success?: boolean; error?: string; error_description?: string }) => {
         if (data.success) {
           console.log("Callback successful, redirecting to dashboard");
-          router.push("/dashboard");
+          router.push("/");
         } else {
           console.error("Callback failed:", data);
           router.push(

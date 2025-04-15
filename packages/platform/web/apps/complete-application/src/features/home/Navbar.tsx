@@ -3,7 +3,18 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import LoginButton from "@/components/LoginButton";
 
-export default function Navbar({ session }: { session: any }) {
+interface User {
+  given_name?: string;
+  preferred_username?: string;
+  email?: string;
+}
+
+interface NavbarProps {
+  session: boolean;
+  user: User | null;
+}
+
+export default function Navbar({ session, user }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -79,7 +90,7 @@ export default function Navbar({ session }: { session: any }) {
                 Documentation
               </Link>
              
-              <LoginButton session={session} />
+              <LoginButton session={session} user={user} />
             </div>
 
             {/* Mobile menu button */}
@@ -156,12 +167,6 @@ export default function Navbar({ session }: { session: any }) {
                 className="text-gray-700 px-4 py-2 rounded-md text-center bg-gray-100 shadow-[2px_2px_5px_rgba(0,0,0,0.05),-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all duration-200 hover:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.8)]"
               >
                 Contact
-              </Link>
-              <Link
-                href="/dashboard"
-                className="text-white px-4 py-2 rounded-md text-center bg-gray-800 hover:bg-gray-900 shadow-md transition-all duration-200"
-              >
-                Dashboard
               </Link>
             </div>
           </div>

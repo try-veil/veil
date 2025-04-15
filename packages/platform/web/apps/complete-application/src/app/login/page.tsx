@@ -29,7 +29,8 @@ export default function Login() {
 
       if (response.ok) {
         // Store the access token in a cookie (HTTP-only, set in API route)
-        router.push('/dashboard');
+        router.push('/');
+        router.refresh();
       } else {
         setError(data.error_description || 'Login failed');
       }

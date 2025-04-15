@@ -40,7 +40,7 @@ export default function SignupPage() {
         await response.json();
 
       if (response.ok && data.success) {
-        router.push("/dashboard");
+        router.push("/");
       } else {
         setError(data.error_description || "Signup failed");
       }
