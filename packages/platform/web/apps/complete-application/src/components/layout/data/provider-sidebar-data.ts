@@ -66,7 +66,7 @@ export const getProviderSidebarData = (): ProviderSidebarData => {
         items: [
           {
             title: "Hub Listing",
-            url: "/studio/project_jiya/client/publish/general",
+            url: "/studio/project_jiya/hub-listing",
             icon: IconLayoutDashboard,
           },
           {
