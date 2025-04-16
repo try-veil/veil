@@ -39,8 +39,8 @@ export default function Navbar({ session, user }: NavbarProps) {
         w-[90vw] max-w-6xl
       ${
         scrolled
-        ? "shadow-lg dark:shadow-[0_4px_12px_rgba(255,255,255,0.08)]"
-        : "shadow-[6px_6px_12px_rgba(0,0,0,0.05),-6px_-6px_12px_rgba(255,255,255,0.7)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.4),-6px_-6px_12px_rgba(255,255,255,0.05)]"
+          ? "shadow-lg dark:shadow-[0_4px_12px_rgba(255,255,255,0.08)]"
+          : "shadow-[6px_6px_12px_rgba(0,0,0,0.05),-6px_-6px_12px_rgba(255,255,255,0.7)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.4),-6px_-6px_12px_rgba(255,255,255,0.05)]"
       }`}
         style={{ backdropFilter: "blur(12px)" }}
       >
@@ -49,8 +49,7 @@ export default function Navbar({ session, user }: NavbarProps) {
             {/* Logo */}
             <div className="flex-shrink-0 flex items-center">
               <Link href="/" className="flex items-center">
-                <div className="w-8 h-8 bg-black dark:bg-white rounded-md flex items-center justify-center mr-2">
-                </div>
+                <div className="w-8 h-8 bg-black dark:bg-white rounded-md flex items-center justify-center mr-2"></div>
                 <span className="text-gray-800 dark:text-white font-semibold text-xl">
                   Veil
                 </span>
@@ -89,7 +88,19 @@ export default function Navbar({ session, user }: NavbarProps) {
               >
                 Documentation
               </Link>
-             
+              <Link
+                href="/studio"
+                className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
+              >
+                Studio
+              </Link>
+              <Link
+                href="/marketplace"
+                className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
+              >
+                Marketplace
+              </Link>
+
               <LoginButton session={session} user={user} />
             </div>
 
