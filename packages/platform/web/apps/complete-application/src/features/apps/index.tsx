@@ -49,10 +49,10 @@ export default function Apps() {
     .filter((app) => app.name.toLowerCase().includes(searchTerm.toLowerCase()))
 
   return (
-    <div className="flex w-full items-center justify-center pt-24 pb-4">
-      <div className="flex h-[calc(100vh-7rem)] w-full max-w-[1400px] flex-col ">
+    <div className="flex w-full items-center justify-center pt-32 pb-4">
+      <div className="flex h-[calc(100vh-7rem)] w-full max-w-7xl flex-col ">
         {/* Fixed Content Section */}
-        <div className="sticky top-0 z-10 border-b bg-background px-6 py-6">
+        <div className="sticky top-0 z-10 bg-background px-6 py-6">
           <div>
             <h1 className='text-2xl font-bold tracking-tight'>
               API Marketplace
