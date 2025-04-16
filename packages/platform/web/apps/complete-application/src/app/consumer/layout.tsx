@@ -4,12 +4,13 @@ import { SearchProvider } from "@/context/search-context";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { RequestsProvider } from "@/context/requests-context";
 import SkipToMain from "@/components/skip-to-main";
-import { ProviderAppSidebar } from "@/components/layout/provider-app-sidebar";
 import { Main } from "@/components/layout/main";
 import { Header } from "@/components/layout/header";
 import { ProfileDropdown } from "@/components/profile-dropdown";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { ConsumerAppSidebar } from "@/components/layout/consumer-app-sidebar";
+import { TopNav } from "@/components/layout/top-nav";
+
 export default function ConsumerLayout({
   children,
 }: {
@@ -21,7 +22,7 @@ export default function ConsumerLayout({
       <RequestsProvider>
         <SidebarProvider defaultOpen={defaultOpen}>
           <SkipToMain />
-         <ConsumerAppSidebar />
+          <ConsumerAppSidebar />
           <div
             id="content"
             className={cn(
@@ -36,6 +37,7 @@ export default function ConsumerLayout({
           >
             {/* ===== Top Heading ===== */}
             <Header>
+              <TopNav links={topNav} />
               <div className="ml-auto flex items-center space-x-4">
                 <ThemeSwitch />
                 <ProfileDropdown />
@@ -53,26 +55,20 @@ export default function ConsumerLayout({
 
 const topNav = [
   {
-    title: "Overview",
-    href: "dashboard/overview",
-    isActive: true,
+    title: "Home",
+    href: "/",
+    isActive: false,
     disabled: false,
   },
   {
-    title: "Customers",
-    href: "dashboard/customers",
+    title: "Marketplace",
+    href: "/marketplace",
     isActive: false,
     disabled: true,
   },
   {
-    title: "Products",
-    href: "dashboard/products",
-    isActive: false,
-    disabled: true,
-  },
-  {
-    title: "Settings",
-    href: "dashboard/settings",
+    title: "Studio",
+    href: "/studio",
     isActive: false,
     disabled: true,
   },
