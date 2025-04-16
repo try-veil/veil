@@ -57,21 +57,15 @@ export default function Navbar({ session, user }: NavbarProps) {
             </div>
 
             {/* Desktop menu */}
-            <div className="hidden md:flex md:justify-center md:items-center md:space-x-8">
+            <div className="hidden lg:flex lg:justify-center lg:items-center lg:space-x-8">
               <Link
-                href="/"
-                className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
-              >
-                Home
-              </Link>
-              <Link
-                href="#about"
+                href="/#about"
                 className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
               >
                 About
               </Link>
               <Link
-                href="/why-us"
+                href="/#why-us"
                 className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
               >
                 Why Us
@@ -105,7 +99,7 @@ export default function Navbar({ session, user }: NavbarProps) {
             </div>
 
             {/* Mobile menu button */}
-            <div className="md:hidden flex items-center">
+            <div className="lg:hidden flex items-center">
               <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 dark:text-white hover:text-black focus:outline-none"
@@ -135,7 +129,7 @@ export default function Navbar({ session, user }: NavbarProps) {
 
         {/* Mobile menu */}
         <div
-          className={`md:hidden transform transition-all duration-300 ease-in-out ${
+          className={`lg:hidden transform transition-all duration-300 ease-in-out ${
             isOpen
               ? "max-h-96 opacity-100"
               : "max-h-0 opacity-0 overflow-hidden"
@@ -143,22 +137,16 @@ export default function Navbar({ session, user }: NavbarProps) {
         >
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-50 shadow-inner">
             <Link
-              href="/resources"
+              href="/#about"
               className="text-gray-700 dark:text-white hover:text-black block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
             >
-              Resources
+              About
             </Link>
             <Link
-              href="/solutions"
+              href="/#why-us"
               className="text-gray-700 dark:text-white hover:text-black block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
             >
-              Solutions
-            </Link>
-            <Link
-              href="/blog"
-              className="text-gray-700 dark:text-white hover:text-black block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-            >
-              Blog
+              Why Us
             </Link>
             <Link
               href="/pricing"
@@ -170,15 +158,22 @@ export default function Navbar({ session, user }: NavbarProps) {
               href="/docs"
               className="text-gray-700 dark:text-white hover:text-black block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
             >
-              Docs
+              Documentation
             </Link>
-            <div className="pt-4 pb-2 flex flex-col space-y-2">
-              <Link
-                href="/contact"
-                className="text-gray-700 px-4 py-2 rounded-md text-center bg-gray-100 shadow-[2px_2px_5px_rgba(0,0,0,0.05),-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all duration-200 hover:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.8)]"
-              >
-                Contact
-              </Link>
+            <Link
+              href="/studio"
+              className="text-gray-700 dark:text-white hover:text-black block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+            >
+              Studio
+            </Link>
+            <Link
+              href="/marketplace"
+              className="text-gray-700 dark:text-white hover:text-black block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+            >
+              Marketplace
+            </Link>
+            <div className="pt-4 pb-2">
+              <LoginButton session={session} user={user} />
             </div>
           </div>
         </div>

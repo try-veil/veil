@@ -15,17 +15,17 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
-import { Header } from '@/components/layout/header'
-import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
 import { apps } from './data/apps'
-
+import Link from 'next/link'
 const appText = new Map<string, string>([
-  ['all', 'All Apps'],
-  ['connected', 'Connected'],
-  ['notConnected', 'Not Connected'],
+  ['all', 'All Categories'],
+  ['connected', 'AI'],
+  ['notConnected', 'Analytics'],
+  ['notConnected', 'Commerce'],
+  ['notConnected', 'Content'],
+  ['notConnected', 'Customer Support'],
+  ['notConnected', 'Data'],
+  ['notConnected', 'Marketing'],
 ])
 
 export default function Apps() {
@@ -49,97 +49,101 @@ export default function Apps() {
     .filter((app) => app.name.toLowerCase().includes(searchTerm.toLowerCase()))
 
   return (
-    <>
-      {/* ===== Top Heading ===== */}
-      <Header>
-        <Search />
-        <div className='ml-auto flex items-center gap-4'>
-          <ThemeSwitch />
-          <ProfileDropdown />
-        </div>
-      </Header>
+    <div className="flex w-full items-center justify-center pt-24 pb-4">
+      <div className="flex h-[calc(100vh-7rem)] w-full max-w-[1400px] flex-col ">
+        {/* Fixed Content Section */}
+        <div className="sticky top-0 z-10 border-b bg-background px-6 py-6">
+          <div>
+            <h1 className='text-2xl font-bold tracking-tight'>
+              API Marketplace
+            </h1>
+            <p className='text-muted-foreground'>
+              Lorem ipsum dolor, sit amet consectetur adipisicing elit. Consequuntur, iusto?
+            </p>
+          </div>
+          <div className='my-4 flex items-end justify-between sm:my-0 sm:items-center'>
+            <div className='flex flex-col gap-4 sm:my-4 sm:flex-row'>
+              <Input
+                placeholder='Search APIs...'
+                className='h-9 w-40 lg:w-[250px]'
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <Select value={appType} onValueChange={setAppType}>
+                <SelectTrigger className='w-36'>
+                  <SelectValue>{appText.get(appType)}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='all'>All Categories</SelectItem>
+                  <SelectItem value='connected'>AI</SelectItem>
+                  <SelectItem value='notConnected'>Analytics</SelectItem>
+                  <SelectItem value='notConnected'>Commerce</SelectItem>
+                  <SelectItem value='notConnected'>Content</SelectItem>
+                  <SelectItem value='notConnected'>Customer Support</SelectItem>
+                  <SelectItem value='notConnected'>Data</SelectItem>
+                  <SelectItem value='notConnected'>Marketing</SelectItem>
+                  
+                </SelectContent>
+              </Select>
+            </div>
 
-      {/* ===== Content ===== */}
-      <Main fixed>
-        <div>
-          <h1 className='text-2xl font-bold tracking-tight'>
-            App Integrations
-          </h1>
-          <p className='text-muted-foreground'>
-            Here&apos;s a list of your apps for the integration!
-          </p>
-        </div>
-        <div className='my-4 flex items-end justify-between sm:my-0 sm:items-center'>
-          <div className='flex flex-col gap-4 sm:my-4 sm:flex-row'>
-            <Input
-              placeholder='Filter apps...'
-              className='h-9 w-40 lg:w-[250px]'
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <Select value={appType} onValueChange={setAppType}>
-              <SelectTrigger className='w-36'>
-                <SelectValue>{appText.get(appType)}</SelectValue>
+            <Select value={sort} onValueChange={setSort}>
+              <SelectTrigger className='w-16'>
+                <SelectValue>
+                  <IconAdjustmentsHorizontal size={18} />
+                </SelectValue>
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='all'>All Apps</SelectItem>
-                <SelectItem value='connected'>Connected</SelectItem>
-                <SelectItem value='notConnected'>Not Connected</SelectItem>
+              <SelectContent align='end'>
+                <SelectItem value='ascending'>
+                  <div className='flex items-center gap-4'>
+                    <IconSortAscendingLetters size={16} />
+                    <span>Ascending</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value='descending'>
+                  <div className='flex items-center gap-4'>
+                    <IconSortDescendingLetters size={16} />
+                    <span>Descending</span>
+                  </div>
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
-
-          <Select value={sort} onValueChange={setSort}>
-            <SelectTrigger className='w-16'>
-              <SelectValue>
-                <IconAdjustmentsHorizontal size={18} />
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent align='end'>
-              <SelectItem value='ascending'>
-                <div className='flex items-center gap-4'>
-                  <IconSortAscendingLetters size={16} />
-                  <span>Ascending</span>
-                </div>
-              </SelectItem>
-              <SelectItem value='descending'>
-                <div className='flex items-center gap-4'>
-                  <IconSortDescendingLetters size={16} />
-                  <span>Descending</span>
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <Separator className='shadow' />
         </div>
-        <Separator className='shadow' />
-        <ul className='faded-bottom no-scrollbar grid gap-4 overflow-auto pb-16 pt-4 md:grid-cols-2 lg:grid-cols-3'>
-          {filteredApps.map((app) => (
-            <li
-              key={app.name}
-              className='rounded-lg border p-4 hover:shadow-md'
-            >
-              <div className='mb-8 flex items-center justify-between'>
-                <div
-                  className={`flex size-10 items-center justify-center rounded-lg bg-muted p-2`}
-                >
-                  {app.logo}
+
+        {/* Scrollable Cards Section */}
+        <div className="flex-1 overflow-auto px-6 py-6">
+          <ul className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+            {filteredApps.map((app) => (
+              <Link href={`/consumer/${app.name}/playground`} key={app.name}>
+              <li
+                className='rounded-lg border p-4 hover:shadow-md'
+              >
+                <div className='mb-8 flex items-center justify-between'>
+                  <div
+                    className={`flex size-10 items-center justify-center rounded-lg bg-muted p-2`}
+                  >
+                    {app.logo}
+                  </div>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className={`${app.connected ? 'border border-blue-300 bg-blue-50 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950 dark:hover:bg-blue-900' : ''}`}
+                  >
+                    {app.connected ? 'Connected' : 'Connect'}
+                  </Button>
                 </div>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className={`${app.connected ? 'border border-blue-300 bg-blue-50 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950 dark:hover:bg-blue-900' : ''}`}
-                >
-                  {app.connected ? 'Connected' : 'Connect'}
-                </Button>
-              </div>
-              <div>
-                <h2 className='mb-1 font-semibold'>{app.name}</h2>
-                <p className='line-clamp-2 text-gray-500'>{app.desc}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </Main>
-    </>
+                <div>
+                  <h2 className='mb-1 font-semibold'>{app.name}</h2>
+                  <p className='line-clamp-2 text-gray-500'>{app.desc}</p>
+                </div>
+              </li>
+              </Link>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
   )
 }
