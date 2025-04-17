@@ -8,7 +8,7 @@ export default function MaintenanceError() {
         <span className='font-medium'>Website is under maintenance!</span>
         <p className='text-center text-muted-foreground'>
           The site is not available at the moment. <br />
-          We'll be back online shortly.
+          We&apos;ll be back online shortly.
         </p>
         <div className='mt-6 flex gap-4'>
           <Button variant='outline'>Learn more</Button>

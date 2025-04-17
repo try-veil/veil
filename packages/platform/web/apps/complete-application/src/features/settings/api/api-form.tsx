@@ -115,7 +115,7 @@ export function ApiForm() {
         <h3 className='text-lg font-medium'>Delete API Project</h3>
         <p className='text-sm text-muted-foreground'>
           Permanently deleting this API project will remove it from the Veil Hub
-          Listing, will destroy your team's data from Requests, Testing and
+          Listing, will destroy your team&apos;s data from Requests, Testing and
           Descriptions. This action is not reversible.
         </p>
         <Button variant='destructive'>Delete API Project</Button>

@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PasswordInput } from "@/components/password-input";
 import { cn } from "@/lib/utils";
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import {
   Select,
   SelectContent,
@@ -55,8 +56,8 @@ const MDEditor = dynamic(
   { ssr: false }
 );
 
-export default function page() {
-  const [markdownContent, setMarkdownContent] = useState("# API Documentation\n\nWrite your API documentation here...");
+export default function HubListingPage() {
+  const [markdownContent, setMarkdownContent] = useState("# API Documentation\n\n&quot;Write your API documentation here...&quot;");
   const [initialContent] = useState(markdownContent);
   const [selectedLogo, setSelectedLogo] = useState<string | null>(null);
 
@@ -113,10 +114,12 @@ export default function page() {
                   </div>
                   <div className="w-24 h-24 border rounded-md overflow-hidden bg-muted flex items-center justify-center">
                     {selectedLogo ? (
-                      <img
+                      <Image
                         src={selectedLogo}
                         alt="Logo preview"
-                        className="w-full h-full object-contain"
+                        width={96}
+                        height={96}
+                        className="object-contain"
                       />
                     ) : (
                       <div className="flex flex-col items-center justify-center text-muted-foreground">
@@ -254,7 +257,7 @@ export default function page() {
                   <p className="text-sm text-muted-foreground mt-1">
                     Protect your API by blocking requests that are not from the
                     RapidAPI infrastructure. RapidAPI adds the
-                    "X-RapidAPI-Proxy-Secret" header on every request. This header
+                    &quot;X-RapidAPI-Proxy-Secret&quot; header on every request. This header
                     has a unique value for each API.
                   </p>
                 </div>

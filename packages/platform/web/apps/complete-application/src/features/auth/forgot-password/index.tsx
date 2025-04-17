@@ -18,7 +18,7 @@ export default function ForgotPassword() {
         </div>
         <ForgotForm />
         <p className='mt-4 px-8 text-center text-sm text-muted-foreground'>
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link
             href='/sign-up'
             className='underline underline-offset-4 hover:text-primary'

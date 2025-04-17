@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select"
 import ResponseViewer from '@/features/projects/request/components/response-viewer'
 
-export default function page() {
+export default function RequestPage() {
   const [isCodePreviewExpanded, setIsCodePreviewExpanded] = useState(false)
   const viewportHeight = typeof window !== 'undefined' ? window.innerHeight - 200 : 600 // 32px for padding
   const requestHeight = isCodePreviewExpanded ? Math.floor(viewportHeight * 0.5) : viewportHeight - 100 // 100px for code preview header
