@@ -22,7 +22,7 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-    console.log(username, password,clientId,apiKey,tenantId)
+
     const response = await fetch(`${process.env.NEXT_PUBLIC_FUSIONAUTH_URL}/api/login`, {
       method: 'POST',
       headers: {
@@ -40,12 +40,13 @@ export async function POST(request: Request) {
     const data = await response.json();
 
     if (response.ok) {
-      const token = data.jwt;
+      const accessToken = data.token || data.jwt;
       const refreshToken = data.refreshToken;
-      console.log("data",data)
+      const user = data.user;
 
+      // Set cookies like before
       const cookieStore = cookies();
-      cookieStore.set('access_token', token, {
+      cookieStore.set('access_token', accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
@@ -61,7 +62,17 @@ export async function POST(request: Request) {
         });
       }
 
-      return NextResponse.json({ success: true });
+      // Also return tokens and user data for NextAuth
+      return NextResponse.json({ 
+        success: true,
+        user: {
+          id: user.id,
+          name: user.firstName + ' ' + user.lastName,
+          email: user.email
+        },
+        accessToken,
+        refreshToken
+      });
     } else {
       return NextResponse.json(
         {

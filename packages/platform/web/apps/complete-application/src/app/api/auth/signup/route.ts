@@ -61,7 +61,7 @@ export async function POST(req: Request) {
         registerData?.error ||
         "Registration failed";
       console.error("Registration error:", firstErrorMessage);
-      return NextResponse.json({ error: firstErrorMessage }, { status: registerResponse.status });
+      return NextResponse.json({ error: firstErrorMessage, error_description: firstErrorMessage }, { status: registerResponse.status });
     }
 
 
@@ -84,25 +84,22 @@ export async function POST(req: Request) {
 
     if (!tokenResponse.ok) {
       return NextResponse.json(
-        { error: tokenData?.error_description || "Token exchange failed" },
+        { error: tokenData?.error_description || "Token exchange failed", error_description: tokenData?.error_description },
         { status: tokenResponse.status }
       );
     }
 
-
-    const headers = new Headers();
-    headers.append(
-      "Set-Cookie",
-      `access_token=${tokenData.access_token}; HttpOnly; Path=/; Max-Age=${tokenData.expires_in}; SameSite=Strict`
-    );
-    if (tokenData.refresh_token) {
-      headers.append(
-        "Set-Cookie",
-        `refresh_token=${tokenData.refresh_token}; HttpOnly; Path=/; Max-Age=${tokenData.expires_in}; SameSite=Strict`
-      );
-    }
-
-    return NextResponse.json({ success: true }, { status: 200, headers });
+    // Return tokens and user data for NextAuth
+    return NextResponse.json({ 
+      success: true,
+      user: {
+        id: registerData.user.id,
+        name: registerData.user.firstName + ' ' + registerData.user.lastName,
+        email: registerData.user.email
+      },
+      accessToken: tokenData.access_token,
+      refreshToken: tokenData.refresh_token
+    });
   } catch (error) {
     console.error("Signup error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

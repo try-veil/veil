@@ -1,11 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 
 interface User {
-  given_name?: string;
-  preferred_username?: string;
+  id?: string;
+  name?: string;
   email?: string;
 }
 
@@ -23,15 +24,7 @@ export default function LoginButton({ session, user }: LoginButtonProps) {
         onClick={async () => {
           try {
             console.log("Initiating logout...");
-            const response = await fetch("/api/auth/logout", { method: "POST" });
-            const data = await response.json();
-            if (data.success) {
-              console.log("Logout successful");
-              // Force a hard refresh of the page to clear all states
-              window.location.href = "/";
-            } else {
-              console.error("Logout failed:", data.error);
-            }
+            await signOut({ redirect: true, callbackUrl: "/" });
           } catch (error) {
             console.error("Logout request error:", error);
           }

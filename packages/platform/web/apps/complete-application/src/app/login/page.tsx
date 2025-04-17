@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react';
+import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Metadata } from "next";
 import Image from "next/image";
@@ -19,6 +20,7 @@ export default function Login() {
     setLoading(true);
 
     try {
+      // First get tokens from your FusionAuth API
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -28,9 +30,20 @@ export default function Login() {
       const data = await response.json();
 
       if (response.ok) {
-        // Store the access token in a cookie (HTTP-only, set in API route)
-        router.push('/');
-        router.refresh();
+        // Use NextAuth to sign in with the obtained credentials
+        const result = await signIn('custom-credentials', {
+          redirect: false,
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+          userData: JSON.stringify(data.user),
+        });
+
+        if (result?.error) {
+          setError(result.error);
+        } else {
+          router.push('/');
+          router.refresh();
+        }
       } else {
         setError(data.error_description || 'Login failed');
       }
@@ -48,7 +61,7 @@ export default function Login() {
     const authUrl = `${fusionAuthUrl}/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid%20email%20profile&identityProviderId=${provider}`;
     router.push(authUrl);
   };
-
+  
   return (
     <>
       <div className="container relative h-screen px-8 flex flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">

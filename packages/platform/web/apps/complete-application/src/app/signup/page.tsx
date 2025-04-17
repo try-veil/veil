@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Metadata } from "next";
 import Image from "next/image";
@@ -36,11 +37,22 @@ export default function SignupPage() {
         body: JSON.stringify({ email, password, role }),
       });
 
-      const data: { success?: boolean; error?: string; error_description?: string } =
-        await response.json();
+      const data = await response.json();
 
       if (response.ok && data.success) {
-        router.push("/");
+        // Use NextAuth to sign in with the obtained credentials
+        const result = await signIn('custom-credentials', {
+          redirect: false,
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+          userData: JSON.stringify(data.user),
+        });
+
+        if (result?.error) {
+          setError(result.error);
+        } else {
+          router.push("/");
+        }
       } else {
         setError(data.error_description || "Signup failed");
       }

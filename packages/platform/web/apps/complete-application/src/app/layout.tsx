@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/context/theme-context";
 import { FontProvider } from "@/context/font-context";
+import AuthProvider from "@/components/auth-provider";
 
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",
@@ -29,11 +30,13 @@ export default function RootLayout({
       <body
       // className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-        <FontProvider>
-          {children}
-          </FontProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+            <FontProvider>
+              {children}
+            </FontProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

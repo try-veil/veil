@@ -81,7 +81,7 @@ export const authOptions: NextAuthOptions = {
           ...token,
           accessToken: (user as any).accessToken,
           refreshToken: (user as any).refreshToken,
-          accessTokenExpiry: Date.now() + 15 * 60 * 1000,
+          accessTokenExpiry: Date.now() +  30 * 1000,
           user: {
             id: user.id,
             name: user.name || "",
@@ -92,9 +92,10 @@ export const authOptions: NextAuthOptions = {
 
       // If token is still valid, return it
       if (Date.now() < (token.accessTokenExpiry as number)) {
+        console.log("Token still valid until:", new Date(token.accessTokenExpiry as number));
         return token as ExtendedToken;
       }
-
+      console.log("Token expired, refreshing...");
       // Refresh the token
       try {
         const res = await fetch(`${process.env.NEXTAUTH_URL}/api/auth/refreshtoken`, {

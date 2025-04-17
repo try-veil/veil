@@ -4,8 +4,8 @@ import Link from "next/link";
 import LoginButton from "@/components/LoginButton";
 
 interface User {
-  given_name?: string;
-  preferred_username?: string;
+  id?: string;
+  name?: string;
   email?: string;
 }
 
