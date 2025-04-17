@@ -58,6 +58,7 @@ function Calendar({
         ...classNames,
       }}
       components={{
+        // @ts-expect-error - These component names are valid for react-day-picker
         IconLeft: () => <ChevronLeft className='h-4 w-4' />,
         IconRight: () => <ChevronRight className='h-4 w-4' />,
       }}

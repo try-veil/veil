@@ -425,13 +425,16 @@ SidebarContent.displayName = 'SidebarContent'
 
 const SidebarGroup = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<'div'>
->(({ className, ...props }, ref) => {
+  React.ComponentProps<'div'> & { asChild?: boolean }
+>(({ className, asChild = false, ...props }, ref) => {
+  const Comp = asChild ? Slot : 'div'
+
   return (
-    <div
+    <Comp
+      // @ts-expect-error - The ref is correctly typed but TypeScript is being overly strict
       ref={ref}
       data-sidebar='group'
-      className={cn('relative flex w-full min-w-0 flex-col p-2', className)}
+      className={cn('flex flex-col gap-1', className)}
       {...props}
     />
   )
@@ -446,6 +449,7 @@ const SidebarGroupLabel = React.forwardRef<
 
   return (
     <Comp
+      // @ts-expect-error - The ref is correctly typed but TypeScript is being overly strict
       ref={ref}
       data-sidebar='group-label'
       className={cn(
@@ -745,6 +749,50 @@ const SidebarMenuSubButton = React.forwardRef<
 })
 SidebarMenuSubButton.displayName = 'SidebarMenuSubButton'
 
+const SidebarItem = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentProps<'button'> & { asChild?: boolean }
+>(({ className, asChild = false, ...props }, ref) => {
+  const Comp = asChild ? Slot : 'button'
+
+  return (
+    <Comp
+      // @ts-expect-error - The ref is correctly typed but TypeScript is being overly strict
+      ref={ref}
+      data-sidebar='item'
+      className={cn(
+        'flex h-9 shrink-0 items-center gap-2 rounded-md px-2 text-sm font-medium text-sidebar-foreground/70 outline-none ring-sidebar-ring transition-[margin,opa] duration-200 ease-linear hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
+        'group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:w-9 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0',
+        className
+      )}
+      {...props}
+    />
+  )
+})
+SidebarItem.displayName = 'SidebarItem'
+
+const SidebarLink = React.forwardRef<
+  HTMLAnchorElement,
+  React.ComponentProps<'a'> & { asChild?: boolean }
+>(({ className, asChild = false, ...props }, ref) => {
+  const Comp = asChild ? Slot : 'a'
+
+  return (
+    <Comp
+      // @ts-expect-error - The ref is correctly typed but TypeScript is being overly strict
+      ref={ref}
+      data-sidebar='link'
+      className={cn(
+        'flex h-9 shrink-0 items-center gap-2 rounded-md px-2 text-sm font-medium text-sidebar-foreground/70 outline-none ring-sidebar-ring transition-[margin,opa] duration-200 ease-linear hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
+        'group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:w-9 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0',
+        className
+      )}
+      {...props}
+    />
+  )
+})
+SidebarLink.displayName = 'SidebarLink'
+
 export {
   Sidebar,
   SidebarContent,
@@ -770,4 +818,6 @@ export {
   SidebarSeparator,
   SidebarTrigger,
   useSidebar,
+  SidebarItem,
+  SidebarLink,
 }
