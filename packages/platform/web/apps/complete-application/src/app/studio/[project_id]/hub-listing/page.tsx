@@ -16,6 +16,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { PlusIcon } from "lucide-react";
 
 const MDEditor = dynamic(
   () => import('@uiw/react-md-editor').then((mod) => {
@@ -47,6 +57,11 @@ const MDEditor = dynamic(
 export default function page() {
   const [markdownContent, setMarkdownContent] = useState("# API Documentation\n\nWrite your API documentation here...");
   const [initialContent] = useState(markdownContent);
+
+  // Add state for pricing tiers
+  const [basicEnabled, setBasicEnabled] = useState(true);
+  const [proEnabled, setProEnabled] = useState(true);
+  const [ultraEnabled, setUltraEnabled] = useState(true);
 
   const handleDiscard = () => {
     setMarkdownContent(initialContent);
@@ -297,8 +312,107 @@ export default function page() {
               </div>
             </form>
           </TabsContent>
-          <TabsContent value="monetize" className="space-y-4">
-            <p>monetize</p>
+          <TabsContent value="monetize" className="space-y-6">
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold">Monetization</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Basic Plan */}
+                <Card>
+                  <CardHeader className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle>BASIC</CardTitle>
+                      <Switch
+                        checked={basicEnabled}
+                        onCheckedChange={setBasicEnabled}
+                      />
+                    </div>
+                    <CardDescription>
+                      ${basicEnabled ? "0.00" : "0"}/month
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Requests</h3>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">500,000 / month</div>
+                        <Badge variant="secondary">Quota</Badge>
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Rapid-free-plans-hard-limit</h3>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">500,000 / month</div>
+                        <Badge variant="secondary">Quota</Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Pro Plan */}
+                <Card>
+                  <CardHeader className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle>PRO</CardTitle>
+                      <Switch
+                        checked={proEnabled}
+                        onCheckedChange={setProEnabled}
+                      />
+                    </div>
+                    <CardDescription>
+                      ${proEnabled ? "0.00" : "0"}/month
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Requests</h3>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">500,000 / month</div>
+                        <Badge variant="secondary">Quota</Badge>
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Rapid-free-plans-hard-limit</h3>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">500,000 / month</div>
+                        <Badge variant="secondary">Quota</Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Ultra Plan */}
+                <Card>
+                  <CardHeader className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle>ULTRA</CardTitle>
+                      <Switch
+                        checked={ultraEnabled}
+                        onCheckedChange={setUltraEnabled}
+                      />
+                    </div>
+                    <CardDescription>
+                      ${ultraEnabled ? "0.00" : "0"}/month
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Requests</h3>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">500,000 / month</div>
+                        <Badge variant="secondary">Quota</Badge>
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Rapid-free-plans-hard-limit</h3>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">500,000 / month</div>
+                        <Badge variant="secondary">Quota</Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </TabsContent>
         </div>
       </Tabs>
