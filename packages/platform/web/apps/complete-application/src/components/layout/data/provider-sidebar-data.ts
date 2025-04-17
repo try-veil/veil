@@ -84,18 +84,70 @@ const defaultSidebarData: ProviderSidebarData = {
 
 // React component that uses the hook
 export function ProviderSidebarDataComponent() {
-  const { requests } = useRequests();
+  const { requests, projectId } = useRequests();
   
   // Create a deep copy of the default data
-  const sidebarData = JSON.parse(JSON.stringify(defaultSidebarData));
-  
-  // Add requests to the first nav group
-  if (requests && requests.length > 0) {
-    sidebarData.navGroups[0].items = [
-      ...requests,
-      ...sidebarData.navGroups[0].items
-    ];
-  }
+  const sidebarData = {
+    user: {
+      name: "satnaing",
+      email: "satnaingdev@gmail.com",
+      avatar: "/avatars/shadcn.jpg",
+    },
+    projects: [
+      {
+        name: "Weather API",
+        logo: Command,
+        plan: "Basic",
+      },
+      {
+        name: "Typesense API",
+        logo: GalleryVerticalEnd,
+        plan: "Pro",
+      },
+      {
+        name: "Gemini API",
+        logo: AudioWaveform,
+        plan: "Premium",
+      },
+    ],
+    navGroups: [
+      {
+        title: "Requests",
+        items: [
+          ...requests.map(request => ({
+            title: request.title,
+            url: request.url,
+            icon: request.icon,
+          })),
+          {
+            title: "Add Request",
+            url: `/projects/${projectId}/client/add-request`,
+            icon: IconPackages,
+          },
+        ],
+      },
+      {
+        title: "General",
+        items: [
+          {
+            title: "Hub Listing",
+            url: `/projects/${projectId}/hub-listing`,
+            icon: IconLayoutDashboard,
+          },
+          {
+            title: "Analytics",
+            url: `/projects/${projectId}/analytics`,
+            icon: IconChecklist,
+          },
+          {
+            title: "Settings",
+            url: `/projects/${projectId}/settings`,
+            icon: IconPackages,
+          },
+        ],
+      },
+    ],
+  };
   
   return sidebarData;
 }
@@ -104,3 +156,69 @@ export function ProviderSidebarDataComponent() {
 export const getProviderSidebarData = (): ProviderSidebarData => {
   return defaultSidebarData;
 };
+
+export function useProviderSidebarData() {
+  const { requests, projectId } = useRequests();
+  
+  return {
+    user: {
+      name: "satnaing",
+      email: "satnaingdev@gmail.com",
+      avatar: "/avatars/shadcn.jpg",
+    },
+    projects: [
+      {
+        name: "Weather API",
+        logo: Command,
+        plan: "Basic",
+      },
+      {
+        name: "Typesense API",
+        logo: GalleryVerticalEnd,
+        plan: "Pro",
+      },
+      {
+        name: "Gemini API",
+        logo: AudioWaveform,
+        plan: "Premium",
+      },
+    ],
+    navGroups: [
+      {
+        title: "Requests",
+        items: [
+          ...requests.map(request => ({
+            title: request.title,
+            url: request.url,
+            icon: request.icon,
+          })),
+          {
+            title: "Add Request",
+            url: `/projects/${projectId}/client/add-request`,
+            icon: IconPackages,
+          },
+        ],
+      },
+      {
+        title: "General",
+        items: [
+          {
+            title: "Hub Listing",
+            url: `/projects/${projectId}/hub-listing`,
+            icon: IconLayoutDashboard,
+          },
+          {
+            title: "Analytics",
+            url: `/projects/${projectId}/analytics`,
+            icon: IconChecklist,
+          },
+          {
+            title: "Settings",
+            url: `/projects/${projectId}/settings`,
+            icon: IconPackages,
+          },
+        ],
+      },
+    ],
+  };
+}

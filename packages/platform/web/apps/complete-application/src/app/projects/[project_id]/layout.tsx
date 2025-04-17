@@ -13,13 +13,15 @@ import { TopNav } from "@/components/layout/top-nav";
 
 export default function DashboardLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: { project_id: string };
 }) {
   const defaultOpen = Cookies.get("sidebar:state") !== "false";
   return (
     <SearchProvider>
-      <RequestsProvider>
+      <RequestsProvider projectId={params.project_id}>
         <SidebarProvider defaultOpen={defaultOpen}>
           <SkipToMain />
           <ProviderAppSidebar />

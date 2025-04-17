@@ -26,18 +26,19 @@ export default function AddRequestPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
-  const { addRequest } = useRequests();
+  const { addRequest, projectId } = useRequests();
   const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (title.trim()) {
+      const requestTitle = title.trim();
       addRequest({
-        title: title.trim(),
+        title: requestTitle,
         description: description.trim(),
-        category,
+        category: category || 'api',
       });
-      router.back();
+      router.push(`/projects/${projectId}/client/${requestTitle}`);
     }
   };
 
@@ -53,6 +54,7 @@ export default function AddRequestPage() {
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter request name"
             className="mt-1"
+            required
           />
         </div>
         <div>
