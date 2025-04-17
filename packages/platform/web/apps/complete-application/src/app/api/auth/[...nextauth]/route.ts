@@ -81,7 +81,7 @@ export const authOptions: NextAuthOptions = {
           ...token,
           accessToken: (user as any).accessToken,
           refreshToken: (user as any).refreshToken,
-          accessTokenExpiry: Date.now() +  30 * 1000,
+          accessTokenExpiry: Date.now() +  15 * 60 * 1000,
           user: {
             id: user.id,
             name: user.name || "",
@@ -98,25 +98,31 @@ export const authOptions: NextAuthOptions = {
       console.log("Token expired, refreshing...");
       // Refresh the token
       try {
-        const res = await fetch(`${process.env.NEXTAUTH_URL}/api/auth/refreshtoken`, {
+        const fusionAuthUrl = process.env.NEXT_PUBLIC_FUSIONAUTH_URL!;
+        const tenantId = process.env.FUSIONAUTH_TENANT_ID!;
+
+        const response = await fetch(`${fusionAuthUrl}/api/jwt/refresh`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "X-FusionAuth-TenantId": tenantId
           },
-          body: JSON.stringify({ refreshToken: token.refreshToken }),
+          body: JSON.stringify({
+            refreshToken: token.refreshToken,
+          }),
         });
 
-        if (!res.ok) {
-          const errorData = await res.json();
+        if (!response.ok) {
+          const errorData = await response.json();
           console.error("Token refresh failed:", errorData.error);
           return { ...token, error: "RefreshAccessTokenError" } as ExtendedToken;
         }
 
-        const data = await res.json();
+        const data = await response.json();
 
         return {
           ...token,
-          accessToken: data.accessToken,
+          accessToken: data.token,
           refreshToken: data.refreshToken || token.refreshToken,
           accessTokenExpiry: Date.now() + 15 * 60 * 1000,
         } as ExtendedToken;
