@@ -43,25 +43,6 @@ export async function POST(request: Request) {
       const accessToken = data.token || data.jwt;
       const refreshToken = data.refreshToken;
       const user = data.user;
-
-      // Set cookies like before
-      const cookieStore = cookies();
-      cookieStore.set('access_token', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: data.expiresIn || 3600,
-      });
-
-      if (refreshToken) {
-        cookieStore.set('refresh_token', refreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 30 * 24 * 60 * 60, // 30 days
-        });
-      }
-
       // Also return tokens and user data for NextAuth
       return NextResponse.json({ 
         success: true,
