@@ -36,7 +36,7 @@ export default function DashboardLayout({
             )}
           >
             {/* ===== Top Heading ===== */}
-            <Header>
+            <Header fixed={true}>
               <TopNav links={topNav} />
               <div className="ml-auto flex items-center space-x-4">
                 <ThemeSwitch />
