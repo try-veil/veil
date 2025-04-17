@@ -28,7 +28,7 @@ const appText = new Map<string, string>([
   ['notConnected', 'Marketing'],
 ])
 
-export default function Apps() {
+export default function MyProjects() {
   const [sort, setSort] = useState('ascending')
   const [appType, setAppType] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
@@ -49,13 +49,13 @@ export default function Apps() {
     .filter((app) => app.name.toLowerCase().includes(searchTerm.toLowerCase()))
 
   return (
-    <div className="flex w-full items-center justify-center pt-32 pb-4">
-      <div className="flex h-[calc(100vh-10rem)] w-full max-w-7xl flex-col ">
+    <div className="flex w-full items-center justify-center">
+      <div className="flex h-[calc(100vh-12rem)] w-full max-w-7xl flex-col">
         {/* Fixed Content Section */}
-        <div className="sticky top-0 z-10 bg-background px-6 py-6">
+        <div className="sticky top-32 z-10 bg-background py-6">
           <div>
             <h1 className='text-2xl font-bold tracking-tight'>
-              API Marketplace
+              My Projects
             </h1>
             <p className='text-muted-foreground'>
               Lorem ipsum dolor, sit amet consectetur adipisicing elit. Consequuntur, iusto?
@@ -64,7 +64,7 @@ export default function Apps() {
           <div className='my-4 flex items-end justify-between sm:my-0 sm:items-center'>
             <div className='flex flex-col gap-4 sm:my-4 sm:flex-row'>
               <Input
-                placeholder='Search APIs...'
+                placeholder='Search your APIs...'
                 className='h-9 w-40 lg:w-[250px]'
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -116,7 +116,7 @@ export default function Apps() {
         <div className="flex-1 overflow-auto px-6 py-6">
           <ul className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
             {filteredApps.map((app) => (
-              <Link href={`/consumer/${app.name}/playground`} key={app.name}>
+              <Link href={`/studio/${app.name}`} key={app.name}>
               <li
                 className='rounded-lg border p-4 hover:shadow-md'
               >
