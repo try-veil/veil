@@ -258,9 +258,9 @@ export default function PlaygroundPage() {
     .filter((category) => category.items.length > 0);
 
   return (
-    <div className="flex">
+    <div className="flex flex-col lg:flex-row">
       {/* Left Column - Endpoints List */}
-      <div className="w-1/3 border-r border-gray-200 overflow-y-auto p-4">
+      <div className="w-full lg:w-1/3 border-r border-gray-200 overflow-y-auto p-4 max-h-[50vh] lg:max-h-screen">
         <div className="mb-4">
           <div className="relative">
             <Input
@@ -333,7 +333,7 @@ export default function PlaygroundPage() {
       </div>
 
       {/* Right Column - Selected Endpoint Display */}
-      <div className="flex-1 p-4">
+      <div className="w-full lg:w-2/3 p-4">
         <div>
             <EndpointViewer endpoint={selectedEndpoint}/>
         </div>
