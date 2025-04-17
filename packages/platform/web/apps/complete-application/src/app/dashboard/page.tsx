@@ -28,7 +28,7 @@ export default function Dashboard() {
             <CardDescription>You are signed in!</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="mb-4">User: {session?.user?.name || session?.user?.email}</p>
+            {/* <p className="mb-4">User: {session?.user?.name || session?.user?.email}</p> */}
             <Button onClick={() => router.push("/")}>Go Home</Button>
           </CardContent>
         </Card>

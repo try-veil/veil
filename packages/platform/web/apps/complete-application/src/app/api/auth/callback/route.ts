@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 
 export async function POST(req: Request) {
   const { code, role }: { code?: string; role?: string } = await req.json();
@@ -48,8 +47,9 @@ export async function POST(req: Request) {
       expires_in?: number;
       error?: string;
       error_description?: string;
+      userId?: string;
     } = await tokenResponse.json();
-
+    console.log("Token data:", tokenData);
     if (!tokenResponse.ok) {
       console.error("Token exchange failed:", tokenData);
       return NextResponse.json(
@@ -60,42 +60,13 @@ export async function POST(req: Request) {
         { status: tokenResponse.status }
       );
     }
-
-    // Step 2: Set cookies
-    const headers = new Headers();
-    if (tokenData.access_token) {
-      headers.append(
-        "Set-Cookie",
-        `access_token=${tokenData.access_token}; HttpOnly; Path=/; Max-Age=${tokenData.expires_in || 3600}; SameSite=Strict`
-      );
-    } else {
-      console.warn("No access_token in token response");
-    }
-    if (tokenData.refresh_token) {
-      headers.append(
-        "Set-Cookie",
-        `refresh_token=${tokenData.refresh_token}; HttpOnly; Path=/; Max-Age=${tokenData.expires_in || 3600}; SameSite=Strict`
-      );
-    }
-
-    // Step 3: Assign role if provided
-    if (role) {
-      // Get userId from access_token (JWT)
-      let userId: string | undefined;
-      if (tokenData.access_token) {
-        try {
-          const decoded = jwt.decode(tokenData.access_token) as { sub?: string };
-          userId = decoded?.sub;
-          console.log("Decoded userId from JWT:", userId);
-        } catch (jwtError) {
-          console.error("JWT decode error:", jwtError);
-          // Continue login even if JWT decoding fails
-        }
-      }
-
-      if (userId) {
+    
+    // If tokens were obtained successfully
+    if (tokenData.userId && tokenData.access_token) {
+      // Assign role if provided
+      if (role && tokenData.userId) {
         const fusionAuthRole = role === process.env.NEXT_PUBLIC_ROLE_CONSUMER_ID ? "consumer" : "provider";
-        const registrationUrl = `${fusionAuthUrl}/api/user/registration/${userId}/${clientId}`;
+        const registrationUrl = `${fusionAuthUrl}/api/user/registration/${tokenData.userId}/${clientId}`;
         const registrationBody = {
           registration: {
             applicationId: clientId,
@@ -116,7 +87,7 @@ export async function POST(req: Request) {
         });
 
         const putData = await putResponse.json().catch(() => ({}));
-
+        console.log("Put data:", putData);
         if (putResponse.ok) {
           console.log("Role assignment successful:", putData);
         } else {
@@ -124,14 +95,20 @@ export async function POST(req: Request) {
           // Log error but continue login to avoid breaking the flow
         }
       } else {
-        console.warn("No userId found, skipping role assignment");
+        console.log("No role provided, skipping role assignment");
       }
-    } else {
-      console.log("No role provided, skipping role assignment");
+
+      // Return tokens to client for NextAuth sign-in
+      return NextResponse.json({
+        success: true,
+        accessToken: tokenData.access_token,
+        refreshToken: tokenData.refresh_token,
+        userId: tokenData.userId,
+        // Include any other user data you have
+      });
     }
 
-    // Step 4: Return success
-    return NextResponse.json({ success: true }, { status: 200, headers });
+    return NextResponse.json({ error: "Missing user data or access token" }, { status: 400 });
   } catch (error) {
     console.error("Authentication error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
