@@ -49,8 +49,8 @@ export default function Apps() {
     .filter((app) => app.name.toLowerCase().includes(searchTerm.toLowerCase()))
 
   return (
-    <div className="flex w-full items-center justify-center pt-32 pb-4">
-      <div className="flex h-[calc(100vh-10rem)] w-full max-w-7xl flex-col ">
+    <div className="flex w-full items-center justify-center pt-24 pb-4">
+      <div className="flex h-[calc(100vh-7rem)] w-full max-w-7xl flex-col ">
         {/* Fixed Content Section */}
         <div className="sticky top-0 z-10 bg-background px-6 py-6">
           <div>

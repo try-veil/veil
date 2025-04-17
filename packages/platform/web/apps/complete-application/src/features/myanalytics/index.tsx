@@ -50,7 +50,7 @@ export default function MyAnalytics() {
 
   return (
     <div className="flex w-full items-center justify-center">
-      <div className="flex h-[calc(100vh-12rem)] w-full max-w-7xl flex-col">
+      <div className="flex h-[calc(100vh-10rem)] w-full max-w-7xl flex-col">
         {/* Fixed Content Section */}
         <div className="bg-background py-6">
           <div>

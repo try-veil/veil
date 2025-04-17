@@ -61,8 +61,8 @@ export default function Projects() {
   return (
     <main className=" flex flex-col">
       <Navbar session={!isLoading && user !== null} user={user} />
-      <div className="flex-1 pt-32">
-        <div className="sticky top-16 z-20 bg-background w-full max-w-7xl mx-auto px-6 h-[calc(100vh-12rem)]">
+      <div className="flex-1 pt-24">
+        <div className="sticky top-16 z-20 bg-background w-full max-w-7xl mx-auto px-6 h-[calc(100vh-7rem)]">
           <Tabs
             orientation="vertical"
             defaultValue="projects"
