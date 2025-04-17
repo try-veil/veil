@@ -56,7 +56,7 @@ export const getProviderSidebarData = (): ProviderSidebarData => {
           ...requests,
           {
             title: "Add Request",
-            url: "/studio/project_jiya/client/add-request",
+            url: "/projects/project_jiya/client/add-request",
             icon: IconPackages,
           },
         ],
@@ -66,17 +66,17 @@ export const getProviderSidebarData = (): ProviderSidebarData => {
         items: [
           {
             title: "Hub Listing",
-            url: "/studio/project_jiya/hub-listing",
+            url: "/projects/project_jiya/hub-listing",
             icon: IconLayoutDashboard,
           },
           {
             title: "Analytics",
-            url: "/studio/project_jiya/analytics",
+            url: "/projects/project_jiya/analytics",
             icon: IconChecklist,
           },
           {
             title: "Settings",
-            url: "/studio/project_jiya/settings",
+            url: "/projects/project_jiya/settings",
             icon: IconPackages,
           },
         ],

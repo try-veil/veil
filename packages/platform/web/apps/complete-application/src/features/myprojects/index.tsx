@@ -52,7 +52,7 @@ export default function MyProjects() {
     <div className="flex w-full items-center justify-center">
       <div className="flex h-[calc(100vh-12rem)] w-full max-w-7xl flex-col">
         {/* Fixed Content Section */}
-        <div className="sticky top-32 z-10 bg-background py-6">
+        <div className="bg-background py-6">
           <div>
             <h1 className='text-2xl font-bold tracking-tight'>
               My Projects
@@ -116,7 +116,7 @@ export default function MyProjects() {
         <div className="flex-1 overflow-auto px-6 py-6">
           <ul className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
             {filteredApps.map((app) => (
-              <Link href={`/studio/${app.name}`} key={app.name}>
+              <Link href={`/projects/${app.name}`} key={app.name}>
               <li
                 className='rounded-lg border p-4 hover:shadow-md'
               >

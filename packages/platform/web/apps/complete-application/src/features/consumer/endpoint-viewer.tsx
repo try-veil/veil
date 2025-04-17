@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import React, { useState } from 'react'
 import { dummyEndpoint } from './endpoints'
-import { JsonViewer } from '@/features/studio/request/components/json-tree-viewer'
+import { JsonViewer } from '@/features/projects/request/components/json-tree-viewer'
 
 export default function EndpointViewer() {
   const [selectedLanguage, setSelectedLanguage] = useState('shell')

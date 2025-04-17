@@ -26,7 +26,7 @@ export function RequestsProvider({ children }: { children: React.ReactNode }) {
       title: 'Request 1',
       description: '',
       category: 'api',
-      url: '/studio/project_jiya/client/request1',
+      url: '/projects/project_jiya/client/request1',
       icon: IconLayoutDashboard,
     },
     {
@@ -34,7 +34,7 @@ export function RequestsProvider({ children }: { children: React.ReactNode }) {
       title: 'Request 2',
       description: '',
       category: 'api',
-      url: '/studio/project_jiya/client/request2',
+      url: '/projects/project_jiya/client/request2',
       icon: IconChecklist,
     },
   ]);
@@ -43,7 +43,7 @@ export function RequestsProvider({ children }: { children: React.ReactNode }) {
     const newRequest: Request = {
       id: Date.now().toString(),
       ...request,
-      url: `/studio/project_jiya/client/request${requests.length + 1}`,
+      url: `/projects/project_jiya/client/request${requests.length + 1}`,
       icon: IconPackages,
     };
     setRequests([...requests, newRequest]);

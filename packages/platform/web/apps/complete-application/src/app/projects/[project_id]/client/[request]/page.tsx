@@ -1,6 +1,6 @@
 'use client'
 
-import Request from '@/features/studio/request'
+import Request from '@/features/projects/request'
 import React, { useState } from 'react'
 import { ResizableBox } from 'react-resizable'
 import 'react-resizable/css/styles.css'
@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import ResponseViewer from '@/features/studio/request/components/response-viewer'
+import ResponseViewer from '@/features/projects/request/components/response-viewer'
 
 export default function page() {
   const [isCodePreviewExpanded, setIsCodePreviewExpanded] = useState(false)

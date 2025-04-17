@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import Navbar from "@/features/home/Navbar";
 import Apps from "@/features/apps";
-import MyProjects from "@/features/projects";
+import MyProjects from "@/features/myprojects";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MyAnalytics from "@/features/myanalytics";
 
 interface User {
   given_name?: string;
@@ -58,16 +59,16 @@ export default function Projects() {
   if (error) return <p style={{ color: "red" }}>{error}</p>;
 
   return (
-    <main className="min-h-screen">
+    <main className=" flex flex-col">
       <Navbar session={!isLoading && user !== null} user={user} />
-      <div className="flex flex-col pt-32">
-        <div className="sticky top-16 z-10 bg-background w-full max-w-7xl mx-auto px-6">
+      <div className="flex-1 pt-32">
+        <div className="sticky top-16 z-20 bg-background w-full max-w-7xl mx-auto px-6 h-[calc(100vh-12rem)]">
           <Tabs
             orientation="vertical"
             defaultValue="projects"
             className="w-full"
           >
-            <TabsList className=" justify-start border-b-0 py-4">
+            <TabsList className="justify-start border-b-0 py-4">
               <TabsTrigger value="projects">My Projects</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
             </TabsList>
@@ -75,8 +76,8 @@ export default function Projects() {
               <TabsContent value="projects" className="m-0">
                 <MyProjects/>
               </TabsContent>
-              <TabsContent value="analytics" className="m-0 min-h-64 h-full text-center flex items-center justify-center">
-                Your Analytics will be shown here
+              <TabsContent value="analytics" className="m-0">
+                <MyAnalytics/>
               </TabsContent>
             </div>
           </Tabs>

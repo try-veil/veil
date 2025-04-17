@@ -83,10 +83,10 @@ export default function Navbar({ session, user }: NavbarProps) {
                 Documentation
               </Link>
               <Link
-                href="/studio"
+                href="/projects"
                 className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
               >
-                Studio
+                My Projects
               </Link>
               <Link
                 href="/marketplace"
@@ -161,16 +161,16 @@ export default function Navbar({ session, user }: NavbarProps) {
               Documentation
             </Link>
             <Link
-              href="/studio"
-              className="text-gray-700 dark:text-white hover:text-black block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-            >
-              Studio
-            </Link>
-            <Link
               href="/marketplace"
               className="text-gray-700 dark:text-white hover:text-black block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
             >
               Marketplace
+            </Link>
+            <Link
+              href="/projects"
+              className="text-gray-700 dark:text-white hover:text-black block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+            >
+              My Projects
             </Link>
             <div className="pt-4 pb-2">
               <LoginButton session={session} user={user} />
