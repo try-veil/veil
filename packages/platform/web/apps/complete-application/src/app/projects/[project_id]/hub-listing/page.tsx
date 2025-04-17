@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PlusIcon } from "lucide-react";
+import { ImageIcon } from "lucide-react";
 
 const MDEditor = dynamic(
   () => import('@uiw/react-md-editor').then((mod) => {
@@ -57,6 +58,7 @@ const MDEditor = dynamic(
 export default function page() {
   const [markdownContent, setMarkdownContent] = useState("# API Documentation\n\nWrite your API documentation here...");
   const [initialContent] = useState(markdownContent);
+  const [selectedLogo, setSelectedLogo] = useState<string | null>(null);
 
   // Add state for pricing tiers
   const [basicEnabled, setBasicEnabled] = useState(true);
@@ -88,14 +90,42 @@ export default function page() {
             <form className="space-y-6">
               <div className="space-y-2">
                 <Label>Upload Logo</Label>
-                <Input
-                  type="file"
-                  accept="image/jpeg,image/png"
-                  className="h-9 w-full"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Maximum Size: 500 x 500px, JPEG / PNG
-                </p>
+                <div className="flex items-start gap-4">
+                  <div className="">
+                    <Input
+                      type="file"
+                      accept="image/jpeg,image/png"
+                      className="h-9 w-full max-w-2xl"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setSelectedLogo(reader.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Maximum Size: 500 x 500px, JPEG / PNG
+                    </p>
+                  </div>
+                  <div className="w-24 h-24 border rounded-md overflow-hidden bg-muted flex items-center justify-center">
+                    {selectedLogo ? (
+                      <img
+                        src={selectedLogo}
+                        alt="Logo preview"
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-muted-foreground">
+                        <ImageIcon className="w-8 h-8 mb-1" />
+                        <span className="text-xs">No logo</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2">
