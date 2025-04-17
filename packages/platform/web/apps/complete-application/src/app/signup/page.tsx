@@ -73,10 +73,22 @@ export default function SignupPage() {
     const fusionAuthUrl = process.env.NEXT_PUBLIC_FUSIONAUTH_URL;
     const redirectUri = encodeURIComponent("http://localhost:3000/callback");
     const state = Math.random().toString(36).substring(2);
+    
     // Store both state and selected role in session storage
     sessionStorage.setItem("oauth_state", state);
     sessionStorage.setItem("selected_role", role);
-    const authUrl = `${fusionAuthUrl}/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid%20email%20profile&identityProviderId=${provider}&state=${state}&prompt=select_account`;
+    
+    // Build authorization URL with explicit offline_access and prompt=consent
+    const authUrl = `${fusionAuthUrl}/oauth2/authorize?client_id=${clientId}` + 
+                    `&redirect_uri=${redirectUri}` + 
+                    `&response_type=code` + 
+                    `&scope=${encodeURIComponent('openid offline_access email profile')}` +
+                    `&identityProviderId=${provider}` +
+                    `&prompt=consent` + // Force consent screen to ensure refresh token is issued
+                    `&state=${state}` +
+                    `&newRegistration=true`;
+    
+    console.log("Redirecting to social signup:", authUrl);
     router.push(authUrl);
   };
 

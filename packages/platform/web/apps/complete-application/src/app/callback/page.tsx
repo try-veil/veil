@@ -69,7 +69,6 @@ export default function CallbackPage() {
       .then(async (data) => {
         if (data.success && data.accessToken) {
           setStatus("Creating session with NextAuth...");
-          console.log("Tokens received, signing in with NextAuth");
           
           // Prepare user data
           const userData = {
@@ -80,7 +79,7 @@ export default function CallbackPage() {
           // Sign in with NextAuth to create a session
           const result = await signIn("custom-credentials", {
             accessToken: data.accessToken,
-            refreshToken: data.refreshToken,
+            refreshToken: data.refreshToken || null,
             userData: JSON.stringify(userData),
             redirect: false,
           });

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
 
 export async function POST(req: Request) {
   const { code, role }: { code?: string; role?: string } = await req.json();
@@ -30,6 +31,7 @@ export async function POST(req: Request) {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json",
       },
       body: new URLSearchParams({
         client_id: clientId!,
@@ -48,8 +50,23 @@ export async function POST(req: Request) {
       error?: string;
       error_description?: string;
       userId?: string;
+      scope?: string;
+      token_type?: string;
+      id_token?: string;
+      [key: string]: any; // Allow for other fields
     } = await tokenResponse.json();
-    console.log("Token data:", tokenData);
+    
+    // Add detailed logging to debug refresh token issue
+    console.log("Full token response:", {
+      status: tokenResponse.status,
+      hasHeaders: !!tokenResponse.headers,
+      hasAccessToken: !!tokenData.access_token,
+      hasRefreshToken: !!tokenData.refresh_token,
+      tokenFields: Object.keys(tokenData),
+      scope: tokenData.scope,
+      expiresIn: tokenData.expires_in
+    });
+    
     if (!tokenResponse.ok) {
       console.error("Token exchange failed:", tokenData);
       return NextResponse.json(
@@ -61,8 +78,22 @@ export async function POST(req: Request) {
       );
     }
     
+    // Extract userId from the access token
+    let userId;
+    if (tokenData.access_token) {
+      try {
+        const decoded = jwt.decode(tokenData.access_token);
+        console.log("Decoded JWT:", decoded);
+        // Most OAuth providers use 'sub' for the user ID
+        userId = decoded?.sub || (decoded as any)?.user_id;
+        tokenData.userId = userId;
+      } catch (error) {
+        console.error("Error decoding access token:", error);
+      }
+    }
+    
     // If tokens were obtained successfully
-    if (tokenData.userId && tokenData.access_token) {
+    if (tokenData.access_token) {
       // Assign role if provided
       if (role && tokenData.userId) {
         const fusionAuthRole = role === process.env.NEXT_PUBLIC_ROLE_CONSUMER_ID ? "consumer" : "provider";
@@ -94,6 +125,8 @@ export async function POST(req: Request) {
           console.error("Role assignment failed:", putData);
           // Log error but continue login to avoid breaking the flow
         }
+      } else if (role) {
+        console.warn("Role provided but no userId found, skipping role assignment");
       } else {
         console.log("No role provided, skipping role assignment");
       }

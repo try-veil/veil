@@ -58,7 +58,21 @@ export default function Login() {
     const clientId = process.env.NEXT_PUBLIC_FUSIONAUTH_CLIENT_ID;
     const fusionAuthUrl = process.env.NEXT_PUBLIC_FUSIONAUTH_URL;
     const redirectUri = encodeURIComponent('http://localhost:3000/callback'); // Update for production
-    const authUrl = `${fusionAuthUrl}/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid%20email%20profile&identityProviderId=${provider}`;
+    
+    // Generate and store a random state for CSRF protection
+    const state = Math.random().toString(36).substring(2, 15);
+    sessionStorage.setItem('oauth_state', state);
+    
+    // Build authorization URL with explicit offline_access and prompt=consent
+    const authUrl = `${fusionAuthUrl}/oauth2/authorize?client_id=${clientId}` + 
+                    `&redirect_uri=${redirectUri}` + 
+                    `&response_type=code` + 
+                    `&scope=${encodeURIComponent('openid offline_access email profile')}` +
+                    `&identityProviderId=${provider}` +
+                    `&prompt=consent` + // Force consent screen to ensure refresh token is issued
+                    `&state=${state}`;
+    
+    console.log("Redirecting to:", authUrl);
     router.push(authUrl);
   };
   
