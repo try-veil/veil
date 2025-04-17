@@ -67,7 +67,7 @@ const topNav = [
     disabled: true,
   },
   {
-    title: "Projects",
+    title: "My Projects",
     href: "/projects",
     isActive: false,
     disabled: true,
