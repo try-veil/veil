@@ -12,7 +12,7 @@ export default function About() {
   }, []);
 
   return (
-    <div className="w-full bg-background pt-32 py-12 px-4">
+    <div className="w-full bg-background pt-32 py-12 px-4" id="about">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl md:text-4xl font-bold text-center mb-3">Manage & Monetize Your APIs</h1>
         

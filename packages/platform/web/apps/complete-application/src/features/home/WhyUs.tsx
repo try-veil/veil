@@ -3,7 +3,7 @@ import React from "react";
 
 export default function WhyUs() {
   return (
-    <div className="flex bg-background flex-col items-center justify-center gap-0 lg:gap-4 min-h-[80vh]">
+    <div className="flex bg-background flex-col items-center justify-center gap-0 lg:gap-4 min-h-[80vh]" id="why-us">
       <h2 className="text-3xl px-2 lg:text-4xl font-black max-w-xl text-center mb-4">
         Why Us
       </h2>

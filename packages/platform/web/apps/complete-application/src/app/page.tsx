@@ -24,13 +24,15 @@ export default function Home() {
   if (error) return <p style={{ color: "red" }}>{error}</p>;
 
   return (
-    <main>
+    <main >
       <Navbar session={status === "authenticated"} user={user} />
-      <Hero />
-      <About />
-      <WhyUs />
-      <Subscribe />
-      <Footer03Page />
+      <div className="max-w-screen-lg mx-auto">
+        <Hero />
+        <About />
+        <WhyUs />
+        <Subscribe />
+        <Footer03Page />
+      </div>
     </main>
   );
 }

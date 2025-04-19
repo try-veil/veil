@@ -59,30 +59,31 @@ export default function Navbar({ session, user }: NavbarProps) {
             {/* Desktop menu */}
             <div className="hidden lg:flex lg:justify-center lg:items-center lg:space-x-8">
               <Link
-                href="/#about"
+                href="#about"
                 className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
               >
                 About
               </Link>
               <Link
-                href="/#why-us"
+                href="#why-us"
                 className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
               >
                 Why Us
               </Link>
               <Link
-                href="/pricing"
+              
+                href="/"
                 className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
               >
                 Pricing
               </Link>
               <Link
-                href="/docs"
+                href="/"
                 className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
               >
                 Documentation
               </Link>
-              <Link
+              {/* <Link
                 href="/projects"
                 className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
               >
@@ -93,9 +94,9 @@ export default function Navbar({ session, user }: NavbarProps) {
                 className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
               >
                 Marketplace
-              </Link>
+              </Link> */}
 
-              <LoginButton session={session} user={user} />
+              {/* <LoginButton session={session} user={user} /> */}
             </div>
 
             {/* Mobile menu button */}
