@@ -26,7 +26,7 @@ func TestAPIKeyManagement(t *testing.T) {
 	defer upstreamCmd.Process.Kill()
 
 	// Start Caddy server
-	caddyCmd := exec.Command("./veil", "run", "--config", "Caddyfile")
+	caddyCmd := exec.Command("./caddy", "run", "--config", "Caddyfile")
 	caddyCmd.Stdout = os.Stdout
 	caddyCmd.Stderr = os.Stderr
 	err = caddyCmd.Start()
