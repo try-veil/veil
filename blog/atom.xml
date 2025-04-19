@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?><?xml-stylesheet type="text/xsl" href="atom.xsl"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-    <id>https://veil.theflywheel.in/veil/blog</id>
+    <id>https://veil.theflywheel.in/blog</id>
     <title>Veil - Documentation Blog</title>
     <updated>2025-03-25T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
-    <link rel="alternate" href="https://veil.theflywheel.in/veil/blog"/>
+    <link rel="alternate" href="https://veil.theflywheel.in/blog"/>
     <subtitle>Veil - Documentation Blog</subtitle>
-    <icon>https://veil.theflywheel.in/veil/img/favicon.ico</icon>
+    <icon>https://veil.theflywheel.in/img/favicon.ico</icon>
     <entry>
         <title type="html"><![CDATA[Veil - Getting Started]]></title>
-        <id>https://veil.theflywheel.in/veil/blog/getting-starting</id>
-        <link href="https://veil.theflywheel.in/veil/blog/getting-starting"/>
+        <id>https://veil.theflywheel.in/blog/getting-starting</id>
+        <link href="https://veil.theflywheel.in/blog/getting-starting"/>
         <updated>2025-03-25T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[Getting Started with Veil]]></summary>
         <content type="html"><![CDATA[<p>Getting Started with Veil</p>

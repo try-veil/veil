@@ -2,7 +2,7 @@
 <rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
     <channel>
         <title>Veil - Documentation Blog</title>
-        <link>https://veil.theflywheel.in/veil/blog</link>
+        <link>https://veil.theflywheel.in/blog</link>
         <description>Veil - Documentation Blog</description>
         <lastBuildDate>Tue, 25 Mar 2025 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
@@ -10,8 +10,8 @@
         <language>en</language>
         <item>
             <title><![CDATA[Veil - Getting Started]]></title>
-            <link>https://veil.theflywheel.in/veil/blog/getting-starting</link>
-            <guid>https://veil.theflywheel.in/veil/blog/getting-starting</guid>
+            <link>https://veil.theflywheel.in/blog/getting-starting</link>
+            <guid>https://veil.theflywheel.in/blog/getting-starting</guid>
             <pubDate>Tue, 25 Mar 2025 00:00:00 GMT</pubDate>
             <description><![CDATA[Getting Started with Veil]]></description>
             <content:encoded><![CDATA[<p>Getting Started with Veil</p>
