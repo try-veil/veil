@@ -1,6 +1,6 @@
 'use client'
 
-import Request from '@/features/studio/request'
+import Request from '@/features/projects/request'
 import React, { useState } from 'react'
 import { ResizableBox } from 'react-resizable'
 import 'react-resizable/css/styles.css'
@@ -12,9 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import ResponseViewer from '@/features/studio/request/components/response-viewer'
+import ResponseViewer from '@/features/projects/request/components/response-viewer'
 
-export default function page() {
+export default function RequestPage() {
   const [isCodePreviewExpanded, setIsCodePreviewExpanded] = useState(false)
   const viewportHeight = typeof window !== 'undefined' ? window.innerHeight - 200 : 600 // 32px for padding
   const requestHeight = isCodePreviewExpanded ? Math.floor(viewportHeight * 0.5) : viewportHeight - 100 // 100px for code preview header

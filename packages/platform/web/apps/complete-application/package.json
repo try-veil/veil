@@ -39,6 +39,7 @@
     "@types/react": "18.2.15",
     "@types/react-dom": "18.2.7",
     "@types/react-resizable": "^3.0.8",
+    "@uiw/react-md-editor": "^4.0.5",
     "class-variance-authority": "^0.7.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
@@ -61,12 +62,20 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.24.0",
+    "@tanstack/eslint-plugin-query": "^5.73.3",
     "@types/js-cookie": "^3.0.6",
     "@types/jsonwebtoken": "^9.0.9",
+    "@typescript-eslint/eslint-plugin": "^8.30.1",
+    "@typescript-eslint/parser": "^8.30.1",
     "autoprefixer": "^10.4.16",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0",
     "jsonwebtoken": "^9.0.2",
     "postcss": "^8.4.31",
     "postcss-nested": "^7.0.2",
-    "tailwindcss": "^3.3.0"
+    "tailwindcss": "^3.3.0",
+    "typescript-eslint": "^8.30.1"
   }
 }

@@ -9,16 +9,19 @@ import { Main } from "@/components/layout/main";
 import { Header } from "@/components/layout/header";
 import { ProfileDropdown } from "@/components/profile-dropdown";
 import { ThemeSwitch } from "@/components/theme-switch";
+import { TopNav } from "@/components/layout/top-nav";
 
 export default function DashboardLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: { project_id: string };
 }) {
   const defaultOpen = Cookies.get("sidebar:state") !== "false";
   return (
     <SearchProvider>
-      <RequestsProvider>
+      <RequestsProvider projectId={params.project_id}>
         <SidebarProvider defaultOpen={defaultOpen}>
           <SkipToMain />
           <ProviderAppSidebar />
@@ -35,7 +38,8 @@ export default function DashboardLayout({
             )}
           >
             {/* ===== Top Heading ===== */}
-            <Header>
+            <Header fixed={true}>
+              <TopNav links={topNav} />
               <div className="ml-auto flex items-center space-x-4">
                 <ThemeSwitch />
                 <ProfileDropdown />
@@ -53,26 +57,20 @@ export default function DashboardLayout({
 
 const topNav = [
   {
-    title: "Overview",
-    href: "dashboard/overview",
-    isActive: true,
+    title: "Home",
+    href: "/",
+    isActive: false,
     disabled: false,
   },
   {
-    title: "Customers",
-    href: "dashboard/customers",
+    title: "Marketplace",
+    href: "/marketplace",
     isActive: false,
     disabled: true,
   },
   {
-    title: "Products",
-    href: "dashboard/products",
-    isActive: false,
-    disabled: true,
-  },
-  {
-    title: "Settings",
-    href: "dashboard/settings",
+    title: "My Projects",
+    href: "/projects",
     isActive: false,
     disabled: true,
   },

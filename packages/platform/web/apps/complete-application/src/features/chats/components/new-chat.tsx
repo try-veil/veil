@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { IconCheck, IconX } from '@tabler/icons-react'
+import Image from 'next/image'
 import { toast } from '@/hooks/use-toast'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -101,10 +102,12 @@ export function NewChat({ users, onOpenChange, open }: Props) {
                     className='flex items-center justify-between gap-2'
                   >
                     <div className='flex items-center gap-2'>
-                      <img
+                      <Image
                         src={user.profile || '/placeholder.svg'}
                         alt={user.fullName}
-                        className='h-8 w-8 rounded-full'
+                        width={32}
+                        height={32}
+                        className='rounded-full'
                       />
                       <div className='flex flex-col'>
                         <span className='text-sm font-medium'>

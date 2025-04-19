@@ -1,3 +1,4 @@
+"use client"
 import * as React from 'react'
 import { IconEye, IconEyeOff } from '@tabler/icons-react'
 import { cn } from '@/lib/utils'
