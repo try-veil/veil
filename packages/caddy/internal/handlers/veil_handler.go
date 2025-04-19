@@ -31,8 +31,6 @@ type VeilHandler struct {
 	store           *store.APIStore
 	logger          *zap.Logger
 	ctx             caddy.Context
-	apisLoaded      bool
-	adminAPIReady   bool
 }
 
 // CaddyModule returns the Caddy module information.
@@ -61,8 +59,6 @@ func (h *VeilHandler) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 
 func (h *VeilHandler) Start() error {
 	h.logger = h.ctx.Logger().Named("veil_handler")
-
-	h.waitForAdminAPI()
 	return nil
 }
 
@@ -89,90 +85,6 @@ func (h *VeilHandler) Provision(ctx caddy.Context) error {
 
 	h.logger.Info("VeilHandler provisioned successfully",
 		zap.String("db_path", h.DBPath))
-
-	return nil
-}
-
-// waitForAdminAPI waits for the admin API to be available before loading APIs
-func (h *VeilHandler) waitForAdminAPI() {
-	// Start a goroutine to wait for admin module readiness
-	go func() {
-		h.logger.Info("waiting for admin module to become available")
-
-		// Wait for admin module to be loaded
-		for !h.adminAPIReady {
-			// Check if admin module is loaded by checking if it exists in the loaded modules
-			modules := h.ctx.Modules()
-			h.logger.Debug("loaded modules", zap.Any("modules", modules))
-			if _, err := h.ctx.App("admin"); err == nil {
-				h.adminAPIReady = true
-				h.logger.Info("admin module is available, loading existing APIs")
-
-				// Load APIs if not already loaded
-				if !h.apisLoaded {
-					if err := h.loadAPIs(); err != nil {
-						h.logger.Error("failed to load APIs from database",
-							zap.Error(err))
-					} else {
-						h.logger.Info("successfully loaded APIs from database")
-					}
-					h.apisLoaded = true
-				}
-				return
-			}
-
-			h.logger.Debug("admin module not ready, waiting...")
-			time.Sleep(time.Second)
-		}
-	}()
-}
-
-// loadAPIs loads APIs from the database for this handler
-func (h *VeilHandler) loadAPIs() error {
-	h.logger.Info("starting to load APIs from database",
-		zap.String("db_path", h.DBPath))
-
-	apis, err := h.store.ListAPIs()
-	if err != nil {
-		return fmt.Errorf("failed to list APIs: %v", err)
-	}
-
-	h.logger.Info("found existing APIs in database",
-		zap.Int("count", len(apis)),
-		zap.String("db_path", h.DBPath))
-
-	successCount := 0
-	failureCount := 0
-
-	// Update routes for each API
-	for _, api := range apis {
-		h.logger.Info("attempting to configure API route",
-			zap.String("path", api.Path),
-			zap.String("upstream", api.Upstream),
-			zap.String("subscription", api.RequiredSubscription),
-			zap.Int("api_keys_count", len(api.APIKeys)),
-			zap.Int("methods_count", len(api.Methods)))
-
-		if err := h.updateCaddyfile(api); err != nil {
-			h.logger.Error("failed to configure API route",
-				zap.Error(err),
-				zap.String("path", api.Path),
-				zap.String("upstream", api.Upstream))
-			failureCount++
-			continue
-		}
-
-		h.logger.Info("successfully configured API route",
-			zap.String("path", api.Path),
-			zap.String("upstream", api.Upstream),
-			zap.String("subscription", api.RequiredSubscription))
-		successCount++
-	}
-
-	h.logger.Info("completed loading APIs",
-		zap.Int("total_apis", len(apis)),
-		zap.Int("success_count", successCount),
-		zap.Int("failure_count", failureCount))
 
 	return nil
 }
