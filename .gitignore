@@ -12,3 +12,9 @@ config/
 
 ## compiled binary
 veil
+
+node_modules/
+.next/
+.env
+.env.local
+
