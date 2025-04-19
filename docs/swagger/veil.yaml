@@ -44,7 +44,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /veil/api/api-keys:
+  /veil/api/keys:
     post:
       summary: Add new API keys
       description: Add new API keys to an existing API
@@ -100,7 +100,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /veil/api/api-keys/status:
+  /veil/api/keys/status:
     put:
       summary: Update API key status
       description: Update the status of an existing API key

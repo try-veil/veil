@@ -1,0 +1,70 @@
+sequenceDiagram
+    participant Consumer
+    participant AuthService
+    participant CreditManagementService
+    participant SubscriptionService
+    participant GatewayService
+    participant CreditService
+    participant ProviderService
+    
+    critical User Authentication and Credit Initialization
+        Consumer->>+AuthService: Authenticate (credentials)
+        AuthService->>AuthService: validate credentials & assign role
+        AuthService-->>-Consumer: JWT token with 'Consumer' role
+        
+        Consumer->>+CreditManagementService: POST /initialize (JWT token)
+        CreditManagementService->>CreditManagementService: verify JWT via JWKS URL
+        CreditManagementService->>CreditManagementService: extract userId
+        CreditManagementService->>+CreditService: initializeWallet(userId, 150)
+        CreditService-->>-CreditManagementService: wallet created
+        
+        CreditManagementService->>+SubscriptionService: request API key generation
+        SubscriptionService->>SubscriptionService: generate API key
+        SubscriptionService->>+GatewayService: register API key
+        GatewayService-->>-SubscriptionService: key registered
+        SubscriptionService-->>-CreditManagementService: API key
+        
+        CreditManagementService-->>-Consumer: API key & notification of 150 credits
+    end
+    
+    critical Credit-Based API Call Flow
+        activate GatewayService
+        Consumer->>GatewayService: METHOD /*path* ('X-Subscription-Key=api_key')
+        GatewayService->>GatewayService: validates 'X-Subscription-Key'
+        
+        alt Invalid Key
+            GatewayService->>Consumer: 401 (Unauthorized)
+        else Valid Key
+            GatewayService->>+CreditService: checkCredits(X-Subscription-Key, endpointId)
+            
+            alt Insufficient Credits
+                CreditService-->>-GatewayService: 403 (Insufficient Credits)
+                GatewayService->>Consumer: 403 (Insufficient Credits)
+            else Sufficient Credits
+                CreditService-->>-GatewayService: credits available
+                GatewayService->>GatewayService: adds *required_headers*
+                GatewayService->>+ProviderService: METHOD /*path* (*required_headers*)
+                ProviderService->>-GatewayService: response
+                
+                GatewayService->>+CreditService: logUsage(X-Subscription-Key, endpointId)
+                CreditService-->>-GatewayService: logged
+                CreditService->>CreditService: deductCredits(userId, endpointId, 1)
+                
+                GatewayService-->>Consumer: response
+            end
+            
+            deactivate GatewayService
+        end
+    end
+    
+    critical Credit Management Flow
+        Consumer->>+AuthService: Authenticate (credentials)
+        AuthService-->>-Consumer: JWT token
+        
+        Consumer->>+CreditManagementService: GET /credits (JWT token)
+        CreditManagementService->>CreditManagementService: verify JWT via JWKS URL
+        CreditManagementService->>CreditManagementService: extract userId
+        CreditManagementService->>+CreditService: getCredits(userId)
+        CreditService-->>-CreditManagementService: credit balance
+        CreditManagementService-->>-Consumer: credit balance information
+    end 

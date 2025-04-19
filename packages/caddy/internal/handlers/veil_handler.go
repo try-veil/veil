@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -245,9 +247,69 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 		},`
 	}
 
+	// Create a rewrite configuration to strip the API path prefix
+	// Remove any wildcards from the path for the rewrite pattern
+	apiPathForRewrite := strings.TrimSuffix(strings.TrimSuffix(api.Path, "*"), "/")
+
+	// Simply extract the last path segment
+	pathParts := strings.Split(apiPathForRewrite, "/")
+	var lastSegment string
+	if len(pathParts) > 0 {
+		lastSegment = pathParts[len(pathParts)-1]
+	}
+
+	h.logger.Debug("generating rewrite pattern",
+		zap.String("original_path", api.Path),
+		zap.String("rewrite_path", apiPathForRewrite),
+		zap.String("last_segment", lastSegment))
+
+	// Create a rewrite rule with a direct replacement without capture groups
+	rewriteConfig := fmt.Sprintf(`"rewrite": {
+		"method": "GET",
+		"path_regexp": [
+			{
+				"find": "^%s",
+				"replace": "/%s"
+			}
+		]
+	},`, apiPathForRewrite, lastSegment)
+
+	// Get the list of methods from the API config
+	methodsList := []string{}
+	for _, method := range api.Methods {
+		methodsList = append(methodsList, fmt.Sprintf(`"%s"`, method.Method))
+	}
+
+	// If no methods are defined, default to supporting all common methods
+	if len(methodsList) == 0 {
+		methodsList = []string{`"GET"`, `"POST"`, `"PUT"`, `"DELETE"`, `"PATCH"`}
+	}
+
+	methodsJSON := strings.Join(methodsList, ", ")
+
+	// Ensure path ends with a wildcard for matching
+	apiPathForMatching := api.Path
+	if !strings.HasSuffix(apiPathForMatching, "*") {
+		if strings.HasSuffix(apiPathForMatching, "/") {
+			apiPathForMatching = apiPathForMatching + "*"
+		} else {
+			apiPathForMatching = apiPathForMatching + "*"
+		}
+	}
+
+	h.logger.Debug("configuring path patterns",
+		zap.String("original_path", api.Path),
+		zap.String("matching_path", apiPathForMatching),
+		zap.String("rewrite_path", apiPathForRewrite))
+
 	// Create the new route JSON
 	newRouteJSON := fmt.Sprintf(`{
-		"match": [{"path": ["%s"]}],
+		"match": [
+			{
+				"method": [%s],
+				"path": ["%s"]
+			}
+		],
 		"handle": [
 			{
 				"handler": "subroute",
@@ -261,6 +323,7 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 							},
 							{
 								"handler": "reverse_proxy",
+								%s
 								%s
 								"upstreams": [{"dial": "%s"}],
 								"headers": {
@@ -277,7 +340,7 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 			}
 		],
 		"terminal": true
-	}`, api.Path, transportConfig, h.getUpstreamDialAddress(api.Upstream), h.getUpstreamHost(api.Upstream))
+	}`, methodsJSON, apiPathForMatching, transportConfig, rewriteConfig, h.getUpstreamDialAddress(api.Upstream), h.getUpstreamHost(api.Upstream))
 
 	var newRoute map[string]interface{}
 	if err := json.Unmarshal([]byte(newRouteJSON), &newRoute); err != nil {
@@ -358,11 +421,18 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 			continue
 		}
 
-		if path, ok := paths[0].(string); ok && path == api.Path {
-			// Replace the existing route
-			routes[i] = newRoute
-			routeExists = true
-			break
+		// Check if path with or without wildcard exists
+		if path, ok := paths[0].(string); ok {
+			// Strip wildcard for comparison
+			pathWithoutWildcard := strings.TrimSuffix(path, "*")
+			apiPathWithoutWildcard := strings.TrimSuffix(api.Path, "*")
+
+			if pathWithoutWildcard == apiPathWithoutWildcard {
+				// Replace the existing route
+				routes[i] = newRoute
+				routeExists = true
+				break
+			}
 		}
 	}
 
@@ -616,36 +686,126 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 
 // handleManagementAPI handles the management API endpoints
 func (h *VeilHandler) handleManagementAPI(w http.ResponseWriter, r *http.Request) error {
-	switch {
-	case strings.HasSuffix(r.URL.Path, "/onboard"):
+	pathSegments := strings.Split(r.URL.Path, "/")
+
+	// Clean up the path segments by removing empty strings
+	var cleanSegments []string
+	for _, seg := range pathSegments {
+		if seg != "" {
+			cleanSegments = append(cleanSegments, seg)
+		}
+	}
+
+	// Basic format should be /veil/api/{resource}
+	if len(cleanSegments) < 3 {
+		http.Error(w, "Invalid API path", http.StatusNotFound)
+		return nil
+	}
+
+	// Get the resource type (routes, keys, etc.)
+	resource := cleanSegments[2]
+
+	switch resource {
+	case "routes":
+		// Handle API routes: /veil/api/routes or /veil/api/routes/{id}
 		return h.handleOnboard(w, r)
-	case strings.HasSuffix(r.URL.Path, "/api-keys"):
+	case "keys":
+		// Check if this is a status update request
+		if len(cleanSegments) > 3 && cleanSegments[3] == "status" {
+			// Handle status update: /veil/api/keys/status
+			return h.handleUpdateAPIKeyStatus(w, r)
+		}
+		// Handle API keys: /veil/api/keys
 		return h.handleAddAPIKeys(w, r)
-	case strings.HasSuffix(r.URL.Path, "/api-keys/status"):
-		return h.handleUpdateAPIKeyStatus(w, r)
 	default:
-		http.Error(w, "Not found", http.StatusNotFound)
+		http.Error(w, "Resource not found", http.StatusNotFound)
 		return nil
 	}
 }
 
 // handleOnboard handles the API onboarding endpoint
 func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) error {
-	if r.Method != http.MethodPost {
+	h.logger.Info("handling API onboarding request",
+		zap.String("method", r.Method),
+		zap.String("path", r.URL.Path))
+
+	// Parse path segments
+	pathSegments := strings.Split(r.URL.Path, "/")
+
+	// Clean up the path segments by removing empty strings
+	var cleanSegments []string
+	for _, seg := range pathSegments {
+		if seg != "" {
+			cleanSegments = append(cleanSegments, seg)
+		}
+	}
+
+	// Check if this is an operation on a specific API
+	var apiID string
+	if len(cleanSegments) > 3 {
+		apiID = cleanSegments[3]
+		h.logger.Debug("operation on specific API",
+			zap.String("api_id", apiID))
+	}
+
+	// Handle HTTP method
+	if r.Method != http.MethodPost && r.Method != http.MethodPut && r.Method != http.MethodPatch && r.Method != http.MethodDelete {
+		h.logger.Warn("method not allowed",
+			zap.String("method", r.Method))
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return nil
 	}
 
-	var req dto.APIOnboardRequestDTO
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.logger.Error("failed to decode request body",
+	// For DELETE requests, we need an API ID
+	if r.Method == http.MethodDelete {
+		if apiID == "" {
+			h.logger.Warn("API ID required for DELETE")
+			http.Error(w, "API ID required for DELETE", http.StatusBadRequest)
+			return nil
+		}
+		return h.handleDeleteAPI(w, r, apiID)
+	}
+
+	// Read and log the request body
+	requestBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		h.logger.Error("failed to read request body",
 			zap.Error(err))
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, "Failed to read request body", http.StatusBadRequest)
 		return nil
 	}
 
+	// Log the request body
+	h.logger.Debug("received request body",
+		zap.String("body", string(requestBody)))
+
+	// Reset request body for later reading
+	r.Body = io.NopCloser(bytes.NewBuffer(requestBody))
+
+	// For POST, PUT, PATCH we need to decode the request body
+	var req dto.APIOnboardRequestDTO
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.logger.Error("failed to decode request body",
+			zap.Error(err),
+			zap.String("body", string(requestBody)))
+		http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+		return nil
+	}
+
+	// Log the parsed DTO
+	h.logger.Debug("parsed request DTO",
+		zap.String("path", req.Path),
+		zap.String("upstream", req.Upstream),
+		zap.Any("methods", req.Methods),
+		zap.Any("required_headers", req.RequiredHeaders),
+		zap.Any("parameters", req.Parameters),
+		zap.Int("api_keys_count", len(req.APIKeys)))
+
 	// Validate required fields
 	if req.Path == "" || req.Upstream == "" {
+		h.logger.Warn("missing required fields",
+			zap.String("path", req.Path),
+			zap.String("upstream", req.Upstream))
 		http.Error(w, "Path and upstream are required", http.StatusBadRequest)
 		return nil
 	}
@@ -665,6 +825,15 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		})
 	}
 
+	// Create API parameters
+	for _, param := range req.Parameters {
+		config.Parameters = append(config.Parameters, models.APIParameter{
+			Name:     param.Name,
+			Type:     param.Type,
+			Required: param.Required,
+		})
+	}
+
 	// Create API keys
 	for _, key := range req.APIKeys {
 		config.APIKeys = append(config.APIKeys, models.APIKey{
@@ -674,23 +843,56 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		})
 	}
 
+	h.logger.Debug("created API config object",
+		zap.String("path", config.Path),
+		zap.String("upstream", config.Upstream),
+		zap.Int("methods_count", len(config.Methods)),
+		zap.Int("parameters_count", len(config.Parameters)),
+		zap.Int("api_keys_count", len(config.APIKeys)))
+
+	// For PATCH/PUT requests with an API ID, update existing API
+	if (r.Method == http.MethodPatch || r.Method == http.MethodPut) && apiID != "" {
+		h.logger.Info("updating existing API",
+			zap.String("api_id", apiID))
+		return h.handleUpdateAPI(w, r, apiID, config)
+	}
+
 	// Store in database
+	h.logger.Info("storing API config in database")
 	if err := h.store.CreateAPI(config); err != nil {
 		h.logger.Error("failed to store API config",
-			zap.Error(err))
-		http.Error(w, "Failed to store API configuration", http.StatusInternalServerError)
+			zap.Error(err),
+			zap.String("db_path", h.DBPath),
+			zap.String("api_path", config.Path),
+			zap.String("error_details", err.Error()))
+
+		// Check for specific errors
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			http.Error(w, "API path already exists", http.StatusConflict)
+			return nil
+		}
+
+		http.Error(w, "Failed to store API configuration: "+err.Error(), http.StatusInternalServerError)
 		return nil
 	}
 
 	// Update Caddy configuration
+	h.logger.Info("updating Caddy configuration")
 	if err := h.updateCaddyfile(*config); err != nil {
 		h.logger.Error("failed to update Caddy config",
-			zap.Error(err))
-		http.Error(w, "Failed to update Caddy configuration", http.StatusInternalServerError)
+			zap.Error(err),
+			zap.String("api_path", config.Path),
+			zap.String("upstream", config.Upstream),
+			zap.String("error_details", err.Error()))
+		http.Error(w, "Failed to update Caddy configuration: "+err.Error(), http.StatusInternalServerError)
 		return nil
 	}
 
-	// Return success response
+	h.logger.Info("API onboarded successfully",
+		zap.String("path", config.Path),
+		zap.String("upstream", config.Upstream))
+
+	// Return success response with 201 Created status
 	w.WriteHeader(http.StatusCreated)
 	return json.NewEncoder(w).Encode(dto.APIResponseDTO{
 		Status:  "success",
@@ -699,9 +901,78 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 	})
 }
 
+// handleUpdateAPI handles updating an existing API
+func (h *VeilHandler) handleUpdateAPI(w http.ResponseWriter, r *http.Request, apiID string, newConfig *models.APIConfig) error {
+	// Get existing API to verify it exists
+	if _, err := h.store.GetAPIByPath(newConfig.Path); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			http.Error(w, "API not found", http.StatusNotFound)
+			return nil
+		}
+		h.logger.Error("failed to get API",
+			zap.Error(err))
+		http.Error(w, "Failed to get API", http.StatusInternalServerError)
+		return nil
+	}
+
+	// Update API in database
+	if err := h.store.UpdateAPI(newConfig); err != nil {
+		h.logger.Error("failed to update API",
+			zap.Error(err))
+		http.Error(w, "Failed to update API", http.StatusInternalServerError)
+		return nil
+	}
+
+	// Update Caddy configuration
+	if err := h.updateCaddyfile(*newConfig); err != nil {
+		h.logger.Error("failed to update Caddy config",
+			zap.Error(err))
+		http.Error(w, "Failed to update Caddy configuration", http.StatusInternalServerError)
+		return nil
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	return json.NewEncoder(w).Encode(dto.APIResponseDTO{
+		Status:  "success",
+		Message: "API updated successfully",
+		API:     newConfig,
+	})
+}
+
+// handleDeleteAPI handles deleting an API
+func (h *VeilHandler) handleDeleteAPI(w http.ResponseWriter, r *http.Request, apiID string) error {
+	// Get API to delete
+	api, err := h.store.GetAPIByPath(apiID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			http.Error(w, "API not found", http.StatusNotFound)
+			return nil
+		}
+		h.logger.Error("failed to get API",
+			zap.Error(err))
+		http.Error(w, "Failed to get API", http.StatusInternalServerError)
+		return nil
+	}
+
+	// Delete API from database
+	if err := h.store.DeleteAPI(api.Path); err != nil {
+		h.logger.Error("failed to delete API",
+			zap.Error(err))
+		http.Error(w, "Failed to delete API", http.StatusInternalServerError)
+		return nil
+	}
+
+	w.WriteHeader(http.StatusOK)
+	return json.NewEncoder(w).Encode(dto.APIResponseDTO{
+		Status:  "success",
+		Message: "API deleted successfully",
+	})
+}
+
 // handleAddAPIKeys handles adding new API keys to an existing API
 func (h *VeilHandler) handleAddAPIKeys(w http.ResponseWriter, r *http.Request) error {
-	if r.Method != http.MethodPost {
+	// Support both POST and PUT for better RESTful API design
+	if r.Method != http.MethodPost && r.Method != http.MethodPut {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return nil
 	}
@@ -751,8 +1022,8 @@ func (h *VeilHandler) handleAddAPIKeys(w http.ResponseWriter, r *http.Request) e
 		return nil
 	}
 
-	// Return success response
-	w.WriteHeader(http.StatusOK)
+	// Return success response with 201 Created status
+	w.WriteHeader(http.StatusCreated)
 	return json.NewEncoder(w).Encode(dto.APIResponseDTO{
 		Status:  "success",
 		Message: "API keys added successfully",
@@ -762,7 +1033,7 @@ func (h *VeilHandler) handleAddAPIKeys(w http.ResponseWriter, r *http.Request) e
 
 // handleUpdateAPIKeyStatus handles updating the active status of an API key
 func (h *VeilHandler) handleUpdateAPIKeyStatus(w http.ResponseWriter, r *http.Request) error {
-	if r.Method != http.MethodPut {
+	if r.Method != http.MethodPut && r.Method != http.MethodPatch {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return nil
 	}

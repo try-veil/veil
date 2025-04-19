@@ -18,7 +18,7 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
-          id: "swagger/add-new-api-keys",
+          id: "swagger/add-new-keys",
           label: "Add new API keys",
           className: "api-method post",
         },

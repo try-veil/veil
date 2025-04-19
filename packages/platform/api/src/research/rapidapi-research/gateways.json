@@ -1,0 +1,181 @@
+{
+    "data": {
+        "getGateways": [
+            {
+                "id": 7,
+                "dns": "rapidapi.com",
+                "serviceStatus": "Active",
+                "type": "rapidapi",
+                "status": "ACTIVE",
+                "isDefault": true,
+                "gatewayTemplate": {
+                    "name": "rapidapi-default-template",
+                    "urlPattern": "https://{{API_ID}}.p.rapidapi.com{{ PATH }}",
+                    "headers": [
+                        {
+                            "paramName": "X-RapidAPI-Key",
+                            "paramValue": "{{x-rapidapi-key}}",
+                            "paramDescription": "",
+                            "id": 3
+                        },
+                        {
+                            "paramName": "X-RapidAPI-Host",
+                            "paramValue": "{{API_ID}}.{{TENANT_NAME}}.rapidapi.com",
+                            "paramDescription": "",
+                            "id": 4
+                        }
+                    ]
+                }
+            },
+            {
+                "id": 19,
+                "dns": "rapidapi-test",
+                "serviceStatus": "Pending",
+                "type": "rapidapi",
+                "status": "ACTIVE",
+                "isDefault": false,
+                "gatewayTemplate": {
+                    "name": "rapidapi-default-template",
+                    "urlPattern": "https://{{API_ID}}.p.rapidapi.com{{ PATH }}",
+                    "headers": [
+                        {
+                            "paramName": "X-RapidAPI-Key",
+                            "paramValue": "{{x-rapidapi-key}}",
+                            "paramDescription": "",
+                            "id": 3
+                        },
+                        {
+                            "paramName": "X-RapidAPI-Host",
+                            "paramValue": "{{API_ID}}.{{TENANT_NAME}}.rapidapi.com",
+                            "paramDescription": "",
+                            "id": 4
+                        }
+                    ]
+                }
+            },
+            {
+                "id": 93,
+                "dns": "updated-dns",
+                "serviceStatus": "Pending",
+                "type": "rapidapi",
+                "status": "DELETED",
+                "isDefault": false,
+                "gatewayTemplate": {
+                    "name": null,
+                    "urlPattern": null,
+                    "headers": null
+                }
+            },
+            {
+                "id": 107,
+                "dns": "kdkdkd.com",
+                "serviceStatus": "Inactive",
+                "type": "rapidapi",
+                "status": "DELETED",
+                "isDefault": false,
+                "gatewayTemplate": {
+                    "name": null,
+                    "urlPattern": null,
+                    "headers": null
+                }
+            },
+            {
+                "id": 158,
+                "dns": "isdefaulttest",
+                "serviceStatus": "Pending",
+                "type": "rapidapi",
+                "status": "DELETED",
+                "isDefault": false,
+                "gatewayTemplate": {
+                    "name": null,
+                    "urlPattern": null,
+                    "headers": null
+                }
+            },
+            {
+                "id": 159,
+                "dns": "testisdefault",
+                "serviceStatus": "Inactive",
+                "type": "rapidapi",
+                "status": "DELETED",
+                "isDefault": false,
+                "gatewayTemplate": {
+                    "name": null,
+                    "urlPattern": null,
+                    "headers": null
+                }
+            },
+            {
+                "id": 165,
+                "dns": "google.com",
+                "serviceStatus": "Pending",
+                "type": "rapidapi",
+                "status": "DELETED",
+                "isDefault": false,
+                "gatewayTemplate": {
+                    "name": null,
+                    "urlPattern": null,
+                    "headers": null
+                }
+            },
+            {
+                "id": 218,
+                "dns": "v2-update-dns-111",
+                "serviceStatus": "Inactive",
+                "type": "Apigee",
+                "status": "DELETED",
+                "isDefault": false,
+                "gatewayTemplate": {
+                    "name": null,
+                    "urlPattern": null,
+                    "headers": null
+                }
+            },
+            {
+                "id": 2455,
+                "dns": "rapidapi-test-case-sensitive",
+                "serviceStatus": "Inactive",
+                "type": "rapidapi",
+                "status": "DELETED",
+                "isDefault": false,
+                "gatewayTemplate": {
+                    "name": null,
+                    "urlPattern": null,
+                    "headers": null
+                }
+            },
+            {
+                "id": 2736,
+                "dns": "https://api.example.com/{VAR_orgName}",
+                "serviceStatus": "Pending",
+                "type": "rapidapi",
+                "status": "ACTIVE",
+                "isDefault": false,
+                "gatewayTemplate": {
+                    "name": "rapidapi-default-template",
+                    "urlPattern": "https://{{API_ID}}.p.rapidapi.com{{ PATH }}",
+                    "headers": [
+                        {
+                            "paramName": "X-RapidAPI-Key",
+                            "paramValue": "{{x-rapidapi-key}}",
+                            "paramDescription": "",
+                            "id": 3
+                        },
+                        {
+                            "paramName": "X-RapidAPI-Host",
+                            "paramValue": "{{API_ID}}.{{TENANT_NAME}}.rapidapi.com",
+                            "paramDescription": "",
+                            "id": 4
+                        }
+                    ]
+                }
+            }
+        ],
+        "tenant": {
+            "id": "1",
+            "domain": "rapidapi.com",
+            "name": "rapidapi",
+            "slugifiedKey": "p"
+        }
+    }
+}

@@ -1,0 +1,928 @@
+{
+    "data": {
+        "products": {
+            "nodes": [
+                {
+                    "id": "api_ef16517b-acde-4505-b67f-f29b010db60d",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/22c3fbb4-9b0e-4d9d-a970-735f20284db1.png",
+                    "name": "Fresh <em>LinkedIn</em> Profile Data",
+                    "description": "Real-time <em>LinkedIn</em> Data. Search Employees at Scale. Get Access to Sales Navigator without cookies. Trusted by numerous AI startups around the world.",
+                    "slugifiedName": "fresh-linkedin-profile-data",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2025-04-10T02:12:11.093Z",
+                    "categoryName": "Data",
+                    "isSavedApi": false,
+                    "title": "Fresh LinkedIn Profile Data",
+                    "visibility": "PUBLIC",
+                    "category": "Data",
+                    "apiCategory": {
+                        "name": "Data",
+                        "color": "rgba(245,243,255,1)"
+                    },
+                    "score": {
+                        "popularityScore": 9.9,
+                        "avgLatency": 1930,
+                        "avgServiceLevel": 100,
+                        "avgSuccessRate": 98
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 6885168,
+                        "username": "freshdata-freshdata-default",
+                        "slugifiedName": "freshdata-freshdata-default",
+                        "name": "FreshData",
+                        "type": "Team",
+                        "parents": [
+                            {
+                                "id": "6885167",
+                                "name": "FreshData",
+                                "slugifiedName": "freshdata",
+                                "type": "Organization",
+                                "thumbnail": "https://rapidapi-prod-collections.s3.amazonaws.com/org/ab88bf84-9500-4064-aa8c-13801b0882cf.png"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "id": "api_29fa6e54-78e0-47c5-83d1-5e83f81b6a91",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/9006b8ee-7041-4a31-b203-08b38e1567f6.jpg",
+                    "name": "Real-Time <em>LinkedIn</em> Scraper API",
+                    "description": "A reliable API to search & scrape <em>LinkedIn</em> jobs, profiles (all profile details, open to work status, skills, work experience, education, course, given & received recommendation), last activity date, and companies. %100 live data, no dead data!\n\n**For any questions or requests, please feel free to leave a message in the Discussions or PM channels.**\n\n**Please contact us if you need a custom package**\n\nfor cheap packages, you can take a look https://rapidapi.com/rockapis-rockapis-default/api/li...",
+                    "slugifiedName": "linkedin-data-api",
+                    "pricing": "PAID",
+                    "updatedAt": "2025-04-10T03:54:13.003Z",
+                    "categoryName": "Data",
+                    "isSavedApi": false,
+                    "title": "Real-Time LinkedIn Scraper API",
+                    "visibility": "PUBLIC",
+                    "category": "Data",
+                    "apiCategory": {
+                        "name": "Data",
+                        "color": "rgba(245,243,255,1)"
+                    },
+                    "score": {
+                        "popularityScore": 9.9,
+                        "avgLatency": 1446,
+                        "avgServiceLevel": 100,
+                        "avgSuccessRate": 100
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 8184384,
+                        "username": "rockapis-rockapis-default",
+                        "slugifiedName": "rockapis-rockapis-default",
+                        "name": "RockApis-Default",
+                        "type": "Team",
+                        "parents": [
+                            {
+                                "id": "8184383",
+                                "name": "RockApis",
+                                "slugifiedName": "rockapis",
+                                "type": "Organization",
+                                "thumbnail": "https://rapidapi-prod-collections.s3.amazonaws.com/org/ecf6f71c-f902-4d98-b23d-e24e362b0995.jpg"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "id": "api_eec98b66-d2f7-470a-9f9c-b651c3461d7b",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/daaaee0b-3163-4fdc-9c44-0ad6e8c12adb.jpg",
+                    "name": "Real-Time <em>LinkedIn</em> Scraper",
+                    "description": "A reliable API to search & scrape <em>LinkedIn</em> jobs, profiles (all profile details, skills, work experience, open to work status, course, education, given & received recommendation), last activity date, and companies. %100 live data, no dead data!\n\n**For any questions or requests, please feel free to leave a message in the Discussions or PM channels.**\n\n**Please contact us if you need a custom package**\n\nfor high limits, you can take a look https://rapidapi.com/rockapis-rockapis-default/api/linke...",
+                    "slugifiedName": "linkedin-api8",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2025-04-10T03:54:09.989Z",
+                    "categoryName": "Data",
+                    "isSavedApi": false,
+                    "title": "Real-Time LinkedIn Scraper",
+                    "visibility": "PUBLIC",
+                    "category": "Data",
+                    "apiCategory": {
+                        "name": "Data",
+                        "color": "rgba(245,243,255,1)"
+                    },
+                    "score": {
+                        "popularityScore": 9.9,
+                        "avgLatency": 811,
+                        "avgServiceLevel": 100,
+                        "avgSuccessRate": 100
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 8184384,
+                        "username": "rockapis-rockapis-default",
+                        "slugifiedName": "rockapis-rockapis-default",
+                        "name": "RockApis-Default",
+                        "type": "Team",
+                        "parents": [
+                            {
+                                "id": "8184383",
+                                "name": "RockApis",
+                                "slugifiedName": "rockapis",
+                                "type": "Organization",
+                                "thumbnail": "https://rapidapi-prod-collections.s3.amazonaws.com/org/ecf6f71c-f902-4d98-b23d-e24e362b0995.jpg"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "id": "api_1efd3d37-3dce-4a21-934e-2fe6661219dc",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/7c673542-a528-443f-8c94-4845266b70d1.png",
+                    "name": "<em>LinkedIn</em> BULK data API",
+                    "description": "Scrapes <em>linkedin</em> profile and company data in bulk. This API can scrape 50 person profiles / company profiles in a go. Plus it can mass scrape other data from <em>linkedin</em>.",
+                    "slugifiedName": "linkedin-bulk-data-scraper",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2025-04-10T14:19:24.780Z",
+                    "categoryName": "Data",
+                    "isSavedApi": false,
+                    "title": "LinkedIn BULK data API",
+                    "visibility": "PUBLIC",
+                    "category": "Data",
+                    "apiCategory": {
+                        "name": "Data",
+                        "color": "rgba(245,243,255,1)"
+                    },
+                    "score": {
+                        "popularityScore": 9.9,
+                        "avgLatency": 1955,
+                        "avgServiceLevel": 97,
+                        "avgSuccessRate": 87
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 7736945,
+                        "username": "mgujjargamingm",
+                        "slugifiedName": "mgujjargamingm",
+                        "name": "EZ",
+                        "type": "User",
+                        "parents": null
+                    }
+                },
+                {
+                    "id": "api_6a5ee8ca-4932-4fa3-b62c-0ef0e071e3ca",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/a99a424f-cd68-4345-932c-46941476bc89.png",
+                    "name": "JSearch",
+                    "description": "Fast and Reliable Job Searches on All Public Job Sites: <em>LinkedIn</em>, Indeed, Glassdoor, ZipRecruiter, and Others in Real-Time from Google for Jobs.",
+                    "slugifiedName": "jsearch",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2025-04-02T10:54:24.637Z",
+                    "categoryName": "Jobs",
+                    "isSavedApi": false,
+                    "title": "JSearch",
+                    "visibility": "PUBLIC",
+                    "category": "Jobs",
+                    "apiCategory": {
+                        "name": "Jobs",
+                        "color": "rgba(255,94,252,0.4)"
+                    },
+                    "score": {
+                        "popularityScore": 9.9,
+                        "avgLatency": 4135,
+                        "avgServiceLevel": 99,
+                        "avgSuccessRate": 98
+                    },
+                    "version": {
+                        "tags": [
+                            {
+                                "id": "tag_efc3804f-1451-4d2c-b98a-b7692e0e31fd",
+                                "status": "ACTIVE",
+                                "tagdefinition": "tagdefinition_ad8279d5-df5e-40b5-86f6-0c467a403932",
+                                "type": "tag",
+                                "value": "✓"
+                            }
+                        ]
+                    },
+                    "user": {
+                        "id": 5827619,
+                        "username": "letscrape-6bRBa3QguO5",
+                        "slugifiedName": "letscrape-6bRBa3QguO5",
+                        "name": "OpenWeb Ninja",
+                        "type": "User",
+                        "parents": null
+                    }
+                },
+                {
+                    "id": "api_b755c4a4-533c-4f81-aadd-94cbaaa2f49e",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/49481edc-241d-48f9-8efb-79b54f7516e3.png",
+                    "name": "Zillow Working API",
+                    "description": "🔥 Fastest Zillow API with skip trace 🔥 500 req/month is free: Search properties by address. Priority support, concurrent requests, custom endpoints, and more. Contact: oneapi.project@gmail.com.\n\n\n\nAPIs:TikTok,Instagram,Youtube,Google,Twitter,Amazon,ChatGPT,Whatsapp,Spotify,<em>LinkedIn</em>,Facebook,Yahoo,Threads,Telegram,Meta,Zillow,taobao,tmall,jingdong,pinduoduo,douyin,kuaishou,lazada,SHEIN,1688,Redbook,weibo,zhihu,quota,wechat,news,baidu,reddit,dianping,ele,meituan,bili,temu,dewu,AI,Chat,GPT,Midjo...",
+                    "slugifiedName": "zillow-working-api",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2025-04-05T11:14:39.645Z",
+                    "categoryName": "Data",
+                    "isSavedApi": false,
+                    "title": "Zillow Working API",
+                    "visibility": "PUBLIC",
+                    "category": "Data",
+                    "apiCategory": {
+                        "name": "Data",
+                        "color": "rgba(245,243,255,1)"
+                    },
+                    "score": {
+                        "popularityScore": 9.9,
+                        "avgLatency": 660,
+                        "avgServiceLevel": 100,
+                        "avgSuccessRate": 100
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 9220371,
+                        "username": "oneapiproject",
+                        "slugifiedName": "oneapiproject",
+                        "name": "ONEAPI",
+                        "type": "User",
+                        "parents": null
+                    }
+                },
+                {
+                    "id": "api_4e534d52-6104-4df0-b0f0-1c2288366701",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/efc1313d-f679-44c1-a1cb-51c5d3b19d5a.png",
+                    "name": "<em>LinkedIn</em> data API",
+                    "description": "Scrapes <em>Linkedin</em> company & profile data, <em>Linkedin</em> company jobs and <em>Linkedin</em> company & profile posts. You can also search for people, companies and jobs from <em>linkedin</em>.",
+                    "slugifiedName": "linkedin-data-scraper",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2025-04-10T14:21:35.760Z",
+                    "categoryName": "Data",
+                    "isSavedApi": false,
+                    "title": "LinkedIn data API",
+                    "visibility": "PUBLIC",
+                    "category": "Data",
+                    "apiCategory": {
+                        "name": "Data",
+                        "color": "rgba(245,243,255,1)"
+                    },
+                    "score": {
+                        "popularityScore": 9.9,
+                        "avgLatency": 1394,
+                        "avgServiceLevel": 93,
+                        "avgSuccessRate": 65
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 7736945,
+                        "username": "mgujjargamingm",
+                        "slugifiedName": "mgujjargamingm",
+                        "name": "EZ",
+                        "type": "User",
+                        "parents": null
+                    }
+                },
+                {
+                    "id": "api_93b89c1d-d12f-4b2d-af1b-5689a3d5ce0d",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/97f3b189-86e1-4758-ad02-1581ff045658.png",
+                    "name": "<em>Linkedin</em> Sales Navigator ( No cookies required )",
+                    "description": "You can scrape 750k leads a month with PRO subscription plan. This API can scrape data from <em>linkedin</em> sales navigator  includeing leads ( people ) and Accounts ( Companies ) data.",
+                    "slugifiedName": "linkedin-sales-navigator-no-cookies-required",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2025-03-20T17:27:44.046Z",
+                    "categoryName": "Data",
+                    "isSavedApi": false,
+                    "title": "Linkedin Sales Navigator ( No cookies required )",
+                    "visibility": "PUBLIC",
+                    "category": "Data",
+                    "apiCategory": {
+                        "name": "Data",
+                        "color": "rgba(245,243,255,1)"
+                    },
+                    "score": {
+                        "popularityScore": 9.8,
+                        "avgLatency": 3049,
+                        "avgServiceLevel": 100,
+                        "avgSuccessRate": 97
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 7736945,
+                        "username": "mgujjargamingm",
+                        "slugifiedName": "mgujjargamingm",
+                        "name": "EZ",
+                        "type": "User",
+                        "parents": null
+                    }
+                },
+                {
+                    "id": "api_1ae4568f-de27-4754-898b-179635c5d748",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/bd294079-a2bb-4059-acb6-d89df89773c7.png",
+                    "name": "<em>LinkedIn</em> Job Search API",
+                    "description": "2M+ AI-enriched Jobs from the last 7 days with Recruiter + Company - 100 jobs per call -  Hourly refresh - Description included by default",
+                    "slugifiedName": "linkedin-job-search-api",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2025-03-31T12:46:59.453Z",
+                    "categoryName": "Jobs",
+                    "isSavedApi": false,
+                    "title": "LinkedIn Job Search API",
+                    "visibility": "PUBLIC",
+                    "category": "Jobs",
+                    "apiCategory": {
+                        "name": "Jobs",
+                        "color": "rgba(255,94,252,0.4)"
+                    },
+                    "score": {
+                        "popularityScore": 9.8,
+                        "avgLatency": 964,
+                        "avgServiceLevel": 100,
+                        "avgSuccessRate": 100
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 8820691,
+                        "username": "fantastic-jobs-fantastic-jobs-default",
+                        "slugifiedName": "fantastic-jobs-fantastic-jobs-default",
+                        "name": "Fantastic Jobs",
+                        "type": "Team",
+                        "parents": [
+                            {
+                                "id": "8820690",
+                                "name": "Fantastic.Jobs",
+                                "slugifiedName": "fantastic-jobs",
+                                "type": "Organization",
+                                "thumbnail": "org-settings/8820690/1cf7ec77-a713-4e41-8319-c9120fe3b19ffantastic.jobs_logo_1_.png"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "id": "api_6a11872c-022e-48f4-b3b8-461a058b4969",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/1a349357-3540-4947-bdfb-d43804a74a0d.png",
+                    "name": "Auto Download All In One",
+                    "description": "Tiktok, Douyin, Capcut, Threa.ds, Insta.gram, Face.book, Kuaishou, Espn, Pinterest, imdb, imgur, ifunny, Izlesene, Reddit, Youtube, Twitter, Vimeo, Snapchat, Bilibili, Dailymotion, Sharechat, Likee, <em>Linkedin</em>, Tumblr, Hipi, Telegram, Getstickerpack, Bitchute, Febspot, 9GAG, oke.ru, Rumble, Streamable, Ted, SohuTv, Pornbox, Xvideos, Xnxx, Kuaishou, Xiaohongshu, Ixigua, Weibo, Miaopai, Meipai, Xiaoying, National Video, Yingke, Sina, Bluesky, Soundcloud, Mixcloud, Spotify, Zingmp3, Bandcamp.",
+                    "slugifiedName": "auto-download-all-in-one",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2025-03-25T02:33:45.293Z",
+                    "categoryName": "Media",
+                    "isSavedApi": false,
+                    "title": "Auto Download All In One",
+                    "visibility": "PUBLIC",
+                    "category": "Media",
+                    "apiCategory": {
+                        "name": "Media",
+                        "color": "rgba(253,232,254,1)"
+                    },
+                    "score": {
+                        "popularityScore": 9.9,
+                        "avgLatency": 1875,
+                        "avgServiceLevel": 99,
+                        "avgSuccessRate": 99
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 5726397,
+                        "username": "nguyenmanhict-MuTUtGWD7K",
+                        "slugifiedName": "nguyenmanhict-MuTUtGWD7K",
+                        "name": "manh'g",
+                        "type": "User",
+                        "parents": null
+                    }
+                },
+                {
+                    "id": "api_5cef0444-83c6-482a-a2ff-07184d4a8397",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/568e1d42-9b47-4cca-98d4-e8e6a41985b2.png",
+                    "name": "Xiaohongshu All API",
+                    "description": "<h5>🔥RedBook RedNote Red🔥</h5>\n<h5>🔥(China Instagram)🔥</h5>\n<h5>🔥Recommended 🔥</h5>\nAPIs:TikTok,Instagram,Youtube,Google,Twitter,Amazon,ChatGPT,Whatsapp,Spotify,<em>LinkedIn</em>,Facebook,Yahoo,Threads,Telegram,Meta,Zillow,taobao,tmall,jingdong,pinduoduo,douyin,kuaishou,shopee,lazada,SHEIN,1688,Xiaohongshu,Redbook,weibo,zhihu,quota,wechat,news,baidu,reddit,dianping,ele,meituan,bili,temu,dewu,AI,Chat,GPT,Midjourney,Search,Scraper,download,text,image,news,video,live,media",
+                    "slugifiedName": "xiaohongshu-all-api",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2025-02-13T08:59:20.946Z",
+                    "categoryName": "Social",
+                    "isSavedApi": false,
+                    "title": "Xiaohongshu All API",
+                    "visibility": "PUBLIC",
+                    "category": "Social",
+                    "apiCategory": {
+                        "name": "Social",
+                        "color": "rgba(232,238,254,1)"
+                    },
+                    "score": {
+                        "popularityScore": 9.9,
+                        "avgLatency": 867,
+                        "avgServiceLevel": 41,
+                        "avgSuccessRate": 40
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 8615376,
+                        "username": "dataapiman",
+                        "slugifiedName": "dataapiman",
+                        "name": "scrapyman",
+                        "type": "User",
+                        "parents": null
+                    }
+                },
+                {
+                    "id": "api_2df549f6-165a-48c5-995e-fee367308d87",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/cbbfba9d-db99-4212-9d24-411b74d6d21b.png",
+                    "name": "LI Data Scraper",
+                    "description": "A reliable <em>LinkedIn</em> Scraper API to scrape Data such as profiles (all profile details, skills, work experience, **open to work** status, course, education, given & received recommendation), last activity date, companies and job. %100 live data, no dead data!",
+                    "slugifiedName": "li-data-scraper",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2025-01-09T15:16:47.296Z",
+                    "categoryName": "Data",
+                    "isSavedApi": false,
+                    "title": "LI Data Scraper",
+                    "visibility": "PUBLIC",
+                    "category": "Data",
+                    "apiCategory": {
+                        "name": "Data",
+                        "color": "rgba(245,243,255,1)"
+                    },
+                    "score": {
+                        "popularityScore": 9.9,
+                        "avgLatency": 1408,
+                        "avgServiceLevel": 100,
+                        "avgSuccessRate": 100
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 9345956,
+                        "username": "liscraper-liscraper-default",
+                        "slugifiedName": "liscraper-liscraper-default",
+                        "name": "LiScraper-Default",
+                        "type": "Team",
+                        "parents": [
+                            {
+                                "id": "9345955",
+                                "name": "LiScraper",
+                                "slugifiedName": "liscraper",
+                                "type": "Organization",
+                                "thumbnail": "https://rapidapi-prod-collections.s3.amazonaws.com/org/6144d1d0-86fa-4b89-b67c-5ee003f53eb8.png"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "id": "api_97a9f4f4-bafe-4929-985e-ae58882d90f3",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/604f195d-75dd-4b00-bc90-2321b779d1e3.png",
+                    "name": "Fresh <em>Linkedin</em> to Email Finder",
+                    "description": "Fresh <em>LinkedIn</em> to Email Finder helps you quickly discover email addresses from <em>LinkedIn</em> profiles, making it easy to connect with potential business contacts in just a few clicks.  ",
+                    "slugifiedName": "fresh-linkedin-to-email-finder",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2025-04-09T17:22:43.881Z",
+                    "categoryName": "Data",
+                    "isSavedApi": false,
+                    "title": "Fresh Linkedin to Email Finder",
+                    "visibility": "PUBLIC",
+                    "category": "Data",
+                    "apiCategory": {
+                        "name": "Data",
+                        "color": "rgba(245,243,255,1)"
+                    },
+                    "score": {
+                        "popularityScore": 9.7,
+                        "avgLatency": 6661,
+                        "avgServiceLevel": 100,
+                        "avgSuccessRate": 100
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 9586563,
+                        "username": "coracle-api-coracle-api-default",
+                        "slugifiedName": "coracle-api-coracle-api-default",
+                        "name": "Coracle API-Default",
+                        "type": "Team",
+                        "parents": [
+                            {
+                                "id": "9586562",
+                                "name": "Coracle API",
+                                "slugifiedName": "coracle-api",
+                                "type": "Organization",
+                                "thumbnail": "https://rapidapi-prod-collections.s3.amazonaws.com/org/09c3bb0b-1abe-4cb1-86f4-db46afb9f280.png"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "id": "api_8df0990e-e27f-4ac5-aa74-df6001f2f3d1",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/4028318c-c26d-4541-9123-21d04e601f52.jpg",
+                    "name": "Unofficial <em>LinkedIn</em> Company Data",
+                    "description": "Given a company's webpage, or <em>linkedin</em> company url this rest API returns 25+ fields about the company including Crunchbase funding info, three to four employee profiles from the company, and recent company <em>LinkedIn</em> posts. Postman documentation available here: https://documenter.getpostman.com/view/10812513/UVeGpQqo",
+                    "slugifiedName": "linkedin-company-data",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2024-12-30T12:59:15.168Z",
+                    "categoryName": "Social",
+                    "isSavedApi": false,
+                    "title": "Unofficial LinkedIn Company Data",
+                    "visibility": "PUBLIC",
+                    "category": "Social",
+                    "apiCategory": {
+                        "name": "Social",
+                        "color": "rgba(232,238,254,1)"
+                    },
+                    "score": {
+                        "popularityScore": 9.9,
+                        "avgLatency": 5319,
+                        "avgServiceLevel": 99,
+                        "avgSuccessRate": 99
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 4844448,
+                        "username": "williambarberjr",
+                        "slugifiedName": "williambarberjr",
+                        "name": "William Barber",
+                        "type": "User",
+                        "parents": null
+                    }
+                },
+                {
+                    "id": "api_66b3c042-cc1c-407d-9e1d-7cee6c9bcb92",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/0dcb93d1-2a76-4000-b952-90a8e420dd40.png",
+                    "name": "Website Social Scraper Api",
+                    "description": "Website Social Scraper Api helps you collect Website Social data including emails, phones, <em>linkedin</em>, twitter, facebook, youtube, instagram, and more.",
+                    "slugifiedName": "website-social-scraper-api",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2025-03-21T12:55:19.998Z",
+                    "categoryName": "Data",
+                    "isSavedApi": false,
+                    "title": "Website Social Scraper Api",
+                    "visibility": "PUBLIC",
+                    "category": "Data",
+                    "apiCategory": {
+                        "name": "Data",
+                        "color": "rgba(245,243,255,1)"
+                    },
+                    "score": {
+                        "popularityScore": 9.9,
+                        "avgLatency": 1188,
+                        "avgServiceLevel": 98,
+                        "avgSuccessRate": 98
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 6845140,
+                        "username": "Chetan11dev",
+                        "slugifiedName": "Chetan11dev",
+                        "name": "Chetan11-dev",
+                        "type": "User",
+                        "parents": null
+                    }
+                },
+                {
+                    "id": "api_d0eaf755-f0c8-4d90-93e3-89befb7d63fa",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/2084ed45-a3a4-41de-b808-c8a1178765cb.png",
+                    "name": "Auto Download All In One (Big)",
+                    "description": "Tiktok, Douyin, Capcut, Threa.ds, Insta.gram, Face.book, Kuaishou, Espn, Pinterest, imdb, imgur, ifunny, Izlesene, Reddit, Youtube, Twitter, Vimeo, Snapchat, Bilibili, Dailymotion, Sharechat, Likee, <em>Linkedin</em>, Tumblr, Hipi, Telegram, Getstickerpack, Bitchute, Febspot, 9GAG, oke.ru, Rumble, Streamable, Ted, SohuTv, Pornbox, Xvideos, Xnxx, Kuaishou, Xiaohongshu, Ixigua, Weibo, Miaopai, Meipai, Xiaoying, National Video, Yingke, Sina, Bluesky, Soundcloud, Mixcloud, Spotify, Zingmp3, Bandcamp.",
+                    "slugifiedName": "auto-download-all-in-one-big",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2025-03-25T02:33:53.283Z",
+                    "categoryName": "Social",
+                    "isSavedApi": false,
+                    "title": "Auto Download All In One (Big)",
+                    "visibility": "PUBLIC",
+                    "category": "Social",
+                    "apiCategory": {
+                        "name": "Social",
+                        "color": "rgba(232,238,254,1)"
+                    },
+                    "score": {
+                        "popularityScore": 9.9,
+                        "avgLatency": 2144,
+                        "avgServiceLevel": 100,
+                        "avgSuccessRate": 100
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 5726397,
+                        "username": "nguyenmanhict-MuTUtGWD7K",
+                        "slugifiedName": "nguyenmanhict-MuTUtGWD7K",
+                        "name": "manh'g",
+                        "type": "User",
+                        "parents": null
+                    }
+                },
+                {
+                    "id": "api_5786b229-d6d9-41f5-8c96-59acee0b8b6d",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/46ce4492-847d-40fc-863e-5e5e1565bc4c.png",
+                    "name": "Best <em>LinkedIn</em> Scraper API",
+                    "description": "Access and Search profiles, posts, companies, and jobs in real-time with the most powerful and affordable <em>LinkedIn</em> API. This API extracts data directly from <em>LinkedIn</em> on demand, delivering fresh information without caching. With optimized search routes for companies, profiles, and content, our solution is production-ready, reliable, and processes 6M monthly requests. Trusted by SaaS worldwide, it requires no <em>LinkedIn</em> account and delivers responses in just 1200ms for business intelligence, recr...",
+                    "slugifiedName": "best-linkedin-scraper-api3",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2025-03-06T16:02:29.348Z",
+                    "categoryName": "Data",
+                    "isSavedApi": false,
+                    "title": "Best LinkedIn Scraper API",
+                    "visibility": "PUBLIC",
+                    "category": "Data",
+                    "apiCategory": {
+                        "name": "Data",
+                        "color": "rgba(245,243,255,1)"
+                    },
+                    "score": {
+                        "popularityScore": 9.8,
+                        "avgLatency": 6959,
+                        "avgServiceLevel": 97,
+                        "avgSuccessRate": 85
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 9907805,
+                        "username": "ghost-genius-ghost-genius-default",
+                        "slugifiedName": "ghost-genius-ghost-genius-default",
+                        "name": "Ghost Genius",
+                        "type": "Team",
+                        "parents": [
+                            {
+                                "id": "9907804",
+                                "name": "Ghost Genius",
+                                "slugifiedName": "ghost-genius",
+                                "type": "Organization",
+                                "thumbnail": "https://rapidapi-prod-collections.s3.amazonaws.com/org/aa07361e-4c19-4a09-9d87-914db0c1219f.png"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "id": "api_f10b4702-11a7-418d-9573-71209eb08a87",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/a096bc18-2cc3-435f-8e00-b5247f01dcf0.png",
+                    "name": "<em>LinkedIn</em> API (Live Data)",
+                    "description": "Real-time <em>LinkedIn</em> API to access complete profile and company data at scale — no outdated databases, just live data stream.    ",
+                    "slugifiedName": "linkedin-api-live-data1",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2025-04-11T10:12:23.842Z",
+                    "categoryName": "Data",
+                    "isSavedApi": false,
+                    "title": "LinkedIn API (Live Data)",
+                    "visibility": "PUBLIC",
+                    "category": "Data",
+                    "apiCategory": {
+                        "name": "Data",
+                        "color": "rgba(245,243,255,1)"
+                    },
+                    "score": {
+                        "popularityScore": 9.6,
+                        "avgLatency": 1067,
+                        "avgServiceLevel": 99,
+                        "avgSuccessRate": 98
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 10399661,
+                        "username": "linkedin-api-linkedin-api-default",
+                        "slugifiedName": "linkedin-api-linkedin-api-default",
+                        "name": "Linkedin API",
+                        "type": "Team",
+                        "parents": [
+                            {
+                                "id": "10399660",
+                                "name": "Linkedin API",
+                                "slugifiedName": "linkedin-api",
+                                "type": "Organization",
+                                "thumbnail": "org-settings/10399660/710733f6-970d-4f2d-b1b9-aa702feb0c1capple_touch_icon_180x180.png"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "id": "api_7ef18b4c-4dc3-4296-a9ea-09b71d64188a",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/d0756ea2-b331-4169-b8f2-07b82ed63f39.png",
+                    "name": "Social Download All In One",
+                    "description": "Social Video, Image, audio Downloader All In One.\n\nDownload Photos and Videos from Anywhere\n\nTiktok, Douyin, Capcut, Th.ds, In.gram, f.𝒷, Espn, Pinterest, imdb, imgur, ifunny, Izlesene, Reddit, Youtube, Twitter, Vimeo, Snapchat, Bilibili, Dailymotion, Sharechat, Likee, <em>Linkedin</em>, Tumblr, Hipi, Telegram, Getstickerpack, Bitchute, Febspot, 9GAG, oke.ru, Rumble, Streamable, Ted, SohuTv, Xvideos, Xnxx, Xiaohongshu, Ixigua, Weibo, Miaopai, Meipai, Xiaoying, National Video, Yingke, Sina, Soundcloud,...",
+                    "slugifiedName": "social-download-all-in-one",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2025-03-25T02:34:08.234Z",
+                    "categoryName": "News, Media",
+                    "isSavedApi": false,
+                    "title": "Social Download All In One",
+                    "visibility": "PUBLIC",
+                    "category": "News, Media",
+                    "apiCategory": {
+                        "name": "News, Media",
+                        "color": "rgba(254,232,248,1)"
+                    },
+                    "score": {
+                        "popularityScore": 9.9,
+                        "avgLatency": 1988,
+                        "avgServiceLevel": 98,
+                        "avgSuccessRate": 98
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 5726397,
+                        "username": "nguyenmanhict-MuTUtGWD7K",
+                        "slugifiedName": "nguyenmanhict-MuTUtGWD7K",
+                        "name": "manh'g",
+                        "type": "User",
+                        "parents": null
+                    }
+                },
+                {
+                    "id": "api_90209957-e428-45bb-9b03-328de69cd6d1",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/8ca75f67-8728-48db-a362-e327edb18001.png",
+                    "name": "<em>Linkedin</em> Data Scraper API",
+                    "description": "<em>LinkedIn</em> Scraper API: Access jobs, profiles, companies & posts data and more Comprehensive <em>LinkedIn</em> data \nAPI is offering job search, user profiles, company details, and post analytics ... Real-time access to worldwide <em>LinkedIn</em> data.",
+                    "slugifiedName": "linkedin-data-scraper-api1",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2025-04-09T17:13:44.164Z",
+                    "categoryName": "Data",
+                    "isSavedApi": false,
+                    "title": "Linkedin Data Scraper API",
+                    "visibility": "PUBLIC",
+                    "category": "Data",
+                    "apiCategory": {
+                        "name": "Data",
+                        "color": "rgba(245,243,255,1)"
+                    },
+                    "score": {
+                        "popularityScore": 9.8,
+                        "avgLatency": 2520,
+                        "avgServiceLevel": 100,
+                        "avgSuccessRate": 99
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 9331687,
+                        "username": "karimgreek",
+                        "slugifiedName": "karimgreek",
+                        "name": "Api G.",
+                        "type": "User",
+                        "parents": null
+                    }
+                },
+                {
+                    "id": "api_cb8dc8f0-306d-42bf-b4b0-d946343e94fe",
+                    "thumbnail": "https://rapidapi-prod-apis.s3.amazonaws.com/57a1ca17-6ec2-46c5-b85d-8863b987f402.png",
+                    "name": "MTN <em>LINKEDIN</em> ScraperX Api",
+                    "description": "\nAll-in-one API for real-time <em>LinkedIn</em> and Sales Navigator data: scrape profiles, companies, posts, jobs, and more with AI insights.",
+                    "slugifiedName": "mtn-linkedin-scraperx-api",
+                    "pricing": "FREEMIUM",
+                    "updatedAt": "2025-04-09T18:36:48.279Z",
+                    "categoryName": "Data",
+                    "isSavedApi": false,
+                    "title": "MTN LINKEDIN ScraperX Api",
+                    "visibility": "PUBLIC",
+                    "category": "Data",
+                    "apiCategory": {
+                        "name": "Data",
+                        "color": "rgba(245,243,255,1)"
+                    },
+                    "score": {
+                        "popularityScore": 9.7,
+                        "avgLatency": 2360,
+                        "avgServiceLevel": 100,
+                        "avgSuccessRate": 100
+                    },
+                    "version": {
+                        "tags": []
+                    },
+                    "user": {
+                        "id": 9806672,
+                        "username": "mtn-data-mtn-data-default",
+                        "slugifiedName": "mtn-data-mtn-data-default",
+                        "name": "MTN Data ORG",
+                        "type": "Team",
+                        "parents": [
+                            {
+                                "id": "9806671",
+                                "name": "MTN Data",
+                                "slugifiedName": "mtn-data",
+                                "type": "Organization",
+                                "thumbnail": "https://rapidapi-prod-collections.s3.amazonaws.com/org/0063ca71-3298-4d73-9c19-bd1a0525ce67.png"
+                            }
+                        ]
+                    }
+                }
+            ],
+            "facets": {
+                "category": [
+                    {
+                        "key": "Business",
+                        "count": 722
+                    },
+                    {
+                        "key": "Data",
+                        "count": 63
+                    },
+                    {
+                        "key": "Advertising",
+                        "count": 42
+                    },
+                    {
+                        "key": "Artificial Intelligence/Machine Learning",
+                        "count": 30
+                    },
+                    {
+                        "key": "Social",
+                        "count": 26
+                    },
+                    {
+                        "key": "Jobs",
+                        "count": 15
+                    },
+                    {
+                        "key": "Business Software",
+                        "count": 8
+                    },
+                    {
+                        "key": "Media",
+                        "count": 8
+                    },
+                    {
+                        "key": "Tools",
+                        "count": 7
+                    },
+                    {
+                        "key": "Email",
+                        "count": 4
+                    },
+                    {
+                        "key": "News, Media",
+                        "count": 3
+                    },
+                    {
+                        "key": "Search",
+                        "count": 3
+                    },
+                    {
+                        "key": "eCommerce",
+                        "count": 3
+                    },
+                    {
+                        "key": "Cybersecurity",
+                        "count": 2
+                    },
+                    {
+                        "key": "Events",
+                        "count": 2
+                    },
+                    {
+                        "key": "Commerce",
+                        "count": 1
+                    },
+                    {
+                        "key": "Communication",
+                        "count": 1
+                    },
+                    {
+                        "key": "Machine Learning",
+                        "count": 1
+                    },
+                    {
+                        "key": "Medical",
+                        "count": 1
+                    },
+                    {
+                        "key": "Other",
+                        "count": 1
+                    },
+                    {
+                        "key": "Travel",
+                        "count": 1
+                    },
+                    {
+                        "key": "Video, Images",
+                        "count": 1
+                    },
+                    {
+                        "key": "Weather",
+                        "count": 1
+                    }
+                ]
+            },
+            "pageInfo": {
+                "endCursor": "MjA=",
+                "hasNextPage": true,
+                "hasPreviousPage": false,
+                "startCursor": "MA=="
+            },
+            "total": 946,
+            "queryID": "974784542455afe7ca092373e66d61d7",
+            "replicaIndex": "Api-prod-ByNewScore"
+        }
+    }
+}

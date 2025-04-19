@@ -1,0 +1,505 @@
+// This is your Prisma schema file
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// Authorization Models (Not being used yet)
+model ApplicationAuthorization {
+    id                  String              @id @default(uuid())
+    key                 String              @unique // API key should be unique
+    name                String
+    applicationId       String
+    status              AuthorizationStatus @default(ACTIVE)
+    authorizationType   AuthorizationType
+    grantType           GrantType?
+    authorizationValues Json?
+    gateways            String[]            @default([])
+    createdAt           DateTime            @default(now())
+    updatedAt           DateTime            @updatedAt
+
+    @@map("application_authorizations")
+}
+
+enum AuthorizationType {
+    RAPIDAPI
+    OAUTH2
+    APIKEY
+    BASIC
+}
+
+enum GrantType {
+    CLIENT_CREDENTIALS
+    AUTHORIZATION_CODE
+    PASSWORD
+    IMPLICIT
+}
+
+enum AuthorizationStatus {
+    ACTIVE
+    INACTIVE
+    REVOKED
+    EXPIRED
+}
+
+// Gateway Models
+model Gateway {
+    id              Int             @id @default(autoincrement())
+    dns             String
+    serviceStatus   ServiceStatus   @default(PENDING)
+    type            GatewayType     @default(VEIL)
+    status          GatewayStatus   @default(ACTIVE)
+    isDefault       Boolean         @default(false)
+    gatewayTemplate GatewayTemplate @relation(fields: [templateId], references: [id])
+    templateId      Int
+    tenant          Tenant?         @relation(fields: [tenantId], references: [id])
+    tenantId        String?
+
+    @@map("gateways")
+}
+
+model GatewayTemplate {
+    id         Int       @id @default(autoincrement())
+    name       String?
+    urlPattern String?
+    headers    Json? // Stores HeaderParameter[]
+    gateways   Gateway[]
+
+    @@map("gateway_templates")
+}
+
+enum GatewayType {
+    VEIL
+}
+
+enum ServiceStatus {
+    ACTIVE
+    INACTIVE
+    PENDING
+}
+
+enum GatewayStatus {
+    ACTIVE
+    DELETED
+}
+
+model Tenant {
+    id           String         @id @default(uuid())
+    domain       String         @unique
+    name         String
+    slugifiedKey String         @unique
+    gateways     Gateway[]
+    wallets      Wallet[]
+    payments     Payment[]
+    Subscription Subscription[]
+
+    @@map("tenants")
+}
+
+// User Models
+model User {
+    id                 String              @id @default(uuid())
+    fusionAuthId       String?             @unique // UUID from FusionAuth
+    name               String
+    username           String              @unique
+    email              String              @unique
+    slugifiedName      String              @unique
+    type               EntityType          @default(USER)
+    description        String?
+    bio                String?
+    thumbnail          String?
+    parents            String[]            @default([])
+    publishedApisList  String[]            @default([])
+    followedApis       String[]            @default([])
+    attributes         UserAttribute[]
+    metadataAttributes MetadataAttribute[]
+    projects           ProjectAcl[]
+    wallets            Wallet[]
+    createdAt          DateTime            @default(now())
+    updatedAt          DateTime            @updatedAt
+
+    @@map("users")
+}
+
+model UserAttribute {
+    id             String @id @default(uuid())
+    attributeName  String
+    attributeValue Json
+    user           User   @relation(fields: [userId], references: [id])
+    userId         String
+
+    @@map("user_attributes")
+}
+
+model MetadataAttribute {
+    id             String @id @default(uuid())
+    entityId       String
+    attributeName  String
+    attributeValue String
+    user           User   @relation(fields: [userId], references: [id])
+    userId         String
+
+    @@map("metadata_attributes")
+}
+
+enum EntityType {
+    USER
+    TEAM
+    ORGANIZATION
+}
+
+// Project Models
+model Project {
+    id                 Int                 @id @default(autoincrement())
+    name               String
+    mashapeId          String?             @unique
+    thumbnail          String?
+    favorite           Boolean             @default(false)
+    xMashapeKey        String?
+    enableLimitsToAPIs Boolean?
+    projectAllowedAPIs ProjectAllowedAPI[]
+    projectAcls        ProjectAcl[]
+    createdAt          DateTime            @default(now())
+    updatedAt          DateTime            @updatedAt
+    ProjectPricing     ProjectPricing[]
+    Subscription       Subscription[]
+
+    @@map("projects")
+}
+
+model ProjectAcl {
+    id        Int      @id @default(autoincrement())
+    user      User     @relation(fields: [userId], references: [id])
+    userId    String
+    project   Project  @relation(fields: [projectId], references: [id])
+    projectId Int
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@map("project_acls")
+}
+
+model ProjectAllowedAPI {
+    id           Int      @id @default(autoincrement())
+    project      Project  @relation(fields: [projectId], references: [id])
+    projectId    Int
+    apiId        String
+    apiVersionId String
+    status       String   @default("ACTIVE")
+    api          Json // Stores API details
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+
+    @@map("project_allowed_apis")
+}
+
+// Wallet and Payment Models
+model Wallet {
+    id            String              @id @default(uuid())
+    customerId    String // Reference to User
+    customer      User                @relation(fields: [customerId], references: [id])
+    tenantId      String // Reference to Tenant
+    tenant        Tenant              @relation(fields: [tenantId], references: [id])
+    balance       Float
+    creditBalance Float
+    currency      String              @default("CREDITS")
+    transactions  WalletTransaction[]
+    createdAt     DateTime            @default(now())
+    updatedAt     DateTime            @updatedAt
+
+    @@map("wallets")
+}
+
+model WalletTransaction {
+    id               String                          @id @default(uuid())
+    walletId         String
+    wallet           Wallet                          @relation(fields: [walletId], references: [id])
+    tenantId         String
+    customerId       String
+    type             WalletTransactionType
+    subtype          WalletTransactionSubtype
+    status           WalletTransactionStatus         @default(COMPLETED)
+    amount           Float
+    creditsAvailable Float?
+    expiryDate       DateTime?
+    description      String?
+    referenceType    WalletTransactionReferenceType?
+    referenceId      String?
+    metadata         Json?
+    createdAt        DateTime                        @default(now())
+    updatedAt        DateTime                        @updatedAt
+
+    @@map("wallet_transactions")
+}
+
+enum WalletTransactionType {
+    CREDIT
+    DEBIT
+}
+
+enum WalletTransactionSubtype {
+    PAID
+    FREE
+    EXPIRY
+    PAYMENT
+    REFUND
+    MANUAL
+}
+
+enum WalletTransactionStatus {
+    PENDING
+    COMPLETED
+    FAILED
+    CANCELLED
+}
+
+enum WalletTransactionReferenceType {
+    INVOICE
+    PAYMENT
+    EXTERNAL
+}
+
+model Payment {
+    id                String                 @id @default(uuid())
+    tenantId          String
+    tenant            Tenant                 @relation(fields: [tenantId], references: [id])
+    idempotencyKey    String                 @unique
+    destinationType   PaymentDestinationType
+    destinationId     String
+    paymentMethodType PaymentMethodType
+    paymentMethodId   String?
+    paymentGateway    String?
+    gatewayPaymentId  String?
+    amount            Float
+    currency          String
+    paymentStatus     PaymentStatus
+    trackAttempts     Boolean                @default(true)
+    metadata          Json?
+    succeededAt       DateTime?
+    failedAt          DateTime?
+    refundedAt        DateTime?
+    errorMessage      String?
+    attempts          PaymentAttempt[]
+    createdAt         DateTime               @default(now())
+    updatedAt         DateTime               @updatedAt
+
+    @@map("payments")
+}
+
+model PaymentAttempt {
+    id               String               @id @default(uuid())
+    tenantId         String
+    paymentId        String
+    payment          Payment              @relation(fields: [paymentId], references: [id])
+    attemptNumber    Int
+    paymentStatus    PaymentAttemptStatus
+    gatewayAttemptId String?
+    errorMessage     String?
+    metadata         Json?
+    createdAt        DateTime             @default(now())
+    updatedAt        DateTime             @updatedAt
+
+    @@map("payment_attempts")
+}
+
+enum PaymentMethodType {
+    OFFLINE
+    CREDITS
+    CARD
+    ACH
+}
+
+enum PaymentStatus {
+    PENDING
+    PROCESSING
+    SUCCEEDED
+    FAILED
+    REFUNDED
+    PARTIALLY_REFUNDED
+}
+
+enum PaymentAttemptStatus {
+    PENDING
+    PROCESSING
+    SUCCEEDED
+    FAILED
+}
+
+enum PaymentDestinationType {
+    INVOICE
+    WALLET_TOPUP
+}
+
+// Credit Models
+model CreditBalance {
+    id        String              @id @default(uuid())
+    userId    String              @unique // Making userId unique
+    balance   Float
+    status    CreditBalanceStatus @default(ACTIVE)
+    expiresAt DateTime?
+    createdAt DateTime            @default(now())
+    updatedAt DateTime            @updatedAt
+
+    @@map("credit_balances")
+}
+
+model CreditUsage {
+    id          String          @id @default(uuid())
+    userId      String
+    amount      Float
+    type        CreditUsageType
+    endpointId  String?
+    featureId   String?
+    description String?
+    metadata    Json?
+    createdAt   DateTime        @default(now())
+
+    @@map("credit_usages")
+}
+
+model CreditAdjustment {
+    id         String   @id @default(uuid())
+    userId     String
+    amount     Float
+    reason     String
+    adjustedBy String
+    metadata   Json?
+    createdAt  DateTime @default(now())
+
+    @@map("credit_adjustments")
+}
+
+enum CreditBalanceStatus {
+    ACTIVE
+    SUSPENDED
+    EXPIRED
+}
+
+enum CreditUsageType {
+    API_CALL
+    FEATURE_USAGE
+    MANUAL_ADJUSTMENT
+}
+
+model ProjectPricing {
+    id            String          @id @default(cuid())
+    projectId     Int
+    project       Project         @relation(fields: [projectId], references: [id])
+    name          String
+    description   String?
+    price         Float           @default(0)
+    currency      String          @default("USD")
+    interval      PricingInterval
+    status        PricingStatus   @default(ACTIVE)
+    createdAt     DateTime        @default(now())
+    updatedAt     DateTime        @updatedAt
+    subscriptions Subscription[]
+
+    @@map("project_pricing")
+}
+
+enum PricingInterval {
+    MONTHLY
+    YEARLY
+    ONE_TIME
+}
+
+enum PricingStatus {
+    ACTIVE
+    INACTIVE
+    ARCHIVED
+}
+
+model Subscription {
+    id          String             @id @default(cuid())
+    tenantId    String
+    projectId   Int
+    pricingId   String?
+    planId      String?
+    userId      String
+    apiId       String
+    name        String?
+    description String?
+    apiKey      String             @unique
+    status      SubscriptionStatus @default(ACTIVE)
+    startDate   DateTime           @default(now())
+    endDate     DateTime?
+    lastUsed    DateTime?
+    cancelledAt DateTime?
+    createdAt   DateTime           @default(now())
+    updatedAt   DateTime           @updatedAt
+
+    tenant  Tenant          @relation(fields: [tenantId], references: [id])
+    project Project         @relation(fields: [projectId], references: [id])
+    pricing ProjectPricing? @relation(fields: [pricingId], references: [id])
+    api     Api             @relation(fields: [apiId], references: [id])
+    plan    Plan?           @relation(fields: [planId], references: [id])
+    usages  ApiUsage[]
+
+    @@map("subscriptions")
+}
+
+enum SubscriptionStatus {
+    ACTIVE
+    INACTIVE
+    SUSPENDED
+    EXPIRED
+    CANCELLED
+}
+
+// API Models
+model Api {
+    id               String         @id @default(uuid())
+    name             String
+    description      String?
+    version          String
+    path             String         @unique
+    providerId       String
+    method           String
+    specification    Json
+    documentationUrl String? // Added documentationUrl
+    requiredHeaders  Json? // Added requiredHeaders
+    status           ApiStatus      @default(ACTIVE)
+    subscriptions    Subscription[]
+    createdAt        DateTime       @default(now())
+    updatedAt        DateTime       @updatedAt
+
+    @@map("apis")
+}
+
+enum ApiStatus {
+    ACTIVE
+    INACTIVE
+    DEPRECATED
+}
+
+model Plan {
+    id            String         @id @default(uuid())
+    name          String
+    description   String?
+    subscriptions Subscription[]
+    createdAt     DateTime       @default(now())
+    updatedAt     DateTime       @updatedAt
+
+    @@map("plans")
+}
+
+model ApiUsage {
+    id             String       @id @default(uuid())
+    apiId          String
+    userId         String
+    subscriptionId String
+    endpoint       String
+    method         String
+    statusCode     Int
+    latency        Int
+    timestamp      DateTime     @default(now())
+    metadata       Json?
+    subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+
+    @@map("api_usages")
+}
