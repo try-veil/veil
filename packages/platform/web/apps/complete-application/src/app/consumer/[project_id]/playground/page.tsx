@@ -1,12 +1,15 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import EndpointViewer from "@/features/consumer/endpoint-viewer";
-interface Endpoint {
-  method: "GET" | "POST";
+import { OnboardAPI, getOnboardAPIById } from "@/app/api/onboard-api/route";
+
+type Endpoint = {
+  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   name: string;
   category: string;
-}
+  api_id: string;
+};
 
 const endpoints: { category: string; items: Endpoint[] }[] = [
   {
@@ -14,217 +17,17 @@ const endpoints: { category: string; items: Endpoint[] }[] = [
     items: [
       {
         method: "GET",
-        name: "Get Personal Profile",
+        name: "Get Posts",
         category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Detect Activity Time",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Get Profile by Sales Nav URL",
-        category: "Personal Data",
-      },
-      {
-        method: "POST",
-        name: "Google Full Profiles",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Get Profile Latest Post Date",
-        category: "Personal Data",
-      },
-    ],
-  },
-  {
-    category: "Company Data",
-    items: [
-      {
-        method: "GET",
-        name: "Get Personal Profile",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Detect Activity Time",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Get Profile by Sales Nav URL",
-        category: "Personal Data",
-      },
-      {
-        method: "POST",
-        name: "Google Full Profiles",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Get Profile Latest Post Date",
-        category: "Personal Data",
-      },
-    ],
-  },
-  {
-    category: "Post Data",
-    items: [
-      {
-        method: "GET",
-        name: "Get Personal Profile",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Detect Activity Time",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Get Profile by Sales Nav URL",
-        category: "Personal Data",
-      },
-      {
-        method: "POST",
-        name: "Google Full Profiles",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Get Profile Latest Post Date",
-        category: "Personal Data",
-      },
-    ],
-  },
-  {
-    category: "Employee Search (Sales Nav)",
-    items: [
-      {
-        method: "GET",
-        name: "Get Personal Profile",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Detect Activity Time",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Get Profile by Sales Nav URL",
-        category: "Personal Data",
-      },
-      {
-        method: "POST",
-        name: "Google Full Profiles",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Get Profile Latest Post Date",
-        category: "Personal Data",
-      },
-    ],
-  },
-  {
-    category: "Company Search (Sales Nav)",
-    items: [
-      {
-        method: "GET",
-        name: "Get Personal Profile",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Detect Activity Time",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Get Profile by Sales Nav URL",
-        category: "Personal Data",
-      },
-      {
-        method: "POST",
-        name: "Google Full Profiles",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Get Profile Latest Post Date",
-        category: "Personal Data",
-      },
-    ],
-  },
-  {
-    category: "Job Search",
-    items: [
-      {
-        method: "GET",
-        name: "Get Personal Profile",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Detect Activity Time",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Get Profile by Sales Nav URL",
-        category: "Personal Data",
-      },
-      {
-        method: "POST",
-        name: "Google Full Profiles",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Get Profile Latest Post Date",
-        category: "Personal Data",
-      },
-    ],
-  },
-  {
-    category: "Other Endpoints",
-    items: [
-      {
-        method: "GET",
-        name: "Get Personal Profile",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Detect Activity Time",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Get Profile by Sales Nav URL",
-        category: "Personal Data",
-      },
-      {
-        method: "POST",
-        name: "Google Full Profiles",
-        category: "Personal Data",
-      },
-      {
-        method: "GET",
-        name: "Get Profile Latest Post Date",
-        category: "Personal Data",
+        api_id: "c308770f-68fb-4c28-98b2-03f858b690e2",
       },
     ],
   },
 ];
 
 export default function PlaygroundPage() {
-  const [selectedEndpoint, setSelectedEndpoint] = useState<Endpoint | null>(
-    null
-  );
+  const [selectedEndpoint, setSelectedEndpoint] = useState<Endpoint | null>(null);
+  const [apiDetails, setApiDetails] = useState<OnboardAPI | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(
     () => {
@@ -234,6 +37,26 @@ export default function PlaygroundPage() {
       return initialCollapsed;
     }
   );
+
+  useEffect(() => {
+    const fetchApiDetails = async () => {
+      if (selectedEndpoint) {
+        try {
+          // TODO: Replace with actual token management
+          const token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjFyeWJyOGpUTXNNa0tYbzd1MjJ0Qm5XeVc2dyJ9.eyJhdWQiOiIyMTMwMWZkZC02NWJhLTQ2OWUtOTlmMy0xZjZlY2RlY2IzMjUiLCJleHAiOjE3ODExMzQ5MjAsImlhdCI6MTc0NTEzNDkyMCwiaXNzIjoidHJ5dmVpbC5mdXNpb25hdXRoLmlvIiwic3ViIjoiM2VjMjQ3MTgtYzAwOC00NDUwLWFjMmQtZjYyMTJhYTg0MDE1IiwianRpIjoiZjIyNWEwNjQtNmJmMi00NTFiLWE2ZmItYjM2YjdlMDE0YjJjIiwiYXV0aGVudGljYXRpb25UeXBlIjoiUEFTU1dPUkQiLCJhcHBsaWNhdGlvbklkIjoiMjEzMDFmZGQtNjViYS00NjllLTk5ZjMtMWY2ZWNkZWNiMzI1Iiwicm9sZXMiOlsicHJvdmlkZXIiXSwic2lkIjoiMDFkNTk4MjktOTUxNi00OWJmLWFkOWYtYjIwYWJlODQxMmE3IiwiYXV0aF90aW1lIjoxNzQ1MTM0OTIwLCJ0aWQiOiJmZWI4MDE5YS01YmE2LTQwYzQtMzBhZC03NGQ3YzQ3OWZiOTAifQ.hvQnd-At13JKkeOjRr1Cp_w4A9YERwblx2ZFxvIjYLfAs-UwSEm_tKrUn-t5FngHZfL8RhN93qfuxd94OaTvjz6b1A2psDQ1vO2nVgqvx1UrF6US-E6HpKDql7QNsJzJBobyRN29MnyB30j2SbyWDWZzVP1jjHCFx47sHnnZA1MAuJ1Ty2BbfQF3DUJBIN_26pP3JtAR0-toZ039aUzscwbw5xTjCmu5qSQyFwt2kICsPpmGOFQygAvC8KqbRmJShOnXhzWIgqq430tKQeUHvbaB7sc910fb-EKUnkAOXDLewGIxSuS_NKzxX5NLQOYG4qNKI8UGCzx_qCYitIFGiw";
+          const details = await getOnboardAPIById(selectedEndpoint.api_id, token);
+          setApiDetails(details);
+        } catch (error) {
+          console.error("Failed to fetch API details:", error);
+          setApiDetails(null);
+        }
+      } else {
+        setApiDetails(null);
+      }
+    };
+
+    fetchApiDetails();
+  }, [selectedEndpoint]);
 
   const toggleCategory = (category: string) => {
     const newCollapsed = new Set(collapsedCategories);
@@ -335,7 +158,7 @@ export default function PlaygroundPage() {
       {/* Right Column - Selected Endpoint Display */}
       <div className="w-full lg:w-2/3 p-4">
         <div>
-            <EndpointViewer endpoint={selectedEndpoint}/>
+            <EndpointViewer endpoint={selectedEndpoint} apiDetails={apiDetails} />
         </div>
       </div>
     </div>
