@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import React, { useState } from 'react'
 import { dummyEndpoint } from './endpoints'
 import { JsonViewer } from '@/features/projects/request/components/json-tree-viewer'
+import ResponseViewer from '@/features/projects/request/components/response-viewer'
 
 interface Endpoint {
   method: "GET" | "POST";
@@ -21,6 +22,9 @@ export default function EndpointViewer({ endpoint }: EndpointViewerProps) {
   const [selectedLanguage, setSelectedLanguage] = useState('shell')
   const [selectedStatus, setSelectedStatus] = useState('200')
   const [selectedAuthType, setSelectedAuthType] = useState('api_key')
+  const [codeType, setCodeType] = useState("curl")
+  const [isLoading, setIsLoading] = useState(false)
+  const [response, setResponse] = useState<any>(null)
 
   const authTypes = {
     'api_key': 'API Key',
@@ -39,6 +43,49 @@ export default function EndpointViewer({ endpoint }: EndpointViewerProps) {
       default:
         return null
     }
+  }
+
+  const handleSendRequest = () => {
+    setIsLoading(true)
+    // Simulated API call
+    setTimeout(() => {
+      setResponse({
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          'content-type': 'application/json',
+          'x-powered-by': 'Express',
+        },
+        data: {
+          message: 'Hello World',
+          timestamp: new Date().toISOString(),
+        },
+        info: {
+          date: new Date().toISOString(),
+          url: 'https://echo.paw.cloud',
+          status: '200 OK',
+          library: 'Paw Cloud Proxy',
+          headersResponseTime: '489 ms',
+          totalResponseTime: '1419 ms',
+          responseBodySize: '4.51 KiB',
+        },
+        request: {
+          method: 'GET',
+          url: 'https://echo.paw.cloud',
+          path: '/',
+          clientIP: '172.70.85.125',
+          headers: {
+            'Accept-Encoding': 'gzip',
+            'Cdn-Loop': 'cloudflare; loops=1; subreqs=1',
+            'Cf-Connecting-Ip': '2a06:98c0:3600::103',
+            'Cf-Visitor': '{"scheme":"https"}',
+            'Cf-Worker': 'paw.app',
+            'Host': 'echo.paw.cloud',
+          }
+        }
+      })
+      setIsLoading(false)
+    }, 1000)
   }
 
   // If no endpoint is selected, show a message
@@ -259,8 +306,11 @@ export default function EndpointViewer({ endpoint }: EndpointViewerProps) {
             <Card>
               <CardContent className="p-4">
                 <div className="overflow-x-auto">
-                  <JsonViewer data={dummyEndpoint.results} rootName="results" className="whitespace-pre-wrap break-words" />
-                </div>
+                 <ResponseViewer 
+            isLoading={isLoading}
+            response={response}
+            onSend={handleSendRequest}
+          />   </div>
               </CardContent>
             </Card>
           </TabsContent>
