@@ -138,7 +138,7 @@ export function Query() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-h-[300px] overflow-y-auto">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}

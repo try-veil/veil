@@ -68,7 +68,7 @@ export default function RequestPage() {
 
   return (
     <div className="h-[calc(100vh-7rem)] w-full p-4">
-      <div className="grid grid-cols-2 gap-4 h-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
         {/* Left Column */}
         <div className="flex flex-col h-full">
           <div className="flex-1 min-h-0">

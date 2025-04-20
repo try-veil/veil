@@ -32,9 +32,9 @@ export default function Request() {
     <>
 
         <div className="mb-2 flex items-center justify-between space-y-2">
-          <div className="flex flex-col gap-4 sm:my-4 sm:flex-row px-4">
+          <div className="flex flex-col gap-4 sm:my-4 sm:flex-row px-4 flex-wrap w-full">
             <Select value={type} onValueChange={setType}>
-              <SelectTrigger className="w-36">
+              <SelectTrigger className="w-full lg:w-2/5 md:max-w-28">
                 <SelectValue>{options.get(type)}</SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -50,7 +50,7 @@ export default function Request() {
             </Select>
             <Input
               placeholder="http://google.com"
-              className="h-9 w-40 lg:w-[250px]"
+              className="h-9 w-full lg:w-2/5"
               value={urlTerm}
               onChange={(e) => setUrlTerm(e.target.value)}
             />
@@ -62,14 +62,14 @@ export default function Request() {
           defaultValue="overview"
           className="space-y-4"
         >
-          {/* <div className='w-full overflow-x-auto pb-2'> */}
+          <div className='w-full overflow-x-auto pb-2'>
           <TabsList className="mx-4">
             <TabsTrigger value="overview">Description</TabsTrigger>
             <TabsTrigger value="headers">Headers</TabsTrigger>
             <TabsTrigger value="query">Query</TabsTrigger>
             <TabsTrigger value="body">Body</TabsTrigger>
           </TabsList>
-          {/* </div> */}
+          </div>
           <div className="flex-grow overflow-y-auto overflow-x-auto p-4">
           <TabsContent value="overview" className="space-y-4">
             <>
