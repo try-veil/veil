@@ -36,6 +36,7 @@ export class OnboardingController {
     const result = await this.onboardingService.registerApi(
       request,
       req.user.id,
+      request.project_id,
     );
     res.status(HttpStatus.CREATED).json(result);
   }

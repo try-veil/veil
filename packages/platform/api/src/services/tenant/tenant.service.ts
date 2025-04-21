@@ -6,13 +6,13 @@ import {
 } from '@nestjs/common';
 import {
   PrismaClient,
-  Tenant,
   Gateway,
   GatewayStatus,
   GatewayType,
   ServiceStatus,
 } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
+import { ApiProperty } from '@nestjs/swagger';
 
 export interface CreateTenantDto {
   name: string;
@@ -22,6 +22,33 @@ export interface CreateTenantDto {
 export interface UpdateTenantDto {
   name?: string;
   domain?: string;
+}
+
+// Convert TenantResponseDto interface to a class
+export class TenantResponseDto {
+  @ApiProperty({ description: 'Tenant ID' })
+  id: string;
+
+  @ApiProperty({ description: 'Tenant name' })
+  name: string;
+
+  @ApiProperty({ description: 'Tenant domain' })
+  domain: string;
+
+  @ApiProperty({ description: 'Slugified key for the tenant' })
+  slugifiedKey: string;
+
+  // Removed createdAt and updatedAt as they are not on the Tenant model
+  // @ApiProperty({ description: 'Creation timestamp' })
+  // createdAt: Date;
+  // @ApiProperty({ description: 'Last update timestamp' })
+  // updatedAt: Date;
+
+  // Optionally include related fields if needed, e.g.:
+  // @ApiProperty({ type: () => [GatewayDto] }) // Example if GatewayDto exists
+  // gateways?: Gateway[];
+  // @ApiProperty({ type: () => [SubscriptionDto] }) // Example if SubscriptionDto exists
+  // Subscription?: Subscription[];
 }
 
 @Injectable()
@@ -64,7 +91,7 @@ export class TenantService {
     });
   }
 
-  async createTenant(data: CreateTenantDto): Promise<Tenant> {
+  async createTenant(data: CreateTenantDto): Promise<TenantResponseDto> {
     const { name, domain } = data;
 
     // Generate slugified key from name
@@ -78,6 +105,13 @@ export class TenantService {
             name,
             domain,
             slugifiedKey,
+          },
+          // Select fields matching TenantResponseDto
+          select: {
+            id: true,
+            name: true,
+            domain: true,
+            slugifiedKey: true,
           },
         });
 
@@ -128,21 +162,25 @@ export class TenantService {
     }
   }
 
-  async getAllTenants(): Promise<Tenant[]> {
+  async getAllTenants(): Promise<TenantResponseDto[]> {
     return this.prisma.tenant.findMany({
-      include: {
-        gateways: true,
-        Subscription: true,
+      select: {
+        id: true,
+        name: true,
+        domain: true,
+        slugifiedKey: true,
       },
     });
   }
 
-  async getTenantById(id: string): Promise<Tenant> {
+  async getTenantById(id: string): Promise<TenantResponseDto> {
     const tenant = await this.prisma.tenant.findUnique({
       where: { id },
-      include: {
-        gateways: true,
-        Subscription: true,
+      select: {
+        id: true,
+        name: true,
+        domain: true,
+        slugifiedKey: true,
       },
     });
 
@@ -153,12 +191,14 @@ export class TenantService {
     return tenant;
   }
 
-  async getTenantByDomain(domain: string): Promise<Tenant> {
+  async getTenantByDomain(domain: string): Promise<TenantResponseDto> {
     const tenant = await this.prisma.tenant.findUnique({
       where: { domain },
-      include: {
-        gateways: true,
-        Subscription: true,
+      select: {
+        id: true,
+        name: true,
+        domain: true,
+        slugifiedKey: true,
       },
     });
 
@@ -169,8 +209,19 @@ export class TenantService {
     return tenant;
   }
 
-  async updateTenant(id: string, data: UpdateTenantDto): Promise<Tenant> {
-    await this.getTenantById(id);
+  async updateTenant(
+    id: string,
+    data: UpdateTenantDto,
+  ): Promise<TenantResponseDto> {
+    // Check existence first, but getTenantById now returns TenantResponseDto
+    // We only need to know it exists, so a quick findUnique is fine.
+    const existingTenant = await this.prisma.tenant.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!existingTenant) {
+      throw new NotFoundException(`Tenant with ID ${id} not found`);
+    }
 
     const updateData: any = { ...data };
     if (data.name) {
@@ -181,9 +232,11 @@ export class TenantService {
       return await this.prisma.tenant.update({
         where: { id },
         data: updateData,
-        include: {
-          gateways: true,
-          Subscription: true,
+        select: {
+          id: true,
+          name: true,
+          domain: true,
+          slugifiedKey: true,
         },
       });
     } catch (error) {
@@ -198,7 +251,14 @@ export class TenantService {
   }
 
   async deleteTenant(id: string): Promise<void> {
-    await this.getTenantById(id);
+    // Check existence first
+    const existingTenant = await this.prisma.tenant.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!existingTenant) {
+      throw new NotFoundException(`Tenant with ID ${id} not found`);
+    }
 
     // Check if tenant has active subscriptions
     const activeSubscriptions = await this.prisma.subscription.count({

@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
-import { ApiRegistrationRequestDto } from './dto/api-registration.dto';
+import {
+  ApiRegistrationRequestDto,
+  CaddyOnboardingRequestDto,
+} from './dto/api-registration.dto';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -19,7 +22,7 @@ export class GatewayService {
   }
 
   async onboardApi(
-    request: ApiRegistrationRequestDto,
+    request: CaddyOnboardingRequestDto,
   ): Promise<{ status: string; message: string; api: any }> {
     try {
       // Convert NestJS request to Caddy format

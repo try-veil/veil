@@ -1,9 +1,15 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GatewayService } from './gateway.service';
 import {
   ApiRegistrationRequestDto,
   ApiDetailsResponseDto,
+  CaddyOnboardingRequestDto,
 } from './dto/api-registration.dto';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -19,7 +25,29 @@ export class OnboardingService {
   async registerApi(
     request: ApiRegistrationRequestDto,
     providerId: string,
+    projectId: number,
   ): Promise<ApiDetailsResponseDto> {
+    // Verify user has access to the project
+    const projectAcl = await this.prisma.projectAcl.findFirst({
+      where: {
+        projectId: projectId,
+        userId: providerId,
+      },
+    });
+
+    if (!projectAcl) {
+      this.logger.warn(
+        `User ${providerId} attempted to onboard API to project ${projectId} without access.`,
+      );
+      throw new ForbiddenException(
+        'User does not have access to the specified project.',
+      );
+    }
+
+    this.logger.log(
+      `User ${providerId} verified for project ${projectId}. Proceeding with API onboarding.`,
+    );
+
     // Create API record using upsert
     const apiId = request.api_id || uuidv4();
     const api = await this.prisma.api.upsert({
@@ -70,19 +98,52 @@ export class OnboardingService {
       },
     });
 
-    // Register API route in gateway
-    const response = await this.gatewayService.onboardApi({
-      api_id: apiId,
-      name: request.name,
+    // Check if the link already exists
+    const existingLink = await this.prisma.projectAllowedAPI.findFirst({
+      where: {
+        projectId: projectId,
+        apiId: api.id,
+        apiVersionId: api.version,
+      },
+    });
+
+    if (existingLink) {
+      // Update existing link if necessary (e.g., ensure status is ACTIVE)
+      await this.prisma.projectAllowedAPI.update({
+        where: { id: existingLink.id }, // Use the primary key 'id' for update
+        data: { status: 'ACTIVE' },
+      });
+      this.logger.log(
+        `Existing link found for API ${api.id} and project ${projectId}. Updated status.`,
+      );
+    } else {
+      // Create new link if it doesn't exist
+      await this.prisma.projectAllowedAPI.create({
+        data: {
+          projectId: projectId,
+          apiId: api.id,
+          apiVersionId: api.version,
+          status: 'ACTIVE',
+          api: {}, // Assuming default or minimal info needed here
+        },
+      });
+      this.logger.log(
+        `API ${api.id} successfully linked to project ${projectId}.`,
+      );
+    }
+
+    // Register API route in gateway - Pass only relevant fields
+    // Construct the object matching CaddyOnboardingRequestDto
+    const gatewayRequest: CaddyOnboardingRequestDto = {
       path: request.path,
       target_url: request.target_url,
       method: request.method,
-      version: request.version,
-      description: request.description,
-      documentation_url: request.documentation_url,
+      required_subscription: request.required_subscription,
       required_headers: request.required_headers,
-      specification: request.specification,
-    });
+      parameters: request.parameters,
+      api_keys: request.api_keys,
+    };
+    const response = await this.gatewayService.onboardApi(gatewayRequest);
 
     console.log('Gateway response:', response);
 
