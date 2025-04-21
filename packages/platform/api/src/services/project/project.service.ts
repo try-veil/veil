@@ -237,13 +237,11 @@ export class ProjectService {
     // Add API to project via ProjectAllowedAPI
     await this.prisma.projectAllowedAPI.create({
       data: {
-        project: {
-          connect: { id: projectId },
-        },
-        apiId: apiId, // Use the direct field, not a relation
-        apiVersionId,
+        projectId: projectId, // Use direct foreign key
+        apiId: apiId,
+        apiVersionId: apiVersionId,
         status: 'ACTIVE',
-        api: {}, // Empty object as placeholder
+        api: {}, // Keep JSON field as empty object placeholder
       },
     });
   }
