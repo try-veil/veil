@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/context/theme-context";
 import { FontProvider } from "@/context/font-context";
 import AuthProvider from "@/components/auth-provider";
+import { Toaster } from "@/components/ui/toaster";
 
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",
@@ -34,6 +35,7 @@ export default function RootLayout({
           <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
             <FontProvider>
               {children}
+              <Toaster />
             </FontProvider>
           </ThemeProvider>
         </AuthProvider>

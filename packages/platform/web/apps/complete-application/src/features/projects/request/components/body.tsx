@@ -33,10 +33,10 @@ export default function Body() {
         <TabsContent value="json" className="space-y-4">
           <JsonEditor />
         </TabsContent>
-        <TabsContent value="form-url-encoded" className="space-y-4">
+        <TabsContent value="form-url-encoded" className="space-y-4 max-h-[270px] overflow-y-auto">
           <FormUrlEncoded />
         </TabsContent>
-        <TabsContent value="multipart" className="space-y-4">
+        <TabsContent value="multipart" className="space-y-4 max-h-[270px] overflow-y-auto pb-8">
           <Multipart />
         </TabsContent>
         <TabsContent value="graphql" className="space-y-4">

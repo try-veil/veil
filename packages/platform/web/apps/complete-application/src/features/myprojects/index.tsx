@@ -17,6 +17,8 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { apps } from './data/apps'
 import Link from 'next/link'
+import { ProjectsActionDialog } from '../projects/projects-action-dialog'
+
 const appText = new Map<string, string>([
   ['all', 'All Categories'],
   ['connected', 'AI'],
@@ -29,6 +31,8 @@ const appText = new Map<string, string>([
 ])
 
 export default function MyProjects() {
+  const [open, setOpen] = useState(false)
+
   const [sort, setSort] = useState('ascending')
   const [appType, setAppType] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
@@ -53,6 +57,7 @@ export default function MyProjects() {
       <div className="flex h-[calc(100vh-10rem)] w-full max-w-7xl flex-col">
         {/* Fixed Content Section */}
         <div className="bg-background py-6">
+          <div className='flex justify-between'>
           <div>
             <h1 className='text-2xl font-bold tracking-tight'>
               My Projects
@@ -60,6 +65,11 @@ export default function MyProjects() {
             <p className='text-muted-foreground'>
               Lorem ipsum dolor, sit amet consectetur adipisicing elit. Consequuntur, iusto?
             </p>
+          </div>
+          <div>
+            <Button variant={"default"}  onClick={() => setOpen(true)}>Add Project</Button>
+            <ProjectsActionDialog open={open} onOpenChange={setOpen} />
+          </div>
           </div>
           <div className='my-4 flex items-end justify-between sm:my-0 sm:items-center'>
             <div className='flex flex-col gap-4 sm:my-4 sm:flex-row'>

@@ -52,8 +52,8 @@ export default function ResponseViewer({ isLoading, response, onSend }: Response
       : 'bg-yellow-500'
 
   return (
-    <div className="h-full flex flex-col py-2">
-      <div className={`px-4 py-2 rounded-t-lg flex items-center gap-2 mb-2`}>
+    <div className="h-full flex flex-col py-2 overflow-y-auto">
+      <div className={`px-4 py-2 rounded-t-lg flex items-center gap-2 mb-2  `}>
         <span className={`text-white rounded-md px-2 text-center font-mono ${statusColor}`}>{response.status}</span>
         <span>{response.statusText}</span>
       </div>
