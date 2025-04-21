@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Navbar from "@/features/home/Navbar";
-import Apps from "@/features/apps";
+import Apps from "@/features/marketplace";
 import MyProjects from "@/features/myprojects";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MyAnalytics from "@/features/myanalytics";
