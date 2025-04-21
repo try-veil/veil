@@ -12,11 +12,21 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Image from 'next/image'
 import { ImageIcon } from 'lucide-react'
+import { createProject } from '@/app/api/project/route'
+import { useRouter } from 'next/navigation'
+
+interface AddForm {
+  name: string;
+  thumbnail?: File;
+  description?: string;
+  favorite?: boolean;
+  enableLimitsToAPIs?: boolean;
+}
 
 // Schema
 const formSchema = z.object({
   name: z.string().min(1, { message: 'Name is required.' }),
-  logo: z
+  thumbnail: z
     .any()
     .optional()
     .refine(
@@ -25,48 +35,91 @@ const formSchema = z.object({
         (file instanceof File && file.size > 0),
       { message: 'Invalid file.' }
     ),
-  description: z.string().min(1, { message: 'Description is required.' }),
+  description: z.string().optional(),
+  favorite: z.boolean().optional(),
+  enableLimitsToAPIs: z.boolean().optional(),
 })
-
-type AddForm = z.infer<typeof formSchema>
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
 }
 
-export function ProjectsActionDialog({ open, onOpenChange }: Props) {
+export function ProjectsActionDialog({ open, onOpenChange, onSuccess }: Props) {
   const [selectedLogo, setSelectedLogo] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const router = useRouter()
 
   const form = useForm<AddForm>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
-      logo: undefined,
+      thumbnail: undefined,
       description: '',
+      favorite: false,
+      enableLimitsToAPIs: false,
     },
   })
 
   const onSubmit = async (values: AddForm) => {
-    const { name, logo, description } = values
+    try {
+      setIsLoading(true)
+      const { name, thumbnail, description, favorite, enableLimitsToAPIs } = values
 
-    toast({
-      title: 'You submitted the following values:',
-      description: (
-        <pre className='mt-2 w-[340px] rounded-md bg-slate-950 p-4'>
-          <code className='text-white'>{JSON.stringify(values, null, 2)}</code>
-        </pre>
-      ),
-    })
+      // Convert thumbnail file to base64 if it exists
+      let thumbnailBase64: string | undefined = undefined
+      if (thumbnail instanceof File) {
+        thumbnailBase64 = await new Promise((resolve) => {
+          const reader = new FileReader()
+          reader.onloadend = () => resolve(reader.result as string)
+          reader.readAsDataURL(thumbnail)
+        })
+      }
 
-    // Reset form and clear file input
-    form.reset()
-    setSelectedLogo(null)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+      // Create project object
+      const projectData = {
+        name,
+        description,
+        thumbnail: thumbnailBase64,
+        favorite: favorite || false,
+        enableLimitsToAPIs: enableLimitsToAPIs || false
+      }
+
+      // Get auth token from localStorage or your auth context
+      const token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjFyeWJyOGpUTXNNa0tYbzd1MjJ0Qm5XeVc2dyJ9.eyJhdWQiOiIyMTMwMWZkZC02NWJhLTQ2OWUtOTlmMy0xZjZlY2RlY2IzMjUiLCJleHAiOjE3ODEyMzcxODMsImlhdCI6MTc0NTIzNzE4MywiaXNzIjoidHJ5dmVpbC5mdXNpb25hdXRoLmlvIiwic3ViIjoiM2VjMjQ3MTgtYzAwOC00NDUwLWFjMmQtZjYyMTJhYTg0MDE1IiwianRpIjoiZTkyOWUyODctNjNjZC00YzlhLWI1YzMtMjcyYzZmMmJmNDM5IiwiYXV0aGVudGljYXRpb25UeXBlIjoiUEFTU1dPUkQiLCJhcHBsaWNhdGlvbklkIjoiMjEzMDFmZGQtNjViYS00NjllLTk5ZjMtMWY2ZWNkZWNiMzI1Iiwicm9sZXMiOlsicHJvdmlkZXIiXSwic2lkIjoiYTlhMmM0OWItN2RmOC00NTQyLWIzNzctZDgwNTczMDdhZDNlIiwiYXV0aF90aW1lIjoxNzQ1MjM3MTgzLCJ0aWQiOiJmZWI4MDE5YS01YmE2LTQwYzQtMzBhZC03NGQ3YzQ3OWZiOTAifQ.UjaGt3XuRSG0UlWrfcl4s9eQWanNS3Z0nQbYqA9V1Dxci9do0lkgbiJ2xDOYlTrkUe_O9MRm_2yKgGIGqgNZAyitgAWOwAS-az5okOfna7ATMcedc2JWGg3LSwawr3wLkYzS9nj0aACQRKxv3vzQtlPBeaFgHThwbPWQS30oGmT2tkpkuJsRasQr7PLtgyR9AqtUJR4M4AvhG8vUKUBBp4ekLs3-d9TOdtZnxQt3LLYMr_qIqnBaZBGu7CPXq3F_3tdObyR7mQoTDWARhi1oNw2PBDAXQ46wGEEBEKUaK7N8Uxi90mVLo73l58IKfKHdLrdUw3QolyHHoMFYAixI-A"
+      if (!token) {
+        throw new Error('Authentication token not found')
+      }
+
+      const project = await createProject(projectData, token)
+
+      toast({
+        title: 'Success',
+        description: 'Project created successfully',
+      })
+
+      // Reset form and close dialog
+      form.reset()
+      setSelectedLogo(null)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+      onOpenChange(false)
+
+      // Call onSuccess callback to refresh projects list
+      onSuccess?.()
+    } catch (error) {
+      console.log('Error creating project:', error)
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to create project',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsLoading(false)
     }
-    onOpenChange(false)
   }
 
   return (
@@ -111,7 +164,7 @@ export function ProjectsActionDialog({ open, onOpenChange }: Props) {
               {/* ✅ Custom Logo Upload with Preview */}
               <FormField
                 control={form.control}
-                name='logo'
+                name='thumbnail'
                 render={({ field: { onChange, value, ...rest } }) => (
                   <FormItem>
                     <Label>Upload Logo</Label>
@@ -175,7 +228,9 @@ export function ProjectsActionDialog({ open, onOpenChange }: Props) {
                 )}
               />
 
-              <Button type='submit'>Add Project</Button>
+              <Button type='submit' disabled={isLoading}>
+                {isLoading ? 'Creating...' : 'Add Project'}
+              </Button>
             </form>
           </Form>
         </div>

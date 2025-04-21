@@ -2,13 +2,15 @@ export interface Project {
   name: string;
   thumbnail?: string;
   description?: string;
+  favorite?:boolean;
+  enableLimitsToAPIs?:boolean;
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
-export async function getAllProjectsByUserId(userId: string, token: string): Promise<Project[]> {
+export async function getAllProjectsByUserId(token: string): Promise<Project[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/projects/user/${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/projects`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
