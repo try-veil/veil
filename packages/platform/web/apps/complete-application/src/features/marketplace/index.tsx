@@ -1,10 +1,11 @@
 "use client"
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   IconAdjustmentsHorizontal,
   IconSortAscendingLetters,
   IconSortDescendingLetters,
   IconFilter,
+  IconApi
 } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,7 +17,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
-import { apps } from './data/apps'
 import Link from 'next/link'
 import {
   DropdownMenu,
@@ -25,6 +25,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { getMarketplaceProjects } from '@/app/api/marketplace/route'
+import { MarketplaceProject } from '@/app/api/marketplace/route'
 
 const appText = new Map<string, string>([
   ['all', 'All Categories'],
@@ -41,21 +43,42 @@ export default function Marketplace() {
   const [sort, setSort] = useState('ascending')
   const [appType, setAppType] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
+  const [projects, setProjects] = useState<MarketplaceProject[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const filteredApps = apps
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        // Get token from your auth system - you'll need to implement this
+        const token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjFyeWJyOGpUTXNNa0tYbzd1MjJ0Qm5XeVc2dyJ9.eyJhdWQiOiIyMTMwMWZkZC02NWJhLTQ2OWUtOTlmMy0xZjZlY2RlY2IzMjUiLCJleHAiOjE3ODEyMzcxODMsImlhdCI6MTc0NTIzNzE4MywiaXNzIjoidHJ5dmVpbC5mdXNpb25hdXRoLmlvIiwic3ViIjoiM2VjMjQ3MTgtYzAwOC00NDUwLWFjMmQtZjYyMTJhYTg0MDE1IiwianRpIjoiZTkyOWUyODctNjNjZC00YzlhLWI1YzMtMjcyYzZmMmJmNDM5IiwiYXV0aGVudGljYXRpb25UeXBlIjoiUEFTU1dPUkQiLCJhcHBsaWNhdGlvbklkIjoiMjEzMDFmZGQtNjViYS00NjllLTk5ZjMtMWY2ZWNkZWNiMzI1Iiwicm9sZXMiOlsicHJvdmlkZXIiXSwic2lkIjoiYTlhMmM0OWItN2RmOC00NTQyLWIzNzctZDgwNTczMDdhZDNlIiwiYXV0aF90aW1lIjoxNzQ1MjM3MTgzLCJ0aWQiOiJmZWI4MDE5YS01YmE2LTQwYzQtMzBhZC03NGQ3YzQ3OWZiOTAifQ.UjaGt3XuRSG0UlWrfcl4s9eQWanNS3Z0nQbYqA9V1Dxci9do0lkgbiJ2xDOYlTrkUe_O9MRm_2yKgGIGqgNZAyitgAWOwAS-az5okOfna7ATMcedc2JWGg3LSwawr3wLkYzS9nj0aACQRKxv3vzQtlPBeaFgHThwbPWQS30oGmT2tkpkuJsRasQr7PLtgyR9AqtUJR4M4AvhG8vUKUBBp4ekLs3-d9TOdtZnxQt3LLYMr_qIqnBaZBGu7CPXq3F_3tdObyR7mQoTDWARhi1oNw2PBDAXQ46wGEEBEKUaK7N8Uxi90mVLo73l58IKfKHdLrdUw3QolyHHoMFYAixI-A';
+        const data = await getMarketplaceProjects(token);
+        setProjects(data);
+        setIsLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch projects');
+        setIsLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, []);
+
+  const filteredProjects = projects
     .sort((a, b) =>
       sort === 'ascending'
         ? a.name.localeCompare(b.name)
         : b.name.localeCompare(a.name)
     )
-    .filter((app) =>
-      appType === 'connected'
-        ? app.connected
-        : appType === 'notConnected'
-          ? !app.connected
-          : true
-    )
-    .filter((app) => app.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    .filter((project) => project.name.toLowerCase().includes(searchTerm.toLowerCase()))
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-full">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="flex justify-center items-center h-full text-red-500">{error}</div>;
+  }
 
   return (
     <div className="flex w-full items-center justify-center pt-24 pb-4">
@@ -68,7 +91,7 @@ export default function Marketplace() {
                 API Marketplace
               </h1>
               <p className='text-muted-foreground'>
-                Lorem ipsum dolor, sit amet consectetur adipisicing elit. Consequuntur, iusto?
+                Explore and connect with various APIs available in the marketplace
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -148,14 +171,13 @@ export default function Marketplace() {
               </DropdownMenu>
             </div>
           </div>
-          {/* <Separator className='shadow mt-6' /> */}
         </div>
 
         {/* Scrollable Cards Section */}
         <div className="flex-1 overflow-auto px-6 py-6">
           <ul className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-            {filteredApps.map((app) => (
-              <Link href={`/consumer/${app.name}/playground`} key={app.name}>
+            {filteredProjects.map((project) => (
+              <Link href={`/consumer/${project.name}/playground`} key={project.id}>
               <li
                 className='rounded-lg border p-4 hover:shadow-md'
               >
@@ -163,19 +185,19 @@ export default function Marketplace() {
                   <div
                     className={`flex size-10 items-center justify-center rounded-lg bg-muted p-2`}
                   >
-                    {app.logo}
+                    <IconApi />
                   </div>
                   <Button
                     variant='outline'
                     size='sm'
-                    className={`${app.connected ? 'border border-blue-300 bg-blue-50 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950 dark:hover:bg-blue-900' : ''}`}
+                    className='border border-blue-300 bg-blue-50 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950 dark:hover:bg-blue-900'
                   >
-                    {app.connected ? 'Connected' : 'Connect'}
+                    View Details
                   </Button>
                 </div>
                 <div>
-                  <h2 className='mb-1 font-semibold'>{app.name}</h2>
-                  <p className='line-clamp-2 text-gray-500'>{app.desc}</p>
+                  <h2 className='mb-1 font-semibold'>{project.name}</h2>
+                  <p className='line-clamp-2 text-gray-500'>{project.description}</p>
                 </div>
               </li>
               </Link>
