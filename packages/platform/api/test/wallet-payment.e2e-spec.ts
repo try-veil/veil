@@ -36,26 +36,56 @@ describe('Wallet and Payment Services (e2e)', () => {
 
     try {
       // Clean up any existing test data first
-      await prisma.projectAcl.deleteMany({
-        where: {
-          userId: {
-            in: [internalUserId],
+
+      // Define the filter for users to clean up
+      const userCleanupFilter = {
+        OR: [
+          { username: { startsWith: 'testuser_' } },
+          { id: internalUserId },
+          { fusionAuthId: fusionAuthId },
+        ],
+      };
+
+      // Find all users matching the filter
+      const usersToDelete = await prisma.user.findMany({
+        where: userCleanupFilter,
+        select: { id: true }, // Only select IDs
+      });
+
+      const userIdsToDelete = usersToDelete.map((user) => user.id);
+
+      if (userIdsToDelete.length > 0) {
+        // Delete related ProjectAcl records
+        await prisma.projectAcl.deleteMany({
+          where: {
+            userId: { in: userIdsToDelete },
           },
-        },
-      });
+        });
 
-      // Now clean up users
-      const deleteResult = await prisma.user.deleteMany({
-        where: {
-          OR: [
-            { username: { startsWith: 'testuser_' } },
-            { id: internalUserId },
-            { fusionAuthId: fusionAuthId },
-          ],
-        },
-      });
+        // Delete related MetadataAttribute records
+        await prisma.metadataAttribute.deleteMany({
+          where: {
+            userId: { in: userIdsToDelete },
+          },
+        });
 
-      console.log('Cleaned up existing test users:', deleteResult);
+        // Delete related UserAttribute records
+        await prisma.userAttribute.deleteMany({
+          where: {
+            userId: { in: userIdsToDelete },
+          },
+        });
+
+        // Now clean up users
+        const deleteResult = await prisma.user.deleteMany({
+          where: {
+            id: { in: userIdsToDelete }, // Use the fetched IDs
+          },
+        });
+        console.log('Cleaned up existing test users:', deleteResult);
+      } else {
+        console.log('No existing test users found matching criteria.');
+      }
 
       // First check if the tenant exists
       defaultTenant = await prisma.tenant.findFirst({
@@ -124,6 +154,14 @@ describe('Wallet and Payment Services (e2e)', () => {
       }
 
       if (testUser) {
+        // Delete related attributes first
+        await prisma.metadataAttribute.deleteMany({
+          where: { userId: testUser.id },
+        });
+        await prisma.userAttribute.deleteMany({
+          where: { userId: testUser.id },
+        });
+
         await prisma.user.delete({
           where: { id: testUser.id },
         });

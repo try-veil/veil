@@ -20,7 +20,7 @@ export class UserController {
 
   @Get('me')
   async getCurrentUser(@Request() req) {
-    const fusionAuthId = req.user.sub;
+    const fusionAuthId = req.user.jwt.sub;
     return this.userService.findByFusionAuthId(fusionAuthId);
   }
 
@@ -35,7 +35,7 @@ export class UserController {
 
   @Put('me')
   async updateCurrentUser(@Request() req, @Body() updateDto: UpdateUserDto) {
-    const user = await this.userService.findByFusionAuthId(req.user.sub);
+    const user = await this.userService.findByFusionAuthId(req.user.jwt.sub);
     if (!user) {
       throw new ForbiddenException('User not found');
     }
@@ -50,7 +50,9 @@ export class UserController {
     @Request() req,
   ) {
     // Verify the user is updating their own attributes
-    const currentUser = await this.userService.findByFusionAuthId(req.user.sub);
+    const currentUser = await this.userService.findByFusionAuthId(
+      req.user.jwt.sub,
+    );
     if (!currentUser || currentUser.id !== id) {
       throw new ForbiddenException('Cannot update attributes of other users');
     }
@@ -71,7 +73,9 @@ export class UserController {
     @Request() req,
   ) {
     // Verify the user is updating their own metadata
-    const currentUser = await this.userService.findByFusionAuthId(req.user.sub);
+    const currentUser = await this.userService.findByFusionAuthId(
+      req.user.jwt.sub,
+    );
     if (!currentUser || currentUser.id !== id) {
       throw new ForbiddenException('Cannot update metadata of other users');
     }

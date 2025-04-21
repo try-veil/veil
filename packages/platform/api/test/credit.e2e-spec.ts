@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/services/prisma/prisma.service';
@@ -8,36 +8,41 @@ import {
   CreditUsageType,
   CreditBalanceStatus,
 } from '../src/entities/credit/types';
-import { AuthGuard } from '../src/services/auth/auth.guard';
-
-// Mock AuthGuard to always return true
-class MockAuthGuard {
-  canActivate() {
-    return true;
-  }
-}
+import { ConfigService } from '@nestjs/config';
 
 describe('Credit Service (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let configService: ConfigService;
   let testUser: any;
   let userId: string;
   let walletId: string;
+  let jwtToken: string;
+  let testTenant: any;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    })
-      .overrideGuard(AuthGuard)
-      .useClass(MockAuthGuard)
-      .compile();
+    }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe());
     prisma = moduleFixture.get<PrismaService>(PrismaService);
+    configService = moduleFixture.get<ConfigService>(ConfigService);
+
     await app.init();
 
+    jwtToken = configService.get<string>('E2E_CONSUMER_JWT_TOKEN');
+    if (!jwtToken) {
+      throw new Error(
+        'E2E_CONSUMER_JWT_TOKEN not found in environment variables. Please set it.',
+      );
+    }
+
+    const username = `testuser_${Date.now()}_${uuidv4()}`;
+
     try {
-      // Clean up any existing test data first
+      // Clean up potential leftovers from previous runs
       await prisma.walletTransaction.deleteMany({
         where: {
           wallet: { customer: { username: { startsWith: 'testuser_' } } },
@@ -46,17 +51,20 @@ describe('Credit Service (e2e)', () => {
       await prisma.wallet.deleteMany({
         where: { customer: { username: { startsWith: 'testuser_' } } },
       });
+      await prisma.tenant.deleteMany({
+        where: { name: { startsWith: 'Test Tenant E2E Credit' } },
+      });
       await prisma.user.deleteMany({
         where: { username: { startsWith: 'testuser_' } },
       });
 
       // Create test tenant
-      const testTenant = await prisma.tenant.create({
+      testTenant = await prisma.tenant.create({
         data: {
           id: uuidv4(),
-          name: 'Test Tenant',
-          domain: 'test.example.com',
-          slugifiedKey: 'test',
+          name: `Test Tenant E2E Credit ${Date.now()}`,
+          domain: `test-credit-${Date.now()}.example.com`,
+          slugifiedKey: `test-credit-${Date.now()}`,
         },
       });
 
@@ -65,10 +73,10 @@ describe('Credit Service (e2e)', () => {
         data: {
           id: uuidv4(),
           fusionAuthId: uuidv4(),
-          name: 'Test User',
-          username: `testuser_${Date.now()}_${uuidv4()}`,
-          email: `testuser_${Date.now()}@example.com`,
-          slugifiedName: `testuser-${Date.now()}`,
+          name: 'Test Credit User',
+          username: username,
+          email: `${username}@example.com`,
+          slugifiedName: `testcredituser-${Date.now()}`,
         },
       });
 
@@ -94,6 +102,7 @@ describe('Credit Service (e2e)', () => {
       });
     } catch (error) {
       console.error('Error setting up test data:', error);
+      await app?.close();
       throw error;
     }
   });
@@ -105,26 +114,24 @@ describe('Credit Service (e2e)', () => {
         await prisma.walletTransaction.deleteMany({
           where: { walletId },
         });
-        await prisma.wallet
-          .delete({
-            where: { id: walletId },
-          })
-          .catch(() => {}); // Ignore if already deleted
+        await prisma.wallet.delete({ where: { id: walletId } }).catch(() => {});
       }
 
-      if (testUser?.id) {
-        await prisma.user
-          .delete({
-            where: { id: testUser.id },
-          })
-          .catch(() => {}); // Ignore if already deleted
+      if (userId) {
+        await prisma.user.delete({ where: { id: userId } }).catch(() => {});
+      }
+
+      if (testTenant?.id) {
+        await prisma.tenant
+          .delete({ where: { id: testTenant.id } })
+          .catch(() => {});
       }
     } catch (error) {
       console.error('Error cleaning up test data:', error);
+    } finally {
+      await prisma.$disconnect();
+      await app?.close();
     }
-
-    await prisma.$disconnect();
-    await app.close();
   });
 
   describe('Credit Balance Management', () => {
@@ -132,7 +139,7 @@ describe('Credit Service (e2e)', () => {
     it('should add initial credits to user', async () => {
       const res = await request(app.getHttpServer())
         .post(`/credits/${userId}/add`)
-        .set('Authorization', 'Bearer test-token')
+        .set('Authorization', `Bearer ${jwtToken}`)
         .send({
           amount: 100,
           reason: 'Initial credit allocation',
@@ -141,7 +148,7 @@ describe('Credit Service (e2e)', () => {
 
       expect(res.status).toBe(201);
       expect(res.body).toHaveProperty('id');
-      expect(res.body.balance).toBe(215); // Updated to match actual balance
+      expect(res.body.balance).toBe(100);
       expect(res.body.status).toBe(CreditBalanceStatus.ACTIVE);
     });
 
@@ -149,11 +156,11 @@ describe('Credit Service (e2e)', () => {
     it('should retrieve credit balance', async () => {
       const res = await request(app.getHttpServer())
         .get(`/credits/${userId}`)
-        .set('Authorization', 'Bearer test-token');
+        .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('balance');
-      expect(res.body.balance).toBe(215); // Updated to match actual balance
+      expect(res.body.balance).toBe(100);
       expect(res.body).toHaveProperty('recentUsage');
       expect(Array.isArray(res.body.recentUsage)).toBe(true);
     });
@@ -162,7 +169,7 @@ describe('Credit Service (e2e)', () => {
     it('should check if user has sufficient credits', async () => {
       const res = await request(app.getHttpServer())
         .post(`/credits/${userId}/check`)
-        .set('Authorization', 'Bearer test-token')
+        .set('Authorization', `Bearer ${jwtToken}`)
         .send({
           amount: 50,
         });
@@ -176,7 +183,7 @@ describe('Credit Service (e2e)', () => {
     it('should deduct credits for API usage', async () => {
       const res = await request(app.getHttpServer())
         .post(`/credits/${userId}/deduct`)
-        .set('Authorization', 'Bearer test-token')
+        .set('Authorization', `Bearer ${jwtToken}`)
         .send({
           amount: 25,
           type: CreditUsageType.API_CALL,
@@ -188,14 +195,14 @@ describe('Credit Service (e2e)', () => {
 
       expect(res.status).toBe(201);
       expect(res.body).toHaveProperty('balance');
-      expect(res.body.balance).toBe(190); // Updated to match actual balance
+      expect(res.body.balance).toBe(75);
     });
 
     // Test 5: Check insufficient credits
     it('should handle insufficient credits check', async () => {
       const res = await request(app.getHttpServer())
         .post(`/credits/${userId}/check`)
-        .set('Authorization', 'Bearer test-token')
+        .set('Authorization', `Bearer ${jwtToken}`)
         .send({
           amount: 1000,
         });
@@ -209,7 +216,7 @@ describe('Credit Service (e2e)', () => {
     it('should handle insufficient credits deduction', async () => {
       const res = await request(app.getHttpServer())
         .post(`/credits/${userId}/deduct`)
-        .set('Authorization', 'Bearer test-token')
+        .set('Authorization', `Bearer ${jwtToken}`)
         .send({
           amount: 1000,
           type: CreditUsageType.API_CALL,
@@ -224,7 +231,7 @@ describe('Credit Service (e2e)', () => {
     it('should add more credits to existing balance', async () => {
       const res = await request(app.getHttpServer())
         .post(`/credits/${userId}/add`)
-        .set('Authorization', 'Bearer test-token')
+        .set('Authorization', `Bearer ${jwtToken}`)
         .send({
           amount: 50,
           reason: 'Additional credit purchase',
@@ -233,14 +240,14 @@ describe('Credit Service (e2e)', () => {
 
       expect(res.status).toBe(201);
       expect(res.body).toHaveProperty('balance');
-      expect(res.body.balance).toBe(240); // Updated to match actual balance
+      expect(res.body.balance).toBe(125);
     });
 
     // Test 8: Invalid credit amount
     it('should handle invalid credit amounts', async () => {
       const res = await request(app.getHttpServer())
         .post(`/credits/${userId}/add`)
-        .set('Authorization', 'Bearer test-token')
+        .set('Authorization', `Bearer ${jwtToken}`)
         .send({
           amount: -50,
           reason: 'Negative amount test',
@@ -256,10 +263,9 @@ describe('Credit Service (e2e)', () => {
     it('should handle missing required fields', async () => {
       const res = await request(app.getHttpServer())
         .post(`/credits/${userId}/add`)
-        .set('Authorization', 'Bearer test-token')
+        .set('Authorization', `Bearer ${jwtToken}`)
         .send({
           amount: 50,
-          // Missing reason and adjustedBy
         });
 
       expect(res.status).toBe(400);
@@ -270,7 +276,7 @@ describe('Credit Service (e2e)', () => {
     it('should deduct credits for feature usage', async () => {
       const res = await request(app.getHttpServer())
         .post(`/credits/${userId}/deduct`)
-        .set('Authorization', 'Bearer test-token')
+        .set('Authorization', `Bearer ${jwtToken}`)
         .send({
           amount: 10,
           type: CreditUsageType.FEATURE_USAGE,
@@ -281,92 +287,7 @@ describe('Credit Service (e2e)', () => {
 
       expect(res.status).toBe(201);
       expect(res.body).toHaveProperty('balance');
-      expect(res.body.balance).toBe(230); // Updated to match actual balance
-    });
-
-    // Test 11: Add credits to a wallet
-    it('should add credits to a wallet', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/api/v1/credits/add')
-        .set('Authorization', 'Bearer test-token')
-        .send({
-          amount: 100,
-          reason: 'Initial credit allocation',
-          adjustedBy: 'system',
-        });
-
-      expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('id');
-      expect(response.body.balance).toBe(100);
-      expect(response.body.status).toBe(CreditBalanceStatus.ACTIVE);
-    });
-
-    // Test 12: Retrieve credit balance
-    it('should retrieve credit balance', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/api/v1/credits/balance')
-        .set('Authorization', 'Bearer test-token')
-        .send({
-          userId: testUser.id,
-        });
-
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('balance');
-      expect(response.body.balance).toBe(100);
-      expect(response.body).toHaveProperty('recentUsage');
-      expect(Array.isArray(response.body.recentUsage)).toBe(true);
-    });
-
-    // Test 13: Check if sufficient credits are available
-    it('should check if sufficient credits are available', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/api/v1/credits/check')
-        .set('Authorization', 'Bearer test-token')
-        .send({
-          amount: 50,
-          userId: testUser.id,
-        });
-
-      expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('hasSufficientCredits');
-      expect(response.body.hasSufficientCredits).toBe(true);
-    });
-
-    // Test 14: Deduct credits from wallet
-    it('should deduct credits from wallet', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/api/v1/credits/deduct')
-        .set('Authorization', 'Bearer test-token')
-        .send({
-          amount: 25,
-          type: CreditUsageType.API_CALL,
-          metadata: {
-            endpoint: '/api/test',
-            method: 'GET',
-          },
-          userId: testUser.id,
-        });
-
-      expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('balance');
-      expect(response.body.balance).toBe(75);
-    });
-
-    // Test 15: Add more credits to wallet
-    it('should add more credits to wallet', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/api/v1/credits/add')
-        .set('Authorization', 'Bearer test-token')
-        .send({
-          amount: 50,
-          reason: 'Additional credit purchase',
-          adjustedBy: 'system',
-          userId: testUser.id,
-        });
-
-      expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('balance');
-      expect(response.body.balance).toBe(125); // 75 + 50
+      expect(res.body.balance).toBe(115);
     });
   });
 });

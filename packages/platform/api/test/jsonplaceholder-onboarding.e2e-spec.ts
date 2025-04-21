@@ -13,15 +13,11 @@ describe('JSONPlaceholder API Onboarding Flow (e2e)', () => {
   let prisma: PrismaService;
   let configService: ConfigService;
   let gatewayService: GatewayService;
-  let testTenant: any; // Keep for use in setup
   let testUser: any;
   let testProject: any;
-  let testProjectAcl: any; // Keep for use in setup
-  let gatewayUrl: string; // Keep for potential use
   let providerJwtToken: string;
-  let consumerJwtToken: string; // Keep for potential use
   let consumerApiKey: string;
-  let providerId: string; // Keep for potential use
+  let providerId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -34,11 +30,7 @@ describe('JSONPlaceholder API Onboarding Flow (e2e)', () => {
     gatewayService = moduleFixture.get<GatewayService>(GatewayService);
     await app.init();
 
-    gatewayUrl =
-      configService.get<string>('DEFAULT_GATEWAY_URL') ||
-      'http://localhost:2020';
     providerJwtToken = configService.get<string>('E2E_PROVIDER_JWT_TOKEN');
-    consumerJwtToken = configService.get<string>('E2E_CONSUMER_JWT_TOKEN');
     consumerApiKey = uuidv4(); // Generate a unique API key for the consumer
 
     // Setup test data
@@ -59,29 +51,40 @@ describe('JSONPlaceholder API Onboarding Flow (e2e)', () => {
       // Clean up any existing test data first
       await cleanupTestData();
 
-      // Create test tenant with unique domain
-      testTenant = await prisma.tenant.create({
-        data: {
-          id: uuidv4(),
-          name: `Test Tenant ${timestamp}`,
-          domain: `test-${timestamp}.example.com`,
-          slugifiedKey: `test-${timestamp}`,
-        },
-      });
+      // Create test tenant using the API endpoint
+      const tenantDomain = `test-${timestamp}.example.com`;
+      const tenantName = `Test Tenant ${timestamp}`;
+      const createTenantResponse = await request(app.getHttpServer())
+        .post('/tenants')
+        .set('Authorization', `Bearer ${providerJwtToken}`)
+        .send({
+          name: tenantName,
+          domain: tenantDomain,
+        });
+
+      if (createTenantResponse.status !== 201) {
+        console.error(
+          'Failed to create tenant via API:',
+          createTenantResponse.body,
+        );
+        throw new Error('Tenant creation failed in test setup');
+      }
 
       // Create test provider user
+      // We need the provider user ID for ProjectAcl later
+      const providerUsername = `provider_${username}`;
       const provider = await prisma.user.create({
         data: {
           id: uuidv4(),
           fusionAuthId: uuidv4(),
           name: 'Test Provider',
-          username: `provider_${username}`,
-          email: `provider_${username}@example.com`,
-          slugifiedName: `provider_${username}`,
+          username: providerUsername,
+          email: `${providerUsername}@example.com`,
+          slugifiedName: providerUsername,
           type: 'USER',
         },
       });
-      providerId = provider.id;
+      providerId = provider.id; // Assign providerId here
 
       // Create test consumer user
       testUser = await prisma.user.create({
@@ -96,17 +99,28 @@ describe('JSONPlaceholder API Onboarding Flow (e2e)', () => {
         },
       });
 
-      // Create test project
-      testProject = await prisma.project.create({
-        data: {
+      // Create test project using the API endpoint
+      const createProjectResponse = await request(app.getHttpServer())
+        .post('/projects')
+        .set('Authorization', `Bearer ${providerJwtToken}`)
+        .send({
           name: `test_project_${timestamp}`,
-        },
-      });
+          // Add other required fields if necessary, based on Project DTO
+        });
 
-      // Link project to tenant through ProjectAcl
-      testProjectAcl = await prisma.projectAcl.create({
+      if (createProjectResponse.status !== 201) {
+        console.error(
+          'Failed to create project via API:',
+          createProjectResponse.body,
+        );
+        throw new Error('Project creation failed in test setup');
+      }
+      testProject = createProjectResponse.body; // Store the response body
+
+      // Link project to provider through ProjectAcl
+      await prisma.projectAcl.create({
         data: {
-          userId: testUser.id,
+          userId: providerId,
           projectId: testProject.id,
         },
       });
@@ -154,7 +168,7 @@ describe('JSONPlaceholder API Onboarding Flow (e2e)', () => {
         where: { username: { startsWith: 'testuser_' } },
       });
 
-      // Finally delete tenants
+      // Finally delete tenants - this should still work with the name prefix
       await prisma.tenant.deleteMany({
         where: { name: { startsWith: 'Test Tenant' } },
       });
@@ -165,10 +179,7 @@ describe('JSONPlaceholder API Onboarding Flow (e2e)', () => {
 
   describe('JSONPlaceholder API Tests', () => {
     const baseApiPath = '/api/v1/jsonplaceholder';
-    let postApiId: string;
     let getUserApiId: string;
-    let updateUserApiId: string;
-    let deleteUserApiId: string;
 
     it('should onboard GET /posts endpoint', async () => {
       const apiId = uuidv4();
@@ -178,6 +189,7 @@ describe('JSONPlaceholder API Onboarding Flow (e2e)', () => {
         .set('Authorization', `Bearer ${providerJwtToken}`)
         .send({
           api_id: apiId,
+          project_id: testProject.id,
           name: 'Get Posts',
           path: `/${apiId}${baseApiPath}/posts`,
           target_url: 'https://jsonplaceholder.typicode.com/posts',
@@ -210,16 +222,15 @@ describe('JSONPlaceholder API Onboarding Flow (e2e)', () => {
         getUserApiId,
       );
 
-      // Link the API to the project via ProjectAllowedAPI
-      await prisma.projectAllowedAPI.create({
-        data: {
+      // Verify the link was created automatically
+      const projectLink = await prisma.projectAllowedAPI.findFirst({
+        where: {
           projectId: testProject.id,
           apiId: getUserApiId,
-          apiVersionId: 'v1',
-          status: 'ACTIVE',
-          api: {}, // Empty JSON object as placeholder
         },
       });
+      expect(projectLink).toBeDefined();
+      expect(projectLink.status).toBe('ACTIVE');
 
       const apiCallResponse = await request('http://localhost:2021')
         .get(`/${apiId}${baseApiPath}/posts`)
@@ -438,22 +449,22 @@ describe('JSONPlaceholder API Onboarding Flow (e2e)', () => {
 
     //   it('should verify all test resources were created properly', async () => {
     //     // Verify tenant was created
-    //     expect(testTenant).toBeDefined();
-    //     expect(testTenant.id).toBeTruthy();
+    //     // expect(testTenant).toBeDefined();
+    //     // expect(testTenant.id).toBeTruthy();
 
     //     // Verify project access control
-    //     expect(testProjectAcl).toBeDefined();
-    //     expect(testProjectAcl.projectId).toBe(testProject.id);
-    //     expect(testProjectAcl.userId).toBe(testUser.id);
+    //     // expect(testProjectAcl).toBeDefined();
+    //     // expect(testProjectAcl.projectId).toBe(testProject.id);
+    //     // expect(testProjectAcl.userId).toBe(testUser.id);
 
     //     // Verify gateway URL is set
-    //     expect(gatewayUrl).toBeTruthy();
+    //     // expect(gatewayUrl).toBeTruthy();
 
     //     // Verify JWT tokens exist
-    //     expect(consumerJwtToken).toBeTruthy();
+    //     // expect(consumerJwtToken).toBeTruthy();
 
     //     // Verify provider ID was set
-    //     expect(providerId).toBeTruthy();
+    //     // expect(providerId).toBeTruthy();
     //   });
     // });
   });
