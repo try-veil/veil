@@ -30,15 +30,15 @@ export function Carousel({ images }: CarouselProps) {
   }, [emblaApi])
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full h-full">
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex">
           {images.map((src, index) => (
-            <div key={index} className="flex-[0_0_100%] min-w-0 relative h-[500px]">
+            <div key={index} className="flex-[0_0_100%] min-w-0 relative h-[250px] lg:h-[500px]">
               <img
                 src={src}
                 alt={`Slide ${index + 1}`}
-                className="w-full h-full object-contain rounded-2xl"
+                className="w-full h-[250px] lg:h-full object-contain rounded-2xl"
               />
             </div>
           ))}

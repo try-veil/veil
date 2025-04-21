@@ -12,7 +12,7 @@ export default function Hero() {
   ];
 
   return (
-    <div className="flex bg-background mt-36 flex-col items-center justify-center gap-0 lg:gap-4 h-[100vh]">
+    <div className="flex bg-background mt-28 lg:mt-52 xl:mt-32 flex-col items-center justify-center gap-0 lg:gap-4 lg:h-[100vh]">
       <h2 className="text-3xl px-2 lg:text-4xl font-black max-w-xl text-center mb-4">
         Launch and Monetize your APIs in Minutes
       </h2>
@@ -28,7 +28,7 @@ export default function Hero() {
         <Button variant={"primary-scale"}>Try For Free</Button>
         </Link>
       </div>
-      <div className="relative h-full w-[90vw] lg:h-[500px] lg:w-full lg:max-w-7xl">
+      <div className="relative w-[90vw] h-[250px] lg:h-[500px] lg:w-full lg:max-w-7xl">
         <Carousel images={images} />
       </div>
     </div>
