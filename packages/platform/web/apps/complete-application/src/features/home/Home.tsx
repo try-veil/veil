@@ -12,7 +12,7 @@ export default function Hero() {
   ];
 
   return (
-    <div className="flex bg-background mt-28 lg:mt-52 xl:mt-32 flex-col items-center justify-center gap-0 lg:gap-4 lg:h-[100vh]">
+    <div className="flex bg-background flex-col items-center justify-center gap-0 lg:gap-4 pt-36 lg:min-h-screen">
       <h2 className="text-3xl px-2 lg:text-4xl font-black max-w-xl text-center mb-4">
         Launch and Monetize your APIs in Minutes
       </h2>
