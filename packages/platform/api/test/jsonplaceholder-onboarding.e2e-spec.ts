@@ -13,15 +13,15 @@ describe('JSONPlaceholder API Onboarding Flow (e2e)', () => {
   let prisma: PrismaService;
   let configService: ConfigService;
   let gatewayService: GatewayService;
-  let testTenant: any;
+  let testTenant: any; // Keep for use in setup
   let testUser: any;
   let testProject: any;
-  let testProjectAcl: any;
-  let gatewayUrl: string;
+  let testProjectAcl: any; // Keep for use in setup
+  let gatewayUrl: string; // Keep for potential use
   let providerJwtToken: string;
-  let consumerJwtToken: string;
+  let consumerJwtToken: string; // Keep for potential use
   let consumerApiKey: string;
-  let providerId: string;
+  let providerId: string; // Keep for potential use
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -210,6 +210,17 @@ describe('JSONPlaceholder API Onboarding Flow (e2e)', () => {
         getUserApiId,
       );
 
+      // Link the API to the project via ProjectAllowedAPI
+      await prisma.projectAllowedAPI.create({
+        data: {
+          projectId: testProject.id,
+          apiId: getUserApiId,
+          apiVersionId: 'v1',
+          status: 'ACTIVE',
+          api: {}, // Empty JSON object as placeholder
+        },
+      });
+
       const apiCallResponse = await request('http://localhost:2021')
         .get(`/${apiId}${baseApiPath}/posts`)
         .set('Authorization', consumerApiKey)
@@ -231,7 +242,7 @@ describe('JSONPlaceholder API Onboarding Flow (e2e)', () => {
     //     .send({
     //       api_id: apiId,
     //       name: 'Create Post',
-    //       path: `${baseApiPath}/posts`,
+    //       path: `/${apiId}${baseApiPath}/posts`,
     //       target_url: 'https://jsonplaceholder.typicode.com/posts',
     //       method: 'POST',
     //       version: 'v1',
@@ -261,6 +272,31 @@ describe('JSONPlaceholder API Onboarding Flow (e2e)', () => {
     //     testUser.id,
     //     postApiId,
     //   );
+
+    //   // Link the API to the project via ProjectAllowedAPI
+    //   await prisma.projectAllowedAPI.create({
+    //     data: {
+    //       projectId: testProject.id,
+    //       apiId: postApiId,
+    //       apiVersionId: 'v1',
+    //       status: 'ACTIVE',
+    //       api: {}, // Empty JSON object as placeholder
+    //     },
+    //   });
+
+    //   // Test the API call
+    //   const apiCallResponse = await request('http://localhost:2021')
+    //     .post(`/${apiId}${baseApiPath}/posts`)
+    //     .set('Authorization', consumerApiKey)
+    //     .set('X-Subscription-Key', consumerApiKey)
+    //     .send({
+    //       title: 'Test Post',
+    //       body: 'This is a test post',
+    //       userId: 1,
+    //     });
+
+    //   expect(apiCallResponse.status).toBe(201);
+    //   expect(apiCallResponse.body.title).toBe('Test Post');
     // });
 
     // it('should onboard PUT /posts/:id endpoint', async () => {
@@ -272,7 +308,7 @@ describe('JSONPlaceholder API Onboarding Flow (e2e)', () => {
     //     .send({
     //       api_id: apiId,
     //       name: 'Update Post',
-    //       path: `${baseApiPath}/posts/:id`,
+    //       path: `/${apiId}${baseApiPath}/posts/:id`,
     //       target_url: 'https://jsonplaceholder.typicode.com/posts/:id',
     //       method: 'PUT',
     //       version: 'v1',
@@ -302,6 +338,31 @@ describe('JSONPlaceholder API Onboarding Flow (e2e)', () => {
     //     testUser.id,
     //     updateUserApiId,
     //   );
+
+    //   // Link the API to the project via ProjectAllowedAPI
+    //   await prisma.projectAllowedAPI.create({
+    //     data: {
+    //       projectId: testProject.id,
+    //       apiId: updateUserApiId,
+    //       apiVersionId: 'v1',
+    //       status: 'ACTIVE',
+    //       api: {}, // Empty JSON object as placeholder
+    //     },
+    //   });
+
+    //   // Test the API call
+    //   const apiCallResponse = await request('http://localhost:2021')
+    //     .put(`/${apiId}${baseApiPath}/posts/1`)
+    //     .set('Authorization', consumerApiKey)
+    //     .set('X-Subscription-Key', consumerApiKey)
+    //     .send({
+    //       title: 'Updated Test Post',
+    //       body: 'This is an updated test post',
+    //       userId: 1,
+    //     });
+
+    //   expect(apiCallResponse.status).toBe(200);
+    //   expect(apiCallResponse.body.title).toBe('Updated Test Post');
     // });
 
     // it('should onboard DELETE /posts/:id endpoint', async () => {
@@ -313,7 +374,7 @@ describe('JSONPlaceholder API Onboarding Flow (e2e)', () => {
     //     .send({
     //       api_id: apiId,
     //       name: 'Delete Post',
-    //       path: `${baseApiPath}/posts/:id`,
+    //       path: `/${apiId}${baseApiPath}/posts/:id`,
     //       target_url: 'https://jsonplaceholder.typicode.com/posts/:id',
     //       method: 'DELETE',
     //       version: 'v1',
@@ -343,56 +404,56 @@ describe('JSONPlaceholder API Onboarding Flow (e2e)', () => {
     //     testUser.id,
     //     deleteUserApiId,
     //   );
+
+    //   // Link the API to the project via ProjectAllowedAPI
+    //   await prisma.projectAllowedAPI.create({
+    //     data: {
+    //       projectId: testProject.id,
+    //       apiId: deleteUserApiId,
+    //       apiVersionId: 'v1',
+    //       status: 'ACTIVE',
+    //       api: {}, // Empty JSON object as placeholder
+    //     },
+    //   });
+
+    //   // Test the API call
+    //   const apiCallResponse = await request('http://localhost:2021')
+    //     .delete(`/${apiId}${baseApiPath}/posts/1`)
+    //     .set('Authorization', consumerApiKey)
+    //     .set('X-Subscription-Key', consumerApiKey);
+
+    //   expect(apiCallResponse.status).toBe(200);
     // });
 
     // describe('Consumer API Tests', () => {
-    //   it('should successfully GET posts through the gateway', async () => {
-    //     const response = await request(gatewayUrl)
-    //       .get(`${baseApiPath}/posts`)
-    //       .set('Authorization', `Bearer ${consumerJwtToken}`)
-    //       .set('X-Subscription-Key', consumerApiKey);
+    //   it('should verify all APIs are linked to the project', async () => {
+    //     const projectWithApis = await prisma.project.findUnique({
+    //       where: { id: testProject.id },
+    //       include: { projectAllowedAPIs: true },
+    //     });
 
-    //     expect(response.status).toBe(200);
-    //     expect(Array.isArray(response.body)).toBe(true);
+    //     expect(projectWithApis).toBeDefined();
+    //     expect(projectWithApis?.projectAllowedAPIs.length).toBe(4); // One for each API endpoint
     //   });
 
-    //   it('should successfully POST a new post through the gateway', async () => {
-    //     const response = await request(gatewayUrl)
-    //       .post(`${baseApiPath}/posts`)
-    //       .set('Authorization', `Bearer ${consumerJwtToken}`)
-    //       .set('X-Subscription-Key', consumerApiKey)
-    //       .send({
-    //         title: 'Test Post',
-    //         body: 'This is a test post',
-    //         userId: 1,
-    //       });
+    //   it('should verify all test resources were created properly', async () => {
+    //     // Verify tenant was created
+    //     expect(testTenant).toBeDefined();
+    //     expect(testTenant.id).toBeTruthy();
 
-    //     expect(response.status).toBe(201);
-    //     expect(response.body.title).toBe('Test Post');
-    //   });
+    //     // Verify project access control
+    //     expect(testProjectAcl).toBeDefined();
+    //     expect(testProjectAcl.projectId).toBe(testProject.id);
+    //     expect(testProjectAcl.userId).toBe(testUser.id);
 
-    //   it('should successfully PUT an existing post through the gateway', async () => {
-    //     const response = await request(gatewayUrl)
-    //       .put(`${baseApiPath}/posts/1`)
-    //       .set('Authorization', `Bearer ${consumerJwtToken}`)
-    //       .set('X-Subscription-Key', consumerApiKey)
-    //       .send({
-    //         title: 'Updated Test Post',
-    //         body: 'This is an updated test post',
-    //         userId: 1,
-    //       });
+    //     // Verify gateway URL is set
+    //     expect(gatewayUrl).toBeTruthy();
 
-    //     expect(response.status).toBe(200);
-    //     expect(response.body.title).toBe('Updated Test Post');
-    //   });
+    //     // Verify JWT tokens exist
+    //     expect(consumerJwtToken).toBeTruthy();
 
-    //   it('should successfully DELETE a post through the gateway', async () => {
-    //     const response = await request(gatewayUrl)
-    //       .delete(`${baseApiPath}/posts/1`)
-    //       .set('Authorization', `Bearer ${consumerJwtToken}`)
-    //       .set('X-Subscription-Key', consumerApiKey);
-
-    //     expect(response.status).toBe(200);
+    //     // Verify provider ID was set
+    //     expect(providerId).toBeTruthy();
     //   });
     // });
   });

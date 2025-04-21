@@ -163,6 +163,7 @@ model Project {
     enableLimitsToAPIs Boolean?
     projectAllowedAPIs ProjectAllowedAPI[]
     projectAcls        ProjectAcl[]
+    apis               Api[]               @relation("ProjectToApi")
     createdAt          DateTime            @default(now())
     updatedAt          DateTime            @updatedAt
     ProjectPricing     ProjectPricing[]
@@ -188,9 +189,10 @@ model ProjectAllowedAPI {
     project      Project  @relation(fields: [projectId], references: [id])
     projectId    Int
     apiId        String
+    apiModel     Api      @relation(fields: [apiId], references: [id], name: "projectAllowedAPIs")
     apiVersionId String
     status       String   @default("ACTIVE")
-    api          Json // Stores API details
+    api          Json // Keep original field name
     createdAt    DateTime @default(now())
     updatedAt    DateTime @updatedAt
 
@@ -453,20 +455,22 @@ enum SubscriptionStatus {
 
 // API Models
 model Api {
-    id               String         @id @default(uuid())
-    name             String
-    description      String?
-    version          String
-    path             String         @unique
-    providerId       String
-    method           String
-    specification    Json
-    documentationUrl String? // Added documentationUrl
-    requiredHeaders  Json? // Added requiredHeaders
-    status           ApiStatus      @default(ACTIVE)
-    subscriptions    Subscription[]
-    createdAt        DateTime       @default(now())
-    updatedAt        DateTime       @updatedAt
+    id                 String              @id @default(uuid())
+    name               String
+    description        String?
+    version            String
+    path               String              @unique
+    providerId         String
+    method             String
+    specification      Json
+    documentationUrl   String? // Added documentationUrl
+    requiredHeaders    Json? // Added requiredHeaders
+    status             ApiStatus           @default(ACTIVE)
+    subscriptions      Subscription[]
+    projectAllowedAPIs ProjectAllowedAPI[] @relation("projectAllowedAPIs")
+    projects           Project[]           @relation("ProjectToApi")
+    createdAt          DateTime            @default(now())
+    updatedAt          DateTime            @updatedAt
 
     @@map("apis")
 }
