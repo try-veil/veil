@@ -24,7 +24,7 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Veil API Server built with [Nest](https://github.com/nestjs/nest) framework.
 
 ## Installation
 
@@ -43,6 +43,43 @@ $ yarn run start:dev
 
 # production mode
 $ yarn run start:prod
+```
+
+## API Documentation
+
+The API is documented using Swagger. After starting the server, access the Swagger UI at:
+
+```
+http://localhost:3000/api/docs
+```
+
+This provides an interactive documentation where you can:
+
+- Browse available endpoints
+- See request/response schemas
+- Execute requests directly from the browser
+- Download the OpenAPI specification
+
+## Adding Swagger Documentation
+
+For more information on adding Swagger documentation to new controllers and endpoints, see:
+
+- [Swagger Documentation Guide](./docs/swagger-guide.md)
+- Script to check controllers: `node scripts/add-swagger-docs.js`
+
+## Prisma ORM
+
+This project uses Prisma ORM to interact with the database.
+
+```bash
+# Generate Prisma client
+$ yarn prisma:generate
+
+# Run migrations
+$ yarn prisma:migrate
+
+# Open Prisma Studio
+$ yarn prisma:studio
 ```
 
 ## Test

@@ -6,6 +6,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { CreditModule } from './credit/credit.module';
 import { TenantModule } from './tenant/tenant.module';
 import { ProjectModule } from './project/project.module';
+import { OnboardingModule } from './onboarding/onboarding.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { ProjectModule } from './project/project.module';
     PaymentModule,
     CreditModule,
     ProjectModule,
+    OnboardingModule,
+    UserModule,
   ],
   exports: [
     PrismaModule,
@@ -25,6 +29,8 @@ import { ProjectModule } from './project/project.module';
     PaymentModule,
     CreditModule,
     ProjectModule,
+    OnboardingModule,
+    UserModule,
   ],
 })
 export class ServicesModule {}
