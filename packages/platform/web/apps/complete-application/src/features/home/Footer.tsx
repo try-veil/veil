@@ -1,45 +1,58 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import {
-  Dribbble,
-  Github,
-  Twitter,
-} from "lucide-react";
+import { Dribbble, Github, Twitter } from "lucide-react";
 import Link from "next/link";
 
 const footerSections = [
   {
-    title: "Pages",
+    title: "Product",
     links: [
       {
         title: "Home",
-        href: "#",
+        href: "/",
       },
       {
         title: "About",
-        href: "#",
+        href: "/#about",
       },
       {
-        title: "Why Us",
-        href: "#",
+        title: "Why Veil",
+        href: "/#why-us",
       },
       {
         title: "Pricing",
-        href: "#",
-      }
+        href: "/pricing",
+      },
+      {
+        title: "Docs",
+        href: "/docs",
+      },
     ],
   },
   {
-    title: "References",
+    title: "Legal",
     links: [
       {
-        title: "Documentation",
-        href: "#",
+        title: "Terms & Conditions",
+        href: "/terms",
       },
       {
-        title: "Support",
-        href: "#",
+        title: "Privacy Policy",
+        href: "/privacy-policy",
+      },
+    ],
+  },
+  {
+    title: "Account",
+    links: [
+      {
+        title: "Sign Up",
+        href: "/signup",
+      },
+      {
+        title: "Login",
+        href: "/login",
       },
     ],
   },
@@ -50,19 +63,20 @@ const Footer03Page = () => {
     <div className=" bg-background flex flex-col ">
       <footer>
         <div className="max-w-screen-xl mx-auto">
-          <div className="py-12 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-x-8 gap-y-10 px-6 xl:px-0">
+          <div className="py-12 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-6 gap-x-8 gap-y-10 px-6 xl:px-0">
             <div className="col-span-full xl:col-span-3">
               {/* Logo */}
               <div className="flex gap-1 items-center">
-              <div className="w-8 h-8 bg-black dark:bg-white rounded-md flex items-center justify-center mr-2">
-              </div>
-              <span className="text-gray-800 dark:text-white font-semibold text-xl">
+                <div className="w-8 h-8 bg-black dark:bg-white rounded-md flex items-center justify-center mr-2"></div>
+                <span className="text-gray-800 dark:text-white font-semibold text-xl">
                   Veil
                 </span>
-                </div>
+              </div>
               <p className="mt-4">
-                Lorem ipsum dolor, sit amet consectetur adipisicing elit. Quasi, molestiae.
-                lorem ipsum dolor sit amet consectetur adipisicing elit. 
+                Veil is the only open-source API marketplace powered by a
+                reverse proxy. Self-host anywhere, fully brandable, and designed
+                to help indie hackers and enterprises alike publish, manage, and
+                monetize APIs at scale.
               </p>
             </div>
 
@@ -72,10 +86,7 @@ const Footer03Page = () => {
                 <ul className="mt-6 space-y-4">
                   {links.map(({ title, href }) => (
                     <li key={title}>
-                      <Link
-                        href={href}
-                        className="hover:text-foreground"
-                      >
+                      <Link href={href} className="hover:text-foreground">
                         {title}
                       </Link>
                     </li>
@@ -83,19 +94,6 @@ const Footer03Page = () => {
                 </ul>
               </div>
             ))}
-
-            {/* Subscribe Newsletter */}
-            <div className="col-span-2">
-              <h6 className="font-semibold text-black">Stay up to date</h6>
-              <form className="mt-6 flex items-center gap-2">
-                <Input
-                  type="email"
-                  placeholder="Enter your email"
-                  className="grow max-w-64 placeholder:text-gray-500"
-                />
-                <Button variant={"primary-scale"}>Subscribe</Button>
-              </form>
-            </div>
           </div>
           <Separator />
           <div className="py-8 flex flex-col-reverse sm:flex-row items-center justify-between gap-x-2 gap-y-5 px-6 xl:px-0">
@@ -115,7 +113,7 @@ const Footer03Page = () => {
               <Link href="#" target="_blank">
                 <Dribbble className="h-5 w-5" />
               </Link>
-              <Link href="#" target="_blank">
+              <Link href="https://github.com/try-veil/veil" target="_blank">
                 <Github className="h-5 w-5" />
               </Link>
             </div>
