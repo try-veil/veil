@@ -430,7 +430,7 @@ describe('Project CRUD API (e2e)', () => {
 
         // Now test consumer access
         const response = await request(app.getHttpServer())
-          .get(`/projects/${dedicatedProjectId}`)
+          .get(`/projects/marketplace/${dedicatedProjectId}`)
           .set('Authorization', `Bearer ${consumerJwtToken}`);
 
         console.log('Consumer access response status:', response.status);

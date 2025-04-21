@@ -50,6 +50,48 @@ export class ProjectService {
     };
   }
 
+  async findAllForConsumer(): Promise<ProjectResponseDto[]> {
+    const projects = await this.prisma.project.findMany({
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    });
+  
+    return projects.map((project) => ({
+      ...project,
+      description: null,
+    }));
+  }
+  
+  async findOneForConsumer(id: number): Promise<ProjectWithRelationsDto> {
+    const project = await this.prisma.project.findUnique({
+      where: { id },
+      include: {
+        projectAllowedAPIs: {
+          select: {
+            apiId: true,
+            apiVersionId: true,
+            status: true,
+          },
+        },
+      },
+    });
+  
+    if (!project) {
+      throw new NotFoundException(`Project with ID ${id} not found`);
+    }
+  
+    return {
+      ...project,
+      description: null,
+      apis: project.projectAllowedAPIs.map((api) => ({
+        apiId: api.apiId,
+        apiVersionId: api.apiVersionId,
+      })),
+    };
+  }
+  
+
   /**
    * Find all projects accessible by user
    */
