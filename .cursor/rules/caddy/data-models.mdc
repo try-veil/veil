@@ -1,0 +1,241 @@
+---
+description: 
+globs: packages/caddy/*
+alwaysApply: false
+---
+ ---
+description: Guidelines for designing and implementing data models
+globs: packages/**/models/*.go
+alwaysApply: false
+---
+# Data Models Implementation
+
+## Basic Principles
+
+Data models should be:
+1. Well-defined with clear purpose
+2. Properly validated
+3. Properly documented
+4. Follow consistent patterns
+
+## Model Structure
+
+Models should follow this general structure:
+
+```go
+// Package models contains domain models for the application
+package models
+
+import (
+    "time"
+    "github.com/google/uuid"
+)
+
+// UserType represents the type of user in the system
+type UserType string
+
+// UserType enum values
+const (
+    UserTypeAdmin    UserType = "admin"
+    UserTypeRegular  UserType = "regular"
+    UserTypeGuest    UserType = "guest"
+)
+
+// User represents a user in the system
+type User struct {
+    ID          string    `json:"id" gorm:"primaryKey"`
+    Email       string    `json:"email" gorm:"uniqueIndex"`
+    Name        string    `json:"name"`
+    Type        UserType  `json:"type"`
+    IsActive    bool      `json:"is_active"`
+    CreatedAt   time.Time `json:"created_at" gorm:"autoCreateTime"`
+    UpdatedAt   time.Time `json:"updated_at" gorm:"autoUpdateTime"`
+}
+
+// NewUser creates a new user with default values
+func NewUser(email, name string) User {
+    return User{
+        ID:        uuid.New().String(),
+        Email:     email,
+        Name:      name,
+        Type:      UserTypeRegular,
+        IsActive:  true,
+        CreatedAt: time.Now(),
+        UpdatedAt: time.Now(),
+    }
+}
+
+// Validate checks if the user model is valid
+func (u User) Validate() error {
+    if u.Email == "" {
+        return fmt.Errorf("email cannot be empty")
+    }
+    
+    if u.Name == "" {
+        return fmt.Errorf("name cannot be empty")
+    }
+    
+    return nil
+}
+```
+
+## Best Practices
+
+### 1. Use Appropriate Types
+
+Use the most specific type appropriate for your data:
+
+```go
+// Good: Specific types
+type User struct {
+    ID          uuid.UUID  // For IDs, use UUID type
+    Email       string
+    Age         int        // Use appropriate numeric type (int, int64, etc.)
+    IsActive    bool       // Use bool for flags
+    CreatedAt   time.Time  // Use time.Time for timestamps
+    Score       float64    // Use float64 for decimal values
+}
+
+// Bad: Generic types
+type UserBad struct {
+    ID          string     // Using string for UUID
+    Email       string
+    Age         string     // Using string for numeric value
+    IsActive    string     // Using string for boolean flag
+    CreatedAt   string     // Using string for timestamp
+    Score       string     // Using string for decimal value
+}
+```
+
+### 2. Provide Constructor Functions
+
+Always provide constructor functions for complex types:
+
+```go
+// User constructor with validation
+func NewUser(email, name string) (*User, error) {
+    if email == "" {
+        return nil, fmt.Errorf("email cannot be empty")
+    }
+    
+    if name == "" {
+        return nil, fmt.Errorf("name cannot be empty")
+    }
+    
+    return &User{
+        ID:        uuid.New().String(),
+        Email:     email,
+        Name:      name,
+        CreatedAt: time.Now(),
+        UpdatedAt: time.Now(),
+    }, nil
+}
+```
+
+### 3. Use Field Tags for Serialization
+
+Use appropriate field tags for serialization formats:
+
+```go
+// Example with multiple serialization formats
+type User struct {
+    ID          string    `json:"id" gorm:"primaryKey" yaml:"id"`
+    Email       string    `json:"email" gorm:"uniqueIndex" yaml:"email"`
+    Password    string    `json:"-" gorm:"column:password" yaml:"-"` // Exclude from JSON/YAML
+    CreatedAt   time.Time `json:"created_at" gorm:"autoCreateTime" yaml:"created_at"`
+}
+```
+
+### 4. Use Enums for Fixed Values
+
+Use enum types for fields with fixed set of values:
+
+```go
+// StatusType enum
+type StatusType string
+
+const (
+    StatusPending   StatusType = "pending"
+    StatusActive    StatusType = "active"
+    StatusSuspended StatusType = "suspended"
+    StatusCancelled StatusType = "cancelled"
+)
+
+// Order with status enum
+type Order struct {
+    ID      string     `json:"id"`
+    Status  StatusType `json:"status"`
+    // Other fields
+}
+```
+
+### 5. Implement Validation Methods
+
+Add validation methods to models:
+
+```go
+// Validate method for model
+func (u User) Validate() error {
+    if u.Email == "" {
+        return fmt.Errorf("email cannot be empty")
+    }
+    
+    if !isValidEmail(u.Email) {
+        return fmt.Errorf("invalid email format: %s", u.Email)
+    }
+    
+    if u.Name == "" {
+        return fmt.Errorf("name cannot be empty")
+    }
+    
+    return nil
+}
+```
+
+### 6. Use Value Objects for Complex Attributes
+
+Use value objects for complex attributes:
+
+```go
+// Address as a value object
+type Address struct {
+    Street  string `json:"street"`
+    City    string `json:"city"`
+    State   string `json:"state"`
+    Country string `json:"country"`
+    Zip     string `json:"zip"`
+}
+
+// User with address value object
+type User struct {
+    ID      string  `json:"id"`
+    Name    string  `json:"name"`
+    Address Address `json:"address"`
+}
+```
+
+### 7. Document Your Models
+
+Always document models and their fields:
+
+```go
+// Order represents a customer order in the system.
+// It contains information about the items ordered,
+// payment status, and shipping details.
+type Order struct {
+    // ID is the unique identifier for the order
+    ID          string    `json:"id"`
+    
+    // CustomerID references the customer who placed the order
+    CustomerID  string    `json:"customer_id"`
+    
+    // Items contains the list of items in the order
+    Items       []Item    `json:"items"`
+    
+    // Status indicates the current state of the order
+    Status      StatusType `json:"status"`
+    
+    // CreatedAt is the timestamp when the order was created
+    CreatedAt   time.Time `json:"created_at"`
+}
+```

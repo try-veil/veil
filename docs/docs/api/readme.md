@@ -16,14 +16,13 @@ The API Marketplace exposes several REST APIs for managing APIs, users, and anal
 ### Consumer APIs
 
 - [User Registration](./consumer/register.md) - Register new API consumers
-- [API Key Management](./consumer/api-keys.md) - Generate and manage API keys
+- [API Key Management](./consumer/keys.md) - Generate and manage API keys
 - [Subscription Management](./consumer/subscriptions.md) - Manage API subscriptions
 
 ### Analytics APIs
 
 - [Usage Analytics](./analytics/usage.md) - Query API usage metrics
 - [Rate Limits](./analytics/rate-limits.md) - View and configure rate limits
-
 
 ## Common Patterns
 

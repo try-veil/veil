@@ -1,5 +1,5 @@
 ---
-id: add-new-api-keys
+id: add-new-keys
 title: "Add new API keys"
 description: "Add new API keys to an existing API"
 sidebar_label: "Add new API keys"
@@ -23,16 +23,9 @@ import Heading from "@theme/Heading";
   as={"h1"}
   className={"openapi__heading"}
   children={"Add new API keys"}
->
-</Heading>
+></Heading>
 
-
-<MethodEndpoint
-  method={"post"}
-  path={"/veil/api/api-keys"}
-  context={"endpoint"}
-/>
-
+<MethodEndpoint method={"post"} path={"/veil/api/keys"} context={"endpoint"} />
 
 Add new API keys to an existing API
 
@@ -41,29 +34,118 @@ Add new API keys to an existing API
   as={"h2"}
   className={"openapi-tabs__heading"}
   children={"Request"}
->
-</Heading>
+></Heading>
 
-<ParamsDetails
-  parameters={undefined}
->
-  
-</ParamsDetails>
+<ParamsDetails parameters={undefined}></ParamsDetails>
 
 <RequestSchema
   title={"Body"}
-  body={{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["path","apiKeys"],"properties":{"path":{"type":"string","description":"The API path to which the keys will be added","example":"/weather/*"},"apiKeys":{"type":"array","items":{"type":"object","required":["key","name","is_active"],"properties":{"key":{"type":"string","description":"API key value","example":"test-key-123"},"name":{"type":"string","description":"Name of the API key","example":"Weather Test Key"},"is_active":{"type":"boolean","description":"Whether the API key is active","example":true}},"title":"APIKey"}}}}}}}}
->
-  
-</RequestSchema>
+  body={{
+    required: true,
+    content: {
+      "application/json": {
+        schema: {
+          type: "object",
+          required: ["path", "apiKeys"],
+          properties: {
+            path: {
+              type: "string",
+              description: "The API path to which the keys will be added",
+              example: "/weather/*",
+            },
+            apiKeys: {
+              type: "array",
+              items: {
+                type: "object",
+                required: ["key", "name", "is_active"],
+                properties: {
+                  key: {
+                    type: "string",
+                    description: "API key value",
+                    example: "test-key-123",
+                  },
+                  name: {
+                    type: "string",
+                    description: "Name of the API key",
+                    example: "Weather Test Key",
+                  },
+                  is_active: {
+                    type: "boolean",
+                    description: "Whether the API key is active",
+                    example: true,
+                  },
+                },
+                title: "APIKey",
+              },
+            },
+          },
+        },
+      },
+    },
+  }}
+></RequestSchema>
 
 <StatusCodes
   id={undefined}
   label={undefined}
-  responses={{"200":{"description":"API keys added successfully","content":{"application/json":{"schema":{"type":"object","properties":{"status":{"type":"string","example":"success"},"api":{"type":"object","properties":{"api_keys":{"type":"array","items":{"type":"string","example":"new-key-1"}}}}}}}}},"400":{"description":"Invalid request body or missing required fields","content":{"application/json":{"schema":{"type":"object","properties":{"error":{"type":"string","description":"Error message","example":"Invalid request body"}},"title":"ErrorResponse"}}}},"404":{"description":"API not found","content":{"application/json":{"schema":{"type":"object","properties":{"error":{"type":"string","description":"Error message","example":"Invalid request body"}},"title":"ErrorResponse"}}}}}}
->
-  
-</StatusCodes>
-
-
-      
+  responses={{
+    "200": {
+      description: "API keys added successfully",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              status: { type: "string", example: "success" },
+              api: {
+                type: "object",
+                properties: {
+                  api_keys: {
+                    type: "array",
+                    items: { type: "string", example: "new-key-1" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "400": {
+      description: "Invalid request body or missing required fields",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              error: {
+                type: "string",
+                description: "Error message",
+                example: "Invalid request body",
+              },
+            },
+            title: "ErrorResponse",
+          },
+        },
+      },
+    },
+    "404": {
+      description: "API not found",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              error: {
+                type: "string",
+                description: "Error message",
+                example: "Invalid request body",
+              },
+            },
+            title: "ErrorResponse",
+          },
+        },
+      },
+    },
+  }}
+></StatusCodes>

@@ -23,18 +23,13 @@ import Heading from "@theme/Heading";
   as={"h1"}
   className={"openapi__heading"}
   children={"Update API key status"}
->
-</Heading>
+></Heading>
 
 <MethodEndpoint
   method={"put"}
-  path={"/veil/api/api-keys/status"}
+  path={"/veil/api/keys/status"}
   context={"endpoint"}
->
-  
-</MethodEndpoint>
-
-
+></MethodEndpoint>
 
 Update the status of an existing API key
 
@@ -43,29 +38,64 @@ Update the status of an existing API key
   as={"h2"}
   className={"openapi-tabs__heading"}
   children={"Request"}
->
-</Heading>
+></Heading>
 
-<ParamsDetails
-  parameters={undefined}
->
-  
-</ParamsDetails>
+<ParamsDetails parameters={undefined}></ParamsDetails>
 
 <RequestSchema
   title={"Body"}
-  body={{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["path","apiKey","isActive"],"properties":{"path":{"type":"string","description":"The API path associated with the key","example":"/weather/*"},"apiKey":{"type":"string","description":"The API key to update","example":"new-key-1"},"isActive":{"type":"boolean","description":"The new status of the API key","example":false}}}}}}}
->
-  
-</RequestSchema>
+  body={{
+    required: true,
+    content: {
+      "application/json": {
+        schema: {
+          type: "object",
+          required: ["path", "apiKey", "isActive"],
+          properties: {
+            path: {
+              type: "string",
+              description: "The API path associated with the key",
+              example: "/weather/*",
+            },
+            apiKey: {
+              type: "string",
+              description: "The API key to update",
+              example: "new-key-1",
+            },
+            isActive: {
+              type: "boolean",
+              description: "The new status of the API key",
+              example: false,
+            },
+          },
+        },
+      },
+    },
+  }}
+></RequestSchema>
 
 <StatusCodes
   id={undefined}
   label={undefined}
-  responses={{"200":{"description":"API key status updated successfully"},"404":{"description":"API key not found","content":{"application/json":{"schema":{"type":"object","properties":{"error":{"type":"string","description":"Error message","example":"Invalid request body"}},"title":"ErrorResponse"}}}}}}
->
-  
-</StatusCodes>
-
-
-      
+  responses={{
+    "200": { description: "API key status updated successfully" },
+    "404": {
+      description: "API key not found",
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              error: {
+                type: "string",
+                description: "Error message",
+                example: "Invalid request body",
+              },
+            },
+            title: "ErrorResponse",
+          },
+        },
+      },
+    },
+  }}
+></StatusCodes>
