@@ -22,3 +22,5 @@ node_modules
 
 packages/platform/api/src/research
 packages/caddy/configs
+
+.DS_Store

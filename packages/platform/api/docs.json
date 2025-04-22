@@ -1,0 +1,2650 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/tenants": {
+      "post": {
+        "operationId": "TenantController_createTenant",
+        "summary": "Create a new tenant",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Tenant created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "403": {
+            "description": "Forbidden resource"
+          }
+        },
+        "tags": [
+          "tenants"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "TenantController_getAllTenants",
+        "summary": "Get all tenants",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns all tenants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TenantResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden resource"
+          }
+        },
+        "tags": [
+          "tenants"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/tenants/{id}": {
+      "get": {
+        "operationId": "TenantController_getTenantById",
+        "summary": "Get a tenant by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Tenant ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden resource"
+          },
+          "404": {
+            "description": "Tenant not found"
+          }
+        },
+        "tags": [
+          "tenants"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "TenantController_updateTenant",
+        "summary": "Update a tenant",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Tenant ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tenant updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "403": {
+            "description": "Forbidden resource"
+          },
+          "404": {
+            "description": "Tenant not found"
+          }
+        },
+        "tags": [
+          "tenants"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "TenantController_deleteTenant",
+        "summary": "Delete a tenant",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Tenant ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Tenant deleted successfully"
+          },
+          "403": {
+            "description": "Forbidden resource"
+          },
+          "404": {
+            "description": "Tenant not found"
+          }
+        },
+        "tags": [
+          "tenants"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/tenants/by-domain/{domain}": {
+      "get": {
+        "operationId": "TenantController_getTenantByDomain",
+        "summary": "Get a tenant by domain",
+        "parameters": [
+          {
+            "name": "domain",
+            "required": true,
+            "in": "path",
+            "description": "Tenant domain",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden resource"
+          },
+          "404": {
+            "description": "Tenant not found"
+          }
+        },
+        "tags": [
+          "tenants"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/internal/wallet": {
+      "post": {
+        "operationId": "WalletController_createWallet",
+        "summary": "Create a new wallet for a user",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWalletDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Wallet created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "wallet_id": {
+                      "type": "string"
+                    },
+                    "credit_balance": {
+                      "type": "number"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "409": {
+            "description": "Wallet already exists"
+          }
+        },
+        "tags": [
+          "wallet"
+        ]
+      }
+    },
+    "/internal/wallet/balance/{walletId}": {
+      "get": {
+        "operationId": "WalletController_getBalance",
+        "summary": "Get the balance for a wallet",
+        "parameters": [
+          {
+            "name": "walletId",
+            "required": true,
+            "in": "path",
+            "description": "The wallet ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the wallet balance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletBalanceResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Wallet not found"
+          }
+        },
+        "tags": [
+          "wallet"
+        ]
+      }
+    },
+    "/internal/wallet/{walletId}/credits/add": {
+      "post": {
+        "operationId": "WalletController_addCredits",
+        "summary": "Add credits to a wallet",
+        "parameters": [
+          {
+            "name": "walletId",
+            "required": true,
+            "in": "path",
+            "description": "The wallet ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCreditsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Credits added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "transaction_id": {
+                      "type": "string"
+                    },
+                    "previous_balance": {
+                      "type": "number"
+                    },
+                    "added_amount": {
+                      "type": "number"
+                    },
+                    "current_balance": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Wallet not found"
+          }
+        },
+        "tags": [
+          "wallet"
+        ]
+      }
+    },
+    "/internal/wallet/{walletId}/credits/deduct": {
+      "post": {
+        "operationId": "WalletController_deductCredits",
+        "summary": "Deduct credits from a wallet",
+        "parameters": [
+          {
+            "name": "walletId",
+            "required": true,
+            "in": "path",
+            "description": "The wallet ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeductCreditsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Credits deducted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "transaction_id": {
+                      "type": "string"
+                    },
+                    "previous_balance": {
+                      "type": "number"
+                    },
+                    "deducted_amount": {
+                      "type": "number"
+                    },
+                    "current_balance": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request or insufficient credits"
+          },
+          "404": {
+            "description": "Wallet not found"
+          }
+        },
+        "tags": [
+          "wallet"
+        ]
+      }
+    },
+    "/internal/wallet/{walletId}/transactions": {
+      "get": {
+        "operationId": "WalletController_getTransactions",
+        "summary": "Get transaction history for a wallet",
+        "parameters": [
+          {
+            "name": "walletId",
+            "required": true,
+            "in": "path",
+            "description": "The wallet ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of transactions to return",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "Offset for pagination",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "Filter by transaction type (credit or debit)",
+            "schema": {
+              "enum": [
+                "credit",
+                "debit"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns transaction history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "transactions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "transaction_id": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "CREDIT",
+                              "DEBIT"
+                            ]
+                          },
+                          "amount": {
+                            "type": "number"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "reference_id": {
+                            "type": "string"
+                          },
+                          "timestamp": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    },
+                    "limit": {
+                      "type": "number"
+                    },
+                    "offset": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Wallet not found"
+          }
+        },
+        "tags": [
+          "wallet"
+        ]
+      }
+    },
+    "/internal/wallet/check": {
+      "get": {
+        "operationId": "WalletController_checkCredits",
+        "summary": "Check if a wallet has sufficient credits",
+        "parameters": [
+          {
+            "name": "api_key",
+            "required": true,
+            "in": "query",
+            "description": "API key associated with the wallet",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "amount",
+            "required": false,
+            "in": "query",
+            "description": "Amount of credits to check",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns credit check result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "has_sufficient_credits": {
+                      "type": "boolean"
+                    },
+                    "current_balance": {
+                      "type": "number"
+                    },
+                    "required_amount": {
+                      "type": "number"
+                    },
+                    "remaining_if_used": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Invalid API key"
+          }
+        },
+        "tags": [
+          "wallet"
+        ]
+      }
+    },
+    "/internal/payment/process": {
+      "post": {
+        "operationId": "PaymentController_processPayment",
+        "summary": "Process a payment and add credits to wallet",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment processed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "payment_id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "amount": {
+                      "type": "number"
+                    },
+                    "credits_added": {
+                      "type": "number"
+                    },
+                    "processed_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Wallet not found"
+          }
+        },
+        "tags": [
+          "payment"
+        ]
+      }
+    },
+    "/internal/payment/{paymentId}": {
+      "get": {
+        "operationId": "PaymentController_getPayment",
+        "summary": "Get payment details",
+        "parameters": [
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "description": "The payment ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns payment details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "payment_id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "amount": {
+                      "type": "number"
+                    },
+                    "currency": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "processed_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "error_message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Payment not found"
+          }
+        },
+        "tags": [
+          "payment"
+        ]
+      }
+    },
+    "/internal/payment/{paymentId}/attempts": {
+      "get": {
+        "operationId": "PaymentController_getPaymentAttempts",
+        "summary": "Get payment attempt history",
+        "parameters": [
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "description": "The payment ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns payment attempt history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "payment_id": {
+                      "type": "string"
+                    },
+                    "attempts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "attempt_id": {
+                            "type": "string"
+                          },
+                          "attempt_number": {
+                            "type": "number"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updated_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "error_message": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Payment not found"
+          }
+        },
+        "tags": [
+          "payment"
+        ]
+      }
+    },
+    "/internal/payment/{paymentId}/refund": {
+      "post": {
+        "operationId": "PaymentController_refundPayment",
+        "summary": "Refund a payment and deduct credits from wallet",
+        "parameters": [
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "description": "The payment ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefundPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment refunded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "payment_id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "refunded_amount": {
+                      "type": "number"
+                    },
+                    "refunded_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Payment not found"
+          }
+        },
+        "tags": [
+          "payment"
+        ]
+      }
+    },
+    "/credits/{userId}": {
+      "get": {
+        "operationId": "CreditController_getCreditBalance",
+        "summary": "Get credit balance for a user",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the credit balance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditBalanceResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "credits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/credits/{userId}/check": {
+      "post": {
+        "operationId": "CreditController_checkCredits",
+        "summary": "Check if user has sufficient credits",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckCreditsRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Returns whether user has sufficient credits",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckCreditsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid amount"
+          }
+        },
+        "tags": [
+          "credits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/credits/{userId}/deduct": {
+      "post": {
+        "operationId": "CreditController_deductCredits",
+        "summary": "Deduct credits from user",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeductCreditsRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Credits deducted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditBalanceDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request"
+          }
+        },
+        "tags": [
+          "credits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/credits/{userId}/add": {
+      "post": {
+        "operationId": "CreditController_addCredits",
+        "summary": "Add credits to user",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCreditsRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Credits added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditBalanceDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request"
+          }
+        },
+        "tags": [
+          "credits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/projects": {
+      "post": {
+        "operationId": "ProjectController_create",
+        "summary": "Create a new project",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Project created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        },
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "ProjectController_findAll",
+        "summary": "Get all projects for the current user",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns all projects",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}": {
+      "get": {
+        "operationId": "ProjectController_findOne",
+        "summary": "Get a project by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Project ID",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectWithRelationsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found"
+          }
+        },
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "ProjectController_update",
+        "summary": "Update a project",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Project ID",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Project updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found"
+          }
+        },
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "ProjectController_remove",
+        "summary": "Delete a project",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Project ID",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Project deleted successfully"
+          },
+          "404": {
+            "description": "Project not found"
+          }
+        },
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/apis": {
+      "post": {
+        "operationId": "ProjectController_addApiToProject",
+        "summary": "Add an API to a project",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Project ID",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectAllowedApiDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "API added to project successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Project or API not found"
+          }
+        },
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/apis/{apiId}": {
+      "delete": {
+        "operationId": "ProjectController_removeApiFromProject",
+        "summary": "Remove an API from a project",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Project ID",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "apiId",
+            "required": true,
+            "in": "path",
+            "description": "API ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "API removed from project successfully"
+          },
+          "404": {
+            "description": "Project or API not found"
+          }
+        },
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/onboard": {
+      "put": {
+        "operationId": "OnboardingController_registerApi",
+        "summary": "Register a new API",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiRegistrationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "API registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiRegistrationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "403": {
+            "description": "Forbidden - requires provider role"
+          }
+        },
+        "tags": [
+          "onboarding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/onboard/api/{apiId}": {
+      "get": {
+        "operationId": "OnboardingController_getApiDetails",
+        "summary": "Get API details",
+        "parameters": [
+          {
+            "name": "apiId",
+            "required": true,
+            "in": "path",
+            "description": "API ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns API details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiDetailsResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - requires provider role"
+          },
+          "404": {
+            "description": "API not found"
+          }
+        },
+        "tags": [
+          "onboarding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "OnboardingController_updateApi",
+        "summary": "Update an API",
+        "parameters": [
+          {
+            "name": "apiId",
+            "required": true,
+            "in": "path",
+            "description": "API ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiRegistrationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "API updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiDetailsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "403": {
+            "description": "Forbidden - requires provider role"
+          },
+          "404": {
+            "description": "API not found"
+          }
+        },
+        "tags": [
+          "onboarding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "OnboardingController_deleteApi",
+        "summary": "Delete an API",
+        "parameters": [
+          {
+            "name": "apiId",
+            "required": true,
+            "in": "path",
+            "description": "API ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "API deleted successfully"
+          },
+          "403": {
+            "description": "Forbidden - requires provider role"
+          },
+          "404": {
+            "description": "API not found"
+          }
+        },
+        "tags": [
+          "onboarding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/me": {
+      "get": {
+        "operationId": "UserController_getCurrentUser",
+        "summary": "Get the current authenticated user",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns the current user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "firstName": {
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "UserController_updateCurrentUser",
+        "summary": "Update the current authenticated user",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "description": "First name"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "description": "Last name"
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "Email address"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "firstName": {
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "operationId": "UserController_getUser",
+        "summary": "Get a user by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "firstName": {
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/{id}/attributes/{name}": {
+      "put": {
+        "operationId": "UserController_updateUserAttribute",
+        "summary": "Update a user attribute",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "required": true,
+            "in": "path",
+            "description": "Attribute name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "string",
+                    "description": "Attribute value"
+                  }
+                },
+                "required": [
+                  "value"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Attribute updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/{id}/metadata/{name}": {
+      "put": {
+        "operationId": "UserController_updateMetadataAttribute",
+        "summary": "Update a user metadata attribute",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "required": true,
+            "in": "path",
+            "description": "Metadata attribute name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "string",
+                    "description": "Metadata attribute value"
+                  }
+                },
+                "required": [
+                  "value"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Metadata updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Veil API",
+    "description": "The Veil API documentation",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "TenantResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Tenant ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Tenant name"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Tenant domain"
+          },
+          "slugifiedKey": {
+            "type": "string",
+            "description": "Slugified key for the tenant"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "domain",
+          "slugifiedKey"
+        ]
+      },
+      "CreateWalletDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "WalletBalanceResponseDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AddCreditsDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "DeductCreditsDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ProcessPaymentDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "RefundPaymentDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreditUsageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique ID of the credit usage",
+            "example": "1234-5678-90ab-cdef"
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID",
+            "example": "user-123"
+          },
+          "amount": {
+            "type": "number",
+            "description": "Amount of credits used",
+            "example": 100
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of credit usage",
+            "enum": [
+              "API_CALL",
+              "FEATURE_USAGE",
+              "MANUAL_ADJUSTMENT"
+            ],
+            "example": "API_CALL"
+          },
+          "endpointId": {
+            "type": "string",
+            "description": "Endpoint ID if applicable",
+            "example": "endpoint-123"
+          },
+          "featureId": {
+            "type": "string",
+            "description": "Feature ID if applicable",
+            "example": "feature-123"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the usage",
+            "example": "OpenAI API call"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional metadata about the credit usage",
+            "example": {
+              "apiName": "openai",
+              "modelName": "gpt-4"
+            }
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the credits were used",
+            "example": "2023-01-01T12:00:00Z"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "amount",
+          "type",
+          "createdAt"
+        ]
+      },
+      "CreditBalanceResponseDto": {
+        "type": "object",
+        "properties": {
+          "balance": {
+            "type": "number",
+            "description": "Current credit balance",
+            "example": 1000
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of the credit balance",
+            "enum": [
+              "ACTIVE",
+              "SUSPENDED",
+              "EXPIRED"
+            ],
+            "example": "ACTIVE"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the credits expire, if applicable",
+            "example": "2024-01-01T12:00:00Z"
+          },
+          "recentUsage": {
+            "description": "Recent credit usage",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreditUsageDto"
+            }
+          }
+        },
+        "required": [
+          "balance",
+          "status",
+          "recentUsage"
+        ]
+      },
+      "CheckCreditsRequestDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "description": "Amount of credits to check",
+            "example": 100
+          }
+        },
+        "required": [
+          "amount"
+        ]
+      },
+      "CheckCreditsResponseDto": {
+        "type": "object",
+        "properties": {
+          "hasSufficientCredits": {
+            "type": "boolean",
+            "description": "Whether the user has sufficient credits",
+            "example": true
+          }
+        },
+        "required": [
+          "hasSufficientCredits"
+        ]
+      },
+      "DeductCreditsRequestDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "description": "Amount of credits to deduct",
+            "example": 100
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of credit usage",
+            "enum": [
+              "API_CALL",
+              "FEATURE_USAGE",
+              "MANUAL_ADJUSTMENT"
+            ],
+            "example": "API_CALL"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional metadata about the credit usage",
+            "example": {
+              "apiName": "openai",
+              "modelName": "gpt-4"
+            }
+          }
+        },
+        "required": [
+          "amount",
+          "type"
+        ]
+      },
+      "CreditBalanceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique ID of the credit balance",
+            "example": "balance-123"
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID",
+            "example": "user-123"
+          },
+          "balance": {
+            "type": "number",
+            "description": "Current credit balance",
+            "example": 1000
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of the credit balance",
+            "enum": [
+              "ACTIVE",
+              "SUSPENDED",
+              "EXPIRED"
+            ],
+            "example": "ACTIVE"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the credits expire, if applicable",
+            "example": "2024-01-01T12:00:00Z"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the credit balance was created",
+            "example": "2023-01-01T12:00:00Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the credit balance was last updated",
+            "example": "2023-01-01T12:00:00Z"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "balance",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "AddCreditsRequestDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "description": "Amount of credits to add",
+            "example": 100
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for adding credits",
+            "example": "Monthly subscription"
+          },
+          "adjustedBy": {
+            "type": "string",
+            "description": "ID of user who is adjusting the credits",
+            "example": "admin-123"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional metadata about the credit addition",
+            "example": {
+              "subscriptionId": "sub-123"
+            }
+          }
+        },
+        "required": [
+          "amount",
+          "reason",
+          "adjustedBy"
+        ]
+      },
+      "CreateProjectDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Project name",
+            "example": "My API Project"
+          },
+          "description": {
+            "type": "string",
+            "description": "Project description",
+            "example": "Project for managing my APIs"
+          },
+          "thumbnail": {
+            "type": "string",
+            "description": "Project thumbnail URL",
+            "example": "https://example.com/image.png"
+          },
+          "favorite": {
+            "type": "boolean",
+            "description": "Mark project as favorite",
+            "default": false
+          },
+          "enableLimitsToAPIs": {
+            "type": "boolean",
+            "description": "Enable limits to APIs",
+            "default": false
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "ProjectResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "Project ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Project name",
+            "example": "My API Project"
+          },
+          "description": {
+            "type": "string",
+            "description": "Project description",
+            "example": "Project for managing my APIs"
+          },
+          "thumbnail": {
+            "type": "string",
+            "description": "Project thumbnail URL",
+            "example": "https://example.com/image.png"
+          },
+          "favorite": {
+            "type": "boolean",
+            "description": "Mark project as favorite",
+            "default": false
+          },
+          "mashapeId": {
+            "type": "string",
+            "description": "Mashape ID for legacy projects"
+          },
+          "xMashapeKey": {
+            "type": "string",
+            "description": "X-Mashape-Key for legacy authentication"
+          },
+          "enableLimitsToAPIs": {
+            "type": "boolean",
+            "description": "Enable limits to APIs",
+            "default": false
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "favorite",
+          "enableLimitsToAPIs",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ProjectAllowedApiDto": {
+        "type": "object",
+        "properties": {
+          "apiId": {
+            "type": "string",
+            "description": "API ID"
+          },
+          "apiVersionId": {
+            "type": "string",
+            "description": "API version ID"
+          }
+        },
+        "required": [
+          "apiId",
+          "apiVersionId"
+        ]
+      },
+      "ProjectWithRelationsDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "Project ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Project name",
+            "example": "My API Project"
+          },
+          "description": {
+            "type": "string",
+            "description": "Project description",
+            "example": "Project for managing my APIs"
+          },
+          "thumbnail": {
+            "type": "string",
+            "description": "Project thumbnail URL",
+            "example": "https://example.com/image.png"
+          },
+          "favorite": {
+            "type": "boolean",
+            "description": "Mark project as favorite",
+            "default": false
+          },
+          "mashapeId": {
+            "type": "string",
+            "description": "Mashape ID for legacy projects"
+          },
+          "xMashapeKey": {
+            "type": "string",
+            "description": "X-Mashape-Key for legacy authentication"
+          },
+          "enableLimitsToAPIs": {
+            "type": "boolean",
+            "description": "Enable limits to APIs",
+            "default": false
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Last update timestamp"
+          },
+          "apis": {
+            "description": "APIs allowed in this project",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectAllowedApiDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "favorite",
+          "enableLimitsToAPIs",
+          "createdAt",
+          "updatedAt",
+          "apis"
+        ]
+      },
+      "UpdateProjectDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Project name",
+            "example": "Updated API Project"
+          },
+          "description": {
+            "type": "string",
+            "description": "Project description",
+            "example": "Updated description"
+          },
+          "thumbnail": {
+            "type": "string",
+            "description": "Project thumbnail URL",
+            "example": "https://example.com/new-image.png"
+          },
+          "favorite": {
+            "type": "boolean",
+            "description": "Mark project as favorite",
+            "default": false
+          },
+          "enableLimitsToAPIs": {
+            "type": "boolean",
+            "description": "Enable limits to APIs",
+            "default": false
+          },
+          "status": {
+            "type": "string",
+            "description": "Project status",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE",
+              "DELETED"
+            ]
+          }
+        }
+      },
+      "HeaderParameterDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the header",
+            "example": "X-API-Key"
+          },
+          "value": {
+            "type": "string",
+            "description": "Value of the header",
+            "example": "your-api-key"
+          },
+          "is_variable": {
+            "type": "boolean",
+            "description": "Whether the value is a variable",
+            "example": false
+          }
+        },
+        "required": [
+          "name",
+          "value",
+          "is_variable"
+        ]
+      },
+      "ParameterDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the parameter",
+            "example": "userId"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of the parameter",
+            "example": "string"
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether the parameter is required",
+            "example": true
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "required"
+        ]
+      },
+      "ApiKeyDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "API key",
+            "example": "pk_test_123456789"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the API key",
+            "example": "Test Key"
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "Whether the API key is active",
+            "example": true
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "is_active"
+        ]
+      },
+      "ApiRegistrationRequestDto": {
+        "type": "object",
+        "properties": {
+          "api_id": {
+            "type": "string",
+            "description": "Unique identifier for the API",
+            "example": "payment-api-v1"
+          },
+          "project_id": {
+            "type": "number",
+            "description": "Project ID that this API belongs to",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the API",
+            "example": "Payment Processing API"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path for accessing the API",
+            "example": "/api/payments"
+          },
+          "target_url": {
+            "type": "string",
+            "description": "Target URL where the request will be forwarded",
+            "example": "https://api.example.com/payments"
+          },
+          "method": {
+            "type": "string",
+            "description": "HTTP method for the API",
+            "example": "POST"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the API",
+            "example": "Process payment transactions"
+          },
+          "documentation_url": {
+            "type": "string",
+            "description": "URL to the API documentation",
+            "example": "https://docs.example.com/api/payments"
+          },
+          "required_headers": {
+            "description": "Required headers for the API",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HeaderParameterDto"
+            }
+          },
+          "specification": {
+            "type": "object",
+            "description": "API specification (OpenAPI/Swagger)"
+          },
+          "version": {
+            "type": "string",
+            "description": "Version of the API",
+            "example": "1.0.0"
+          },
+          "required_subscription": {
+            "type": "string",
+            "description": "Required subscription level",
+            "example": "premium"
+          },
+          "parameters": {
+            "description": "Parameters for the API",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParameterDto"
+            }
+          },
+          "api_keys": {
+            "description": "API keys that can access this API",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiKeyDto"
+            }
+          }
+        },
+        "required": [
+          "api_id",
+          "project_id",
+          "name",
+          "path",
+          "target_url",
+          "method",
+          "version"
+        ]
+      },
+      "ApiRegistrationResponseDto": {
+        "type": "object",
+        "properties": {
+          "api_id": {
+            "type": "string",
+            "description": "Unique identifier for the API",
+            "example": "payment-api-v1"
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of the API registration",
+            "example": "ACTIVE"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the API was created",
+            "example": "2023-01-01T00:00:00Z"
+          }
+        },
+        "required": [
+          "api_id",
+          "status",
+          "created_at"
+        ]
+      },
+      "ApiDetailsResponseDto": {
+        "type": "object",
+        "properties": {
+          "api_id": {
+            "type": "string",
+            "description": "Unique identifier for the API",
+            "example": "payment-api-v1"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the API",
+            "example": "Payment Processing API"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path for accessing the API",
+            "example": "/api/payments"
+          },
+          "method": {
+            "type": "string",
+            "description": "HTTP method for the API",
+            "example": "POST"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the API",
+            "example": "Process payment transactions"
+          },
+          "documentation_url": {
+            "type": "string",
+            "description": "URL to the API documentation",
+            "example": "https://docs.example.com/api/payments"
+          },
+          "required_headers": {
+            "description": "Required headers for the API",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HeaderParameterDto"
+            }
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of the API",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE",
+              "DEPRECATED"
+            ],
+            "example": "ACTIVE"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the API was created",
+            "example": "2023-01-01T00:00:00Z"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the API was last updated",
+            "example": "2023-01-01T00:00:00Z"
+          }
+        },
+        "required": [
+          "api_id",
+          "name",
+          "path",
+          "method",
+          "required_headers",
+          "status",
+          "created_at",
+          "updated_at"
+        ]
+      }
+    }
+  }
+}

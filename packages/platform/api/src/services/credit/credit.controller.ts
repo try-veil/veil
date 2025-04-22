@@ -11,16 +11,40 @@ import { CreditService } from './credit.service';
 import {
   CreditBalance,
   CreditBalanceResponse,
-  CreditUsageType,
 } from '../../entities/credit/types';
 import { AuthGuard } from '../auth/auth.guard';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
+import {
+  AddCreditsRequestDto,
+  CheckCreditsRequestDto,
+  CheckCreditsResponseDto,
+  CreditBalanceDto,
+  CreditBalanceResponseDto,
+  DeductCreditsRequestDto,
+} from '../../entities/credit/dto';
 
+@ApiTags('credits')
+@ApiBearerAuth()
 @Controller('credits')
 @UseGuards(AuthGuard)
 export class CreditController {
   constructor(private readonly creditService: CreditService) {}
 
   @Get(':userId')
+  @ApiOperation({ summary: 'Get credit balance for a user' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the credit balance',
+    type: CreditBalanceResponseDto,
+  })
   async getCreditBalance(
     @Param('userId') userId: string,
   ): Promise<CreditBalanceResponse> {
@@ -28,6 +52,15 @@ export class CreditController {
   }
 
   @Post(':userId/check')
+  @ApiOperation({ summary: 'Check if user has sufficient credits' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiBody({ type: CheckCreditsRequestDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns whether user has sufficient credits',
+    type: CheckCreditsResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid amount' })
   async checkCredits(
     @Param('userId') userId: string,
     @Body('amount') amount: number,
@@ -45,14 +78,19 @@ export class CreditController {
   }
 
   @Post(':userId/deduct')
+  @ApiOperation({ summary: 'Deduct credits from user' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiBody({ type: DeductCreditsRequestDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Credits deducted successfully',
+    type: CreditBalanceDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid request' })
   async deductCredits(
     @Param('userId') userId: string,
     @Body()
-    body: {
-      amount: number;
-      type: CreditUsageType;
-      metadata?: Record<string, any>;
-    },
+    body: DeductCreditsRequestDto,
   ): Promise<CreditBalance> {
     if (!body.amount || body.amount <= 0) {
       throw new BadRequestException('Invalid amount');
@@ -67,15 +105,19 @@ export class CreditController {
   }
 
   @Post(':userId/add')
+  @ApiOperation({ summary: 'Add credits to user' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiBody({ type: AddCreditsRequestDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Credits added successfully',
+    type: CreditBalanceDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid request' })
   async addCredits(
     @Param('userId') userId: string,
     @Body()
-    body: {
-      amount: number;
-      reason: string;
-      adjustedBy: string;
-      metadata?: Record<string, any>;
-    },
+    body: AddCreditsRequestDto,
   ): Promise<CreditBalance> {
     if (!body.amount || body.amount <= 0) {
       throw new BadRequestException('Invalid amount');

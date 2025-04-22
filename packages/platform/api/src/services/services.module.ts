@@ -7,6 +7,7 @@ import { CreditModule } from './credit/credit.module';
 import { TenantModule } from './tenant/tenant.module';
 import { ProjectModule } from './project/project.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { OnboardingModule } from './onboarding/onboarding.module';
     PaymentModule,
     CreditModule,
     ProjectModule,
-    OnboardingModule
+    OnboardingModule,
+    UserModule,
   ],
   exports: [
     PrismaModule,
@@ -27,7 +29,8 @@ import { OnboardingModule } from './onboarding/onboarding.module';
     PaymentModule,
     CreditModule,
     ProjectModule,
-    OnboardingModule
+    OnboardingModule,
+    UserModule,
   ],
 })
 export class ServicesModule {}

@@ -13,6 +13,13 @@ import {
   PaymentDestinationType,
   PaymentMethodType,
 } from '../../entities/billing/types';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
 
 // DTOs for request/response
 class ProcessPaymentDto {
@@ -30,6 +37,7 @@ class RefundPaymentDto {
   reason?: string;
 }
 
+@ApiTags('payment')
 @Controller('internal/payment')
 export class PaymentController {
   constructor(
@@ -38,6 +46,38 @@ export class PaymentController {
   ) {}
 
   @Post('process')
+  @ApiOperation({ summary: 'Process a payment and add credits to wallet' })
+  @ApiBody({ type: ProcessPaymentDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment processed successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        payment_id: { type: 'string' },
+        status: { type: 'string' },
+        amount: { type: 'number' },
+        credits_added: { type: 'number' },
+        processed_at: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment failed',
+    schema: {
+      type: 'object',
+      properties: {
+        payment_id: { type: 'string' },
+        status: { type: 'string' },
+        amount: { type: 'number' },
+        error: { type: 'string' },
+        processed_at: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 404, description: 'Wallet not found' })
   async processPayment(@Body() processPaymentDto: ProcessPaymentDto) {
     try {
       // Find wallet for user
@@ -101,6 +141,25 @@ export class PaymentController {
   }
 
   @Get(':paymentId')
+  @ApiOperation({ summary: 'Get payment details' })
+  @ApiParam({ name: 'paymentId', description: 'The payment ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns payment details',
+    schema: {
+      type: 'object',
+      properties: {
+        payment_id: { type: 'string' },
+        status: { type: 'string' },
+        amount: { type: 'number' },
+        currency: { type: 'string' },
+        created_at: { type: 'string', format: 'date-time' },
+        processed_at: { type: 'string', format: 'date-time', nullable: true },
+        error_message: { type: 'string', nullable: true },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'Payment not found' })
   async getPayment(@Param('paymentId') paymentId: string) {
     try {
       const payment = await this.paymentService.getPayment(paymentId);
@@ -120,6 +179,33 @@ export class PaymentController {
   }
 
   @Get(':paymentId/attempts')
+  @ApiOperation({ summary: 'Get payment attempt history' })
+  @ApiParam({ name: 'paymentId', description: 'The payment ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns payment attempt history',
+    schema: {
+      type: 'object',
+      properties: {
+        payment_id: { type: 'string' },
+        attempts: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              attempt_id: { type: 'string' },
+              attempt_number: { type: 'number' },
+              status: { type: 'string' },
+              created_at: { type: 'string', format: 'date-time' },
+              updated_at: { type: 'string', format: 'date-time' },
+              error_message: { type: 'string', nullable: true },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'Payment not found' })
   async getPaymentAttempts(@Param('paymentId') paymentId: string) {
     try {
       const payment = await this.paymentService.getPayment(paymentId);
@@ -142,6 +228,24 @@ export class PaymentController {
   }
 
   @Post(':paymentId/refund')
+  @ApiOperation({ summary: 'Refund a payment and deduct credits from wallet' })
+  @ApiParam({ name: 'paymentId', description: 'The payment ID' })
+  @ApiBody({ type: RefundPaymentDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment refunded successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        payment_id: { type: 'string' },
+        status: { type: 'string' },
+        refunded_amount: { type: 'number' },
+        refunded_at: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 404, description: 'Payment not found' })
   async refundPayment(
     @Param('paymentId') paymentId: string,
     @Body() refundPaymentDto: RefundPaymentDto,
