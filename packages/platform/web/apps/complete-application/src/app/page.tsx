@@ -1,31 +1,44 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
-import About from "@/features/home/About";
-import Footer03Page from "@/features/home/Footer";
-import Hero from "@/features/home/Home";
+import Link from "next/link";
 import Navbar from "@/features/home/Navbar";
-import Subscribe from "@/features/home/Subscribe";
+import Hero from "@/features/home/Home";
+import About from "@/features/home/About";
 import WhyUs from "@/features/home/WhyUs";
-
-interface User {
-  id?: string;
-  name?: string;
-  email?: string;
-}
+import Subscribe from "@/features/home/Subscribe";
+import Footer03Page from "@/features/home/Footer";
 
 export default function Home() {
-  const { data: session, status } = useSession();
-  const [error, setError] = useState<string>("");
-  const isLoading = status === "loading";
-  const user = session?.user as User | null || null;
+  const router = useRouter();
+  const { user, isAuthenticated, accessToken } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
+  useEffect(() => {
+    console.log('Home page - Auth state:', {
+      isAuthenticated,
+      hasUser: !!user,
+      hasAccessToken: !!accessToken,
+    });
+    
+    setIsLoading(false);
+  }, [isAuthenticated, router, user, accessToken]);
 
+  // During loading, show a minimal loading indicator
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  // For non-authenticated users, show the landing page
   return (
     <main>
-      <Navbar session={status === "authenticated"} user={user} />
+      <Navbar session={isAuthenticated} user={user} />
       <Hero />
       <About />
       <WhyUs />

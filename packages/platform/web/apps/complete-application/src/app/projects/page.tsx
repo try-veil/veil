@@ -7,7 +7,7 @@ import MyProjects from "@/features/myprojects";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MyAnalytics from "@/features/myanalytics";
 import { getAllProjectsByUserId, Project } from "@/app/api/project/route";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { CreateTenantForm } from "@/features/projects/create-tenant-form";
 import { useUser } from "@/contexts/UserContext";
 
@@ -22,12 +22,12 @@ export default function Projects() {
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
-  const { data: session } = useSession();
+  const { user: authUser, accessToken } = useAuth();
   const { user: userContext, isLoading: isUserLoading } = useUser();
 
   const fetchProjects = async () => {
     try {
-      const token = session?.user?.accessToken;
+      const token = accessToken;
       if (!token) {
         throw new Error('No authentication token found');
       }
@@ -42,10 +42,10 @@ export default function Projects() {
   };
 
   useEffect(() => {
-    if (session?.user?.accessToken) {
+    if (accessToken) {
       fetchProjects();
     }
-  }, [session]);
+  }, [accessToken]);
 
   // Show loading state while checking user context
   if (isUserLoading) {

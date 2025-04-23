@@ -1,121 +1,88 @@
 "use client"
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchAllProjects, Project, fetchUserData } from '@/lib/api';
 
-export interface User {
+// User interface
+export interface UserContextData {
   id: string;
-  fusionAuthId: string;
-  name: string;
-  username: string;
-  email: string;
-  slugifiedName: string;
-  type: string;
-  description: null | string;
-  bio: null | string;
-  thumbnail: null | string;
-  tenantId: string | null;
-  parents: any[];
-  publishedApisList: any[];
-  followedApis: any[];
-  createdAt: string;
-  updatedAt: string;
-  attributes: any[];
-  metadataAttributes: any[];
-}
-
-interface UserWithAuth extends User {
+  name?: string;
+  email?: string;
+  projects?: Project[];
+  role?: string;
   accessToken?: string;
   refreshToken?: string;
 }
 
+// Context interface
 interface UserContextType {
-  user: UserWithAuth | null;
-  setUser: (user: UserWithAuth | null) => void;
-  isAuthenticated: boolean;
+  user: UserContextData | null;
   isLoading: boolean;
+  error: string | null;
   refreshUserData: () => Promise<void>;
 }
 
-const UserContext = createContext<UserContextType | undefined>(undefined);
+const UserContext = createContext<UserContextType>({
+  user: null,
+  isLoading: true,
+  error: null,
+  refreshUserData: async () => {},
+});
 
-async function fetchUserInfo(accessToken: string): Promise<User> {
-  try {
-    console.log('Making API request with token:', accessToken);
-    const response = await fetch('http://localhost:3000/users/me', {
-      headers: {
-        'accept': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
-      }
-    });
+export const useUser = () => useContext(UserContext);
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch user details');
-    }
-
-    const data = await response.json();
-    console.log('API response:', data);
-    return data;
-  } catch (error) {
-    console.error('Error fetching user details:', error);
-    throw error;
-  }
+interface UserProviderProps {
+  children: ReactNode;
 }
 
-export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserWithAuth | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { data: session, status } = useSession();
+export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
+  const [user, setUser] = useState<UserContextData | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const { user: authUser, accessToken, refreshToken, isAuthenticated } = useAuth();
 
   const refreshUserData = async () => {
-    if (status === 'loading') return;
-    if (status === 'unauthenticated') {
-      setIsLoading(false);
+    if (!accessToken || !authUser) {
       setUser(null);
+      setIsLoading(false);
       return;
     }
 
-    const accessToken = session?.user?.accessToken;
-    if (accessToken) {
-      try {
-        setIsLoading(true);
-        const userDetails = await fetchUserInfo(accessToken);
-        setUser({
-          ...userDetails,
-          accessToken: accessToken,
-          refreshToken: session.user?.refreshToken
-        });
-      } catch (error) {
-        console.error('Failed to load user details:', error);
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      console.log('No access token in session:', session);
+    setIsLoading(true);
+    try {
+      // Fetch user data from API
+      const userData = await fetchUserData(accessToken);
+      
+      // Fetch projects
+      const projects = await fetchAllProjects(accessToken);
+      
+      setUser({
+        ...userData,
+        projects,
+        accessToken,
+        refreshToken
+      });
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching user data:', err);
+      setError('Failed to load user data');
+    } finally {
       setIsLoading(false);
-      setUser(null);
     }
   };
 
   useEffect(() => {
-    refreshUserData();
-  }, [session, status]);
+    if (isAuthenticated && authUser) {
+      refreshUserData();
+    } else {
+      setUser(null);
+      setIsLoading(false);
+    }
+  }, [isAuthenticated, authUser?.id, accessToken]);
 
-  const value = {
-    user,
-    setUser,
-    isAuthenticated: !!user,
-    isLoading,
-    refreshUserData
-  };
-
-  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
-}
-
-export function useUser() {
-  const context = useContext(UserContext);
-  if (context === undefined) {
-    throw new Error('useUser must be used within a UserProvider');
-  }
-  return context;
-} 
+  return (
+    <UserContext.Provider value={{ user, isLoading, error, refreshUserData }}>
+      {children}
+    </UserContext.Provider>
+  );
+}; 

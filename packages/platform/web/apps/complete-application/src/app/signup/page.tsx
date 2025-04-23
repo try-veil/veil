@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function SignupPage() {
   const [email, setEmail] = useState<string>("");
@@ -16,10 +14,19 @@ export default function SignupPage() {
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
+  const { login, isAuthenticated } = useAuth();
   const consumerRoleId = process.env.NEXT_PUBLIC_ROLE_CONSUMER_ID;
   const providerRoleId = process.env.NEXT_PUBLIC_ROLE_PROVIDER_ID;
   const githubIdentityProviderId = process.env.NEXT_PUBLIC_GITHUB_IDENTITY_PROVIDER_ID;
   const googleIdentityProviderId = process.env.NEXT_PUBLIC_GOOGLE_IDENTITY_PROVIDER_ID;
+
+  // If already authenticated, redirect to dashboard
+  useEffect(() => {
+    console.log('Signup page - isAuthenticated:', isAuthenticated);
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,23 +47,20 @@ export default function SignupPage() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Use NextAuth to sign in with the obtained credentials
-        const result = await signIn('custom-credentials', {
-          redirect: false,
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-          userData: JSON.stringify(data.user),
-        });
-
-        if (result?.error) {
-          setError(result.error);
-        } else {
-          router.push("/");
-        }
+        console.log('Signup successful, data:', data);
+        // Use our auth context to store user data and tokens
+        login(data.user, data.accessToken, data.refreshToken);
+        console.log('Redirecting to dashboard...');
+        
+        // Add a small delay to ensure localStorage is updated
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 500);
       } else {
         setError(data.error_description || "Signup failed");
       }
-    } catch {
+    } catch (error) {
+      console.error('Signup error:', error);
       setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);

@@ -1,11 +1,8 @@
 'use client'
-import { useState } from 'react';
-import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { Metadata } from "next";
-import Image from "next/image";
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -13,6 +10,18 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectPath = searchParams?.get('redirect') || '/dashboard';
+  const { login, isAuthenticated } = useAuth();
+
+  // If already authenticated, redirect to dashboard or the original requested page
+  useEffect(() => {
+    console.log('Login page - isAuthenticated:', isAuthenticated);
+    if (isAuthenticated) {
+      console.log('Already authenticated, redirecting to:', redirectPath);
+      router.push(redirectPath);
+    }
+  }, [isAuthenticated, redirectPath, router]);
 
   const handlePasswordSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -20,7 +29,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // First get tokens from your FusionAuth API
+      // Get tokens from your auth API
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -30,24 +39,20 @@ export default function Login() {
       const data = await response.json();
 
       if (response.ok) {
-        // Use NextAuth to sign in with the obtained credentials
-        const result = await signIn('custom-credentials', {
-          redirect: false,
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-          userData: JSON.stringify(data.user),
-        });
-
-        if (result?.error) {
-          setError(result.error);
-        } else {
-          router.push('/');
-          router.refresh();
-        }
+        console.log('Login successful, data:', data);
+        // Use our custom auth context instead of NextAuth
+        login(data.user, data.accessToken, data.refreshToken);
+        console.log('Redirecting to:', redirectPath);
+        
+        // Allow a small delay to ensure localStorage and cookies are set
+        setTimeout(() => {
+          router.push(redirectPath);
+        }, 300);
       } else {
         setError(data.error_description || 'Login failed');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
@@ -62,6 +67,8 @@ export default function Login() {
     // Generate and store a random state for CSRF protection
     const state = Math.random().toString(36).substring(2, 15);
     sessionStorage.setItem('oauth_state', state);
+    // Store the redirect path for after login
+    sessionStorage.setItem('auth_redirect', redirectPath);
     
     // Build authorization URL with explicit offline_access and prompt=consent
     const authUrl = `${fusionAuthUrl}/oauth2/authorize?client_id=${clientId}` + 
@@ -76,6 +83,7 @@ export default function Login() {
     router.push(authUrl);
   };
   
+  // Show login form if not authenticated
   return (
     <>
       <div className="container relative h-screen px-8 flex flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
@@ -147,6 +155,41 @@ export default function Login() {
               >
                 {loading ? 'Logging in...' : 'Log In'}
               </button>
+              
+              {/* Development only: Test login button */}
+              {process.env.NODE_ENV === 'development' && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      setLoading(true);
+                      const response = await fetch('/api/auth/test-login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: 'dev@example.com' }),
+                      });
+                      const data = await response.json();
+                      if (data.success) {
+                        console.log('Test login successful');
+                        login(data.user, data.accessToken, data.refreshToken);
+                        
+                        // Allow time for cookies to be set
+                        setTimeout(() => {
+                          router.push(redirectPath);
+                        }, 300);
+                      }
+                    } catch (error) {
+                      console.error('Test login failed:', error);
+                      setError('Test login failed');
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  className="w-full mt-2 py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700"
+                >
+                  Dev Test Login
+                </button>
+              )}
             </form>
 
             <div className="mt-4 text-center text-sm text-muted-foreground">

@@ -14,7 +14,7 @@ import Image from 'next/image'
 import { ImageIcon } from 'lucide-react'
 import { createProject } from '@/app/api/project/route'
 import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { useAuth } from '@/contexts/AuthContext'
 import { useUser } from '@/contexts/UserContext'
 
 interface AddForm {
@@ -53,7 +53,7 @@ export function ProjectsActionDialog({ open, onOpenChange, onSuccess }: Props) {
   const [isLoading, setIsLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
-  const { data: session } = useSession()
+  const { accessToken } = useAuth()
   const { user: userContext } = useUser()
 
   const form = useForm<AddForm>({
@@ -96,12 +96,7 @@ export function ProjectsActionDialog({ open, onOpenChange, onSuccess }: Props) {
         tenantId: userContext.tenantId
       }
 
-      const token = session?.user?.accessToken;
-      if (!token) {
-        throw new Error('Authentication token not found');
-      }
-
-      const project = await createProject(projectData, token)
+      const project = await createProject(projectData, accessToken)
 
       toast({
         title: 'Success',

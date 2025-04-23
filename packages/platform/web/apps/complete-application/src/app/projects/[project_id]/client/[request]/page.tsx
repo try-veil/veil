@@ -6,7 +6,7 @@ import { ResizableBox as BaseResizableBox } from 'react-resizable'
 import type { ResizableBoxProps } from 'react-resizable'
 import 'react-resizable/css/styles.css'
 import ResponseViewer from '@/features/projects/request/components/response-viewer'
-import { useSession } from 'next-auth/react'
+import { useAuth } from '@/contexts/AuthContext'
 import { onboardAPI } from '@/app/api/onboard-api/route'
 
 interface RequiredHeader {
@@ -43,7 +43,7 @@ export default function RequestPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [response, setResponse] = useState<any>(null)
   const [viewportHeight, setViewportHeight] = useState(0)
-  const { data: session } = useSession()
+  const { user, accessToken } = useAuth()
   const [formData, setFormData] = useState<OnboardRequestData>({
     api_id: "",
     name: "",
@@ -56,7 +56,8 @@ export default function RequestPage() {
     documentation_url: "",
     required_headers: []
   })
-  console.log("session",session)
+  console.log("user", user)
+  
   useEffect(() => {
     setViewportHeight(window.innerHeight)
     const handleResize = () => setViewportHeight(window.innerHeight)
@@ -161,11 +162,9 @@ export default function RequestPage() {
       }
 
       // Make API request to /onboard endpoint
-      if (session?.user?.accessToken) {
+      if (accessToken) {
         try {
-          const response = await onboardAPI(updatedFormData, session.user.accessToken);
-          
-         
+          const response = await onboardAPI(updatedFormData, accessToken);
           
           console.log('API onboarded successfully:', response);
         } catch (error: any) {

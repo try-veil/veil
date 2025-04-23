@@ -26,7 +26,7 @@ export interface OnboardResponse {
 
 export async function onboardAPI(data: OnboardAPI, token: string): Promise<OnboardResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/onboard`, {
+    const response = await fetch(`${API_BASE_URL}/onboard/`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -73,7 +73,7 @@ export async function getOnboardAPIById(api_id: string, token: string): Promise<
 }
 
 
-export async function getAllOnboardAPIs(token:string): Promise<OnboardAPI[]> {
+export async function getAllOnboardAPIs(token: string): Promise<OnboardAPI[]> {
   try {
     const response = await fetch(`${API_BASE_URL}/onboard/api`, {
       method: 'GET',

@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function CallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState("Processing your login...");
+  const { login } = useAuth();
 
   useEffect(() => {
     if (!searchParams) {
@@ -21,13 +22,15 @@ export default function CallbackPage() {
     const state = searchParams.get("state");
     const storedState = sessionStorage.getItem("oauth_state");
     const selectedRole = sessionStorage.getItem("selected_role");
+    const redirectPath = sessionStorage.getItem("auth_redirect") || "/dashboard";
 
     // Log for debugging
-    console.log("Callback params:", { code, error, state, storedState, selectedRole });
+    console.log("Callback params:", { code, error, state, storedState, selectedRole, redirectPath });
 
     // Clear sessionStorage to prevent stale data
     sessionStorage.removeItem("oauth_state");
     sessionStorage.removeItem("selected_role");
+    sessionStorage.removeItem("auth_redirect");
 
     // Validate state
     if (state !== storedState) {
@@ -68,7 +71,7 @@ export default function CallbackPage() {
       .then((res) => res.json())
       .then(async (data) => {
         if (data.success && data.accessToken) {
-          setStatus("Creating session with NextAuth...");
+          setStatus("Creating session...");
           
           // Prepare user data
           const userData = {
@@ -76,22 +79,16 @@ export default function CallbackPage() {
             // Add any other user properties here that you have
           };
           
-          // Sign in with NextAuth to create a session
-          const result = await signIn("custom-credentials", {
-            accessToken: data.accessToken,
-            refreshToken: data.refreshToken || null,
-            userData: JSON.stringify(userData),
-            redirect: false,
-          });
+          // Use our auth context to store user data and tokens
+          login(userData, data.accessToken, data.refreshToken || "");
           
-          if (result?.ok) {
-            console.log("NextAuth sign-in successful, redirecting to dashboard");
-            setStatus("Login successful! Redirecting...");
-            router.push("/");
-          } else {
-            console.error("NextAuth sign-in failed:", result?.error);
-            router.push(`/login?error=${encodeURIComponent(result?.error || "Authentication failed")}`);
-          }
+          console.log("Login successful, redirecting to:", redirectPath);
+          setStatus("Login successful! Redirecting...");
+          
+          // Allow a small delay to ensure localStorage is updated
+          setTimeout(() => {
+            router.push(redirectPath);
+          }, 500);
         } else {
           console.error("Callback failed:", data);
           router.push(
@@ -103,7 +100,7 @@ export default function CallbackPage() {
         console.error("Callback request error:", err);
         router.push("/login?error=Server error");
       });
-  }, [searchParams, router]);
+  }, [searchParams, router, login]);
 
   return (
     <div className="flex min-h-screen items-center justify-center">

@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useUser } from "@/contexts/UserContext";
 import { createTenant } from "@/app/api/tenant/route";
+import { useAuth } from "@/contexts/AuthContext";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +20,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { useSession } from "next-auth/react";
 
 const formSchema = z.object({
   tenantName: z.string().min(2, {
@@ -34,7 +34,7 @@ export function CreateTenantForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const { user, refreshUserData } = useUser();
-  const { data: session, status } = useSession();
+  const { accessToken } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -43,9 +43,9 @@ export function CreateTenantForm() {
       tenantDomain: "",
     },
   });
-  console.log(session?.user?.accessToken)
+  console.log(accessToken)
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!session?.user?.accessToken) {
+    if (!accessToken) {
       toast({
         title: "Error",
         description: "You must be logged in to create an organization",
@@ -60,7 +60,7 @@ export function CreateTenantForm() {
       await createTenant({
         name: values.tenantName,
         domain: values.tenantDomain,
-      }, session?.user?.accessToken);
+      }, accessToken);
 
       // Refresh user data to get updated tenant ID
       await refreshUserData();

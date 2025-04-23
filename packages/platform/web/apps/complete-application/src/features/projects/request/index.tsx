@@ -1,8 +1,8 @@
 "use client";
 import React from 'react'
 import { useState } from "react";
+import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useSession } from "next-auth/react";
 import {
   Select,
   SelectContent,
@@ -60,7 +60,7 @@ export default function Request({ isLoading, onSave, onTest }: RequestProps) {
   const [path, setPath] = useState("");
   const [headers, setHeaders] = useState<{ name: string; value: string }[]>([]);
   const [isTestLoading, setIsTestLoading] = useState(false);
-  const { data: session } = useSession();
+  const { user } = useAuth();
 
   const handleHeadersChange = (newHeaders: { id: string; name: string; value: string }[]) => {
     // Filter out empty headers and remove the id field

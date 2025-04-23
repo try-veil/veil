@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { getMarketplaceProjects } from '@/app/api/marketplace/route'
 import { MarketplaceProject } from '@/app/api/marketplace/route'
-import { useSession } from 'next-auth/react'
+import { useAuth } from '@/contexts/AuthContext'
 
 const appText = new Map<string, string>([
   ['all', 'All Categories'],
@@ -47,29 +47,25 @@ export default function Marketplace() {
   const [projects, setProjects] = useState<MarketplaceProject[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { data: session } = useSession()
+  const { accessToken } = useAuth()
 
   useEffect(() => {
-    const fetchProjects = async () => {
+    async function loadMarketplaceData() {
       try {
-        console.log("session?.user?.accessToken",session,session?.user?.accessToken)
-        const token = session?.user?.accessToken;
-        if (!token) {
-          throw new Error('Authentication token not found');
-        }
-        const data = await getMarketplaceProjects(token);
-        setProjects(data);
-        setIsLoading(false);
+        setIsLoading(true)
+        setError(null)
+        const data = await getMarketplaceProjects(accessToken || '')
+        setProjects(data)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch projects');
-        setIsLoading(false);
+        console.error('Error loading marketplace data:', err)
+        setError('Failed to load marketplace projects')
+      } finally {
+        setIsLoading(false)
       }
-    };
-
-    if (session?.user?.accessToken) {
-      fetchProjects();
     }
-  }, [session]);
+
+    loadMarketplaceData()
+  }, [accessToken])
 
   const filteredProjects = projects
     .sort((a, b) =>
