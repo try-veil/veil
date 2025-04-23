@@ -6,6 +6,8 @@ import { ResizableBox as BaseResizableBox } from 'react-resizable'
 import type { ResizableBoxProps } from 'react-resizable'
 import 'react-resizable/css/styles.css'
 import ResponseViewer from '@/features/projects/request/components/response-viewer'
+import { useSession } from 'next-auth/react'
+import { onboardAPI } from '@/app/api/onboard-api/route'
 
 interface RequiredHeader {
   name: string;
@@ -41,6 +43,7 @@ export default function RequestPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [response, setResponse] = useState<any>(null)
   const [viewportHeight, setViewportHeight] = useState(0)
+  const { data: session } = useSession()
   const [formData, setFormData] = useState<OnboardRequestData>({
     api_id: "",
     name: "",
@@ -53,7 +56,7 @@ export default function RequestPage() {
     documentation_url: "",
     required_headers: []
   })
-
+  console.log("session",session)
   useEffect(() => {
     setViewportHeight(window.innerHeight)
     const handleResize = () => setViewportHeight(window.innerHeight)
@@ -145,8 +148,6 @@ export default function RequestPage() {
         is_variable: true
       })) || [];
 
-      console.log('Received headers:', requestData.headers);
-
       const updatedFormData = {
         ...formData,
         api_id: generatedApiId,
@@ -159,18 +160,26 @@ export default function RequestPage() {
         required_headers
       }
 
-      // Log the form data to console
-      console.log('Form Data to be sent:', updatedFormData);
-
-      // Mock response for UI feedback
-      setResponse({
-        status: 200,
-        statusText: 'OK',
-        data: { 
-          message: 'Request logged to console',
-          formData: updatedFormData
+      // Make API request to /onboard endpoint
+      if (session?.user?.accessToken) {
+        try {
+          const response = await onboardAPI(updatedFormData, session.user.accessToken);
+          
+         
+          
+          console.log('API onboarded successfully:', response);
+        } catch (error: any) {
+          console.error('Error onboarding API:', error);
+         
         }
-      })
+      } else {
+        console.error('No authentication token available');
+        setResponse({
+          status: 401,
+          statusText: 'Unauthorized',
+          data: { error: 'Authentication required' }
+        });
+      }
     } catch (error) {
       console.error('Error processing request:', error)
       setResponse({
