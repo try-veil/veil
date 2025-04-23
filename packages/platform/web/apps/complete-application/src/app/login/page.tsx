@@ -62,7 +62,8 @@ export default function Login() {
   const handleSocialLogin = (provider: string) => {
     const clientId = process.env.NEXT_PUBLIC_FUSIONAUTH_CLIENT_ID;
     const fusionAuthUrl = process.env.NEXT_PUBLIC_FUSIONAUTH_URL;
-    const redirectUri = encodeURIComponent('http://localhost:3000/callback'); // Update for production
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const redirectUri = encodeURIComponent(`${appUrl}/callback`);
     
     // Generate and store a random state for CSRF protection
     const state = Math.random().toString(36).substring(2, 15);

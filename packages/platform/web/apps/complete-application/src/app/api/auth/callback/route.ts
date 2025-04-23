@@ -21,7 +21,8 @@ export async function POST(req: Request) {
   const apiKey = process.env.FUSIONAUTH_API_KEY;
   const fusionAuthUrl = process.env.NEXT_PUBLIC_FUSIONAUTH_URL;
   const tenantId = process.env.FUSIONAUTH_TENANT_ID || "";
-  const redirectUri = "http://localhost:3000/callback"; // Update for production
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const redirectUri = `${appUrl}/callback`;
   const tokenUrl = `${fusionAuthUrl}/oauth2/token`;
 
   try {

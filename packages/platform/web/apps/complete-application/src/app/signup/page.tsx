@@ -75,7 +75,8 @@ export default function SignupPage() {
     setError("");
     const clientId = process.env.NEXT_PUBLIC_FUSIONAUTH_CLIENT_ID;
     const fusionAuthUrl = process.env.NEXT_PUBLIC_FUSIONAUTH_URL;
-    const redirectUri = encodeURIComponent("http://localhost:3000/callback");
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const redirectUri = encodeURIComponent(`${appUrl}/callback`);
     const state = Math.random().toString(36).substring(2);
     
     // Store both state and selected role in session storage
