@@ -15,6 +15,7 @@ import { ImageIcon } from 'lucide-react'
 import { createProject } from '@/app/api/project/route'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import { useUser } from '@/contexts/UserContext'
 
 interface AddForm {
   name: string;
@@ -53,6 +54,7 @@ export function ProjectsActionDialog({ open, onOpenChange, onSuccess }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const { data: session } = useSession()
+  const { user: userContext } = useUser()
 
   const form = useForm<AddForm>({
     resolver: zodResolver(formSchema),
@@ -80,13 +82,18 @@ export function ProjectsActionDialog({ open, onOpenChange, onSuccess }: Props) {
         })
       }
 
+      if (!userContext?.tenantId) {
+        throw new Error('No tenant ID found. Please create an organization first.');
+      }
+
       // Create project object
       const projectData = {
         name,
         description,
         thumbnail: thumbnailBase64,
         favorite: favorite || false,
-        enableLimitsToAPIs: enableLimitsToAPIs || false
+        enableLimitsToAPIs: enableLimitsToAPIs || false,
+        tenantId: userContext.tenantId
       }
 
       const token = session?.user?.accessToken;
