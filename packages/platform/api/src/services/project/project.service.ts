@@ -144,6 +144,11 @@ export class ProjectService {
             apiId: true,
             apiVersionId: true,
             status: true,
+            apiModel: { 
+              select: {
+                name: true,
+              },
+            },
           },
         },
       },
@@ -167,6 +172,8 @@ export class ProjectService {
       apis: project.projectAllowedAPIs.map((api) => ({
         apiId: api.apiId,
         apiVersionId: api.apiVersionId,
+        name: api.apiModel?.name ?? '', // Use apiModel
+
       })),
     } as ProjectWithRelationsDto;
   }

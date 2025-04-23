@@ -96,8 +96,9 @@ model Tenant {
     wallets      Wallet[]
     payments     Payment[]
     Subscription Subscription[]
-
     projects     Project[]  
+    users        User[] 
+
     @@map("tenants")
 }
 
@@ -122,6 +123,8 @@ model User {
     wallets            Wallet[]
     createdAt          DateTime            @default(now())
     updatedAt          DateTime            @updatedAt
+    tenantId           String?
+    tenant             Tenant?   @relation(fields: [tenantId], references: [id])
 
     @@map("users")
 }

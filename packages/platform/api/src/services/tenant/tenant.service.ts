@@ -98,7 +98,7 @@ export class TenantService {
     });
   }
 
-  async createTenant(data: CreateTenantDto): Promise<TenantResponseDto> {
+  async createTenant(data: CreateTenantDto,userId:string): Promise<TenantResponseDto> {
     const { name, domain } = data;
 
     // Generate slugified key from name
@@ -151,6 +151,15 @@ export class TenantService {
             serviceStatus: ServiceStatus.ACTIVE,
             isDefault: true,
             templateId: defaultTemplate.id,
+          },
+        });
+
+        await tx.user.update({
+          where: {
+            id: userId,
+          },
+          data: {
+            tenantId: tenant.id,
           },
         });
 
