@@ -14,6 +14,7 @@ import Image from 'next/image'
 import { ImageIcon } from 'lucide-react'
 import { createProject } from '@/app/api/project/route'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 
 interface AddForm {
   name: string;
@@ -51,6 +52,7 @@ export function ProjectsActionDialog({ open, onOpenChange, onSuccess }: Props) {
   const [isLoading, setIsLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
+  const { data: session } = useSession()
 
   const form = useForm<AddForm>({
     resolver: zodResolver(formSchema),
@@ -87,10 +89,9 @@ export function ProjectsActionDialog({ open, onOpenChange, onSuccess }: Props) {
         enableLimitsToAPIs: enableLimitsToAPIs || false
       }
 
-      // Get auth token from localStorage or your auth context
-      const token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjFyeWJyOGpUTXNNa0tYbzd1MjJ0Qm5XeVc2dyJ9.eyJhdWQiOiIyMTMwMWZkZC02NWJhLTQ2OWUtOTlmMy0xZjZlY2RlY2IzMjUiLCJleHAiOjE3ODEyMzcxODMsImlhdCI6MTc0NTIzNzE4MywiaXNzIjoidHJ5dmVpbC5mdXNpb25hdXRoLmlvIiwic3ViIjoiM2VjMjQ3MTgtYzAwOC00NDUwLWFjMmQtZjYyMTJhYTg0MDE1IiwianRpIjoiZTkyOWUyODctNjNjZC00YzlhLWI1YzMtMjcyYzZmMmJmNDM5IiwiYXV0aGVudGljYXRpb25UeXBlIjoiUEFTU1dPUkQiLCJhcHBsaWNhdGlvbklkIjoiMjEzMDFmZGQtNjViYS00NjllLTk5ZjMtMWY2ZWNkZWNiMzI1Iiwicm9sZXMiOlsicHJvdmlkZXIiXSwic2lkIjoiYTlhMmM0OWItN2RmOC00NTQyLWIzNzctZDgwNTczMDdhZDNlIiwiYXV0aF90aW1lIjoxNzQ1MjM3MTgzLCJ0aWQiOiJmZWI4MDE5YS01YmE2LTQwYzQtMzBhZC03NGQ3YzQ3OWZiOTAifQ.UjaGt3XuRSG0UlWrfcl4s9eQWanNS3Z0nQbYqA9V1Dxci9do0lkgbiJ2xDOYlTrkUe_O9MRm_2yKgGIGqgNZAyitgAWOwAS-az5okOfna7ATMcedc2JWGg3LSwawr3wLkYzS9nj0aACQRKxv3vzQtlPBeaFgHThwbPWQS30oGmT2tkpkuJsRasQr7PLtgyR9AqtUJR4M4AvhG8vUKUBBp4ekLs3-d9TOdtZnxQt3LLYMr_qIqnBaZBGu7CPXq3F_3tdObyR7mQoTDWARhi1oNw2PBDAXQ46wGEEBEKUaK7N8Uxi90mVLo73l58IKfKHdLrdUw3QolyHHoMFYAixI-A"
+      const token = session?.user?.accessToken;
       if (!token) {
-        throw new Error('Authentication token not found')
+        throw new Error('Authentication token not found');
       }
 
       const project = await createProject(projectData, token)

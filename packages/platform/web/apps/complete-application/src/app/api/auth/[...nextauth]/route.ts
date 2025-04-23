@@ -132,15 +132,15 @@ export const authOptions: NextAuthOptions = {
       }
     },
 
-    async session({ session, token }): Promise<ExtendedSession> {
-      const extendedToken = token as ExtendedToken;
-      const extendedSession = session as ExtendedSession;
-
-      extendedSession.user = extendedToken.user;
-      extendedSession.accessToken = extendedToken.accessToken;
-      extendedSession.error = extendedToken.error;
-
-      return extendedSession;
+    async session({ session, token }): Promise<Session> {
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          accessToken: token.accessToken,
+          refreshToken: token.refreshToken,
+        },
+      };
     },
   },
 
