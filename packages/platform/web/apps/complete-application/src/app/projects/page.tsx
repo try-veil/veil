@@ -6,10 +6,11 @@ import Apps from "@/features/marketplace";
 import MyProjects from "@/features/myprojects";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MyAnalytics from "@/features/myanalytics";
-import { getAllProjectsByUserId } from "@/app/api/project/route";
+import { getAllProjectsByUserId, Project } from "@/app/api/project/route";
 import { useSession } from "next-auth/react";
 import { CreateTenantForm } from "@/features/projects/create-tenant-form";
 import { useUser } from "@/contexts/UserContext";
+
 interface User {
   given_name?: string;
   preferred_username?: string;
@@ -20,11 +21,10 @@ export default function Projects() {
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
-  const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const { data: session } = useSession();
-  const [hasOrganization, setHasOrganization] = useState(false); 
-  const { user: userContext } = useUser();
-  console.log(userContext)
+  const { user: userContext, isLoading: isUserLoading } = useUser();
+
   const fetchProjects = async () => {
     try {
       const token = session?.user?.accessToken;
@@ -33,9 +33,11 @@ export default function Projects() {
       }
       const projectsData = await getAllProjectsByUserId(token);
       setProjects(projectsData);
+      setIsLoading(false);
     } catch (error) {
       console.log('Error fetching projects:', error);
       setError(error instanceof Error ? error.message : 'Failed to fetch projects');
+      setIsLoading(false);
     }
   };
 
@@ -45,9 +47,21 @@ export default function Projects() {
     }
   }, [session]);
 
+  // Show loading state while checking user context
+  if (isUserLoading) {
+    return (
+      <main className="flex flex-col">
+        <Navbar session={false} user={null} />
+        <div className="flex-1 pt-24 flex items-center justify-center">
+          <p>Loading...</p>
+        </div>
+      </main>
+    );
+  }
+
   if (error) return <p style={{ color: "red" }}>{error}</p>;
   
-  if (!hasOrganization) {
+  if (!userContext?.tenantId) {
     return (
       <main className="flex flex-col">
         <Navbar session={!isLoading && user !== null} user={user} />
@@ -57,6 +71,7 @@ export default function Projects() {
       </main>
     );
   }
+
   return (
     <main className="flex flex-col">
       <Navbar session={!isLoading && user !== null} user={user} />
@@ -73,7 +88,13 @@ export default function Projects() {
             </TabsList>
             <div className="flex-grow">
               <TabsContent value="projects" className="m-0">
-                <MyProjects projects={projects} onProjectsChange={fetchProjects} />
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <p>Loading projects...</p>
+                  </div>
+                ) : (
+                  <MyProjects projects={projects} onProjectsChange={fetchProjects} />
+                )}
               </TabsContent>
               <TabsContent value="analytics" className="m-0">
                 <MyAnalytics />

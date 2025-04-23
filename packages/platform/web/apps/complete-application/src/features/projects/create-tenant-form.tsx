@@ -56,13 +56,13 @@ export function CreateTenantForm() {
 
     setIsLoading(true);
     try {
-      // Map form values to tenant API format
+      // Create tenant
       await createTenant({
         name: values.tenantName,
         domain: values.tenantDomain,
       }, session?.user?.accessToken);
 
-      // Refresh user data to update organization status
+      // Refresh user data to get updated tenant ID
       await refreshUserData();
 
       toast({
@@ -73,7 +73,9 @@ export function CreateTenantForm() {
       // Reset form
       form.reset();
 
-      router.refresh();
+      // Instead of just refreshing the page, we'll force a hard reload
+      // This ensures both user context and projects are freshly fetched
+      window.location.reload();
     } catch (error) {
       console.error('Error creating tenant:', error);
       toast({

@@ -13,6 +13,7 @@ export interface User {
   description: null | string;
   bio: null | string;
   thumbnail: null | string;
+  tenantId: string | null;
   parents: any[];
   publishedApisList: any[];
   followedApis: any[];
@@ -32,6 +33,7 @@ interface UserContextType {
   setUser: (user: UserWithAuth | null) => void;
   isAuthenticated: boolean;
   isLoading: boolean;
+  refreshUserData: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -64,51 +66,47 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const { data: session, status } = useSession();
 
-  useEffect(() => {
-    async function loadUserDetails() {
-      if (status === 'loading') {
-        return;
-      }
-
-      if (status === 'unauthenticated') {
-        setIsLoading(false);
-        setUser(null);
-        return;
-      }
-
-      const accessToken = session?.user?.accessToken;
-      if (accessToken) {
-        try {
-          setIsLoading(true);
-          console.log('Session data:', session);
-          const userDetails = await fetchUserInfo(accessToken);
-          
-          setUser({
-            ...userDetails,
-            accessToken: accessToken,
-            refreshToken: session.user?.refreshToken
-          });
-        } catch (error) {
-          console.error('Failed to load user details:', error);
-          setUser(null);
-        } finally {
-          setIsLoading(false);
-        }
-      } else {
-        console.log('No access token in session:', session);
-        setIsLoading(false);
-        setUser(null);
-      }
+  const refreshUserData = async () => {
+    if (status === 'loading') return;
+    if (status === 'unauthenticated') {
+      setIsLoading(false);
+      setUser(null);
+      return;
     }
 
-    loadUserDetails();
+    const accessToken = session?.user?.accessToken;
+    if (accessToken) {
+      try {
+        setIsLoading(true);
+        const userDetails = await fetchUserInfo(accessToken);
+        setUser({
+          ...userDetails,
+          accessToken: accessToken,
+          refreshToken: session.user?.refreshToken
+        });
+      } catch (error) {
+        console.error('Failed to load user details:', error);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      console.log('No access token in session:', session);
+      setIsLoading(false);
+      setUser(null);
+    }
+  };
+
+  useEffect(() => {
+    refreshUserData();
   }, [session, status]);
 
   const value = {
     user,
     setUser,
     isAuthenticated: !!user,
-    isLoading
+    isLoading,
+    refreshUserData
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
