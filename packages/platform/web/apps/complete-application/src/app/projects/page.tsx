@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MyAnalytics from "@/features/myanalytics";
 import { getAllProjectsByUserId } from "@/app/api/project/route";
 import { useSession } from "next-auth/react";
-
+import { CreateTenantForm } from "@/features/projects/create-tenant-form";
+import { useUser } from "@/contexts/UserContext";
 interface User {
   given_name?: string;
   preferred_username?: string;
@@ -21,7 +22,9 @@ export default function Projects() {
   const [isLoading, setIsLoading] = useState(true);
   const [projects, setProjects] = useState([]);
   const { data: session } = useSession();
-
+  const [hasOrganization, setHasOrganization] = useState(false); 
+  const { user: userContext } = useUser();
+  console.log(userContext)
   const fetchProjects = async () => {
     try {
       const token = session?.user?.accessToken;
@@ -43,7 +46,17 @@ export default function Projects() {
   }, [session]);
 
   if (error) return <p style={{ color: "red" }}>{error}</p>;
-
+  
+  if (!hasOrganization) {
+    return (
+      <main className="flex flex-col">
+        <Navbar session={!isLoading && user !== null} user={user} />
+        <div className="flex-1 pt-24">
+          <CreateTenantForm />
+        </div>
+      </main>
+    );
+  }
   return (
     <main className="flex flex-col">
       <Navbar session={!isLoading && user !== null} user={user} />
