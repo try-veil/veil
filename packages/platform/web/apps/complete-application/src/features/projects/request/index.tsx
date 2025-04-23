@@ -2,7 +2,7 @@
 import React from 'react'
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
+import { useSession } from "next-auth/react";
 import {
   Select,
   SelectContent,
@@ -20,7 +20,17 @@ import { Send } from 'lucide-react'
 
 interface RequestProps {
   isLoading?: boolean;
-  onSend?: () => void;
+  onSave?: (data: RequestData) => void;
+}
+
+interface RequestData {
+  name: string;
+  description: string;
+  path: string;
+  documentation_url: string;
+  target_url: string;
+  method: string;
+  headers?: { name: string; value: string }[];
 }
 
 const options = new Map([
@@ -34,18 +44,48 @@ const options = new Map([
   ["trace", "TRACE"],
 ]);
 
-export default function Request({ isLoading, onSend }: RequestProps) {
-  const [type, setType] = useState("get");
-  const [urlTerm, setUrlTerm] = useState("");
+export default function Request({ isLoading, onSave }: RequestProps) {
+  const [method, setMethod] = useState("get");
+  const [targetUrl, setTargetUrl] = useState("");
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [documentationUrl, setDocumentationUrl] = useState("");
+  const [path, setPath] = useState("");
+  const [headers, setHeaders] = useState<{ name: string; value: string }[]>([]);
+  const { data: session } = useSession();
+
+  const handleHeadersChange = (newHeaders: { id: string; name: string; value: string }[]) => {
+    // Filter out empty headers and remove the id field
+    const processedHeaders = newHeaders
+      .filter(header => header.name.trim() !== '' && header.value.trim() !== '')
+      .map(({ name, value }) => ({ name, value }));
+    setHeaders(processedHeaders);
+  };
+
+  const handleSave = () => {
+    const formData = {
+      name,
+      description,
+      path,
+      documentation_url: documentationUrl,
+      target_url: targetUrl,
+      method,
+      headers
+    };
+    
+    if (onSave) {
+      onSave(formData);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full">
       {/* URL Bar */}
       <div className="flex-none p-4 border-b">
         <div className="flex flex-col sm:flex-row gap-4 items-center">
-          <Select value={type} onValueChange={setType}>
+          <Select value={method} onValueChange={setMethod}>
             <SelectTrigger className="w-full sm:w-[120px]">
-              <SelectValue>{options.get(type)}</SelectValue>
+              <SelectValue>{options.get(method)}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="get">GET</SelectItem>
@@ -59,13 +99,13 @@ export default function Request({ isLoading, onSend }: RequestProps) {
             </SelectContent>
           </Select>
           <Input
-            placeholder="http://google.com"
+            placeholder="https://api.example.com/endpoint"
             className="flex-1"
-            value={urlTerm}
-            onChange={(e) => setUrlTerm(e.target.value)}
+            value={targetUrl}
+            onChange={(e) => setTargetUrl(e.target.value)}
           />
           <Button 
-            onClick={onSend} 
+            onClick={handleSave} 
             disabled={isLoading}
             variant="default"
             size="sm"
@@ -73,12 +113,12 @@ export default function Request({ isLoading, onSend }: RequestProps) {
             {isLoading ? (
               <>
                 <span className="animate-spin mr-2">⌛</span>
-                Sending...
+                saving...
               </>
             ) : (
               <>
                 <Send className="w-4 h-4 mr-2" />
-                Send
+                Save
               </>
             )}
           </Button>
@@ -105,23 +145,39 @@ export default function Request({ isLoading, onSend }: RequestProps) {
                     <Label>Name</Label>
                     <Input
                       placeholder="Request Name"
-                      value={urlTerm}
-                      onChange={(e) => setUrlTerm(e.target.value)}
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Description</Label>
                     <Input
                       placeholder="Set Description"
-                      value={urlTerm}
-                      onChange={(e) => setUrlTerm(e.target.value)}
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Path</Label>
+                    <Input
+                      placeholder="/your-api-path"
+                      value={path}
+                      onChange={(e) => setPath(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Documentation URL</Label>
+                    <Input
+                      placeholder="https://docs.example.com"
+                      value={documentationUrl}
+                      onChange={(e) => setDocumentationUrl(e.target.value)}
                     />
                   </div>
                 </div>
               </TabsContent>
 
               <TabsContent value="headers" className="mt-0 h-full">
-                <Headers />
+                <Headers onHeadersChange={handleHeadersChange} />
               </TabsContent>
 
               <TabsContent value="query" className="mt-0 h-full">

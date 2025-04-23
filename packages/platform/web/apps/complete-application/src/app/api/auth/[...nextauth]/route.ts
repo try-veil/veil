@@ -4,6 +4,18 @@ import type { NextAuthOptions } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import type { Session } from "next-auth";
 
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      accessToken?: string;
+      refreshToken?: string;
+    }
+  }
+}
+
 // Define the shape of the response from your login API
 type LoginResponse = {
   user: {
@@ -36,6 +48,8 @@ interface ExtendedSession extends Session {
     id: string;
     name: string;
     email: string;
+    accessToken?: string;
+    refreshToken?: string;
   };
 }
 
@@ -133,12 +147,14 @@ export const authOptions: NextAuthOptions = {
     },
 
     async session({ session, token }): Promise<Session> {
+      const extendedToken = token as ExtendedToken;
       return {
         ...session,
         user: {
           ...session.user,
-          accessToken: token.accessToken,
-          refreshToken: token.refreshToken,
+          id: extendedToken.user.id,
+          accessToken: extendedToken.accessToken,
+          refreshToken: extendedToken.refreshToken,
         },
       };
     },

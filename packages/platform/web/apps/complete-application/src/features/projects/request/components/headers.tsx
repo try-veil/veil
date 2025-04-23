@@ -29,6 +29,10 @@ interface HeaderPair {
   value: string;
 }
 
+interface HeadersProps {
+  onHeadersChange?: (headers: HeaderPair[]) => void;
+}
+
 function SortableHeaderItem({ header, index, updateHeader, removeHeader }: {
   header: HeaderPair;
   index: number;
@@ -98,7 +102,7 @@ function SortableHeaderItem({ header, index, updateHeader, removeHeader }: {
   );
 }
 
-export function Headers() {
+export function Headers({ onHeadersChange }: HeadersProps) {
   const [headers, setHeaders] = useState<HeaderPair[]>([
     { id: "1", name: "", value: "" }
   ]);
@@ -110,20 +114,33 @@ export function Headers() {
     })
   );
 
+  const notifyHeaderChange = (headersList: HeaderPair[]) => {
+    if (onHeadersChange) {
+      const validHeaders = headersList.filter(
+        header => header.name.trim() !== '' && header.value.trim() !== ''
+      );
+      onHeadersChange(validHeaders);
+    }
+  };
+
   const addNewHeader = () => {
-    setHeaders([...headers, { id: Date.now().toString(), name: "", value: "" }]);
+    const newHeaders = [...headers, { id: Date.now().toString(), name: "", value: "" }];
+    setHeaders(newHeaders);
+    notifyHeaderChange(newHeaders);
   };
 
   const updateHeader = (id: string, field: "name" | "value", value: string) => {
-    setHeaders(
-      headers.map((header) =>
-        header.id === id ? { ...header, [field]: value } : header
-      )
+    const newHeaders = headers.map((header) =>
+      header.id === id ? { ...header, [field]: value } : header
     );
+    setHeaders(newHeaders);
+    notifyHeaderChange(newHeaders);
   };
 
   const removeHeader = (id: string) => {
-    setHeaders(headers.filter((header) => header.id !== id));
+    const newHeaders = headers.filter((header) => header.id !== id);
+    setHeaders(newHeaders);
+    notifyHeaderChange(newHeaders);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -132,8 +149,9 @@ export function Headers() {
     if (over && active.id !== over.id) {
       const oldIndex = headers.findIndex((header) => header.id === active.id);
       const newIndex = headers.findIndex((header) => header.id === over.id);
-
-      setHeaders(arrayMove(headers, oldIndex, newIndex));
+      const newHeaders = arrayMove(headers, oldIndex, newIndex);
+      setHeaders(newHeaders);
+      notifyHeaderChange(newHeaders);
     }
   };
 

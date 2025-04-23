@@ -2,12 +2,32 @@
 
 import Request from '@/features/projects/request'
 import React, { useState, useEffect } from 'react'
-import { ResizableBox as BaseResizableBox, ResizableBoxProps } from 'react-resizable'
+import { ResizableBox as BaseResizableBox } from 'react-resizable'
+import type { ResizableBoxProps } from 'react-resizable'
 import 'react-resizable/css/styles.css'
 import ResponseViewer from '@/features/projects/request/components/response-viewer'
 
+interface RequiredHeader {
+  name: string;
+  value: string;
+  is_variable: boolean;
+}
+
+interface OnboardRequestData {
+  api_id: string;
+  name: string;
+  path: string;
+  project_id: number;
+  target_url: string;
+  method: string;
+  version: string;
+  description: string;
+  documentation_url: string;
+  required_headers: RequiredHeader[];
+}
+
 // Create a properly typed wrapper for ResizableBox
-const ResizableBox = BaseResizableBox as unknown as React.FC<ResizableBoxProps & { children: React.ReactNode }>
+const ResizableBox = BaseResizableBox as any
 
 export default function RequestPage() {
   const [isCodePreviewExpanded, setIsCodePreviewExpanded] = useState(false)
@@ -15,6 +35,18 @@ export default function RequestPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [response, setResponse] = useState<any>(null)
   const [viewportHeight, setViewportHeight] = useState(0)
+  const [formData, setFormData] = useState<OnboardRequestData>({
+    api_id: "",
+    name: "",
+    path: "",
+    project_id: 1,
+    target_url: "",
+    method: "GET",
+    version: "v1",
+    description: "",
+    documentation_url: "",
+    required_headers: []
+  })
 
   useEffect(() => {
     setViewportHeight(window.innerHeight)
@@ -23,47 +55,57 @@ export default function RequestPage() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  const handleSendRequest = () => {
+  const handleSaveRequest = async (requestData: any) => {
     setIsLoading(true)
-    // Simulated API call
-    setTimeout(() => {
+    try {
+      const generatedApiId = crypto.randomUUID();
+      const targetUrlSegments = requestData.target_url.split('/');
+      const targetUrlPart = targetUrlSegments[2] || ''; // Get the fourth segment or empty string if not exists
+      const constructedPath = `${generatedApiId}${requestData.path}${targetUrlPart}`;
+
+      // Transform headers to required format
+      const required_headers = requestData.headers?.map((header: any) => ({
+        name: header.name,
+        value: header.value,
+        is_variable: true
+      })) || [];
+
+      console.log('Received headers:', requestData.headers); // Debug log
+
+      const updatedFormData = {
+        ...formData,
+        api_id: generatedApiId,
+        name: requestData.name,
+        description: requestData.description,
+        path: constructedPath,
+        target_url: requestData.target_url,
+        method: requestData.method.toUpperCase(),
+        documentation_url: requestData.documentation_url,
+        required_headers
+      }
+
+      // Log the form data to console
+      console.log('Form Data to be sent:', updatedFormData);
+
+      // Mock response for UI feedback
       setResponse({
         status: 200,
         statusText: 'OK',
-        headers: {
-          'content-type': 'application/json',
-          'x-powered-by': 'Express',
-        },
-        data: {
-          message: 'Hello World',
-          timestamp: new Date().toISOString(),
-        },
-        info: {
-          date: new Date().toISOString(),
-          url: 'https://echo.paw.cloud',
-          status: '200 OK',
-          library: 'Paw Cloud Proxy',
-          headersResponseTime: '489 ms',
-          totalResponseTime: '1419 ms',
-          responseBodySize: '4.51 KiB',
-        },
-        request: {
-          method: 'GET',
-          url: 'https://echo.paw.cloud',
-          path: '/',
-          clientIP: '172.70.85.125',
-          headers: {
-            'Accept-Encoding': 'gzip',
-            'Cdn-Loop': 'cloudflare; loops=1; subreqs=1',
-            'Cf-Connecting-Ip': '2a06:98c0:3600::103',
-            'Cf-Visitor': '{"scheme":"https"}',
-            'Cf-Worker': 'paw.app',
-            'Host': 'echo.paw.cloud',
-          }
+        data: { 
+          message: 'Request logged to console',
+          formData: updatedFormData // Include form data in response for verification
         }
       })
+    } catch (error) {
+      console.error('Error processing request:', error)
+      setResponse({
+        status: 500,
+        statusText: 'Error',
+        data: { error: 'Failed to process request' }
+      })
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   return (
@@ -124,7 +166,7 @@ export default function RequestPage() {
         >
           <Request 
             isLoading={isLoading}
-            onSend={handleSendRequest}
+            onSave={handleSaveRequest}
           />
         </ResizableBox>
         {/* Right Column - Response */}
