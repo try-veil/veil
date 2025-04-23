@@ -20,7 +20,7 @@ interface ResponseViewerProps {
     statusText: string
     headers: Record<string, string>
     data: any
-    info: {
+    info?: {
       date: string
       url: string
       status: string
@@ -29,12 +29,12 @@ interface ResponseViewerProps {
       totalResponseTime: string
       responseBodySize: string
     }
-    request: {
+    request?: {
       method: string
       url: string
       path: string
-      clientIP: string
       headers: Record<string, string>
+      curl?: string
     }
   }
 }
@@ -132,52 +132,14 @@ export default function ResponseViewer({ isLoading, response }: ResponseViewerPr
   // }
 
   return (
-    <div className="h-full flex flex-col py-2 overflow-y-auto">
-      <div className="px-4 py-2 rounded-t-lg flex items-center mb-2">
-        <div className="flex items-center gap-2">
-          {response && (
-            <>
-              <span className={`text-white rounded-md px-2 text-center font-mono ${statusColor}`}>{response?.status}</span>
-              <span>{response?.statusText}</span>
-            </>
-          )}
+    <div className="flex flex-col h-full">
+      {/* Status Bar */}
+      <div className="flex-none p-4 border-b flex items-center gap-2">
+        <div className={`w-3 h-3 rounded-full ${statusColor}`} />
+        <div className="font-mono">
+          {response ? `${response.status} ${response.statusText}` : 'No Response'}
         </div>
       </div>
-
-      {/* Preview Section - Commented Out */}
-      {/* <div className="bg-muted rounded-lg shadow-md overflow-hidden mx-4 mb-4">
-        <button
-          onClick={() => setIsCodePreviewExpanded(!isCodePreviewExpanded)}
-          className="w-full p-4 flex items-center justify-between hover:bg-gray-50"
-        >
-          <h2 className="text-base font-semibold">Preview</h2>
-          <div className="flex items-center gap-2">
-            <Select value={codeType} onValueChange={setCodeType}>
-              <SelectTrigger className="w-60" aria-label="Select code type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="curl">C / Libcurl</SelectItem>
-                <SelectItem value="clojure">Clojure / clj-http</SelectItem>
-                <SelectItem value="nodejs-axios">Node.js / Axios</SelectItem>
-                <SelectItem value="nodejs-request">Node.js / Request</SelectItem>
-                <SelectItem value="python-requests">Python / Requests</SelectItem>
-                <SelectItem value="python-http-client">Python / http.client</SelectItem>
-              </SelectContent>
-            </Select>
-            {isCodePreviewExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-          </div>
-        </button>
-        {isCodePreviewExpanded && (
-          <div className="border-t">
-            <div className="p-4 max-h-[300px] overflow-auto">
-              <pre className="whitespace-pre-wrap font-mono text-sm">
-                {generateCodePreview()}
-              </pre>
-            </div>
-          </div>
-        )}
-      </div> */}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
         <TabsList className="mx-4">
@@ -189,7 +151,7 @@ export default function ResponseViewer({ isLoading, response }: ResponseViewerPr
         <div className="p-4 overflow-auto flex-1">
           <TabsContent value="info" className="h-full">
             <div className="space-y-2">
-              {Object.entries(response?.info || {}).map(([key, value]) => (
+              {response?.info && Object.entries(response.info).map(([key, value]) => (
                 <div key={key} className="grid grid-cols-2 gap-4">
                   <div className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</div>
                   <div className="text-muted-foreground font-mono">{String(value)}</div>
@@ -203,18 +165,27 @@ export default function ResponseViewer({ isLoading, response }: ResponseViewerPr
               <div className="space-y-2">
                 <div className="font-medium">Request Details</div>
                 <div className="space-y-2">
-                  {Object.entries(response?.request || {}).map(([key, value]) => {
-                    if (key === 'headers') return null
+                  {response?.request && Object.entries(response.request).map(([key, value]) => {
+                    if (key === 'headers' || key === 'curl') return null;
                     return (
                       <div key={key} className="grid grid-cols-2 gap-4">
                         <div className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</div>
                         <div className="text-muted-foreground font-mono">{String(value)}</div>
                       </div>
-                    )
+                    );
                   })}
                 </div>
               </div>
               
+              {response?.request?.curl && (
+                <div className="space-y-2">
+                  <div className="font-medium">Curl Command</div>
+                  <pre className="bg-muted p-4 rounded-lg overflow-x-auto whitespace-pre-wrap">
+                    {response.request.curl}
+                  </pre>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <div className="font-medium">Headers</div>
                 <JsonViewer data={response?.request?.headers || {}} rootName="headers" />

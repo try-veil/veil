@@ -26,6 +26,12 @@ interface OnboardRequestData {
   required_headers: RequiredHeader[];
 }
 
+interface TestRequestData {
+  method: string;
+  target_url: string;
+  headers: { name: string; value: string }[];
+}
+
 // Create a properly typed wrapper for ResizableBox
 const ResizableBox = BaseResizableBox as any
 
@@ -55,12 +61,81 @@ export default function RequestPage() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  const generateCurlCommand = (data: TestRequestData) => {
+    let curl = `curl -X ${data.method} '${data.target_url}'`;
+    
+    // Add headers
+    if (data.headers && data.headers.length > 0) {
+      data.headers.forEach(header => {
+        curl += `\n  -H '${header.name}: ${header.value}'`;
+      });
+    }
+
+    return curl;
+  };
+
+  const handleTest = async (testData: TestRequestData) => {
+    try {
+      const curlCommand = generateCurlCommand(testData);
+      
+      // Make the actual HTTP request
+      const requestHeaders: Record<string, string> = {};
+      testData.headers.forEach(header => {
+        requestHeaders[header.name] = header.value;
+      });
+
+      const response = await fetch(testData.target_url, {
+        method: testData.method,
+        headers: requestHeaders
+      });
+
+      const responseData = await response.json();
+
+      setResponse({
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        data: responseData,
+        info: {
+          date: new Date().toISOString(),
+          url: testData.target_url,
+          status: `${response.status} ${response.statusText}`,
+          library: 'Fetch API',
+          headersResponseTime: 'N/A',
+          totalResponseTime: 'N/A',
+          responseBodySize: 'N/A',
+        },
+        request: {
+          method: testData.method,
+          url: testData.target_url,
+          path: '/',
+          headers: requestHeaders,
+          curl: curlCommand
+        }
+      });
+    } catch (error) {
+      console.error('Error making test request:', error);
+      setResponse({
+        status: 500,
+        statusText: 'Error',
+        data: { error: 'Failed to make test request' },
+        request: {
+          method: testData.method,
+          url: testData.target_url,
+          path: '/',
+          headers: testData.headers,
+          curl: generateCurlCommand(testData)
+        }
+      });
+    }
+  };
+
   const handleSaveRequest = async (requestData: any) => {
     setIsLoading(true)
     try {
       const generatedApiId = crypto.randomUUID();
       const targetUrlSegments = requestData.target_url.split('/');
-      const targetUrlPart = targetUrlSegments[2] || ''; // Get the fourth segment or empty string if not exists
+      const targetUrlPart = targetUrlSegments[2] || '';
       const constructedPath = `${generatedApiId}${requestData.path}${targetUrlPart}`;
 
       // Transform headers to required format
@@ -70,7 +145,7 @@ export default function RequestPage() {
         is_variable: true
       })) || [];
 
-      console.log('Received headers:', requestData.headers); // Debug log
+      console.log('Received headers:', requestData.headers);
 
       const updatedFormData = {
         ...formData,
@@ -93,7 +168,7 @@ export default function RequestPage() {
         statusText: 'OK',
         data: { 
           message: 'Request logged to console',
-          formData: updatedFormData // Include form data in response for verification
+          formData: updatedFormData
         }
       })
     } catch (error) {
@@ -167,6 +242,7 @@ export default function RequestPage() {
           <Request 
             isLoading={isLoading}
             onSave={handleSaveRequest}
+            onTest={handleTest}
           />
         </ResizableBox>
         {/* Right Column - Response */}

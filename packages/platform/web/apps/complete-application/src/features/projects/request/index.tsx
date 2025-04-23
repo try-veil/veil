@@ -16,11 +16,12 @@ import { Button } from "@/components/ui/button";
 import { Headers } from "./components/headers";
 import { Query } from "./components/query";
 import Body from "./components/body";
-import { Send } from 'lucide-react'
+import { Send, Play, Loader2 } from 'lucide-react'
 
 interface RequestProps {
   isLoading?: boolean;
   onSave?: (data: RequestData) => void;
+  onTest?: (data: TestRequestData) => void;
 }
 
 interface RequestData {
@@ -31,6 +32,12 @@ interface RequestData {
   target_url: string;
   method: string;
   headers?: { name: string; value: string }[];
+}
+
+interface TestRequestData {
+  method: string;
+  target_url: string;
+  headers: { name: string; value: string }[];
 }
 
 const options = new Map([
@@ -44,7 +51,7 @@ const options = new Map([
   ["trace", "TRACE"],
 ]);
 
-export default function Request({ isLoading, onSave }: RequestProps) {
+export default function Request({ isLoading, onSave, onTest }: RequestProps) {
   const [method, setMethod] = useState("get");
   const [targetUrl, setTargetUrl] = useState("");
   const [name, setName] = useState("");
@@ -52,6 +59,7 @@ export default function Request({ isLoading, onSave }: RequestProps) {
   const [documentationUrl, setDocumentationUrl] = useState("");
   const [path, setPath] = useState("");
   const [headers, setHeaders] = useState<{ name: string; value: string }[]>([]);
+  const [isTestLoading, setIsTestLoading] = useState(false);
   const { data: session } = useSession();
 
   const handleHeadersChange = (newHeaders: { id: string; name: string; value: string }[]) => {
@@ -76,6 +84,27 @@ export default function Request({ isLoading, onSave }: RequestProps) {
     if (onSave) {
       onSave(formData);
     }
+  };
+
+  const handleTest = async () => {
+    if (!targetUrl) {
+      alert('Please enter a target URL');
+      return;
+    }
+
+    setIsTestLoading(true);
+    
+    const testData: TestRequestData = {
+      method,
+      target_url: targetUrl,
+      headers
+    };
+
+    if (onTest) {
+      await onTest(testData);
+    }
+
+    setIsTestLoading(false);
   };
 
   return (
@@ -104,24 +133,45 @@ export default function Request({ isLoading, onSave }: RequestProps) {
             value={targetUrl}
             onChange={(e) => setTargetUrl(e.target.value)}
           />
-          <Button 
-            onClick={handleSave} 
-            disabled={isLoading}
-            variant="default"
-            size="sm"
-          >
-            {isLoading ? (
-              <>
-                <span className="animate-spin mr-2">⌛</span>
-                saving...
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4 mr-2" />
-                Save
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleTest}
+              disabled={isTestLoading}
+              variant="secondary"
+              size="sm"
+              className="min-w-[80px]"
+            >
+              {isTestLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Test
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 mr-2" />
+                  Test
+                </>
+              )}
+            </Button>
+            <Button 
+              onClick={handleSave} 
+              disabled={isLoading}
+              variant="default"
+              size="sm"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Save
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Save
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 
