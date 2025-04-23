@@ -23,6 +23,11 @@ export class CreateProjectDto {
   @IsOptional()
   description?: string;
 
+  @ApiProperty({ description: 'Tenant ID', example: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' })
+  @IsUUID()
+  @IsNotEmpty({ message: 'Tenant ID is required' })
+  tenantId: string;
+
   @ApiPropertyOptional({
     description: 'Project thumbnail URL',
     example: 'https://example.com/image.png',
@@ -127,6 +132,9 @@ export class ProjectResponseDto {
 
   @ApiProperty({ description: 'Last update timestamp' })
   updatedAt: Date;
+
+  @ApiProperty({ description: 'Tenant ID', example: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' })
+  tenantId: string;
 }
 
 export class ProjectAllowedApiDto {

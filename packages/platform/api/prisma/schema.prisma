@@ -97,6 +97,7 @@ model Tenant {
     payments     Payment[]
     Subscription Subscription[]
 
+    projects     Project[]  
     @@map("tenants")
 }
 
@@ -168,6 +169,8 @@ model Project {
     updatedAt          DateTime            @updatedAt
     ProjectPricing     ProjectPricing[]
     Subscription       Subscription[]
+    tenantId           String
+    tenant             Tenant              @relation(fields: [tenantId], references: [id])
 
     @@map("projects")
 }

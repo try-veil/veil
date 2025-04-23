@@ -34,7 +34,10 @@ export class ProjectService {
         favorite: createProjectDto.favorite ?? false,
         thumbnail: createProjectDto.thumbnail,
         enableLimitsToAPIs: createProjectDto.enableLimitsToAPIs ?? false,
-        // Create initial ProjectAcl with OWNER role for the user who created it
+        tenant: {
+          connect: { id: createProjectDto.tenantId }
+        },
+          // Create initial ProjectAcl with OWNER role for the user who created it
         projectAcls: {
           create: {
             userId: userId, // Use direct field instead of relation
