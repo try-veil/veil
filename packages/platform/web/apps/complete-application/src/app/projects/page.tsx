@@ -11,18 +11,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { CreateTenantForm } from "@/features/projects/create-tenant-form";
 import { useUser } from "@/contexts/UserContext";
 
-interface User {
-  given_name?: string;
-  preferred_username?: string;
-  email?: string;
-}
-
 export default function Projects() {
-  const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
-  const { user: authUser, accessToken } = useAuth();
+  const { user, isAuthenticated, accessToken } = useAuth();
   const { user: userContext, isLoading: isUserLoading } = useUser();
 
   const fetchProjects = async () => {
@@ -51,7 +44,7 @@ export default function Projects() {
   if (isUserLoading) {
     return (
       <main className="flex flex-col">
-        <Navbar session={false} user={null} />
+        <Navbar session={isAuthenticated} user={user} />
         <div className="flex-1 pt-24 flex items-center justify-center">
           <p>Loading...</p>
         </div>
@@ -61,10 +54,11 @@ export default function Projects() {
 
   if (error) return <p style={{ color: "red" }}>{error}</p>;
   
-  if (!userContext?.tenantId) {
+  // Check if projects array is empty before showing CreateTenantForm
+  if (projects.length === 0 && !isLoading) {
     return (
       <main className="flex flex-col">
-        <Navbar session={!isLoading && user !== null} user={user} />
+        <Navbar session={isAuthenticated} user={user} />
         <div className="flex-1 pt-24">
           <CreateTenantForm />
         </div>
@@ -74,7 +68,7 @@ export default function Projects() {
 
   return (
     <main className="flex flex-col">
-      <Navbar session={!isLoading && user !== null} user={user} />
+      <Navbar session={isAuthenticated} user={user} />
       <div className="flex-1 pt-24">
         <div className="sticky top-16 z-20 bg-background w-full max-w-7xl mx-auto px-6 h-[calc(100vh-7rem)]">
           <Tabs

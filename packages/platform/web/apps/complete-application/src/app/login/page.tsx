@@ -11,7 +11,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams?.get('redirect') || '/dashboard';
+  const redirectPath = searchParams?.get('redirect') || '/';
   const { login, isAuthenticated } = useAuth();
 
   // If already authenticated, redirect to dashboard or the original requested page
@@ -155,41 +155,6 @@ export default function Login() {
               >
                 {loading ? 'Logging in...' : 'Log In'}
               </button>
-              
-              {/* Development only: Test login button */}
-              {process.env.NODE_ENV === 'development' && (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      setLoading(true);
-                      const response = await fetch('/api/auth/test-login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username: 'dev@example.com' }),
-                      });
-                      const data = await response.json();
-                      if (data.success) {
-                        console.log('Test login successful');
-                        login(data.user, data.accessToken, data.refreshToken);
-                        
-                        // Allow time for cookies to be set
-                        setTimeout(() => {
-                          router.push(redirectPath);
-                        }, 300);
-                      }
-                    } catch (error) {
-                      console.error('Test login failed:', error);
-                      setError('Test login failed');
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                  className="w-full mt-2 py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700"
-                >
-                  Dev Test Login
-                </button>
-              )}
             </form>
 
             <div className="mt-4 text-center text-sm text-muted-foreground">

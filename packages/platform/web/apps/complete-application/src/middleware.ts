@@ -9,7 +9,8 @@ export function middleware(request: NextRequest) {
   const isProtectedRoute = path.startsWith('/dashboard') || 
                           path.startsWith('/profile') || 
                           path.startsWith('/api/user') ||
-                          path.startsWith('/projects');
+                          path.startsWith('/projects') ||
+                          path.startsWith('/marketplace');
 
   if (isProtectedRoute) {
     // For client-side auth with localStorage, we need to set a cookie in the browser
@@ -39,6 +40,8 @@ export const config = {
     '/profile/:path*',
     '/projects',
     '/projects/:path*',
+    '/marketplace',
+    '/marketplace/:path*',
     '/api/user',
     '/api/user/:path*',
   ],

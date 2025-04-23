@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 
 interface User {
@@ -17,14 +17,16 @@ interface LoginButtonProps {
 
 export default function LoginButton({ session, user }: LoginButtonProps) {
   const router = useRouter();
+  const { logout } = useAuth();
 
   if (session && user) {
     return (
       <Button
-        onClick={async () => {
+        onClick={() => {
           try {
             console.log("Initiating logout...");
-            await signOut({ redirect: true, callbackUrl: "/" });
+            logout();
+            router.push("/");
           } catch (error) {
             console.error("Logout request error:", error);
           }
