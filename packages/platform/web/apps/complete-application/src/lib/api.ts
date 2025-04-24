@@ -2,6 +2,7 @@ export interface Project {
   id: number;
   name: string;
   description?: string;
+  target_url?: string;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -93,7 +94,7 @@ export async function createProject(token: string, data: Omit<Project, 'id' | 'u
  */
 export async function updateProject(token: string, projectId: number, data: Partial<Omit<Project, 'id' | 'user_id' | 'created_at' | 'updated_at'>>): Promise<Project> {
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/${projectId}`, {
-    method: 'PUT',
+    method: 'PATCH',
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'

@@ -99,3 +99,23 @@ export async function createProject(data:Project, token: string): Promise<Projec
     throw error;
   }
 }
+
+export async function updateProject(token: string, projectId: number, data: Partial<Omit<Project, 'id' | 'user_id' | 'created_at' | 'updated_at'>>): Promise<Project> {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/${projectId}`, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update project');
+  }
+
+  const resData = await response.json();
+
+  return resData;
+}
+

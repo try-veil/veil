@@ -188,29 +188,6 @@ export default function HubListingPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Base URL</Label>
-                <Input
-                  type="url"
-                  placeholder="https://api.example.com"
-                  className="h-9 w-full"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Load Balancer</Label>
-                <RadioGroup defaultValue="round-robin">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="round-robin" id="round-robin" />
-                    <Label htmlFor="round-robin">Round Robin</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="geolocation" id="geolocation" />
-                    <Label htmlFor="geolocation">Geolocation</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div className="space-y-2">
                 <Label>Health Check URL</Label>
                 <Input
                   type="url"
