@@ -165,6 +165,7 @@ model Project {
     favorite           Boolean             @default(false)
     xMashapeKey        String?
     enableLimitsToAPIs Boolean?
+    target_url         String?
     projectAllowedAPIs ProjectAllowedAPI[]
     projectAcls        ProjectAcl[]
     apis               Api[]               @relation("ProjectToApi")

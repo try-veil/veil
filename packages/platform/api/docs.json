@@ -2113,6 +2113,11 @@
             "description": "Project description",
             "example": "Project for managing my APIs"
           },
+          "target_url": {
+            "type": "string",
+            "description": "Target Url",
+            "example": "https://jsonplaceholder.typicode.com/posts"
+          },
           "thumbnail": {
             "type": "string",
             "description": "Project thumbnail URL",
@@ -2484,6 +2489,11 @@
             "description": "Project description",
             "example": "Project for managing my APIs"
           },
+          "target_url": {
+            "type": "string",
+            "description": "Target Url",
+            "example": "https://jsonplaceholder.typicode.com/posts"
+          },
           "tenantId": {
             "type": "string",
             "description": "Tenant ID",
@@ -2543,6 +2553,11 @@
             "type": "string",
             "description": "Project description",
             "example": "Project for managing my APIs"
+          },
+          "target_url": {
+            "type": "string",
+            "description": "Target Url",
+            "example": "https://jsonplaceholder.typicode.com/posts"
           },
           "thumbnail": {
             "type": "string",
@@ -2613,6 +2628,11 @@
             "type": "string",
             "description": "Project description",
             "example": "Updated description"
+          },
+          "target_url": {
+            "type": "string",
+            "description": "Target Url",
+            "example": "https://jsonplaceholder.typicode.com/posts"
           },
           "thumbnail": {
             "type": "string",

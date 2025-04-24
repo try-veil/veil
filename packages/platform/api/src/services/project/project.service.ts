@@ -190,13 +190,14 @@ export class ProjectService {
     await this.findOne(id, userId);
 
     // Extract only updatable fields that exist in the Project model
-    const { name, favorite, thumbnail, enableLimitsToAPIs } = updateProjectDto;
+    const { name, favorite, thumbnail, enableLimitsToAPIs,target_url } = updateProjectDto;
 
     // Only include fields that are defined and exist in the schema
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
     if (favorite !== undefined) updateData.favorite = favorite;
     if (thumbnail !== undefined) updateData.thumbnail = thumbnail;
+    if (target_url !== undefined) updateData.target_url=target_url
     if (enableLimitsToAPIs !== undefined)
       updateData.enableLimitsToAPIs = enableLimitsToAPIs;
 

@@ -23,6 +23,14 @@ export class CreateProjectDto {
   @IsOptional()
   description?: string;
 
+  @ApiPropertyOptional({
+    description: 'Target Url',
+    example: 'https://jsonplaceholder.typicode.com/posts',
+  })
+  @IsString()
+  @IsOptional()
+  target_url?: string;
+
   @ApiProperty({ description: 'Tenant ID', example: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' })
   @IsUUID()
   @IsNotEmpty({ message: 'Tenant ID is required' })
@@ -68,6 +76,14 @@ export class UpdateProjectDto {
   description?: string;
 
   @ApiPropertyOptional({
+    description: 'Target Url',
+    example: 'https://jsonplaceholder.typicode.com/posts',
+  })
+  @IsString()
+  @IsOptional()
+  target_url?: string;  
+
+  @ApiPropertyOptional({
     description: 'Project thumbnail URL',
     example: 'https://example.com/new-image.png',
   })
@@ -106,6 +122,15 @@ export class ProjectResponseDto {
     example: 'Project for managing my APIs',
   })
   description?: string;
+
+  @ApiPropertyOptional({
+    description: 'Target Url',
+    example: 'https://jsonplaceholder.typicode.com/posts',
+  })
+  @IsString()
+  @IsOptional()
+  target_url?: string;
+  
 
   @ApiPropertyOptional({
     description: 'Project thumbnail URL',
