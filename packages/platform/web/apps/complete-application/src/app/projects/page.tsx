@@ -10,14 +10,14 @@ import { getAllProjectsByUserId, Project } from "@/app/api/project/route";
 import { useAuth } from "@/contexts/AuthContext";
 import { CreateTenantForm } from "@/features/projects/create-tenant-form";
 import { useUser } from "@/contexts/UserContext";
-
+import { useProject } from "@/context/project-context";
 export default function Projects() {
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
-  const [projects, setProjects] = useState<Project[]>([]);
   const { user, isAuthenticated, accessToken } = useAuth();
   const { user: userContext, isLoading: isUserLoading } = useUser();
   console.log("userContext", userContext,user);
+  const { projectList, setProjectList } = useProject();
   const fetchProjects = async () => {
     try {
       const token = accessToken;
@@ -25,7 +25,7 @@ export default function Projects() {
         throw new Error('No authentication token found');
       }
       const projectsData = await getAllProjectsByUserId(token);
-      setProjects(projectsData);
+      setProjectList(projectsData);
       setIsLoading(false);
     } catch (error) {
       console.log('Error fetching projects:', error);
@@ -55,7 +55,7 @@ export default function Projects() {
   if (error) return <p style={{ color: "red" }}>{error}</p>;
   
   // Check if projects array is empty before showing CreateTenantForm
-  if (projects.length === 0 && !isLoading) {
+  if (projectList.length === 0 && !isLoading) {
     return (
       <main className="flex flex-col">
         <Navbar session={isAuthenticated} user={user} />
@@ -87,7 +87,7 @@ export default function Projects() {
                     <p>Loading projects...</p>
                   </div>
                 ) : (
-                  <MyProjects projects={projects} onProjectsChange={fetchProjects} />
+                  <MyProjects projects={projectList} onProjectsChange={fetchProjects} />
                 )}
               </TabsContent>
               <TabsContent value="analytics" className="m-0">

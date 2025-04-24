@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator'
 import Link from 'next/link'
 import { ProjectsActionDialog } from '../projects/projects-action-dialog'
 import { Project } from '@/app/api/project/route'
-
+import { useProject } from '@/context/project-context'
 interface Props {
   projects: Project[]
   onProjectsChange: () => void
@@ -18,7 +18,7 @@ export default function MyProjects({ projects, onProjectsChange }: Props) {
   const [open, setOpen] = useState(false)
   const [sort, setSort] = useState('ascending')
   const [searchTerm, setSearchTerm] = useState('')
-
+  const { setSelectedProjectId } = useProject();  
   const filteredProjects = projects
     .sort((a, b) =>
       sort === 'ascending'
@@ -80,7 +80,7 @@ export default function MyProjects({ projects, onProjectsChange }: Props) {
         <div className="flex-1 overflow-auto px-6 py-6">
           <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
             {filteredProjects.map((project) => (
-              <Link href={`/projects/${project.id}/client/api/`} key={project.name}>
+              <Link href={`/projects/${project.id}/hub-listing`} key={project.name} onClick={() => setSelectedProjectId(project.id?.toString() || null)}>
                 <div className='rounded-lg border p-4 hover:shadow-md'>
                   <div className='mb-4 flex items-center space-x-4'>
                     <div className='h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-muted'>

@@ -10,7 +10,6 @@ import { Header } from "@/components/layout/header";
 import { ProfileDropdown } from "@/components/profile-dropdown";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { TopNav } from "@/components/layout/top-nav";
-import { ProjectProvider } from "@/context/project-context";
 export default function DashboardLayout({
   children,
   params,
@@ -21,7 +20,6 @@ export default function DashboardLayout({
   const defaultOpen = Cookies.get("sidebar:state") !== "false";
   return (
     <SearchProvider>
-      <ProjectProvider projectId={params.project_id}>
       {/* <RequestsProvider projectId={params.project_id}> */}
         <SidebarProvider defaultOpen={defaultOpen}>
           <SkipToMain />
@@ -52,7 +50,6 @@ export default function DashboardLayout({
           </div>
         </SidebarProvider>
       {/* </RequestsProvider> */}
-      </ProjectProvider>
     </SearchProvider>
   );
 }

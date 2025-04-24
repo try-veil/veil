@@ -17,6 +17,7 @@ import { Headers } from "./components/headers";
 import { Query } from "./components/query";
 import Body from "./components/body";
 import { Send, Play, Loader2 } from 'lucide-react'
+import { useProject } from '@/context/project-context';
 
 interface RequestProps {
   isLoading?: boolean;
@@ -53,7 +54,6 @@ const options = new Map([
 
 export default function Request({ isLoading, onSave, onTest }: RequestProps) {
   const [method, setMethod] = useState("get");
-  const [targetUrl, setTargetUrl] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [documentationUrl, setDocumentationUrl] = useState("");
@@ -61,7 +61,7 @@ export default function Request({ isLoading, onSave, onTest }: RequestProps) {
   const [headers, setHeaders] = useState<{ name: string; value: string }[]>([]);
   const [isTestLoading, setIsTestLoading] = useState(false);
   const { user } = useAuth();
-
+  const { selectedProject } = useProject();
   const handleHeadersChange = (newHeaders: { id: string; name: string; value: string }[]) => {
     // Filter out empty headers and remove the id field
     const processedHeaders = newHeaders
@@ -69,7 +69,7 @@ export default function Request({ isLoading, onSave, onTest }: RequestProps) {
       .map(({ name, value }) => ({ name, value }));
     setHeaders(processedHeaders);
   };
-
+  const targetUrl = selectedProject?.target_url;  
   const handleSave = () => {
     const formData = {
       name,
@@ -82,7 +82,7 @@ export default function Request({ isLoading, onSave, onTest }: RequestProps) {
     };
     
     if (onSave) {
-      onSave(formData);
+      onSave(formData as RequestData);
     }
   };
 
@@ -128,10 +128,10 @@ export default function Request({ isLoading, onSave, onTest }: RequestProps) {
             </SelectContent>
           </Select>
           <Input
-            placeholder="https://api.example.com/endpoint"
+            placeholder="Enter your endpoint"
             className="flex-1"
-            value={targetUrl}
-            onChange={(e) => setTargetUrl(e.target.value)}
+            value={path}
+            onChange={(e) => setPath(e.target.value)}
           />
           <div className="flex gap-2">
             <Button 
@@ -192,9 +192,9 @@ export default function Request({ isLoading, onSave, onTest }: RequestProps) {
               <TabsContent value="overview" className="mt-0 h-full">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Name</Label>
+                    <Label>End point name</Label>
                     <Input
-                      placeholder="Request Name"
+                      placeholder="End point name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                     />
@@ -207,14 +207,14 @@ export default function Request({ isLoading, onSave, onTest }: RequestProps) {
                       onChange={(e) => setDescription(e.target.value)}
                     />
                   </div>
-                  <div className="space-y-2">
+                  {/* <div className="space-y-2">
                     <Label>Path</Label>
                     <Input
                       placeholder="/your-api-path"
                       value={path}
                       onChange={(e) => setPath(e.target.value)}
                     />
-                  </div>
+                  </div> */}
                   <div className="space-y-2">
                     <Label>Documentation URL</Label>
                     <Input

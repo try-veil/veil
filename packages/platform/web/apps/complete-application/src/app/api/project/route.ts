@@ -4,6 +4,7 @@ export interface Project {
   thumbnail?: string;
   description?: string;
   favorite?: boolean;
+  target_url?: string;
   enableLimitsToAPIs?: boolean;
   tenantId?: string;
   projectAllowedAPIs?: ProjectAllowedAPI[];

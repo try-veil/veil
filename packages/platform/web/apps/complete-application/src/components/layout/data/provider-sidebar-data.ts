@@ -23,7 +23,7 @@ import { AudioWaveform, Command, GalleryVerticalEnd } from "lucide-react";
 import { useProject } from "@/context/project-context";
 
 export function useProviderSidebarData() {
-  const { project } = useProject();
+  const { selectedProject } = useProject();
   return {
     user: {
       name: "satnaing",
@@ -51,14 +51,14 @@ export function useProviderSidebarData() {
       {
         title: "End points",
         items: [
-          ...(project?.apis?.map(api => ({
+          ...(selectedProject?.apis?.map(api => ({
             title: `${api.name}`,
-            url: `/projects/${project?.id}/client/${api.apiId}`,
+            url: `/projects/${selectedProject?.id}/client/${api.apiId}`,
             icon: IconPackages,
           })) ?? []),
           {
             title: "Add End Point",
-            url: `/projects/${project?.id}/client/add-request`,
+            url: `/projects/${selectedProject?.id}/client/add-request`,
             icon: IconPlus,
           },
         ],
@@ -68,17 +68,17 @@ export function useProviderSidebarData() {
         items: [
           {
             title: "Hub Listing",
-            url: `/projects/${project?.id}/hub-listing`,
+            url: `/projects/${selectedProject?.id}/hub-listing`,
             icon: IconLayoutDashboard,
           },
           {
             title: "Analytics",
-            url: `/projects/${project?.id}/analytics`,
+            url: `/projects/${selectedProject?.id}/analytics`,
             icon: IconChecklist,
           },
           {
             title: "Settings",
-            url: `/projects/${project?.id}/settings`,
+            url: `/projects/${selectedProject?.id}/settings`,
             icon: IconPackages,
           },
         ],
