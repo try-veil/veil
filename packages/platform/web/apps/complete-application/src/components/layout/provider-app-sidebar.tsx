@@ -10,9 +10,11 @@ import { NavGroup } from '@/components/layout/nav-group'
 import { NavUser } from '@/components/layout/nav-user'
 import { TeamSwitcher } from '@/components/layout/team-switcher'
 import { useProviderSidebarData } from "./data/provider-sidebar-data";
+import { useProject } from '@/context/project-context'
 
 export function ProviderAppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const sidebarData = useProviderSidebarData();
+  const {project} = useProject();
   
   return (
     <Sidebar collapsible='icon' variant='floating' {...props}>

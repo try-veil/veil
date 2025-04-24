@@ -8,6 +8,7 @@ import 'react-resizable/css/styles.css'
 import ResponseViewer from '@/features/projects/request/components/response-viewer'
 import { useAuth } from '@/contexts/AuthContext'
 import { onboardAPI } from '@/app/api/onboard-api/route'
+import { toast } from '@/hooks/use-toast'
 
 interface RequiredHeader {
   name: string;
@@ -167,12 +168,26 @@ export default function RequestPage() {
           const response = await onboardAPI(updatedFormData, accessToken);
           
           console.log('API onboarded successfully:', response);
+          toast({
+            title: "Success",
+            description: "API onboarded successfully",
+            variant: "default",
+          });
         } catch (error: any) {
           console.error('Error onboarding API:', error);
-         
+          toast({
+            title: "Error",
+            description: error.message || "Failed to onboard API",
+            variant: "destructive",
+          });
         }
       } else {
         console.error('No authentication token available');
+        toast({
+          title: "Error",
+          description: "Authentication required",
+          variant: "destructive",
+        });
         setResponse({
           status: 401,
           statusText: 'Unauthorized',
@@ -181,6 +196,11 @@ export default function RequestPage() {
       }
     } catch (error) {
       console.error('Error processing request:', error)
+      toast({
+        title: "Error",
+        description: "Failed to process request",
+        variant: "destructive",
+      });
       setResponse({
         status: 500,
         statusText: 'Error',

@@ -1,10 +1,30 @@
 export interface Project {
+  id?: number;
   name: string;
   thumbnail?: string;
   description?: string;
-  favorite?:boolean;
-  enableLimitsToAPIs?:boolean;
+  favorite?: boolean;
+  enableLimitsToAPIs?: boolean;
   tenantId?: string;
+  projectAllowedAPIs?: ProjectAllowedAPI[];
+  apis?: API[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ProjectAllowedAPI {
+  apiId: string;
+  apiVersionId: string;
+  status: string;
+  apiModel: {
+    name: string;
+  };
+}
+
+export interface API {
+  apiId: string;
+  apiVersionId: string;
+  name: string;
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
@@ -28,6 +48,29 @@ export async function getAllProjectsByUserId(token: string): Promise<Project[]> 
     return data;
   } catch (error) {
     console.error('[getProjectsByUserId] Error:', error);
+    throw error;
+  }
+}
+
+export async function getProjectById(id: string | number, token: string): Promise<Project> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to fetch project details');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('[getProjectById] Error:', error);
     throw error;
   }
 }

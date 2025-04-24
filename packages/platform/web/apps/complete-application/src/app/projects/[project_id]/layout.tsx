@@ -2,7 +2,7 @@ import Cookies from "js-cookie";
 import { cn } from "@/lib/utils";
 import { SearchProvider } from "@/context/search-context";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { RequestsProvider } from "@/context/requests-context";
+// import { RequestsProvider } from "@/context/requests-context";
 import SkipToMain from "@/components/skip-to-main";
 import { ProviderAppSidebar } from "@/components/layout/provider-app-sidebar";
 import { Main } from "@/components/layout/main";
@@ -10,7 +10,7 @@ import { Header } from "@/components/layout/header";
 import { ProfileDropdown } from "@/components/profile-dropdown";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { TopNav } from "@/components/layout/top-nav";
-
+import { ProjectProvider } from "@/context/project-context";
 export default function DashboardLayout({
   children,
   params,
@@ -21,7 +21,8 @@ export default function DashboardLayout({
   const defaultOpen = Cookies.get("sidebar:state") !== "false";
   return (
     <SearchProvider>
-      <RequestsProvider projectId={params.project_id}>
+      <ProjectProvider projectId={params.project_id}>
+      {/* <RequestsProvider projectId={params.project_id}> */}
         <SidebarProvider defaultOpen={defaultOpen}>
           <SkipToMain />
           <ProviderAppSidebar />
@@ -50,7 +51,8 @@ export default function DashboardLayout({
             <Main>{children}</Main>
           </div>
         </SidebarProvider>
-      </RequestsProvider>
+      {/* </RequestsProvider> */}
+      </ProjectProvider>
     </SearchProvider>
   );
 }

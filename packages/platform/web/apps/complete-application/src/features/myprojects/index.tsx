@@ -80,7 +80,7 @@ export default function MyProjects({ projects, onProjectsChange }: Props) {
         <div className="flex-1 overflow-auto px-6 py-6">
           <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
             {filteredProjects.map((project) => (
-              <Link href={`/projects/${project.name}`} key={project.name}>
+              <Link href={`/projects/${project.id}/client/api/`} key={project.name}>
                 <div className='rounded-lg border p-4 hover:shadow-md'>
                   <div className='mb-4 flex items-center space-x-4'>
                     <div className='h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-muted'>

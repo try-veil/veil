@@ -63,8 +63,9 @@ export default function Marketplace() {
         setIsLoading(false)
       }
     }
-
-    loadMarketplaceData()
+    if (accessToken) {
+      loadMarketplaceData()
+    }
   }, [accessToken])
 
   const filteredProjects = projects
