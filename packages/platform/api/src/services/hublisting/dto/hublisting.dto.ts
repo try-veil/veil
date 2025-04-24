@@ -62,9 +62,6 @@ import {
     @IsBoolean()
     visibleToPublic: boolean;
   
-    @IsUrl()
-    baseUrl: string;
-  
     @IsEnum(LoadBalancerStrategy)
     loadBalancer: LoadBalancerStrategy;
   

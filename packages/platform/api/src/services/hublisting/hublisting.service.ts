@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { HubListingDto } from './dto/hublisting-dto';
+import { HubListingDto } from './dto/hublisting.dto';
 
 @Injectable()
 export class HubListingService {

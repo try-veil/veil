@@ -11,7 +11,6 @@ CREATE TABLE "HubListing" (
     "website" TEXT,
     "termsOfUse" TEXT,
     "visibleToPublic" BOOLEAN NOT NULL,
-    "baseUrl" TEXT NOT NULL,
     "loadBalancer" "LoadBalancerStrategy" NOT NULL,
     "healthCheckUrl" TEXT,
     "apiDocumentation" TEXT,

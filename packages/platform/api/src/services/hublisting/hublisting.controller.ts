@@ -13,7 +13,7 @@ import {
   } from '@nestjs/common';
   import { Response } from 'express';
   import { HubListingService } from './hublisting.service';
-  import { HubListingDto } from './dto/hublisting-dto';
+  import { HubListingDto } from './dto/hublisting.dto';
   import { AuthGuard } from '../auth/auth.guard';
   import { RoleGuard } from '../../services/auth/role.guard';
   import { Roles } from '../../services/auth/roles.decorator';
