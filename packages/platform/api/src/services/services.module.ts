@@ -8,6 +8,7 @@ import { TenantModule } from './tenant/tenant.module';
 import { ProjectModule } from './project/project.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
 import { UserModule } from './user/user.module';
+import { HubListingModule } from './hublisting/hublisting.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { UserModule } from './user/user.module';
     ProjectModule,
     OnboardingModule,
     UserModule,
+    HubListingModule
   ],
   exports: [
     PrismaModule,
@@ -31,6 +33,7 @@ import { UserModule } from './user/user.module';
     ProjectModule,
     OnboardingModule,
     UserModule,
+    HubListingModule
   ],
 })
 export class ServicesModule {}
