@@ -53,7 +53,7 @@ export function useProviderSidebarData() {
         items: [
           ...(project?.apis?.map(api => ({
             title: `${api.name}`,
-            url: `/projects/${project?.id}/client/${api.name}`,
+            url: `/projects/${project?.id}/client/${api.apiId}`,
             icon: IconPackages,
           })) ?? []),
           {
