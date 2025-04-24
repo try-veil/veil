@@ -76,11 +76,11 @@ export default function Request({ isLoading, onSave, onTest }: RequestProps) {
       description,
       path,
       documentation_url: documentationUrl,
-      target_url: targetUrl,
       method,
-      headers
+      headers,
+      target_url: targetUrl
     };
-    
+    console.log("Request Data",targetUrl);
     if (onSave) {
       onSave(formData as RequestData);
     }
