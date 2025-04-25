@@ -1,3 +1,4 @@
+'use client'
 import Cookies from "js-cookie";
 import { cn } from "@/lib/utils";
 import { SearchProvider } from "@/context/search-context";
@@ -10,6 +11,8 @@ import { Header } from "@/components/layout/header";
 import { ProfileDropdown } from "@/components/profile-dropdown";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { TopNav } from "@/components/layout/top-nav";
+import { useProject } from "@/context/project-context";
+import { useEffect } from "react";
 export default function DashboardLayout({
   children,
   params,
@@ -18,6 +21,10 @@ export default function DashboardLayout({
   params: { project_id: string };
 }) {
   const defaultOpen = Cookies.get("sidebar:state") !== "false";
+  const { setSelectedProjectId } = useProject();
+  useEffect(() => {
+    setSelectedProjectId(params.project_id);
+  }, [params.project_id]);
   return (
     <SearchProvider>
       {/* <RequestsProvider projectId={params.project_id}> */}
