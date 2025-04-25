@@ -176,19 +176,19 @@ export default function Request({ isLoading, onSave, onTest, initialData }: Requ
             </Button>
             <Button 
               onClick={handleSave} 
-              disabled={isLoading || !!initialData}
+              disabled={isLoading || !!initialData?.path}
               variant="default"
               size="sm"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {initialData ? 'Updating...' : 'Saving...'}
+                  {initialData?.path !== "" ? 'Updating...' : 'Saving...'}
                 </>
               ) : (
                 <>
                   <Send className="w-4 h-4 mr-2" />
-                  {initialData ? 'Update' : 'Save'}
+                  {initialData?.path !== '' ? 'Update' : 'Save'}
                 </>
               )}
             </Button>
