@@ -5,9 +5,12 @@ import {
   IsUUID,
   IsEnum,
   IsNotEmpty,
+  ValidateNested
 } from 'class-validator';
 import { ProjectStatus } from '../../../entities/project/types';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {PlanConfig } from "../../hublisting/dto/hublisting.dto"
+import { Type } from 'class-transformer';
 
 export class CreateProjectDto {
   @ApiProperty({ description: 'Project name', example: 'My API Project' })
@@ -56,45 +59,46 @@ export class CreateProjectDto {
   @IsBoolean()
   @IsOptional()
   enableLimitsToAPIs?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Logo URL for the project',
+    example: 'https://example.com/logo.png',
+  })
+  @IsString()
+  @IsOptional()
+  logo?: string;
+
+  @ApiPropertyOptional({
+    description: 'Category of the project',
+    example: 'Finance',
+  })
+  @IsString()
+  @IsOptional()
+  category?: string;
 }
 
 export class UpdateProjectDto {
-  @ApiPropertyOptional({
-    description: 'Project name',
-    example: 'Updated API Project',
-  })
+  @ApiPropertyOptional({ description: 'Project name', example: 'Updated API Project' })
   @IsString()
   @IsOptional()
   name?: string;
 
-  @ApiPropertyOptional({
-    description: 'Project description',
-    example: 'Updated description',
-  })
+  @ApiPropertyOptional({ description: 'Project description', example: 'Updated description' })
   @IsString()
   @IsOptional()
   description?: string;
 
-  @ApiPropertyOptional({
-    description: 'Target Url',
-    example: 'https://jsonplaceholder.typicode.com/posts',
-  })
+  @ApiPropertyOptional({ description: 'Target Url', example: 'https://jsonplaceholder.typicode.com/posts' })
   @IsString()
   @IsOptional()
-  target_url?: string;  
+  target_url?: string;
 
-  @ApiPropertyOptional({
-    description: 'Project thumbnail URL',
-    example: 'https://example.com/new-image.png',
-  })
+  @ApiPropertyOptional({ description: 'Project thumbnail URL', example: 'https://example.com/new-image.png' })
   @IsString()
   @IsOptional()
   thumbnail?: string;
 
-  @ApiPropertyOptional({
-    description: 'Mark project as favorite',
-    default: false,
-  })
+  @ApiPropertyOptional({ description: 'Mark project as favorite', default: false })
   @IsBoolean()
   @IsOptional()
   favorite?: boolean;
@@ -108,6 +112,46 @@ export class UpdateProjectDto {
   @IsEnum(ProjectStatus)
   @IsOptional()
   status?: ProjectStatus;
+
+  // -------- Add Hub Listing fields below --------
+
+  @ApiPropertyOptional({ description: 'Logo URL', example: 'https://example.com/logo.png' })
+  @IsOptional()
+  @IsString()
+  logo?: string;
+
+  @ApiPropertyOptional({ description: 'API category', example: 'Finance' })
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @ApiPropertyOptional({ description: 'Short description of the API', example: 'Short summary...' })
+  @IsOptional()
+  @IsString()
+  shortDescription?: string;
+
+  @ApiPropertyOptional({ description: 'Public visibility', example: true })
+  @IsOptional()
+  @IsBoolean()
+  visibleToPublic?: boolean;
+
+  @ApiPropertyOptional({ description: 'Basic plan config', type: PlanConfig })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PlanConfig)
+  basicPlan?: PlanConfig;
+
+  @ApiPropertyOptional({ description: 'Pro plan config', type: PlanConfig })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PlanConfig)
+  proPlan?: PlanConfig;
+
+  @ApiPropertyOptional({ description: 'Ultra plan config', type: PlanConfig })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PlanConfig)
+  ultraPlan?: PlanConfig;
 }
 
 export class ProjectResponseDto {

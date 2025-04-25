@@ -557,8 +557,3 @@ model PlanConfig {
   ultraOf               HubListing? @relation("UltraPlan")
 }
 
-
-enum LoadBalancerStrategy {
-  RoundRobin
-  Geolocation
-}

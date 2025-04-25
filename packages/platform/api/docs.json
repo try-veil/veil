@@ -1395,6 +1395,169 @@
         ]
       }
     },
+    "/hublistings": {
+      "post": {
+        "operationId": "HubListingController_create",
+        "summary": "Register a new API in Hub Listing",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HubListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "API registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HubListingDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "403": {
+            "description": "Forbidden - requires provider role"
+          }
+        },
+        "tags": [
+          "hublistings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "HubListingController_findAll",
+        "summary": "Get all hub listings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of all hub listings"
+          }
+        },
+        "tags": [
+          "hublistings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/hublistings/{id}": {
+      "get": {
+        "operationId": "HubListingController_findOne",
+        "summary": "Get a single hub listing by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hub listing found"
+          },
+          "404": {
+            "description": "Hub listing not found"
+          }
+        },
+        "tags": [
+          "hublistings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "HubListingController_update",
+        "summary": "Update a hub listing",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HubListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Hub listing updated"
+          },
+          "404": {
+            "description": "Hub listing not found"
+          }
+        },
+        "tags": [
+          "hublistings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "HubListingController_remove",
+        "summary": "Delete a hub listing",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hub listing deleted"
+          },
+          "404": {
+            "description": "Hub listing not found"
+          }
+        },
+        "tags": [
+          "hublistings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/onboard": {
       "put": {
         "operationId": "OnboardingController_registerApi",
@@ -1914,169 +2077,6 @@
           }
         ]
       }
-    },
-    "/hublistings": {
-      "post": {
-        "operationId": "HubListingController_create",
-        "summary": "Register a new API in Hub Listing",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/HubListingDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "API registered successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HubListingDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "403": {
-            "description": "Forbidden - requires provider role"
-          }
-        },
-        "tags": [
-          "hublistings"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "get": {
-        "operationId": "HubListingController_findAll",
-        "summary": "Get all hub listings",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "List of all hub listings"
-          }
-        },
-        "tags": [
-          "hublistings"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/hublistings/{id}": {
-      "get": {
-        "operationId": "HubListingController_findOne",
-        "summary": "Get a single hub listing by ID",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Hub listing found"
-          },
-          "404": {
-            "description": "Hub listing not found"
-          }
-        },
-        "tags": [
-          "hublistings"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "patch": {
-        "operationId": "HubListingController_update",
-        "summary": "Update a hub listing",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/HubListingDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Hub listing updated"
-          },
-          "404": {
-            "description": "Hub listing not found"
-          }
-        },
-        "tags": [
-          "hublistings"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "delete": {
-        "operationId": "HubListingController_remove",
-        "summary": "Delete a hub listing",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Hub listing deleted"
-          },
-          "404": {
-            "description": "Hub listing not found"
-          }
-        },
-        "tags": [
-          "hublistings"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
     }
   },
   "info": {
@@ -2513,6 +2513,16 @@
             "type": "boolean",
             "description": "Enable limits to APIs",
             "default": false
+          },
+          "logo": {
+            "type": "string",
+            "description": "Logo URL for the project",
+            "example": "https://example.com/logo.png"
+          },
+          "category": {
+            "type": "string",
+            "description": "Category of the project",
+            "example": "Finance"
           }
         },
         "required": [
@@ -2616,6 +2626,37 @@
           "apis"
         ]
       },
+      "PlanConfig": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the plan is enabled",
+            "example": true
+          },
+          "pricePerMonth": {
+            "type": "number",
+            "description": "Monthly price in USD",
+            "example": 29.99
+          },
+          "requestQuotaPerMonth": {
+            "type": "number",
+            "description": "Monthly request quota",
+            "example": 100000
+          },
+          "hardLimitQuota": {
+            "type": "number",
+            "description": "Hard limit of requests per month",
+            "example": 150000
+          }
+        },
+        "required": [
+          "enabled",
+          "pricePerMonth",
+          "requestQuotaPerMonth",
+          "hardLimitQuota"
+        ]
+      },
       "UpdateProjectDto": {
         "type": "object",
         "properties": {
@@ -2657,8 +2698,151 @@
               "INACTIVE",
               "DELETED"
             ]
+          },
+          "logo": {
+            "type": "string",
+            "description": "Logo URL",
+            "example": "https://example.com/logo.png"
+          },
+          "category": {
+            "type": "string",
+            "description": "API category",
+            "example": "Finance"
+          },
+          "shortDescription": {
+            "type": "string",
+            "description": "Short description of the API",
+            "example": "Short summary..."
+          },
+          "visibleToPublic": {
+            "type": "boolean",
+            "description": "Public visibility",
+            "example": true
+          },
+          "basicPlan": {
+            "description": "Basic plan config",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanConfig"
+              }
+            ]
+          },
+          "proPlan": {
+            "description": "Pro plan config",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanConfig"
+              }
+            ]
+          },
+          "ultraPlan": {
+            "description": "Ultra plan config",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanConfig"
+              }
+            ]
           }
         }
+      },
+      "HubListingDto": {
+        "type": "object",
+        "properties": {
+          "logo": {
+            "type": "string",
+            "description": "URL of the logo image",
+            "example": "https://example.com/logo.png"
+          },
+          "category": {
+            "type": "string",
+            "description": "Category of the API",
+            "example": "Finance"
+          },
+          "shortDescription": {
+            "type": "string",
+            "description": "Short description of the API",
+            "example": "Short summary about your API"
+          },
+          "longDescription": {
+            "type": "string",
+            "description": "Long description of the API",
+            "example": "Detailed overview of your API and how it works."
+          },
+          "website": {
+            "type": "string",
+            "description": "API provider website URL",
+            "example": "https://provider.com"
+          },
+          "termsOfUse": {
+            "type": "string",
+            "description": "Terms of use for this API",
+            "example": "https://provider.com/terms"
+          },
+          "visibleToPublic": {
+            "type": "boolean",
+            "description": "Whether this API is visible to the public",
+            "example": true
+          },
+          "healthCheckUrl": {
+            "type": "string",
+            "description": "URL used for health checks",
+            "example": "https://provider.com/health"
+          },
+          "apiDocumentation": {
+            "type": "string",
+            "description": "URL to API documentation",
+            "example": "https://docs.provider.com"
+          },
+          "proxySecret": {
+            "type": "string",
+            "description": "Proxy secret for request authentication",
+            "example": "super-secret-key"
+          },
+          "requestSizeLimitMb": {
+            "type": "number",
+            "description": "Maximum request size in MB",
+            "example": 10
+          },
+          "proxyTimeoutSeconds": {
+            "type": "number",
+            "description": "Proxy timeout in seconds",
+            "example": 60
+          },
+          "basicPlan": {
+            "description": "Configuration for basic plan",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanConfig"
+              }
+            ]
+          },
+          "proPlan": {
+            "description": "Configuration for pro plan",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanConfig"
+              }
+            ]
+          },
+          "ultraPlan": {
+            "description": "Configuration for ultra plan",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanConfig"
+              }
+            ]
+          },
+          "projectId": {
+            "type": "number",
+            "description": "Associated project ID",
+            "example": 123
+          }
+        },
+        "required": [
+          "category",
+          "visibleToPublic",
+          "projectId"
+        ]
       },
       "HeaderParameterDto": {
         "type": "object",
@@ -2923,10 +3107,6 @@
           "created_at",
           "updated_at"
         ]
-      },
-      "HubListingDto": {
-        "type": "object",
-        "properties": {}
       }
     }
   }

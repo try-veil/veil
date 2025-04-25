@@ -4,6 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import {HubListingService } from "../hublisting/hublisting.service"
 import {
   CreateProjectDto,
   UpdateProjectDto,
@@ -13,7 +14,10 @@ import {
 
 @Injectable()
 export class ProjectService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,  
+    private readonly hubListingService: HubListingService,
+  ) {}
 
   /**
    * Create a new project
@@ -46,6 +50,54 @@ export class ProjectService {
       },
     });
 
+
+    await this.prisma.hubListing.create({
+      data: {
+        logo: createProjectDto.logo,
+        category: createProjectDto.category,
+        shortDescription: createProjectDto.description,
+        longDescription: '',
+        website: '',
+        termsOfUse: '',
+        visibleToPublic: false,
+        healthCheckUrl: '',
+        apiDocumentation: '',
+        proxySecret: '',
+        requestSizeLimitMb: 10,
+        proxyTimeoutSeconds: 60,
+    
+        basicPlan: {
+          create: {
+            enabled: true,
+            pricePerMonth: 29.99,
+            requestQuotaPerMonth: 100000,
+            hardLimitQuota: 150000,
+          },
+        },
+        proPlan: {
+          create: {
+            enabled: false,
+            pricePerMonth: 29.99,
+            requestQuotaPerMonth: 100000,
+            hardLimitQuota: 150000,
+          },
+        },
+        ultraPlan: {
+          create: {
+            enabled: false,
+            pricePerMonth: 29.99,
+            requestQuotaPerMonth: 100000,
+            hardLimitQuota: 150000,
+          },
+        },
+    
+        project: {
+          connect: { id: project.id },
+        },
+      },
+    });
+    
+
     // Add back the fields for API response that aren't in the database
     return {
       ...project,
@@ -55,16 +107,26 @@ export class ProjectService {
 
   async findAllForConsumer(): Promise<ProjectResponseDto[]> {
     const projects = await this.prisma.project.findMany({
+      where: {
+        hubListing: {
+          visibleToPublic: true,
+        },
+      },
       orderBy: {
         updatedAt: 'desc',
+      },
+      include: {
+        hubListing: true, // if you want to access fields like logo/category later
       },
     });
   
     return projects.map((project) => ({
       ...project,
-      description: null,
+      description: null, // if you want to hide this field
+      // you can optionally expose `project.hubListing.logo`, etc., here
     }));
   }
+  
   
   async findOneForConsumer(id: number): Promise<ProjectWithRelationsDto> {
     const project = await this.prisma.project.findUnique({
@@ -206,6 +268,34 @@ export class ProjectService {
       where: { id },
       data: updateData,
     });
+
+    const hubListing = await this.prisma.hubListing.findUnique({
+      where: { projectId: id },
+    });
+    console.log("the hublisting is",hubListing)
+  
+    if (hubListing) {
+      const {
+        logo,
+        category,
+        shortDescription,
+        visibleToPublic,
+        basicPlan,
+        proPlan,
+        ultraPlan,
+      } = updateProjectDto as any;
+  
+      await this.hubListingService.update(hubListing.id, {
+        logo,
+        category,
+        shortDescription: shortDescription,
+        visibleToPublic,
+        basicPlan,
+        proPlan,
+        ultraPlan,
+        projectId: id,
+      });
+    }
 
     // Add back the fields for API response
     return {
