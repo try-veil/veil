@@ -526,7 +526,6 @@ model HubListing {
   website               String?
   termsOfUse            String?
   visibleToPublic       Boolean
-  loadBalancer          LoadBalancerStrategy
   healthCheckUrl        String?
   apiDocumentation      String?
   proxySecret           String?

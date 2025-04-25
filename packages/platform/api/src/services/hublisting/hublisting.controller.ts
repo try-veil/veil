@@ -47,13 +47,8 @@ import {
       status: 403,
       description: 'Forbidden - requires provider role',
     })
-    async create(
-      @Body() dto: HubListingDto,
-      @Req() req: any,
-      @Res() res: Response,
-    ): Promise<void> {
-      const result = await this.service.create(dto);
-      res.status(HttpStatus.CREATED).json(result);
+    async create(@Body() dto: HubListingDto): Promise<HubListingDto> {
+      return this.service.create(dto);
     }
   
     @Get()
