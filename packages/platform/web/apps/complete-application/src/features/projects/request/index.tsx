@@ -117,7 +117,7 @@ export default function Request({ isLoading, onSave, onTest, initialData }: Requ
     
     const testData: TestRequestData = {
       method,
-      target_url: targetUrl,
+      target_url: `${targetUrl}${path}`,
       headers
     };
 
