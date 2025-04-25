@@ -24,6 +24,22 @@ export interface OnboardResponse {
   data?: any; 
 }
 
+export interface OnboardUpdateAPI extends OnboardAPI {
+  project_id?: number;
+  required_subscription?: string;
+  specification?: Record<string, any>;
+  parameters?: {
+    name: string;
+    type: string;
+    required: boolean;
+  }[];
+  api_keys?: {
+    key: string;
+    name: string;
+    is_active: boolean;
+  }[];
+}
+
 export async function onboardAPI(data: OnboardAPI, token: string): Promise<OnboardResponse> {
   try {
     const response = await fetch(`${API_BASE_URL}/onboard/`, {
@@ -92,6 +108,30 @@ export async function getAllOnboardAPIs(token: string): Promise<OnboardAPI[]> {
     return data;
   } catch (error) {
     console.error('[getAllOnboardAPIs] Error:', error);
+    throw error;
+  }
+}
+
+export async function updateOnboardAPI(apiId: string, data: OnboardUpdateAPI, token: string): Promise<OnboardResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/onboard/api/${apiId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(data),
+    });
+
+    const resData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(resData.error || 'Failed to update API');
+    }
+
+    return resData;
+  } catch (error) {
+    console.error('[updateOnboardAPI] Error:', error);
     throw error;
   }
 }

@@ -7,11 +7,11 @@ import type { ResizableBoxProps } from 'react-resizable'
 import 'react-resizable/css/styles.css'
 import ResponseViewer from '@/features/projects/request/components/response-viewer'
 import { useAuth } from '@/contexts/AuthContext'
-import { onboardAPI } from '@/app/api/onboard-api/route'
+import { onboardAPI, getOnboardAPIById, updateOnboardAPI } from '@/app/api/onboard-api/route'
 import { toast } from '@/hooks/use-toast'
 import { useProject } from '@/context/project-context'
 import { updateProject } from '@/lib/api'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import {
   Dialog,
   DialogContent,
@@ -191,8 +191,9 @@ export default function RequestPage() {
   const [response, setResponse] = useState<any>(null)
   const [viewportHeight, setViewportHeight] = useState(0)
   const { user, accessToken } = useAuth()
-  const { selectedProject } = useProject()
+  const { selectedProject,setSelectedProjectId } = useProject()
   const [showTargetUrlModal, setShowTargetUrlModal] = useState(false)
+  const params = useParams();
   const [formData, setFormData] = useState<OnboardRequestData>({
     api_id: "",
     name: "",
@@ -200,11 +201,44 @@ export default function RequestPage() {
     project_id: 1,
     target_url: "",
     method: "GET",
-    version: "v1",
+    version: "1.0",
     description: "",
     documentation_url: "",
     required_headers: []
-  })
+  });
+
+  useEffect(() => {
+    const fetchApiDetails = async () => {
+      if (params.api_id && params.api_id !== 'add-request' && accessToken) {
+        try {
+          setIsLoading(true);
+          const data = await getOnboardAPIById(params.api_id as string, accessToken);
+          
+          setFormData({
+            ...formData,
+            api_id: data.api_id,
+            name: data.name,
+            path: data.path,
+            method: data.method,
+            description: data.description,
+            documentation_url: data.documentation_url,
+            required_headers: data.required_headers || []
+          });
+        } catch (error) {
+          console.error('Error fetching API details:', error);
+          toast({
+            title: 'Error',
+            description: error instanceof Error ? error.message : 'Failed to fetch API details',
+            variant: 'destructive',
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchApiDetails();
+  }, [params.api_id, accessToken]);
 
   // Check if target_url is missing when component mounts or selectedProject changes
   useEffect(() => {
@@ -292,11 +326,6 @@ export default function RequestPage() {
   const handleSaveRequest = async (requestData: any) => {
     setIsLoading(true)
     try {
-      const generatedApiId = crypto.randomUUID();
-      const targetUrlSegments = requestData.target_url.split('/');
-      const targetUrlPart = targetUrlSegments[2] || '';
-      const constructedPath = `${generatedApiId}${requestData.path}${targetUrlPart}`;
-
       // Transform headers to required format
       const required_headers = requestData.headers?.map((header: any) => ({
         name: header.name,
@@ -304,50 +333,88 @@ export default function RequestPage() {
         is_variable: true
       })) || [];
 
-      const updatedFormData = {
-        ...formData,
-        api_id: generatedApiId,
-        name: requestData.name,
-        description: requestData.description,
-        path: constructedPath,
-        target_url: requestData.target_url,
-        method: requestData.method.toUpperCase(),
-        documentation_url: requestData.documentation_url,
-        required_headers,
-        project_id: selectedProject?.id
-      }
-      console.log("client",updatedFormData);
-      // Make API request to /onboard endpoint
-      if (accessToken) {
-        try {
-          const response = await onboardAPI(updatedFormData, accessToken);
-          
-          console.log('API onboarded successfully:', response);
-          toast({
-            title: "Success",
-            description: "API onboarded successfully",
-            variant: "default",
-          });
-        } catch (error: any) {
-          console.error('Error onboarding API:', error);
-          toast({
-            title: "Error",
-            description: error.message || "Failed to onboard API",
-            variant: "destructive",
-          });
+      if (params.api_id && params.api_id !== 'add-request') {
+        // Update existing API
+        const updateData = {
+          api_id: params.api_id as string,
+          name: requestData.name,
+          description: requestData.description,
+          path: requestData.path,
+          target_url: requestData.target_url,
+          method: requestData.method.toUpperCase(),
+          version: "1.0",
+          documentation_url: requestData.documentation_url,
+          required_headers,
+        };
+
+        if (accessToken) {
+          try {
+            const response = await updateOnboardAPI(params.api_id as string, updateData, accessToken);
+            console.log('API updated successfully:', response);
+            toast({
+              title: "Success",
+              description: "API updated successfully",
+              variant: "default",
+            });
+          } catch (error: any) {
+            console.error('Error updating API:', error);
+            toast({
+              title: "Error",
+              description: error.message || "Failed to update API",
+              variant: "destructive",
+            });
+          }
         }
       } else {
-        console.error('No authentication token available');
-        toast({
-          title: "Error",
-          description: "Authentication required",
-          variant: "destructive",
-        });
-        setResponse({
-          status: 401,
-          statusText: 'Unauthorized',
-          data: { error: 'Authentication required' }
-        });
+        // Create new API
+        const generatedApiId = crypto.randomUUID();
+        const targetUrlSegments = requestData.target_url.split('/');
+        const targetUrlPart = targetUrlSegments[2] || '';
+        const constructedPath = `${generatedApiId}${requestData.path}${targetUrlPart}`;
+
+        const newApiData = {
+          ...formData,
+          api_id: generatedApiId,
+          name: requestData.name,
+          description: requestData.description,
+          path: constructedPath,
+          target_url: requestData.target_url,
+          method: requestData.method.toUpperCase(),
+          documentation_url: requestData.documentation_url,
+          required_headers,
+          project_id: selectedProject?.id
+        };
+
+        if (accessToken) {
+          try {
+            const response = await onboardAPI(newApiData, accessToken);
+            console.log('API onboarded successfully:', response);
+            toast({
+              title: "Success",
+              description: "API onboarded successfully",
+              variant: "default",
+            });
+          } catch (error: any) {
+            console.error('Error onboarding API:', error);
+            toast({
+              title: "Error",
+              description: error.message || "Failed to onboard API",
+              variant: "destructive",
+            });
+          }
+        } else {
+          console.error('No authentication token available');
+          toast({
+            title: "Error",
+            description: "Authentication required",
+            variant: "destructive",
+          });
+          setResponse({
+            status: 401,
+            statusText: 'Unauthorized',
+            data: { error: 'Authentication required' }
+          });
+        }
       }
     } catch (error) {
       console.error('Error processing request:', error)
@@ -356,8 +423,10 @@ export default function RequestPage() {
         description: "Failed to process request",
         variant: "destructive",
       });
-      
     } finally {
+      if (selectedProject?.id) {
+        setSelectedProjectId(String(selectedProject.id));
+      }
       setIsLoading(false)
     }
   }
@@ -431,6 +500,7 @@ export default function RequestPage() {
               isLoading={isLoading}
               onSave={handleSaveRequest}
               onTest={handleTest}
+              initialData={formData}
             />
           </ResizableBox>
           {/* Right Column - Response */}

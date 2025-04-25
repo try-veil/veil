@@ -1,6 +1,5 @@
 "use client";
-import React from 'react'
-import { useState } from "react";
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -23,6 +22,14 @@ interface RequestProps {
   isLoading?: boolean;
   onSave?: (data: RequestData) => void;
   onTest?: (data: TestRequestData) => void;
+  initialData?: {
+    name: string;
+    description: string;
+    path: string;
+    documentation_url: string;
+    method: string;
+    required_headers?: { name: string; value: string; is_variable: boolean }[];
+  };
 }
 
 interface RequestData {
@@ -52,16 +59,30 @@ const options = new Map([
   ["trace", "TRACE"],
 ]);
 
-export default function Request({ isLoading, onSave, onTest }: RequestProps) {
-  const [method, setMethod] = useState("get");
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [documentationUrl, setDocumentationUrl] = useState("");
-  const [path, setPath] = useState("");
-  const [headers, setHeaders] = useState<{ name: string; value: string }[]>([]);
+export default function Request({ isLoading, onSave, onTest, initialData }: RequestProps) {
+  const [method, setMethod] = useState(initialData?.method?.toLowerCase() || "get");
+  const [name, setName] = useState(initialData?.name || "");
+  const [description, setDescription] = useState(initialData?.description || "");
+  const [documentationUrl, setDocumentationUrl] = useState(initialData?.documentation_url || "");
+  const [path, setPath] = useState(initialData?.path || "");
+  const [headers, setHeaders] = useState<{ name: string; value: string }[]>(
+    initialData?.required_headers?.map(h => ({ name: h.name, value: h.value })) || []
+  );
   const [isTestLoading, setIsTestLoading] = useState(false);
   const { user } = useAuth();
   const { selectedProject } = useProject();
+
+  useEffect(() => {
+    if (initialData) {
+      setMethod(initialData.method?.toLowerCase() || "get");
+      setName(initialData.name || "");
+      setDescription(initialData.description || "");
+      setDocumentationUrl(initialData.documentation_url || "");
+      setPath(initialData.path || "");
+      setHeaders(initialData.required_headers?.map(h => ({ name: h.name, value: h.value })) || []);
+    }
+  }, [initialData]);
+
   const handleHeadersChange = (newHeaders: { id: string; name: string; value: string }[]) => {
     // Filter out empty headers and remove the id field
     const processedHeaders = newHeaders
@@ -155,19 +176,19 @@ export default function Request({ isLoading, onSave, onTest }: RequestProps) {
             </Button>
             <Button 
               onClick={handleSave} 
-              disabled={isLoading}
+              disabled={isLoading || !!initialData}
               variant="default"
               size="sm"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Save
+                  {initialData ? 'Updating...' : 'Saving...'}
                 </>
               ) : (
                 <>
                   <Send className="w-4 h-4 mr-2" />
-                  Save
+                  {initialData ? 'Update' : 'Save'}
                 </>
               )}
             </Button>
