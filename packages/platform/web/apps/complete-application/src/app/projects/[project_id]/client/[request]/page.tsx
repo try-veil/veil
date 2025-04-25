@@ -313,7 +313,8 @@ export default function RequestPage() {
         target_url: requestData.target_url,
         method: requestData.method.toUpperCase(),
         documentation_url: requestData.documentation_url,
-        required_headers
+        required_headers,
+        project_id: selectedProject?.id
       }
       console.log("client",updatedFormData);
       // Make API request to /onboard endpoint
