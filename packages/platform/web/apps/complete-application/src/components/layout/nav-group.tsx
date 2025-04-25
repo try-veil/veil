@@ -33,7 +33,7 @@ export function NavGroup({ title, items }: NavGroup) {
   const { state } = useSidebar()
   const href = usePathname()
   return (
-    <SidebarGroup>
+    <SidebarGroup className='max-h-[300px] overflow-y-auto'>
       <SidebarGroupLabel>{title}</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
