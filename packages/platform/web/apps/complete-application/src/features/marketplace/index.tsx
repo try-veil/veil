@@ -86,9 +86,9 @@ export default function Marketplace() {
 
   return (
     <div className="flex w-full items-center justify-center pt-24 pb-4">
-      <div className="flex h-[calc(100vh-7rem)] w-full max-w-7xl flex-col ">
+      <div className="flex h-[calc(100vh-7rem)] w-full max-w-6xl flex-col px-2">
         {/* Fixed Content Section */}
-        <div className=" px-6 py-6">
+        <div className="py-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className='text-2xl font-bold tracking-tight'>
@@ -178,7 +178,7 @@ export default function Marketplace() {
         </div>
 
         {/* Scrollable Cards Section */}
-        <div className="flex-1 overflow-auto px-6 py-6">
+        <div className="flex-1 overflow-auto py-6">
           <ul className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
             {filteredProjects.map((project) => (
               <Link href={`/consumer/${project.id}/playground`} key={project.id}>
@@ -194,7 +194,6 @@ export default function Marketplace() {
                   <Button
                     variant='outline'
                     size='sm'
-                    className='border border-blue-300 bg-blue-50 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950 dark:hover:bg-blue-900'
                   >
                     View Details
                   </Button>

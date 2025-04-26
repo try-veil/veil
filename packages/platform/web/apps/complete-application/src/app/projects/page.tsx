@@ -70,7 +70,7 @@ export default function Projects() {
     <main className="flex flex-col">
       <Navbar session={isAuthenticated} user={user} />
       <div className="flex-1 pt-24">
-        <div className="sticky top-16 z-20 bg-background w-full max-w-7xl mx-auto px-6 h-[calc(100vh-7rem)]">
+        <div className="sticky top-16 z-20 bg-background w-full max-w-6xl mx-auto h-[calc(100vh-7rem)] px-2">
           <Tabs
             orientation="vertical"
             defaultValue="projects"

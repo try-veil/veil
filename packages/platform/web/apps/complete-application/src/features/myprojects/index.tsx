@@ -29,7 +29,7 @@ export default function MyProjects({ projects, onProjectsChange }: Props) {
 
   return (
     <div className="flex w-full items-center justify-center">
-      <div className="flex h-[calc(100vh-10rem)] w-full max-w-7xl flex-col">
+      <div className="flex h-[calc(100vh-10rem)] w-full max-w-6xl flex-col">
         {/* Fixed Content Section */}
         <div className="bg-background py-6">
           <div className='flex justify-between'>
@@ -77,7 +77,7 @@ export default function MyProjects({ projects, onProjectsChange }: Props) {
         </div>
 
         {/* Scrollable Cards Section */}
-        <div className="flex-1 overflow-auto px-6 py-6">
+        <div className="flex-1 overflow-auto py-6">
           <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
             {filteredProjects.map((project) => (
               <Link href={`/projects/${project.id}/hub-listing`} key={project.name} >
