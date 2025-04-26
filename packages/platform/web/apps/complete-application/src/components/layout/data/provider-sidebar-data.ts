@@ -63,16 +63,16 @@ export function useProviderSidebarData() {
       {
         title: "End points",
         items: [
+          {
+            title: "Add Endpoint",
+            url: `/projects/${selectedProject?.id}/client/add-request`,
+            icon: IconPlus,
+          },
           ...(selectedProject?.apis?.map((api) => ({
             title: `${api.name}`,
             url: `/projects/${selectedProject?.id}/client/${api.apiId}`,
             icon: IconPackages,
           })) ?? []),
-          {
-            title: "Add End Point",
-            url: `/projects/${selectedProject?.id}/client/add-request`,
-            icon: IconPlus,
-          },
         ],
       },
       {

@@ -203,8 +203,8 @@ export default function Request({ isLoading, onSave, onTest, initialData }: Requ
             <TabsList className="w-full justify-start">
               <TabsTrigger value="overview">Description</TabsTrigger>
               <TabsTrigger value="headers">Headers</TabsTrigger>
-              <TabsTrigger value="query">Query</TabsTrigger>
-              <TabsTrigger value="body">Body</TabsTrigger>
+              <TabsTrigger disabled value="query">Query</TabsTrigger>
+              <TabsTrigger disabled value="body">Body</TabsTrigger>
             </TabsList>
           </div>
 
