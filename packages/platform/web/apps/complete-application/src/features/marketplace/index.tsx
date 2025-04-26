@@ -181,7 +181,7 @@ export default function Marketplace() {
         <div className="flex-1 overflow-auto px-6 py-6">
           <ul className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
             {filteredProjects.map((project) => (
-              <Link href={`/consumer/${project.name}/playground`} key={project.id}>
+              <Link href={`/consumer/${project.id}/playground`} key={project.id}>
               <li
                 className='rounded-lg border p-4 hover:shadow-md'
               >
