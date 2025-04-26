@@ -15,8 +15,6 @@ import { useProject } from '@/context/project-context'
 export function ProviderAppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const sidebarData = useProviderSidebarData();
   const {selectedProject} = useProject();
-
-  console.log("xxxxxxxx",selectedProject)
   
   return (
     <Sidebar collapsible='icon' variant='floating' {...props}>

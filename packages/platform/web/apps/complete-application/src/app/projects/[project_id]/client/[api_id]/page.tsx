@@ -441,7 +441,7 @@ export default function RequestPage() {
         }}
       />
 
-      <div className="h-[calc(100vh-7rem)] w-full flex flex-col">
+      <div className="h-[calc(100vh-4rem)] w-full flex flex-col">
         {/* Preview Section */}
         {/* <div className="bg-muted rounded-lg shadow-md overflow-hidden mx-4 mt-4">
           <button
@@ -486,7 +486,7 @@ export default function RequestPage() {
         </div> */}
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 p-4 pt-0">
           {/* Left Column - Request */}
           <ResizableBox
             width={Infinity}
