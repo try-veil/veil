@@ -142,7 +142,7 @@ export default function ResponseViewer({ isLoading, response }: ResponseViewerPr
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-        <TabsList className="mx-4">
+        <TabsList className="mx-4 mt-2">
           <TabsTrigger value="info">Info</TabsTrigger>
           <TabsTrigger value="request">Request</TabsTrigger>
           <TabsTrigger value="response">Response</TabsTrigger>

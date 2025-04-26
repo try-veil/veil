@@ -12,9 +12,9 @@ import {
 import React, { useState, useEffect } from "react";
 import { JsonViewer } from "@/features/projects/request/components/json-tree-viewer";
 import { OnboardAPI } from "@/app/api/onboard-api/route";
-import ResponseViewer from '@/features/projects/request/components/response-viewer'
+import ResponseViewer from "@/features/projects/request/components/response-viewer";
 import { Button } from "@/components/ui/button";
-import { Send, Play, Loader2 } from 'lucide-react'
+import { Send, Play, Loader2 } from "lucide-react";
 
 interface Endpoint {
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
@@ -50,9 +50,9 @@ export default function EndpointViewer({
   const [selectedKey, setSelectedKey] = useState<string>("");
   const [selectedUrl, setSelectedUrl] = useState<string>("veil");
   const [selectedAuthType, setSelectedAuthType] = useState("bearer");
-const [isLoading, setIsLoading] = useState(false);
-const [response, setResponse] = useState<any>(null);
-const [isTestLoading, setIsTestLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [response, setResponse] = useState<any>(null);
+  const [isTestLoading, setIsTestLoading] = useState(false);
 
   const authTypes = {
     api_key: "API Key",
@@ -95,10 +95,10 @@ const [isTestLoading, setIsTestLoading] = useState(false);
 
   const generateResponseCurlCommand = (data: TestRequestData) => {
     let curl = `curl -X ${data.method} '${data.target_url}'`;
-    
+
     // Add headers
     if (data.headers && data.headers.length > 0) {
-      data.headers.forEach(header => {
+      data.headers.forEach((header) => {
         curl += `\n  -H '${header.name}: ${header.value}'`;
       });
     }
@@ -118,16 +118,16 @@ const [isTestLoading, setIsTestLoading] = useState(false);
   const handleTest = async (testData: TestRequestData) => {
     try {
       const curlCommand = generateResponseCurlCommand(testData);
-      
+
       // Make the actual HTTP request
       const requestHeaders: Record<string, string> = {};
-      testData.headers.forEach(header => {
+      testData.headers.forEach((header) => {
         requestHeaders[header.name] = header.value;
       });
 
       const response = await fetch(testData.target_url, {
         method: testData.method,
-        headers: requestHeaders
+        headers: requestHeaders,
       });
 
       const responseData = await response.json();
@@ -141,36 +141,35 @@ const [isTestLoading, setIsTestLoading] = useState(false);
           date: new Date().toISOString(),
           url: testData.target_url,
           status: `${response.status} ${response.statusText}`,
-          library: 'Fetch API',
-          headersResponseTime: 'N/A',
-          totalResponseTime: 'N/A',
-          responseBodySize: 'N/A',
+          library: "Fetch API",
+          headersResponseTime: "N/A",
+          totalResponseTime: "N/A",
+          responseBodySize: "N/A",
         },
         request: {
           method: testData.method,
           url: testData.target_url,
-          path: '/',
+          path: "/",
           headers: requestHeaders,
-          curl: curlCommand
-        }
+          curl: curlCommand,
+        },
       });
     } catch (error) {
-      console.error('Error making test request:', error);
+      console.error("Error making test request:", error);
       setResponse({
         status: 500,
-        statusText: 'Error',
-        data: { error: 'Failed to make test request' },
+        statusText: "Error",
+        data: { error: "Failed to make test request" },
         request: {
           method: testData.method,
           url: testData.target_url,
-          path: '/',
+          path: "/",
           headers: testData.headers,
-          curl: generateResponseCurlCommand(testData)
-        }
+          curl: generateResponseCurlCommand(testData),
+        },
       });
     }
   };
-
 
   return (
     <div>
@@ -219,7 +218,7 @@ const [isTestLoading, setIsTestLoading] = useState(false);
               value="example"
               className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
-              Example Responses
+              Examples
             </TabsTrigger>
             <TabsTrigger
               value="results"
@@ -369,9 +368,9 @@ const [isTestLoading, setIsTestLoading] = useState(false);
                 </CardHeader>
                 <CardContent className="p-4">
                   <div className="overflow-x-auto">
-                  <p className="text-muted-foreground">
-                    No additional authorization headers needed
-                  </p>
+                    <p className="text-muted-foreground">
+                      No additional authorization headers needed
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -407,37 +406,39 @@ const [isTestLoading, setIsTestLoading] = useState(false);
             <Card>
               <CardHeader>
                 <div className="flex justify-between">
-                <CardTitle className="text-sm">Results</CardTitle>
-            <Button 
-              onClick={() => {
-                const testData: TestRequestData = {
-                  method: endpoint?.method || 'GET',
-                  target_url: selectedUrl,
-                  headers: Object.entries(headerValues).map(([name, value]) => ({
-                    name,
-                    value: value.value,
-                  })),
-                };
-                handleTest(testData);
-                setIsTestLoading(true); // Trigger loading state
-              }}
-              disabled={isTestLoading}
-              size="sm"
-              className="min-w-[80px]"
-            >
-              {isTestLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Test
-                </>
-              ) : (
-                <>
-                  <Play className="w-4 h-4 mr-2" />
-                  Test
-                </>
-              )}
-            </Button>
-            </div>
+                  <CardTitle className="text-sm">Results</CardTitle>
+                  <Button
+                    onClick={() => {
+                      const testData: TestRequestData = {
+                        method: endpoint?.method || "GET",
+                        target_url: selectedUrl,
+                        headers: Object.entries(headerValues).map(
+                          ([name, value]) => ({
+                            name,
+                            value: value.value,
+                          })
+                        ),
+                      };
+                      handleTest(testData);
+                      setIsTestLoading(true); // Trigger loading state
+                    }}
+                    disabled={isTestLoading}
+                    size="sm"
+                    className="min-w-[80px]"
+                  >
+                    {isTestLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Test
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4 mr-2" />
+                        Test
+                      </>
+                    )}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="p-4">
                 <ResponseViewer isLoading={isLoading} response={response} />

@@ -104,7 +104,7 @@ export default function PlaygroundPage() {
   return (
     <div className="flex flex-col lg:flex-row">
       {/* Left Column - Endpoints List */}
-      <div className="w-full lg:w-1/3 border-r border-gray-200 overflow-y-auto p-4 max-h-[50vh] lg:max-h-screen">
+      <div className="w-full lg:w-1/4 border-r border-gray-200 dark:border-muted overflow-y-auto p-4 max-h-[50vh] lg:max-h-screen">
         <Input
           placeholder="Search Endpoints"
           value={searchQuery}
@@ -115,8 +115,8 @@ export default function PlaygroundPage() {
         {filteredEndpoints.map((endpoint) => (
           <div
             key={endpoint.apiId}
-            className={`flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-gray-100 ${
-              selectedEndpoint?.apiId === endpoint.apiId ? "bg-gray-100" : ""
+            className={`flex items-start gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-muted ${
+              selectedEndpoint?.apiId === endpoint.apiId ? "bg-gray-100 dark:bg-muted" : ""
             }`}
             onClick={() => setSelectedEndpoint(endpoint)}
           >
@@ -127,13 +127,13 @@ export default function PlaygroundPage() {
             >
               {endpoint.method}
             </span>
-            <span className="text-sm">{endpoint.apiId ?? "no api_id"}</span>
+            <span className="text-sm leading-[1.05rem]">{endpoint.name ?? "Endpoint"}</span>
           </div>
         ))}
       </div>
 
       {/* Right Column - Selected Endpoint Display */}
-      <div className="w-full lg:w-2/3 p-4">
+      <div className="w-full lg:w-3/4 p-4">
         <EndpointViewer endpoint={selectedEndpoint} apiDetails={apiDetails} />
       </div>
     </div>

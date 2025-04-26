@@ -3,6 +3,7 @@ import {
     IconBarrierBlock,
     IconBrowserCheck,
     IconBug,
+    IconChartBar,
     IconChecklist,
     IconError404,
     IconHelp,
@@ -22,7 +23,6 @@ import {
   } from "@tabler/icons-react";
   import { AudioWaveform, Command, GalleryVerticalEnd } from "lucide-react";
   import { ConsumerSidebarData } from "../types";
-  import { useRequests } from "@/context/requests-context";
   
   export const getConsumerSidebarData = (): ConsumerSidebarData => {
 
@@ -44,7 +44,7 @@ import {
             {
                 title: "Analytics",
                 url: "/consumer/project_jiya/analytics",
-                icon: IconPackages,
+                icon: IconChartBar,
               },
           ],
         },
