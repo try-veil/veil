@@ -21,13 +21,15 @@ import {
 } from "@tabler/icons-react";
 import { AudioWaveform, Command, GalleryVerticalEnd } from "lucide-react";
 import { useProject } from "@/context/project-context";
+import { useUser } from '@/contexts/UserContext';
 
 export function useProviderSidebarData() {
   const { selectedProject } = useProject();
+  const user = useUser();
   return {
     user: {
-      name: "satnaing",
-      email: "satnaingdev@gmail.com",
+      name: user.user?.name,
+      email: user.user?.email,
       avatar: "/avatars/shadcn.jpg",
     },
     projects: [
