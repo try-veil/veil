@@ -136,3 +136,30 @@ export async function updateOnboardAPI(apiId: string, data: OnboardUpdateAPI, to
   }
 }
 
+export async function deleteAPI(project_id: string, api_id: string, token: string): Promise<OnboardResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/${project_id}/apis/${api_id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+    });
+
+    if (response.ok) {
+      return { success: true, message: 'API deleted successfully' };
+    } else {
+      let errorMessage = 'Deleting API failed';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        errorMessage = `${errorMessage}: ${response.status} ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+  } catch (error) {
+    console.error('[deleteAPI] Error:', error);
+    throw error;
+  }
+}

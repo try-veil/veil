@@ -1,6 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react'
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -15,8 +14,12 @@ import { Button } from "@/components/ui/button";
 import { Headers } from "./components/headers";
 import { Query } from "./components/query";
 import Body from "./components/body";
-import { Send, Play, Loader2 } from 'lucide-react'
-import { useProject } from '@/context/project-context';
+import { Send, Play, Loader2, Trash2 } from "lucide-react";
+import { useProject } from "@/context/project-context";
+import { deleteAPI } from "@/app/api/onboard-api/route";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 interface RequestProps {
   isLoading?: boolean;
@@ -24,6 +27,7 @@ interface RequestProps {
   onTest?: (data: TestRequestData) => void;
   initialData?: {
     name: string;
+    api_id: string;
     description: string;
     path: string;
     documentation_url: string;
@@ -59,17 +63,71 @@ const options = new Map([
   ["trace", "TRACE"],
 ]);
 
-export default function Request({ isLoading, onSave, onTest, initialData }: RequestProps) {
-  const [method, setMethod] = useState(initialData?.method?.toLowerCase() || "get");
+export default function Request({
+  isLoading,
+  onSave,
+  onTest,
+  initialData,
+}: RequestProps) {
+  const { accessToken } = useAuth();
+  const router = useRouter();
+  const handleDeleteAPI = async () => {
+    try {
+      setIsDeleteLoading(true);
+      if (!selectedProject?.id || !initialData?.api_id || !accessToken) {
+        toast({
+          title: "Error",
+          description: "Missing required information to delete API",
+          variant: "destructive",
+        });
+        return;
+      }
+      // Show loading toast
+      toast({
+        title: "Deleting API...",
+        description: "Please wait while we process your request",
+        variant: "default",
+      });
+      await deleteAPI(
+        selectedProject.id.toString(),
+        initialData.api_id.toString(),
+        accessToken
+      );
+      toast({
+        title: "Success",
+        description: "API deleted successfully",
+        variant: "default",
+      });
+      router.push(`/projects/${selectedProject.id}/client/add-request`);
+    } catch (error) {
+      // Show error toast
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to delete API",
+        variant: "destructive",
+      });
+    }
+  };
+  const [method, setMethod] = useState(
+    initialData?.method?.toLowerCase() || "get"
+  );
   const [name, setName] = useState(initialData?.name || "");
-  const [description, setDescription] = useState(initialData?.description || "");
-  const [documentationUrl, setDocumentationUrl] = useState(initialData?.documentation_url || "");
+  const [description, setDescription] = useState(
+    initialData?.description || ""
+  );
+  const [documentationUrl, setDocumentationUrl] = useState(
+    initialData?.documentation_url || ""
+  );
   const [path, setPath] = useState(initialData?.path || "");
   const [headers, setHeaders] = useState<{ name: string; value: string }[]>(
-    initialData?.required_headers?.map(h => ({ name: h.name, value: h.value })) || []
+    initialData?.required_headers?.map((h) => ({
+      name: h.name,
+      value: h.value,
+    })) || []
   );
   const [isTestLoading, setIsTestLoading] = useState(false);
-  const { user } = useAuth();
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const { selectedProject } = useProject();
 
   useEffect(() => {
@@ -79,18 +137,27 @@ export default function Request({ isLoading, onSave, onTest, initialData }: Requ
       setDescription(initialData.description || "");
       setDocumentationUrl(initialData.documentation_url || "");
       setPath(initialData.path || "");
-      setHeaders(initialData.required_headers?.map(h => ({ name: h.name, value: h.value })) || []);
+      setHeaders(
+        initialData.required_headers?.map((h) => ({
+          name: h.name,
+          value: h.value,
+        })) || []
+      );
     }
   }, [initialData]);
 
-  const handleHeadersChange = (newHeaders: { id: string; name: string; value: string }[]) => {
+  const handleHeadersChange = (
+    newHeaders: { id: string; name: string; value: string }[]
+  ) => {
     // Filter out empty headers and remove the id field
     const processedHeaders = newHeaders
-      .filter(header => header.name.trim() !== '' && header.value.trim() !== '')
+      .filter(
+        (header) => header.name.trim() !== "" && header.value.trim() !== ""
+      )
       .map(({ name, value }) => ({ name, value }));
     setHeaders(processedHeaders);
   };
-  const targetUrl = selectedProject?.target_url;  
+  const targetUrl = selectedProject?.target_url;
   const handleSave = () => {
     const formData = {
       name,
@@ -99,9 +166,9 @@ export default function Request({ isLoading, onSave, onTest, initialData }: Requ
       documentation_url: documentationUrl,
       method,
       headers,
-      target_url: targetUrl
+      target_url: targetUrl,
     };
-    console.log("Request Data",targetUrl);
+    console.log("Request Data", targetUrl);
     if (onSave) {
       onSave(formData as RequestData);
     }
@@ -109,16 +176,16 @@ export default function Request({ isLoading, onSave, onTest, initialData }: Requ
 
   const handleTest = async () => {
     if (!targetUrl) {
-      alert('Please enter a target URL');
+      alert("Please enter a target URL");
       return;
     }
 
     setIsTestLoading(true);
-    
+
     const testData: TestRequestData = {
       method,
       target_url: `${targetUrl}${path}`,
-      headers
+      headers,
     };
 
     if (onTest) {
@@ -155,7 +222,7 @@ export default function Request({ isLoading, onSave, onTest, initialData }: Requ
             onChange={(e) => setPath(e.target.value)}
           />
           <div className="flex gap-2">
-            <Button 
+            <Button
               onClick={handleTest}
               disabled={isTestLoading}
               variant="secondary"
@@ -174,8 +241,8 @@ export default function Request({ isLoading, onSave, onTest, initialData }: Requ
                 </>
               )}
             </Button>
-            <Button 
-              onClick={handleSave} 
+            <Button
+              onClick={handleSave}
               disabled={isLoading || !!initialData?.path}
               variant="default"
               size="sm"
@@ -183,15 +250,36 @@ export default function Request({ isLoading, onSave, onTest, initialData }: Requ
               {isLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {initialData?.path !== "" ? 'Updating...' : 'Saving...'}
+                  {initialData?.path !== "" ? "Updating..." : "Saving..."}
                 </>
               ) : (
                 <>
                   <Send className="w-4 h-4 mr-2" />
-                  {initialData?.path !== '' ? 'Update' : 'Save'}
+                  {initialData?.path !== "" ? "Update" : "Save"}
                 </>
               )}
             </Button>
+
+            {initialData?.path !== "" ? (
+              <Button
+                onClick={handleDeleteAPI}
+                disabled={isDeleteLoading}
+                variant="default"
+                size="sm"
+              >
+                {isDeleteLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                  </>
+                )}
+              </Button>
+            ) : (
+              <></>
+            )}
           </div>
         </div>
       </div>
@@ -203,8 +291,12 @@ export default function Request({ isLoading, onSave, onTest, initialData }: Requ
             <TabsList className="w-full justify-start">
               <TabsTrigger value="overview">Description</TabsTrigger>
               <TabsTrigger value="headers">Headers</TabsTrigger>
-              <TabsTrigger disabled value="query">Query</TabsTrigger>
-              <TabsTrigger disabled value="body">Body</TabsTrigger>
+              <TabsTrigger disabled value="query">
+                Query
+              </TabsTrigger>
+              <TabsTrigger disabled value="body">
+                Body
+              </TabsTrigger>
             </TabsList>
           </div>
 
