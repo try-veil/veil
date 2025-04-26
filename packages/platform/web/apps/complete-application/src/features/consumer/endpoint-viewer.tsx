@@ -21,6 +21,7 @@ interface Endpoint {
   name: string;
   apiId: string;
   version: string;
+  path:string;
 }
 
 interface EndpointViewerProps {
@@ -37,6 +38,7 @@ interface TestRequestData {
   method: string;
   target_url: string;
   headers: { name: string; value: string }[];
+  path:string;
 }
 
 export default function EndpointViewer({
@@ -77,7 +79,7 @@ export default function EndpointViewer({
   const generateCurlCommand = () => {
     if (!apiDetails) return "No API details available";
 
-    let curl = `curl -X ${apiDetails.method} '${apiDetails.target_url}${apiDetails.path}'`;
+    let curl = `curl -X ${apiDetails.method} 'http://localhost:2021/${apiDetails.path}'`;
 
     // Add headers with current values
     if (apiDetails.required_headers && apiDetails.required_headers.length > 0) {
@@ -94,7 +96,7 @@ export default function EndpointViewer({
   };
 
   const generateResponseCurlCommand = (data: TestRequestData) => {
-    let curl = `curl -X ${data.method} '${data.target_url}'`;
+    let curl = `curl -X ${data.method} 'http://localhost:2021/${data.path}'`;
 
     // Add headers
     if (data.headers && data.headers.length > 0) {
@@ -125,7 +127,7 @@ export default function EndpointViewer({
         requestHeaders[header.name] = header.value;
       });
 
-      const response = await fetch(testData.target_url, {
+      const response = await fetch(curlCommand, {
         method: testData.method,
         headers: requestHeaders,
       });
@@ -418,6 +420,7 @@ export default function EndpointViewer({
                             value: value.value,
                           })
                         ),
+                        path:endpoint.path,
                       };
                       handleTest(testData);
                       setIsTestLoading(true); // Trigger loading state

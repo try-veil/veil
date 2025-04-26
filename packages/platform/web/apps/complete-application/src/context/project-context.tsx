@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getProjectById, Project } from '@/app/api/project/route';
+  import { getProjectById, Project } from '@/app/api/project/route';
 
 interface ProjectContextType {
   selectedProject: Project | null;

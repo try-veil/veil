@@ -370,7 +370,7 @@ export default function RequestPage() {
         const generatedApiId = crypto.randomUUID();
         const targetUrlSegments = requestData.target_url.split('/');
         const targetUrlPart = targetUrlSegments[2] || '';
-        const constructedPath = `${generatedApiId}${requestData.path}${targetUrlPart}`;
+        const constructedPath = `${generatedApiId}${requestData.path}`;
 
         const newApiData = {
           ...formData,

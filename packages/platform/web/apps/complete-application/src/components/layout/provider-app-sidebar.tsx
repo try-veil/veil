@@ -15,11 +15,13 @@ import { useProject } from '@/context/project-context'
 export function ProviderAppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const sidebarData = useProviderSidebarData();
   const {selectedProject} = useProject();
+
+  console.log("xxxxxxxx",selectedProject)
   
   return (
     <Sidebar collapsible='icon' variant='floating' {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={sidebarData.projects} />
+        <TeamSwitcher teams={sidebarData.projects} selectedProject={selectedProject} />
       </SidebarHeader>
       <SidebarContent>
         {sidebarData.navGroups.map((props) => (
