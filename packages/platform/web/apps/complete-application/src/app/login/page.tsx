@@ -1,59 +1,60 @@
-'use client'
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+"use client";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 export default function Login() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams?.get('redirect') || '/';
+  const redirectPath = searchParams?.get("redirect") || "/";
   const { login, isAuthenticated } = useAuth();
 
   // If already authenticated, redirect to dashboard or the original requested page
   useEffect(() => {
-    console.log('Login page - isAuthenticated:', isAuthenticated);
+    console.log("Login page - isAuthenticated:", isAuthenticated);
     if (isAuthenticated) {
-      console.log('Already authenticated, redirecting to:', redirectPath);
+      console.log("Already authenticated, redirecting to:", redirectPath);
       router.push(redirectPath);
     }
   }, [isAuthenticated, redirectPath, router]);
 
   const handlePasswordSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
       // Get tokens from your auth API
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        console.log('Login successful, data:', data);
+        console.log("Login successful, data:", data);
         // Use our custom auth context instead of NextAuth
         login(data.user, data.accessToken, data.refreshToken);
-        console.log('Redirecting to:', redirectPath);
-        
+        console.log("Redirecting to:", redirectPath);
+
         // Allow a small delay to ensure localStorage and cookies are set
         setTimeout(() => {
           router.push(redirectPath);
         }, 300);
       } else {
-        setError(data.error_description || 'Login failed');
+        setError(data.error_description || "Login failed");
       }
     } catch (err) {
-      console.error('Login error:', err);
-      setError('Something went wrong. Please try again.');
+      console.error("Login error:", err);
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -62,28 +63,29 @@ export default function Login() {
   const handleSocialLogin = (provider: string) => {
     const clientId = process.env.NEXT_PUBLIC_FUSIONAUTH_CLIENT_ID;
     const fusionAuthUrl = process.env.NEXT_PUBLIC_FUSIONAUTH_URL;
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const redirectUri = encodeURIComponent(`${appUrl}/callback`);
-    
+
     // Generate and store a random state for CSRF protection
     const state = Math.random().toString(36).substring(2, 15);
-    sessionStorage.setItem('oauth_state', state);
+    sessionStorage.setItem("oauth_state", state);
     // Store the redirect path for after login
-    sessionStorage.setItem('auth_redirect', redirectPath);
-    
+    sessionStorage.setItem("auth_redirect", redirectPath);
+
     // Build authorization URL with explicit offline_access and prompt=consent
-    const authUrl = `${fusionAuthUrl}/oauth2/authorize?client_id=${clientId}` + 
-                    `&redirect_uri=${redirectUri}` + 
-                    `&response_type=code` + 
-                    `&scope=${encodeURIComponent('openid offline_access email profile')}` +
-                    `&identityProviderId=${provider}` +
-                    `&prompt=consent` + // Force consent screen to ensure refresh token is issued
-                    `&state=${state}`;
-    
+    const authUrl =
+      `${fusionAuthUrl}/oauth2/authorize?client_id=${clientId}` +
+      `&redirect_uri=${redirectUri}` +
+      `&response_type=code` +
+      `&scope=${encodeURIComponent("openid offline_access email profile")}` +
+      `&identityProviderId=${provider}` +
+      `&prompt=consent` + // Force consent screen to ensure refresh token is issued
+      `&state=${state}`;
+
     console.log("Redirecting to:", authUrl);
     router.push(authUrl);
   };
-  
+
   // Show login form if not authenticated
   return (
     <>
@@ -91,26 +93,16 @@ export default function Login() {
         <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
           <div className="absolute inset-0 bg-zinc-900" />
           <div className="relative z-20 flex items-center text-lg font-medium">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="mr-2 h-6 w-6"
-            >
-              <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
-            </svg>
+            <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center mr-2"></div>
             Veil
           </div>
           <div className="relative z-20 mt-auto">
             <blockquote className="space-y-2">
               <p className="text-lg">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Doloremque minima nulla eveniet consequuntur sit impedit amet repellendus, ab officia architecto!
+                Publish your existing APIs, manage subscribers, and start
+                earning without vendor lock‑in.
               </p>
-              <footer className="text-sm">Lorem, ipsum.</footer>
+              <footer className="text-sm">with Veil</footer>
             </blockquote>
           </div>
         </div>
@@ -124,7 +116,7 @@ export default function Login() {
                 Enter your details below to login
               </p>
             </div>
-            
+
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               <div>
                 <input
@@ -154,7 +146,7 @@ export default function Login() {
                 disabled={loading}
                 className="w-full py-2 px-4 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50"
               >
-                {loading ? 'Logging in...' : 'Log In'}
+                {loading ? "Logging in..." : "Log In"}
               </button>
             </form>
 
@@ -181,18 +173,25 @@ export default function Login() {
               </div>
 
               <div className="flex gap-2">
-                <button
-                  onClick={() => handleSocialLogin('82339786-3dff-42a6-aac6-1f1ceecb6c46')}
-                  className="w-full py-2 px-4 bg-[#4285F4] text-white rounded-md hover:bg-[#4285F4]/90"
+                <Button
+                  onClick={() =>
+                    handleSocialLogin("82339786-3dff-42a6-aac6-1f1ceecb6c46")
+                  }
+                  className="w-1/2"
                 >
                   Google
-                </button>
-                <button
-                  onClick={() => handleSocialLogin(process.env.NEXT_PUBLIC_GITHUB_IDENTITY_PROVIDER_ID || "")}
-                  className="w-full py-2 px-4 bg-[#333] text-white rounded-md hover:bg-[#333]/90"
+                </Button>
+
+                <Button
+                  onClick={() =>
+                    handleSocialLogin(
+                      process.env.NEXT_PUBLIC_GITHUB_IDENTITY_PROVIDER_ID || ""
+                    )
+                  }
+                  className="w-1/2"
                 >
                   GitHub
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -206,7 +205,7 @@ export default function Login() {
               </Link>{" "}
               and{" "}
               <Link
-                href="/privacy"
+                href="/privacy-policy"
                 className="underline underline-offset-4 hover:text-primary"
               >
                 Privacy Policy

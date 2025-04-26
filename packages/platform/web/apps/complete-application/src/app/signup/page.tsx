@@ -4,8 +4,15 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 export default function SignupPage() {
   const [email, setEmail] = useState<string>("");
@@ -17,14 +24,16 @@ export default function SignupPage() {
   const { login, isAuthenticated } = useAuth();
   const consumerRoleId = process.env.NEXT_PUBLIC_ROLE_CONSUMER_ID;
   const providerRoleId = process.env.NEXT_PUBLIC_ROLE_PROVIDER_ID;
-  const githubIdentityProviderId = process.env.NEXT_PUBLIC_GITHUB_IDENTITY_PROVIDER_ID;
-  const googleIdentityProviderId = process.env.NEXT_PUBLIC_GOOGLE_IDENTITY_PROVIDER_ID;
+  const githubIdentityProviderId =
+    process.env.NEXT_PUBLIC_GITHUB_IDENTITY_PROVIDER_ID;
+  const googleIdentityProviderId =
+    process.env.NEXT_PUBLIC_GOOGLE_IDENTITY_PROVIDER_ID;
 
   // If already authenticated, redirect to dashboard
   useEffect(() => {
-    console.log('Signup page - isAuthenticated:', isAuthenticated);
+    console.log("Signup page - isAuthenticated:", isAuthenticated);
     if (isAuthenticated) {
-      router.push('/dashboard');
+      router.push("/dashboard");
     }
   }, [isAuthenticated, router]);
 
@@ -47,11 +56,11 @@ export default function SignupPage() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        console.log('Signup successful, data:', data);
+        console.log("Signup successful, data:", data);
         // Use our auth context to store user data and tokens
         login(data.user, data.accessToken, data.refreshToken);
-        console.log('Redirecting to dashboard...');
-        
+        console.log("Redirecting to dashboard...");
+
         // Add a small delay to ensure localStorage is updated
         setTimeout(() => {
           router.push("/dashboard");
@@ -60,7 +69,7 @@ export default function SignupPage() {
         setError(data.error_description || "Signup failed");
       }
     } catch (error) {
-      console.error('Signup error:', error);
+      console.error("Signup error:", error);
       setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
@@ -75,24 +84,25 @@ export default function SignupPage() {
     setError("");
     const clientId = process.env.NEXT_PUBLIC_FUSIONAUTH_CLIENT_ID;
     const fusionAuthUrl = process.env.NEXT_PUBLIC_FUSIONAUTH_URL;
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const redirectUri = encodeURIComponent(`${appUrl}/callback`);
     const state = Math.random().toString(36).substring(2);
-    
+
     // Store both state and selected role in session storage
     sessionStorage.setItem("oauth_state", state);
     sessionStorage.setItem("selected_role", role);
-    
+
     // Build authorization URL with explicit offline_access and prompt=consent
-    const authUrl = `${fusionAuthUrl}/oauth2/authorize?client_id=${clientId}` + 
-                    `&redirect_uri=${redirectUri}` + 
-                    `&response_type=code` + 
-                    `&scope=${encodeURIComponent('openid offline_access email profile')}` +
-                    `&identityProviderId=${provider}` +
-                    `&prompt=consent` + // Force consent screen to ensure refresh token is issued
-                    `&state=${state}` +
-                    `&newRegistration=true`;
-    
+    const authUrl =
+      `${fusionAuthUrl}/oauth2/authorize?client_id=${clientId}` +
+      `&redirect_uri=${redirectUri}` +
+      `&response_type=code` +
+      `&scope=${encodeURIComponent("openid offline_access email profile")}` +
+      `&identityProviderId=${provider}` +
+      `&prompt=consent` + // Force consent screen to ensure refresh token is issued
+      `&state=${state}` +
+      `&newRegistration=true`;
+
     console.log("Redirecting to social signup:", authUrl);
     router.push(authUrl);
   };
@@ -103,26 +113,16 @@ export default function SignupPage() {
         <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
           <div className="absolute inset-0 bg-zinc-900" />
           <div className="relative z-20 flex items-center text-lg font-medium">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="mr-2 h-6 w-6"
-            >
-              <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
-            </svg>
+            <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center mr-2"></div>
             Veil
           </div>
           <div className="relative z-20 mt-auto">
             <blockquote className="space-y-2">
               <p className="text-lg">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Doloremque minima nulla eveniet consequuntur sit impedit amet repellendus, ab officia architecto!
+                Publish your existing APIs, manage subscribers, and start
+                earning without vendor lock‑in.
               </p>
-              <footer className="text-sm">Lorem, ipsum.</footer>
+              <footer className="text-sm">with Veil</footer>
             </blockquote>
           </div>
         </div>
@@ -136,7 +136,7 @@ export default function SignupPage() {
                 Enter your details below to create your account
               </p>
             </div>
-            
+
             <form onSubmit={handleSignup} className="space-y-4">
               <div>
                 <input
@@ -172,8 +172,12 @@ export default function SignupPage() {
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={consumerRoleId || ""}>Consumer</SelectItem>
-                    <SelectItem value={providerRoleId || ""}>Provider</SelectItem>
+                    <SelectItem value={consumerRoleId || ""}>
+                      Consumer
+                    </SelectItem>
+                    <SelectItem value={providerRoleId || ""}>
+                      Provider
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -210,18 +214,22 @@ export default function SignupPage() {
               </div>
 
               <div className="flex gap-2">
-                <button
-                  onClick={() => handleSocialLogin(googleIdentityProviderId || "")}
-                  className="w-full py-2 px-4 bg-[#4285F4] text-white rounded-md hover:bg-[#4285F4]/90"
+                <Button
+                  onClick={() =>
+                    handleSocialLogin(googleIdentityProviderId || "")
+                  }
+                  className="w-1/2"
                 >
                   Google
-                </button>
-                <button
-                  onClick={() => handleSocialLogin(githubIdentityProviderId || "")}
-                  className="w-full py-2 px-4 bg-[#333] text-white rounded-md hover:bg-[#333]/90"
+                </Button>
+                <Button
+                  onClick={() =>
+                    handleSocialLogin(githubIdentityProviderId || "")
+                  }
+                  className="w-1/2"
                 >
                   GitHub
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -235,7 +243,7 @@ export default function SignupPage() {
               </Link>{" "}
               and{" "}
               <Link
-                href="/privacy"
+                href="/privacy-policy"
                 className="underline underline-offset-4 hover:text-primary"
               >
                 Privacy Policy
