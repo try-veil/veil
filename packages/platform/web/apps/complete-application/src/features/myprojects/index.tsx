@@ -84,19 +84,19 @@ export default function MyProjects({ projects, onProjectsChange }: Props) {
                 <div className='rounded-lg border p-4 hover:shadow-md'>
                   <div className='mb-4 flex items-center space-x-4'>
                     <div className='h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-muted'>
-                      {project.thumbnail ? (
+                      {/* {project.thumbnail ? (
                         <img 
                           src={project.thumbnail} 
                           alt={project.name} 
                           className="h-full w-full object-cover"
                         />
-                      ) : (
+                      ) : ( */}
                         <div className='flex h-full w-full items-center justify-center bg-muted'>
                           <span className='text-2xl font-bold text-muted-foreground'>
                             {project.name.charAt(0).toUpperCase()}
                           </span>
                         </div>
-                      )}
+                      {/* )} */}
                     </div>
                     <div className='flex-grow'>
                       <h2 className='font-semibold'>{project.name}</h2>
