@@ -133,6 +133,7 @@ export class ProjectService {
     const project = await this.prisma.project.findUnique({
       where: { id },
       include: {
+        hubListing: true,
         projectAllowedAPIs: {
           select: {
             apiId: true,
@@ -202,6 +203,7 @@ export class ProjectService {
         },
       },
       include: {
+        hubListing: true,
         projectAllowedAPIs: {
           select: {
             apiId: true,
@@ -284,6 +286,14 @@ export class ProjectService {
         basicPlan,
         proPlan,
         ultraPlan,
+        requestSizeLimitMb,
+        website,
+        termsOfUse,
+        proxyTimeoutSeconds,
+        longDescription,
+        healthCheckUrl,
+        apiDocumentation,
+        proxySecret
       } = updateProjectDto as any;
   
       await this.hubListingService.update(hubListing.id, {
@@ -295,6 +305,14 @@ export class ProjectService {
         proPlan,
         ultraPlan,
         projectId: id,
+        requestSizeLimitMb,
+        website,
+        termsOfUse,
+        proxyTimeoutSeconds,
+        longDescription,
+        healthCheckUrl,
+        apiDocumentation,
+        proxySecret
       });
     }
 

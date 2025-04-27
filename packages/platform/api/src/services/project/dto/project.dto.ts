@@ -5,7 +5,11 @@ import {
   IsUUID,
   IsEnum,
   IsNotEmpty,
-  ValidateNested
+  ValidateNested,
+  IsUrl,
+  IsNumber,
+  Max,
+  Min,
 } from 'class-validator';
 import { ProjectStatus } from '../../../entities/project/types';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -129,6 +133,51 @@ export class UpdateProjectDto {
   @IsOptional()
   @IsString()
   shortDescription?: string;
+
+  @ApiPropertyOptional({ description: 'Long description of the API', example: 'Detailed overview of your API and how it works.' })
+  @IsOptional()
+  @IsString()
+  longDescription?: string;
+
+  @ApiPropertyOptional({ description: 'API provider website URL', example: 'https://provider.com' })
+  @IsOptional()
+  @IsUrl()
+  website?: string;
+
+  @ApiPropertyOptional({ description: 'Terms of use for this API', example: 'https://provider.com/terms' })
+  @IsOptional()
+  @IsString()
+  termsOfUse?: string;
+
+  @ApiPropertyOptional({ description: 'Maximum request size in MB', example: 10 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(50)
+  requestSizeLimitMb?: number;
+
+  @ApiPropertyOptional({ description: 'Proxy timeout in seconds', example: 60 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(180)
+  proxyTimeoutSeconds?: number;
+
+
+  @ApiPropertyOptional({ description: 'URL used for health checks', example: 'https://provider.com/health' })
+  @IsOptional()
+  @IsUrl()
+  healthCheckUrl?: string;
+
+  @ApiPropertyOptional({ description: 'URL to API documentation', example: 'https://docs.provider.com' })
+  @IsOptional()
+  @IsString()
+  apiDocumentation?: string;
+
+  @ApiPropertyOptional({ description: 'Proxy secret for request authentication', example: 'super-secret-key' })
+  @IsOptional()
+  @IsString()
+  proxySecret?: string;
 
   @ApiPropertyOptional({ description: 'Public visibility', example: true })
   @IsOptional()
