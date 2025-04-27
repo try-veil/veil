@@ -41,6 +41,7 @@ export class ProjectService {
         tenant: {
           connect: { id: createProjectDto.tenantId }
         },
+        target_url:createProjectDto.target_url,
           // Create initial ProjectAcl with OWNER role for the user who created it
         projectAcls: {
           create: {
