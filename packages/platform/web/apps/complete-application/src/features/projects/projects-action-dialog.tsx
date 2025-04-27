@@ -170,9 +170,9 @@ export function ProjectsActionDialog({ open, onOpenChange, onSuccess }: Props) {
                 name='thumbnail'
                 render={({ field: { onChange, value, ...rest } }) => (
                   <FormItem>
-                    <Label>Upload Logo</Label>
-                    <div className='flex items-start gap-4'>
-                      <div>
+                    <div className='flex items-start justify-between gap-4'>
+                    <div className="flex flex-col justify-between h-24 pt-1">
+                      <Label>Upload Logo</Label>
                         <Input
                           ref={fileInputRef}
                           type='file'

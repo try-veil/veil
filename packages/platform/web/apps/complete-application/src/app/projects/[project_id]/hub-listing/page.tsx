@@ -25,9 +25,10 @@ export default function HubListingPage() {
     >
       <form className="space-y-6">
         <div className="space-y-2">
-          <Label>Upload Logo</Label>
+          
           <div className="flex items-start gap-4">
-            <div className="">
+            <div className="flex flex-col justify-between h-24 pt-1">
+            <Label>Upload Logo</Label>
               <Input
                 type="file"
                 accept="image/jpeg,image/png"
@@ -43,7 +44,7 @@ export default function HubListingPage() {
                   }
                 }}
               />
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground">
                 Maximum Size: 500 x 500px, JPEG / PNG
               </p>
             </div>
