@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from "react";
 import {
-  IconChecklist,
   IconLayoutDashboard,
   IconPackages,
   IconPlus,
+  IconChartBar,
+  IconSettingsCog,
+  IconFile,
+  IconBuildingBank,
+  IconRouteAltRight
 } from "@tabler/icons-react";
-import { AudioWaveform, Command, GalleryVerticalEnd } from "lucide-react";
+import { Command } from "lucide-react";
 import { useProject } from "@/context/project-context";
 import { useUser } from "@/contexts/UserContext";
 import { getAllProjectsByUserId } from "@/app/api/project/route";
@@ -79,19 +83,34 @@ export function useProviderSidebarData() {
         title: "General",
         items: [
           {
-            title: "Hub Listing",
+            title: "Marketplace Listing",
             url: `/projects/${selectedProject?.id}/hub-listing`,
             icon: IconLayoutDashboard,
           },
           {
             title: "Analytics",
             url: `/projects/${selectedProject?.id}/analytics`,
-            icon: IconChecklist,
+            icon: IconChartBar,
           },
           {
             title: "Settings",
             url: `/projects/${selectedProject?.id}/settings`,
-            icon: IconPackages,
+            icon: IconSettingsCog,
+          },
+          {
+            title: "Documentation",
+            url: `/projects/${selectedProject?.id}/hub-listing/documentation`,
+            icon: IconFile,
+          },
+          {
+            title: "Gateway",
+            url: `/projects/${selectedProject?.id}/hub-listing/gateway`,
+            icon: IconRouteAltRight,
+          },
+          {
+            title: "Monetize",
+            url: `/projects/${selectedProject?.id}/hub-listing/monetize`,
+            icon: IconBuildingBank,
           },
         ],
       },
