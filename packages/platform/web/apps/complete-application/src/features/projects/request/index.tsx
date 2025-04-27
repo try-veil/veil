@@ -243,7 +243,7 @@ export default function Request({
             </Button>
             <Button
               onClick={handleSave}
-              disabled={isLoading || !!initialData?.path}
+              disabled={isLoading}
               variant="default"
               size="sm"
             >
