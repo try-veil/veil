@@ -6,11 +6,11 @@ import {
   SidebarHeader,
   SidebarRail,
 } from '@/components/ui/sidebar'
-import { NavGroup } from '@/components/layout/nav-group'
 import { NavUser } from '@/components/layout/nav-user'
 import { TeamSwitcher } from '@/components/layout/team-switcher'
 import { useProviderSidebarData } from "./data/provider-sidebar-data";
 import { useProject } from '@/context/project-context'
+import { NavGroupRequest } from './nav-group-request'
 
 export function ProviderAppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const sidebarData = useProviderSidebarData();
@@ -23,7 +23,7 @@ export function ProviderAppSidebar({ ...props }: React.ComponentProps<typeof Sid
       </SidebarHeader>
       <SidebarContent>
         {sidebarData.navGroups.map((props) => (
-          <NavGroup key={props.title} {...props} />
+          <NavGroupRequest key={props.title} {...props}/>
         ))}
       </SidebarContent>
       <SidebarFooter>

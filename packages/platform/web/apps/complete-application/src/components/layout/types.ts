@@ -12,14 +12,16 @@ interface Team {
 
 interface Project {
   name: string
-  logo: React.ElementType
-  plan: string
+  id: string;
+  logo: React.ElementType | string
+  updatedAt: string;
 }
 
 interface BaseNavItem {
   title: string
   badge?: string
-  icon?: React.ElementType
+  icon?: React.ElementType | string
+  isRequest?: true
 }
 
 type NavLink = BaseNavItem & {
