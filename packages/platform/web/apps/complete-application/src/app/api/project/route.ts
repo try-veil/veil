@@ -77,6 +77,9 @@ export async function getProjectById(id: string | number, token: string): Promis
 }
 
 export async function createProject(data:Project, token: string): Promise<Project> {
+  if (!token) {
+    throw new Error('Access token is missing');
+  }
   try {
     const response = await fetch(`${API_BASE_URL}/projects`, {
       method: 'POST',

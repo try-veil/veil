@@ -12,6 +12,7 @@ export interface UserContextData {
   role?: string;
   accessToken?: string;
   refreshToken?: string;
+  tenantId?:string;
 }
 
 // Context interface
