@@ -28,6 +28,7 @@ import {
 } from "../ui/dropdown-menu";
 import { NavCollapsible, NavItem, NavLink, type NavGroup } from "./types";
 import { usePathname } from "next/navigation";
+import { getMethodColor } from "@/utils/getMethodColor";
 
 export function NavGroupRequest({ title, items }: NavGroup) {
   const { state } = useSidebar();
@@ -58,23 +59,6 @@ const NavBadge = ({ children }: { children: ReactNode }) => (
   <Badge className="rounded-full px-1 py-0 text-xs">{children}</Badge>
 );
 
-// Function to get the color class for the HTTP method
-const getMethodColor = (method: string) => {
-  switch (method) {
-    case "GET":
-      return "text-blue-500";
-    case "POST":
-      return "text-green-500";
-    case "PUT":
-      return "text-yellow-500";
-    case "DELETE":
-      return "text-red-500";
-    case "PATCH":
-      return "text-purple-500";
-    default:
-      return "text-gray-500";
-  }
-};
 
 const SidebarMenuLink = ({ item, href }: { item: NavLink; href: string }) => {
   const { setOpenMobile } = useSidebar();

@@ -6,6 +6,7 @@ import { OnboardAPI, getOnboardAPIById } from "@/app/api/onboard-api/route";
 import { getAllProjectAPIs } from "@/app/api/consumer/route";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePathname } from "next/navigation";
+import { getMethodColor } from "@/utils/getMethodColor";
 
 type Endpoint = {
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
@@ -121,9 +122,7 @@ export default function PlaygroundPage() {
             onClick={() => setSelectedEndpoint(endpoint)}
           >
             <span
-              className={`text-xs font-medium ${
-                endpoint.method === "GET" ? "text-blue-500" : "text-green-500"
-              }`}
+              className={`text-xs font-medium ${getMethodColor(endpoint.method)}`}
             >
               {endpoint.method}
             </span>
