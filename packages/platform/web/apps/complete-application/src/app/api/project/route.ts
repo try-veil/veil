@@ -13,7 +13,29 @@ export interface Project {
   apis?: API[];
   createdAt?: string;
   updatedAt?: string;
+  hubListing: HubListing;
 }
+
+export interface HubListing {
+  id: string;
+  logo?: string;
+  category?: string;
+  shortDescription?: string;
+  longDescription?: string;
+  website?: string;
+  termsOfUse?: string;
+  visibleToPublic?: boolean;
+  healthCheckUrl?: string;
+  apiDocumentation?: string;
+  proxySecret?: string;
+  requestSizeLimitMb?: number;
+  proxyTimeoutSeconds?: number;
+  basicPlanId?: string;
+  proPlanId?: string;
+  ultraPlanId?: string;
+  projectId?: number;
+}
+
 
 export interface ProjectAllowedAPI {
   apiId: string;
@@ -145,7 +167,7 @@ export async function createProject(
 export async function updateProject(
   token: string,
   projectId: number,
-  data: Partial<Omit<Project, "id" | "user_id" | "created_at" | "updated_at">>
+  data: Partial<Omit<Project, "id" | "user_id" | "created_at" | "updated_at" | "hubListing">> & Partial<HubListing>
 ): Promise<Project> {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/${projectId}`,

@@ -92,7 +92,7 @@ export async function createProject(token: string, data: Omit<Project, 'id' | 'u
 /**
  * Update an existing project
  */
-export async function updateProject(token: string, projectId: number, data: Partial<Omit<Project, 'id' | 'user_id' | 'created_at' | 'updated_at'>>): Promise<Project> {
+export async function updateProject(token: string, projectId: string, data: Partial<Omit<Project, 'id' | 'user_id' | 'created_at' | 'updated_at'>>): Promise<Project> {
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/projects/${projectId}`, {
     method: 'PATCH',
     headers: {
