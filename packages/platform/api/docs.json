@@ -1118,6 +1118,76 @@
         ]
       }
     },
+    "/projects/marketplace": {
+      "get": {
+        "operationId": "ProjectController_findAllForConsumer",
+        "summary": "Get all available projects for marketplace",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns all available projects",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/projects/marketplace/{id}": {
+      "get": {
+        "operationId": "ProjectController_findOneForConsumer",
+        "summary": "Get a specific project for marketplace",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Project ID",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectWithRelationsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found"
+          }
+        },
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/projects/{id}": {
       "get": {
         "operationId": "ProjectController_findOne",
@@ -1317,6 +1387,169 @@
         },
         "tags": [
           "projects"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/hublistings": {
+      "post": {
+        "operationId": "HubListingController_create",
+        "summary": "Register a new API in Hub Listing",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HubListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "API registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HubListingDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "403": {
+            "description": "Forbidden - requires provider role"
+          }
+        },
+        "tags": [
+          "hublistings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "HubListingController_findAll",
+        "summary": "Get all hub listings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of all hub listings"
+          }
+        },
+        "tags": [
+          "hublistings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/hublistings/{id}": {
+      "get": {
+        "operationId": "HubListingController_findOne",
+        "summary": "Get a single hub listing by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hub listing found"
+          },
+          "404": {
+            "description": "Hub listing not found"
+          }
+        },
+        "tags": [
+          "hublistings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "HubListingController_update",
+        "summary": "Update a hub listing",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HubListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Hub listing updated"
+          },
+          "404": {
+            "description": "Hub listing not found"
+          }
+        },
+        "tags": [
+          "hublistings"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "HubListingController_remove",
+        "summary": "Delete a hub listing",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hub listing deleted"
+          },
+          "404": {
+            "description": "Hub listing not found"
+          }
+        },
+        "tags": [
+          "hublistings"
         ],
         "security": [
           {
@@ -1863,6 +2096,77 @@
       }
     },
     "schemas": {
+      "ProjectResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "Project ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Project name",
+            "example": "My API Project"
+          },
+          "description": {
+            "type": "string",
+            "description": "Project description",
+            "example": "Project for managing my APIs"
+          },
+          "target_url": {
+            "type": "string",
+            "description": "Target Url",
+            "example": "https://jsonplaceholder.typicode.com/posts"
+          },
+          "thumbnail": {
+            "type": "string",
+            "description": "Project thumbnail URL",
+            "example": "https://example.com/image.png"
+          },
+          "favorite": {
+            "type": "boolean",
+            "description": "Mark project as favorite",
+            "default": false
+          },
+          "mashapeId": {
+            "type": "string",
+            "description": "Mashape ID for legacy projects"
+          },
+          "xMashapeKey": {
+            "type": "string",
+            "description": "X-Mashape-Key for legacy authentication"
+          },
+          "enableLimitsToAPIs": {
+            "type": "boolean",
+            "description": "Enable limits to APIs",
+            "default": false
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Last update timestamp"
+          },
+          "tenantId": {
+            "type": "string",
+            "description": "Tenant ID",
+            "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "favorite",
+          "enableLimitsToAPIs",
+          "createdAt",
+          "updatedAt",
+          "tenantId"
+        ]
+      },
       "TenantResponseDto": {
         "type": "object",
         "properties": {
@@ -1881,13 +2185,21 @@
           "slugifiedKey": {
             "type": "string",
             "description": "Slugified key for the tenant"
+          },
+          "projects": {
+            "description": "Projects under this tenant",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectResponseDto"
+            }
           }
         },
         "required": [
           "id",
           "name",
           "domain",
-          "slugifiedKey"
+          "slugifiedKey",
+          "projects"
         ]
       },
       "CreateWalletDto": {
@@ -2177,6 +2489,16 @@
             "description": "Project description",
             "example": "Project for managing my APIs"
           },
+          "target_url": {
+            "type": "string",
+            "description": "Target Url",
+            "example": "https://jsonplaceholder.typicode.com/posts"
+          },
+          "tenantId": {
+            "type": "string",
+            "description": "Tenant ID",
+            "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+          },
           "thumbnail": {
             "type": "string",
             "description": "Project thumbnail URL",
@@ -2191,70 +2513,21 @@
             "type": "boolean",
             "description": "Enable limits to APIs",
             "default": false
+          },
+          "logo": {
+            "type": "string",
+            "description": "Logo URL for the project",
+            "example": "https://example.com/logo.png"
+          },
+          "category": {
+            "type": "string",
+            "description": "Category of the project",
+            "example": "Finance"
           }
         },
         "required": [
-          "name"
-        ]
-      },
-      "ProjectResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number",
-            "description": "Project ID"
-          },
-          "name": {
-            "type": "string",
-            "description": "Project name",
-            "example": "My API Project"
-          },
-          "description": {
-            "type": "string",
-            "description": "Project description",
-            "example": "Project for managing my APIs"
-          },
-          "thumbnail": {
-            "type": "string",
-            "description": "Project thumbnail URL",
-            "example": "https://example.com/image.png"
-          },
-          "favorite": {
-            "type": "boolean",
-            "description": "Mark project as favorite",
-            "default": false
-          },
-          "mashapeId": {
-            "type": "string",
-            "description": "Mashape ID for legacy projects"
-          },
-          "xMashapeKey": {
-            "type": "string",
-            "description": "X-Mashape-Key for legacy authentication"
-          },
-          "enableLimitsToAPIs": {
-            "type": "boolean",
-            "description": "Enable limits to APIs",
-            "default": false
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "Creation timestamp"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "Last update timestamp"
-          }
-        },
-        "required": [
-          "id",
           "name",
-          "favorite",
-          "enableLimitsToAPIs",
-          "createdAt",
-          "updatedAt"
+          "tenantId"
         ]
       },
       "ProjectAllowedApiDto": {
@@ -2291,6 +2564,11 @@
             "description": "Project description",
             "example": "Project for managing my APIs"
           },
+          "target_url": {
+            "type": "string",
+            "description": "Target Url",
+            "example": "https://jsonplaceholder.typicode.com/posts"
+          },
           "thumbnail": {
             "type": "string",
             "description": "Project thumbnail URL",
@@ -2324,6 +2602,11 @@
             "type": "string",
             "description": "Last update timestamp"
           },
+          "tenantId": {
+            "type": "string",
+            "description": "Tenant ID",
+            "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+          },
           "apis": {
             "description": "APIs allowed in this project",
             "type": "array",
@@ -2339,7 +2622,39 @@
           "enableLimitsToAPIs",
           "createdAt",
           "updatedAt",
+          "tenantId",
           "apis"
+        ]
+      },
+      "PlanConfig": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the plan is enabled",
+            "example": true
+          },
+          "pricePerMonth": {
+            "type": "number",
+            "description": "Monthly price in USD",
+            "example": 29.99
+          },
+          "requestQuotaPerMonth": {
+            "type": "number",
+            "description": "Monthly request quota",
+            "example": 100000
+          },
+          "hardLimitQuota": {
+            "type": "number",
+            "description": "Hard limit of requests per month",
+            "example": 150000
+          }
+        },
+        "required": [
+          "enabled",
+          "pricePerMonth",
+          "requestQuotaPerMonth",
+          "hardLimitQuota"
         ]
       },
       "UpdateProjectDto": {
@@ -2354,6 +2669,11 @@
             "type": "string",
             "description": "Project description",
             "example": "Updated description"
+          },
+          "target_url": {
+            "type": "string",
+            "description": "Target Url",
+            "example": "https://jsonplaceholder.typicode.com/posts"
           },
           "thumbnail": {
             "type": "string",
@@ -2378,8 +2698,151 @@
               "INACTIVE",
               "DELETED"
             ]
+          },
+          "logo": {
+            "type": "string",
+            "description": "Logo URL",
+            "example": "https://example.com/logo.png"
+          },
+          "category": {
+            "type": "string",
+            "description": "API category",
+            "example": "Finance"
+          },
+          "shortDescription": {
+            "type": "string",
+            "description": "Short description of the API",
+            "example": "Short summary..."
+          },
+          "visibleToPublic": {
+            "type": "boolean",
+            "description": "Public visibility",
+            "example": true
+          },
+          "basicPlan": {
+            "description": "Basic plan config",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanConfig"
+              }
+            ]
+          },
+          "proPlan": {
+            "description": "Pro plan config",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanConfig"
+              }
+            ]
+          },
+          "ultraPlan": {
+            "description": "Ultra plan config",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanConfig"
+              }
+            ]
           }
         }
+      },
+      "HubListingDto": {
+        "type": "object",
+        "properties": {
+          "logo": {
+            "type": "string",
+            "description": "URL of the logo image",
+            "example": "https://example.com/logo.png"
+          },
+          "category": {
+            "type": "string",
+            "description": "Category of the API",
+            "example": "Finance"
+          },
+          "shortDescription": {
+            "type": "string",
+            "description": "Short description of the API",
+            "example": "Short summary about your API"
+          },
+          "longDescription": {
+            "type": "string",
+            "description": "Long description of the API",
+            "example": "Detailed overview of your API and how it works."
+          },
+          "website": {
+            "type": "string",
+            "description": "API provider website URL",
+            "example": "https://provider.com"
+          },
+          "termsOfUse": {
+            "type": "string",
+            "description": "Terms of use for this API",
+            "example": "https://provider.com/terms"
+          },
+          "visibleToPublic": {
+            "type": "boolean",
+            "description": "Whether this API is visible to the public",
+            "example": true
+          },
+          "healthCheckUrl": {
+            "type": "string",
+            "description": "URL used for health checks",
+            "example": "https://provider.com/health"
+          },
+          "apiDocumentation": {
+            "type": "string",
+            "description": "URL to API documentation",
+            "example": "https://docs.provider.com"
+          },
+          "proxySecret": {
+            "type": "string",
+            "description": "Proxy secret for request authentication",
+            "example": "super-secret-key"
+          },
+          "requestSizeLimitMb": {
+            "type": "number",
+            "description": "Maximum request size in MB",
+            "example": 10
+          },
+          "proxyTimeoutSeconds": {
+            "type": "number",
+            "description": "Proxy timeout in seconds",
+            "example": 60
+          },
+          "basicPlan": {
+            "description": "Configuration for basic plan",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanConfig"
+              }
+            ]
+          },
+          "proPlan": {
+            "description": "Configuration for pro plan",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanConfig"
+              }
+            ]
+          },
+          "ultraPlan": {
+            "description": "Configuration for ultra plan",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanConfig"
+              }
+            ]
+          },
+          "projectId": {
+            "type": "number",
+            "description": "Associated project ID",
+            "example": 123
+          }
+        },
+        "required": [
+          "category",
+          "visibleToPublic",
+          "projectId"
+        ]
       },
       "HeaderParameterDto": {
         "type": "object",

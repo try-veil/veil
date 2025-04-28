@@ -69,6 +69,33 @@ export class ProjectController {
     return this.projectService.findAll(req.user.id);
   }
 
+  @Get('marketplace')
+  // @Roles('consumer') 
+  @ApiOperation({ summary: 'Get all available projects for marketplace' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns all available projects',
+    type: [ProjectResponseDto],
+  })
+  findAllForConsumer(): Promise<ProjectResponseDto[]> {
+    return this.projectService.findAllForConsumer();
+  }
+
+  @Get('marketplace/:id')
+  @ApiOperation({ summary: 'Get a specific project for marketplace' })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the project',
+    type: ProjectWithRelationsDto,
+  })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  findOneForConsumer(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ProjectWithRelationsDto> {
+    return this.projectService.findOneForConsumer(id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a project by ID' })
   @ApiParam({ name: 'id', description: 'Project ID' })

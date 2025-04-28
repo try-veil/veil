@@ -111,7 +111,6 @@ export class ApiRegistrationRequestDto {
     description: 'URL to the API documentation',
     example: 'https://docs.example.com/api/payments',
   })
-  @IsUrl()
   @IsOptional()
   documentation_url?: string;
 

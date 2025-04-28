@@ -144,6 +144,17 @@ export class OnboardingService {
       api_keys: request.api_keys,
     };
     const response = await this.gatewayService.onboardApi(gatewayRequest);
+    
+    await this.prisma.user.update({
+      where: {
+        id: providerId,
+      },
+      data: {
+        publishedApisList: {
+          push: api.id,
+        },
+      },
+    });
 
     console.log('Gateway response:', response);
 
