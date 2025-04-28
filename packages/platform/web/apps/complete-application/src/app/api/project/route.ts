@@ -211,7 +211,6 @@ export async function deleteProject(
     const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
       method: "DELETE",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
     });

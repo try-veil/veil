@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import ContentSection from '@/features/settings/components/content-section'
 import { Button } from '@/components/ui/button'
 import {
@@ -21,6 +21,8 @@ import { toast } from '@/hooks/use-toast'
 import { useProject } from '@/context/project-context'
 import { useAuth } from '@/contexts/AuthContext'
 import { updateProject } from '@/app/api/project/route'
+import { deleteProject } from '@/app/api/project/route';
+import { useRouter } from 'next/navigation';
 
 // Separate schema for target URL
 const targetUrlSchema = z.object({
@@ -65,6 +67,8 @@ export default function SettingsPage() {
     }
   }, [selectedProject, targetUrlForm]);
 
+  const router = useRouter();
+
   async function onTargetUrlSubmit(data: TargetUrlFormValues) {
     try {
       console.log(selectedProject, accessToken);
@@ -97,8 +101,42 @@ export default function SettingsPage() {
   function onTransferSubmit(data: TransferFormValues) {
     toast({
       title: 'Transfer Ownership',
-      description: 'This feature is not implemented yet.',
+      description: 'This feature is not available in v1.',
     })
+  }
+
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const onDeleteProject = async () => {
+    if (!selectedProject?.id || !accessToken) {
+      toast({
+        title: 'Error',
+        description: 'Project ID or access token not found',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      await deleteProject(selectedProject.id, accessToken);
+      toast({
+        title: 'Success',
+        description: 'Project deleted successfully',
+      });
+
+      router.push('/projects')
+
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete project',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   }
 
   return (
@@ -106,7 +144,7 @@ export default function SettingsPage() {
       title='API Settings'
       desc='Manage your API settings, transfer ownership, and delete project.'
     >
-      <div className='space-y-10'>
+      <div className='space-y-10 pb-8'>
         {/* Target URL Form */}
         <div className='space-y-4'>
           <h3 className='text-lg font-medium'>API Configuration</h3>
@@ -203,7 +241,7 @@ export default function SettingsPage() {
             Listing, will destroy your team&apos;s data from Requests, Testing and
             Descriptions. This action is not reversible.
           </p>
-          <Button variant='destructive'>Delete API Project</Button>
+          <Button onClick={onDeleteProject} variant='destructive'>Delete API Project</Button>
         </div>
       </div>
     </ContentSection>
