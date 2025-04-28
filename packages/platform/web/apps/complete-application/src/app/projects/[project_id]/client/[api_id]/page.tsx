@@ -1,29 +1,33 @@
-'use client'
+"use client";
 
-import Request from '@/features/projects/request'
-import React, { useState, useEffect } from 'react'
-import { ResizableBox as BaseResizableBox } from 'react-resizable'
-import type { ResizableBoxProps } from 'react-resizable'
-import 'react-resizable/css/styles.css'
-import ResponseViewer from '@/features/projects/request/components/response-viewer'
-import { useAuth } from '@/contexts/AuthContext'
-import { onboardAPI, getOnboardAPIById, updateOnboardAPI } from '@/app/api/onboard-api/route'
-import { toast } from '@/hooks/use-toast'
-import { useProject } from '@/context/project-context'
-import { updateProject } from '@/lib/api'
-import { useRouter, useParams } from 'next/navigation'
+import Request from "@/features/projects/request";
+import React, { useState, useEffect } from "react";
+import { ResizableBox as BaseResizableBox } from "react-resizable";
+import type { ResizableBoxProps } from "react-resizable";
+import "react-resizable/css/styles.css";
+import ResponseViewer from "@/features/projects/request/components/response-viewer";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  onboardAPI,
+  getOnboardAPIById,
+  updateOnboardAPI,
+} from "@/app/api/onboard-api/route";
+import { toast } from "@/hooks/use-toast";
+import { useProject } from "@/context/project-context";
+import { updateProject } from "@/lib/api";
+import { useRouter, useParams } from "next/navigation";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Form,
   FormControl,
@@ -32,24 +36,24 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
+} from "@/components/ui/form";
 
 // Target URL Schema
 const targetUrlSchema = z.object({
   target_url: z.string().url({
-    message: 'Please enter a valid URL.',
+    message: "Please enter a valid URL.",
   }),
-})
+});
 
-type TargetUrlFormValues = z.infer<typeof targetUrlSchema>
+type TargetUrlFormValues = z.infer<typeof targetUrlSchema>;
 
 // Target URL Modal Component
-function TargetUrlModal({ 
-  open, 
+function TargetUrlModal({
+  open,
   onOpenChange,
   onSuccess,
-}: { 
-  open: boolean; 
+}: {
+  open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }) {
@@ -61,7 +65,7 @@ function TargetUrlModal({
   const form = useForm<TargetUrlFormValues>({
     resolver: zodResolver(targetUrlSchema),
     defaultValues: {
-      target_url: '',
+      target_url: "",
     },
   });
 
@@ -76,30 +80,33 @@ function TargetUrlModal({
     try {
       setIsLoading(true);
       if (!selectedProject?.id || !accessToken) {
-        throw new Error('Project ID or access token not found');
+        throw new Error("Project ID or access token not found");
       }
 
       // Update project with new target_url
       await updateProject(accessToken, selectedProject.id, {
-        target_url: data.target_url
+        target_url: data.target_url,
       });
 
       // Refresh project data
       await refreshProject();
 
       toast({
-        title: 'Success',
-        description: 'Target URL updated successfully',
+        title: "Success",
+        description: "Target URL updated successfully",
       });
 
       onSuccess();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error updating target URL:', error);
+      console.error("Error updating target URL:", error);
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to update target URL',
-        variant: 'destructive',
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to update target URL",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -107,32 +114,26 @@ function TargetUrlModal({
   }
 
   return (
-    <Dialog 
-      open={open} 
-      onOpenChange={handleOpenChange}
-      modal={true}
-    >
+    <Dialog open={open} onOpenChange={handleOpenChange} modal={true}>
       <DialogContent onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>Set Target URL</DialogTitle>
           <DialogDescription>
-            Please set the target URL for your API endpoints. This will be used as the base URL for all requests.
-            You must set a target URL to continue.
+            Please set the target URL for your API endpoints. This will be used
+            as the base URL for all requests. You must set a target URL to
+            continue.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name='target_url'
+              name="target_url"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Target URL</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder='https://api.example.com'
-                      {...field}
-                    />
+                    <Input placeholder="https://api.example.com" {...field} />
                   </FormControl>
                   <FormDescription>
                     The base URL for your API endpoints
@@ -142,11 +143,15 @@ function TargetUrlModal({
               )}
             />
             <div className="flex justify-between">
-              <Button type="button" variant="outline" onClick={() => router.back()}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+              >
                 Cancel
               </Button>
-              <Button type='submit' disabled={isLoading}>
-                {isLoading ? 'Saving...' : 'Save Target URL'}
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Saving..." : "Save Target URL"}
               </Button>
             </div>
           </form>
@@ -182,17 +187,18 @@ interface TestRequestData {
 }
 
 // Create a properly typed wrapper for ResizableBox
-const ResizableBox = BaseResizableBox as any
+const ResizableBox = BaseResizableBox as any;
 
 export default function RequestPage() {
-  const [isCodePreviewExpanded, setIsCodePreviewExpanded] = useState(false)
-  const [codeType, setCodeType] = useState("curl")
-  const [isLoading, setIsLoading] = useState(false)
-  const [response, setResponse] = useState<any>(null)
-  const [viewportHeight, setViewportHeight] = useState(0)
-  const { user, accessToken } = useAuth()
-  const { selectedProject,setSelectedProjectId } = useProject()
-  const [showTargetUrlModal, setShowTargetUrlModal] = useState(false)
+  const [isCodePreviewExpanded, setIsCodePreviewExpanded] = useState(false);
+  const [codeType, setCodeType] = useState("curl");
+  const [isLoading, setIsLoading] = useState(false);
+  const [response, setResponse] = useState<any>(null);
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const { user, accessToken } = useAuth();
+  const { selectedProject, setSelectedProjectId, refreshProject } =
+    useProject();
+  const [showTargetUrlModal, setShowTargetUrlModal] = useState(false);
   const params = useParams();
   const [formData, setFormData] = useState<OnboardRequestData>({
     api_id: "",
@@ -204,16 +210,20 @@ export default function RequestPage() {
     version: "1.0",
     description: "",
     documentation_url: "",
-    required_headers: []
+    required_headers: [],
   });
+  const router = useRouter();
 
   useEffect(() => {
     const fetchApiDetails = async () => {
-      if (params.api_id && params.api_id !== 'add-request' && accessToken) {
+      if (params.api_id && params.api_id !== "add-request" && accessToken) {
         try {
           setIsLoading(true);
-          const data = await getOnboardAPIById(params.api_id as string, accessToken);
-          
+          const data = await getOnboardAPIById(
+            params.api_id as string,
+            accessToken
+          );
+
           setFormData({
             ...formData,
             api_id: data.api_id,
@@ -222,14 +232,17 @@ export default function RequestPage() {
             method: data.method,
             description: data.description,
             documentation_url: data.documentation_url,
-            required_headers: data.required_headers || []
+            required_headers: data.required_headers || [],
           });
         } catch (error) {
-          console.error('Error fetching API details:', error);
+          console.error("Error fetching API details:", error);
           toast({
-            title: 'Error',
-            description: error instanceof Error ? error.message : 'Failed to fetch API details',
-            variant: 'destructive',
+            title: "Error",
+            description:
+              error instanceof Error
+                ? error.message
+                : "Failed to fetch API details",
+            variant: "destructive",
           });
         } finally {
           setIsLoading(false);
@@ -246,20 +259,20 @@ export default function RequestPage() {
       setShowTargetUrlModal(true);
     }
   }, [selectedProject]);
-  
+
   useEffect(() => {
-    setViewportHeight(window.innerHeight)
-    const handleResize = () => setViewportHeight(window.innerHeight)
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
+    setViewportHeight(window.innerHeight);
+    const handleResize = () => setViewportHeight(window.innerHeight);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const generateCurlCommand = (data: TestRequestData) => {
     let curl = `curl -X ${data.method} '${data.target_url}'`;
-    
+
     // Add headers
     if (data.headers && data.headers.length > 0) {
-      data.headers.forEach(header => {
+      data.headers.forEach((header) => {
         curl += `\n  -H '${header.name}: ${header.value}'`;
       });
     }
@@ -270,16 +283,16 @@ export default function RequestPage() {
   const handleTest = async (testData: TestRequestData) => {
     try {
       const curlCommand = generateCurlCommand(testData);
-      
+
       // Make the actual HTTP request
       const requestHeaders: Record<string, string> = {};
-      testData.headers.forEach(header => {
+      testData.headers.forEach((header) => {
         requestHeaders[header.name] = header.value;
       });
 
       const response = await fetch(testData.target_url, {
         method: testData.method,
-        headers: requestHeaders
+        headers: requestHeaders,
       });
 
       const responseData = await response.json();
@@ -293,47 +306,48 @@ export default function RequestPage() {
           date: new Date().toISOString(),
           url: testData.target_url,
           status: `${response.status} ${response.statusText}`,
-          library: 'Fetch API',
-          headersResponseTime: 'N/A',
-          totalResponseTime: 'N/A',
-          responseBodySize: 'N/A',
+          library: "Fetch API",
+          headersResponseTime: "N/A",
+          totalResponseTime: "N/A",
+          responseBodySize: "N/A",
         },
         request: {
           method: testData.method,
           url: testData.target_url,
-          path: '/',
+          path: "/",
           headers: requestHeaders,
-          curl: curlCommand
-        }
+          curl: curlCommand,
+        },
       });
     } catch (error) {
-      console.error('Error making test request:', error);
+      console.error("Error making test request:", error);
       setResponse({
         status: 500,
-        statusText: 'Error',
-        data: { error: 'Failed to make test request' },
+        statusText: "Error",
+        data: { error: "Failed to make test request" },
         request: {
           method: testData.method,
           url: testData.target_url,
-          path: '/',
+          path: "/",
           headers: testData.headers,
-          curl: generateCurlCommand(testData)
-        }
+          curl: generateCurlCommand(testData),
+        },
       });
     }
   };
 
   const handleSaveRequest = async (requestData: any) => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       // Transform headers to required format
-      const required_headers = requestData.headers?.map((header: any) => ({
-        name: header.name,
-        value: header.value,
-        is_variable: true
-      })) || [];
+      const required_headers =
+        requestData.headers?.map((header: any) => ({
+          name: header.name,
+          value: header.value,
+          is_variable: true,
+        })) || [];
 
-      if (params.api_id && params.api_id !== 'add-request') {
+      if (params.api_id && params.api_id !== "add-request") {
         // Update existing API
         const updateData = {
           api_id: params.api_id as string,
@@ -349,15 +363,20 @@ export default function RequestPage() {
 
         if (accessToken) {
           try {
-            const response = await updateOnboardAPI(params.api_id as string, updateData, accessToken);
-            console.log('API updated successfully:', response);
+            const response = await updateOnboardAPI(
+              params.api_id as string,
+              updateData,
+              accessToken
+            );
+            console.log("API updated successfully:", response);
+            refreshProject();
             toast({
               title: "Success",
               description: "API updated successfully",
               variant: "default",
             });
           } catch (error: any) {
-            console.error('Error updating API:', error);
+            console.error("Error updating API:", error);
             toast({
               title: "Error",
               description: error.message || "Failed to update API",
@@ -368,8 +387,8 @@ export default function RequestPage() {
       } else {
         // Create new API
         const generatedApiId = crypto.randomUUID();
-        const targetUrlSegments = requestData.target_url.split('/');
-        const targetUrlPart = targetUrlSegments[2] || '';
+        const targetUrlSegments = requestData.target_url.split("/");
+        const targetUrlPart = targetUrlSegments[2] || "";
         const constructedPath = `${generatedApiId}${requestData.path}`;
 
         const newApiData = {
@@ -382,20 +401,24 @@ export default function RequestPage() {
           method: requestData.method.toUpperCase(),
           documentation_url: requestData.documentation_url,
           required_headers,
-          project_id: selectedProject?.id
+          project_id: selectedProject?.id,
         };
 
         if (accessToken) {
           try {
             const response = await onboardAPI(newApiData, accessToken);
-            console.log('API onboarded successfully:', response);
+            console.log("API onboarded successfully:", response);
+            await refreshProject();
             toast({
               title: "Success",
               description: "API onboarded successfully",
               variant: "default",
             });
+            router.push(
+              `/projects/${selectedProject?.id}/client/${generatedApiId}`
+            );
           } catch (error: any) {
-            console.error('Error onboarding API:', error);
+            console.error("Error onboarding API:", error);
             toast({
               title: "Error",
               description: error.message || "Failed to onboard API",
@@ -403,7 +426,7 @@ export default function RequestPage() {
             });
           }
         } else {
-          console.error('No authentication token available');
+          console.error("No authentication token available");
           toast({
             title: "Error",
             description: "Authentication required",
@@ -411,13 +434,13 @@ export default function RequestPage() {
           });
           setResponse({
             status: 401,
-            statusText: 'Unauthorized',
-            data: { error: 'Authentication required' }
+            statusText: "Unauthorized",
+            data: { error: "Authentication required" },
           });
         }
       }
     } catch (error) {
-      console.error('Error processing request:', error)
+      console.error("Error processing request:", error);
       toast({
         title: "Error",
         description: "Failed to process request",
@@ -427,14 +450,14 @@ export default function RequestPage() {
       if (selectedProject?.id) {
         setSelectedProjectId(String(selectedProject.id));
       }
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <>
-      <TargetUrlModal 
-        open={showTargetUrlModal} 
+      <TargetUrlModal
+        open={showTargetUrlModal}
         onOpenChange={setShowTargetUrlModal}
         onSuccess={() => {
           // Additional actions after successful update if needed
@@ -496,7 +519,7 @@ export default function RequestPage() {
             axis="none"
             className="rounded-lg shadow-md overflow-hidden"
           >
-            <Request 
+            <Request
               isLoading={isLoading}
               onSave={handleSaveRequest}
               onTest={handleTest}
@@ -512,13 +535,10 @@ export default function RequestPage() {
             axis="none"
             className="bg-muted rounded-lg shadow-md overflow-hidden"
           >
-            <ResponseViewer 
-              isLoading={isLoading}
-              response={response}
-            />
+            <ResponseViewer isLoading={isLoading} response={response} />
           </ResizableBox>
         </div>
       </div>
     </>
-  )
+  );
 }

@@ -71,6 +71,7 @@ export default function Request({
 }: RequestProps) {
   const { accessToken } = useAuth();
   const router = useRouter();
+  const { refreshProject } = useProject();
   const handleDeleteAPI = async () => {
     try {
       setIsDeleteLoading(true);
@@ -93,6 +94,7 @@ export default function Request({
         initialData.api_id.toString(),
         accessToken
       );
+      await refreshProject();
       toast({
         title: "Success",
         description: "API deleted successfully",
