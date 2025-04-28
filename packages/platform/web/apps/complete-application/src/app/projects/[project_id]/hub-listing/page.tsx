@@ -91,12 +91,13 @@ export default function HubListingPage() {
       
 
       setIsDirty(false);
-      await refreshProject();
 
       toast({
         title: "Success",
         description: "Project updated successfully",
       });
+
+      await refreshProject();
     } catch (error) {
       console.error("Failed to save:", error);
     }
