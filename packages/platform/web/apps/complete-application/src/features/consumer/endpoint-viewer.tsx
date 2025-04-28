@@ -21,7 +21,7 @@ interface Endpoint {
   name: string;
   apiId: string;
   version: string;
-  path:string;
+  path: string;
 }
 
 interface EndpointViewerProps {
@@ -38,7 +38,7 @@ interface TestRequestData {
   method: string;
   target_url: string;
   headers: { name: string; value: string }[];
-  path:string;
+  path: string;
 }
 
 export default function EndpointViewer({
@@ -79,7 +79,7 @@ export default function EndpointViewer({
   const generateCurlCommand = () => {
     if (!apiDetails) return "No API details available";
 
-    let curl = `curl -X ${apiDetails.method} 'http://localhost:2021/${apiDetails.path}'`;
+    let curl = `curl -X ${apiDetails.method} '${process.env.NEXT_PUBLIC_VEIL_URL}/${apiDetails.path}'`;
 
     // Add headers with current values
     if (apiDetails.required_headers && apiDetails.required_headers.length > 0) {
@@ -90,13 +90,13 @@ export default function EndpointViewer({
     }
 
     // Add authorization header
-    curl += `\n  -H 'Authorization: Bearer <YOUR_TOKEN>'`;
+    curl += `\n  -H 'x-veilapi-host: ${apiDetails.api_id}'`;
 
     return curl;
   };
 
   const generateResponseCurlCommand = (data: TestRequestData) => {
-    let curl = `curl -X ${data.method} 'http://localhost:2021/${data.path}'`;
+    let curl = `curl -X ${data.method} '${process.env.NEXT_PUBLIC_VEIL_URL}/${data.path}'`;
 
     // Add headers
     if (data.headers && data.headers.length > 0) {
@@ -185,6 +185,7 @@ export default function EndpointViewer({
               App
             </TabsTrigger>
             <TabsTrigger
+              disabled
               value="params"
               className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
@@ -288,43 +289,12 @@ export default function EndpointViewer({
             <Card>
               <CardContent className="p-4">
                 <div className="space-y-4">
-                  {apiDetails?.required_headers &&
-                  apiDetails.required_headers.length > 0 ? (
-                    apiDetails.required_headers.map((header) => (
-                      <div key={header.name} className="space-y-2">
-                        <Label className="font-bold flex items-center gap-2">
-                          {header.name}
-                          {header.is_variable && (
-                            <span className="text-xs text-blue-500 font-normal">
-                              (Variable)
-                            </span>
-                          )}
-                        </Label>
-                        <Input
-                          disabled
-                          placeholder={
-                            header.is_variable
-                              ? `Enter your ${header.name}`
-                              : header.value
-                          }
-                          value={headerValues[header.name]?.value || ""}
-                          onChange={(e) => {
-                            setHeaderValues((prev) => ({
-                              ...prev,
-                              [header.name]: {
-                                value: e.target.value,
-                                is_variable: header.is_variable,
-                              },
-                            }));
-                          }}
-                        />
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-muted-foreground">
-                      No headers available
-                    </p>
-                  )}
+                  <Label>X-VeilAPI-Host</Label>
+                  <Input
+                    disabled
+                    placeholder=""
+                    value={`veil.com/${apiDetails?.api_id}`}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -361,6 +331,44 @@ export default function EndpointViewer({
                     ))}
                   </SelectContent>
                 </Select>
+
+                {/* {apiDetails?.required_headers &&
+                  apiDetails.required_headers.length > 0 ? (
+                    apiDetails.required_headers.map((header) => (
+                      <div key={header.name} className="space-y-2">
+                        <Label className="font-bold flex items-center gap-2">
+                          {header.name}
+                          {header.is_variable && (
+                            <span className="text-xs text-blue-500 font-normal">
+                              (Variable)
+                            </span>
+                          )}
+                        </Label>
+                        <Input
+                          disabled
+                          placeholder={
+                            header.is_variable
+                              ? `Enter your ${header.name}`
+                              : header.value
+                          }
+                          value={headerValues[header.name]?.value || ""}
+                          onChange={(e) => {
+                            setHeaderValues((prev) => ({
+                              ...prev,
+                              [header.name]: {
+                                value: e.target.value,
+                                is_variable: header.is_variable,
+                              },
+                            }));
+                          }}
+                        />
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground">
+                      No headers available
+                    </p>
+                  )} */}
               </div>
               <Card>
                 <CardHeader>
@@ -394,7 +402,7 @@ export default function EndpointViewer({
               <CardHeader>
                 <CardTitle className="text-sm">Example Responses</CardTitle>
               </CardHeader>
-              <CardContent className="p-4">
+              <CardContent className="p-4 pl-6">
                 <div className="text-muted-foreground">
                   <p className="text-muted-foreground">
                     No example responses available for this endpoint
@@ -420,7 +428,7 @@ export default function EndpointViewer({
                             value: value.value,
                           })
                         ),
-                        path:endpoint.path,
+                        path: endpoint.path,
                       };
                       handleTest(testData);
                       setIsTestLoading(true); // Trigger loading state
