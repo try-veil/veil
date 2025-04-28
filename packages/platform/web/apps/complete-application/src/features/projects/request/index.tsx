@@ -20,7 +20,28 @@ import { deleteAPI } from "@/app/api/onboard-api/route";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { z } from "zod";
 
+const requestFormSchema = z.object({
+  name: z.string().min(1, { message: "Endpoint name is required" }),
+  description: z.string().optional(),
+  path: z.string()
+    .min(1, { message: "Path is required" })
+    .startsWith("/", { message: "Path must start with /" }),
+  documentation_url: z.union([
+    z.string().url({ message: "Please enter a valid URL" }),
+    z.string().length(0)
+  ]),
+  method: z.string(),
+  headers: z.array(
+    z.object({
+      name: z.string(),
+      value: z.string()
+    })
+  ).optional()
+});
+
+type RequestFormData = z.infer<typeof requestFormSchema>;
 interface RequestProps {
   isLoading?: boolean;
   onSave?: (data: RequestData) => void;
@@ -72,6 +93,13 @@ export default function Request({
   const { accessToken } = useAuth();
   const router = useRouter();
   const { refreshProject } = useProject();
+
+  const [errors, setErrors] = useState<{
+    name?: string;
+    path?: string;
+    documentation_url?: string;
+  }>();
+
   const handleDeleteAPI = async () => {
     try {
       setIsDeleteLoading(true);
@@ -161,6 +189,7 @@ export default function Request({
   };
   const targetUrl = selectedProject?.target_url;
   const handleSave = () => {
+    try {
     const formData = {
       name,
       description,
@@ -170,9 +199,26 @@ export default function Request({
       headers,
       target_url: targetUrl,
     };
+    const result = requestFormSchema.safeParse(formData);
+    if (!result.success) {
+      // Format and set errors
+      const formattedErrors = result.error.format();
+      setErrors({
+        name: formattedErrors.name?._errors[0],
+        path: formattedErrors.path?._errors[0],
+        documentation_url: formattedErrors.documentation_url?._errors[0],
+      });
+      return;
+    }
+    // Clear errors if validation passes
+    setErrors({});
+    
     console.log("Request Data", targetUrl);
     if (onSave) {
       onSave(formData as RequestData);
+    }}
+    catch (error) {
+      console.error("Form validation error:", error);
     }
   };
 
@@ -223,7 +269,7 @@ export default function Request({
             value={path}
             onChange={(e) => setPath(e.target.value)}
           />
-          <div className="flex gap-2">
+           <div className="flex gap-2">
             <Button
               onClick={handleTest}
               disabled={isTestLoading}
@@ -283,7 +329,9 @@ export default function Request({
               <></>
             )}
           </div>
+          
         </div>
+        {errors?.path && <p className="text-sm text-red-500 mt-1 ml-1">{errors.path}</p>}
       </div>
 
       {/* Tabs Section */}
@@ -313,6 +361,7 @@ export default function Request({
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                     />
+                    {errors?.name && <p className="text-sm text-red-500">{errors.name}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label>Description</Label>
@@ -337,6 +386,9 @@ export default function Request({
                       value={documentationUrl}
                       onChange={(e) => setDocumentationUrl(e.target.value)}
                     />
+                    {errors?.documentation_url && (
+    <p className="text-sm text-red-500">{errors.documentation_url}</p>
+  )}
                   </div>
                 </div>
               </TabsContent>
