@@ -16,20 +16,22 @@ export default function Projects() {
   const [isLoading, setIsLoading] = useState(true);
   const { user, isAuthenticated, accessToken } = useAuth();
   const { user: userContext, isLoading: isUserLoading } = useUser();
-  console.log("userContext", userContext,user);
+  console.log("userContext", userContext, user);
   const { projectList, setProjectList } = useProject();
   const fetchProjects = async () => {
     try {
       const token = accessToken;
       if (!token) {
-        throw new Error('No authentication token found');
+        throw new Error("No authentication token found");
       }
       const projectsData = await getAllProjectsByUserId(token);
       setProjectList(projectsData);
       setIsLoading(false);
     } catch (error) {
-      console.log('Error fetching projects:', error);
-      setError(error instanceof Error ? error.message : 'Failed to fetch projects');
+      console.log("Error fetching projects:", error);
+      setError(
+        error instanceof Error ? error.message : "Failed to fetch projects"
+      );
       setIsLoading(false);
     }
   };
@@ -41,19 +43,19 @@ export default function Projects() {
   }, [accessToken]);
 
   // Show loading state while checking user context
-  if (isUserLoading) {
-    return (
-      <main className="flex flex-col">
-        <Navbar session={isAuthenticated} user={user} />
-        <div className="flex-1 pt-24 flex items-center justify-center">
-          <p>Loading...</p>
-        </div>
-      </main>
-    );
-  }
+  // if (isUserLoading) {
+  //   return (
+  //     <main className="flex flex-col">
+  //       <Navbar session={isAuthenticated} user={user} />
+  //       <div className="flex-1 pt-24 flex items-center justify-center">
+  //         <p>Loading...</p>
+  //       </div>
+  //     </main>
+  //   );
+  // }
 
   if (error) return <p style={{ color: "red" }}>{error}</p>;
-  
+
   // Check if projects array is empty before showing CreateTenantForm
   if (projectList.length === 0 && !isLoading) {
     return (
@@ -82,13 +84,11 @@ export default function Projects() {
             </TabsList>
             <div className="flex-grow">
               <TabsContent value="projects" className="m-0">
-                {isLoading ? (
-                  <div className="flex items-center justify-center h-full">
-                    <p>Loading projects...</p>
-                  </div>
-                ) : (
-                  <MyProjects projects={projectList} onProjectsChange={fetchProjects} />
-                )}
+                <MyProjects
+                  projects={projectList}
+                  onProjectsChange={fetchProjects}
+                  isLoading={isLoading}
+                />
               </TabsContent>
               <TabsContent value="analytics" className="m-0">
                 <MyAnalytics />
