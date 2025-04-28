@@ -34,8 +34,18 @@ export interface HubListing {
   proPlanId?: string;
   ultraPlanId?: string;
   projectId?: number;
+  basicPlan?: Plan;
+  proPlan?: Plan;
+  ultraPlan?: Plan;
 }
 
+export interface Plan {
+  id: string;
+  enabled: boolean;
+  pricePerMonth: number;
+  requestQuotaPerMonth: number;
+  hardLimitQuota: number;
+}
 
 export interface ProjectAllowedAPI {
   apiId: string;
@@ -166,7 +176,7 @@ export async function createProject(
 
 export async function updateProject(
   token: string,
-  projectId: number,
+  projectId: string,
   data: Partial<Omit<Project, "id" | "user_id" | "created_at" | "updated_at" | "hubListing">> & Partial<HubListing>
 ): Promise<Project> {
   const response = await fetch(
@@ -188,4 +198,33 @@ export async function updateProject(
   const resData = await response.json();
 
   return resData;
+}
+
+export async function deleteProject(
+  id: string,
+  token: string
+): Promise<Project> {
+  if (!token) {
+    throw new Error("Access token is missing");
+  }
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const resData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(resData.error || "Failed to delete project");
+    }
+
+    return resData;
+  } catch (error) {
+    console.error("[deleteProject] Error:", error);
+    throw error;
+  }
 }
