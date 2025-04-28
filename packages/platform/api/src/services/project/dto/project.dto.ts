@@ -271,4 +271,13 @@ export class ProjectWithRelationsDto extends ProjectResponseDto {
     type: [ProjectAllowedApiDto],
   })
   apis: ProjectAllowedApiDto[];
+
+  @ApiPropertyOptional({ description: 'Basic plan config', type: PlanConfig })
+  basicPlan?: PlanConfig;
+
+  @ApiPropertyOptional({ description: 'Pro plan config', type: PlanConfig })
+  proPlan?: PlanConfig;
+
+  @ApiPropertyOptional({ description: 'Ultra plan config', type: PlanConfig })
+  ultraPlan?: PlanConfig;
 }
