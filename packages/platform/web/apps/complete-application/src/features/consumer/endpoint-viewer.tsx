@@ -38,7 +38,6 @@ interface TestRequestData {
   method: string;
   target_url: string;
   headers: { name: string; value: string }[];
-  path: string;
 }
 
 export default function EndpointViewer({
@@ -50,7 +49,7 @@ export default function EndpointViewer({
   );
   const [selectedApp, setSelectedApp] = useState<string>("");
   const [selectedKey, setSelectedKey] = useState<string>("");
-  const [selectedUrl, setSelectedUrl] = useState<string>("veil");
+  const [selectedUrl, setSelectedUrl] = useState<string>(process.env.NEXT_PUBLIC_VEIL_URL || "https://veil.com");
   const [selectedAuthType, setSelectedAuthType] = useState("bearer");
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState<any>(null);
@@ -76,7 +75,7 @@ export default function EndpointViewer({
     }
   }, [apiDetails]);
 
-  const generateCurlCommand = () => {
+  const generateCurlCode = () => {
     if (!apiDetails) return "No API details available";
 
     let curl = `curl -X ${apiDetails.method} '${process.env.NEXT_PUBLIC_VEIL_URL}/${apiDetails.path}'`;
@@ -95,8 +94,9 @@ export default function EndpointViewer({
     return curl;
   };
 
-  const generateResponseCurlCommand = (data: TestRequestData) => {
-    let curl = `curl -X ${data.method} '${process.env.NEXT_PUBLIC_VEIL_URL}/${data.path}'`;
+  const generateCurlCommand = (data: TestRequestData) => {
+    console.log("data..........",data)
+    let curl = `curl -X ${data.method} ${data.target_url}`;
 
     // Add headers
     if (data.headers && data.headers.length > 0) {
@@ -117,22 +117,24 @@ export default function EndpointViewer({
     );
   }
 
-  const handleTest = async (testData: TestRequestData) => {
+ const handleTest = async (testData: TestRequestData) => {
     try {
-      const curlCommand = generateResponseCurlCommand(testData);
-
+      const curlCommand = generateCurlCommand(testData);
+      
       // Make the actual HTTP request
       const requestHeaders: Record<string, string> = {};
-      testData.headers.forEach((header) => {
+      testData.headers.forEach(header => {
         requestHeaders[header.name] = header.value;
       });
 
-      const response = await fetch(curlCommand, {
+      const response = await fetch(testData.target_url, {
         method: testData.method,
-        headers: requestHeaders,
+        headers: requestHeaders
       });
 
       const responseData = await response.json();
+
+      console.log("^^^^^^^",responseData)
 
       setResponse({
         status: response.status,
@@ -143,32 +145,44 @@ export default function EndpointViewer({
           date: new Date().toISOString(),
           url: testData.target_url,
           status: `${response.status} ${response.statusText}`,
-          library: "Fetch API",
-          headersResponseTime: "N/A",
-          totalResponseTime: "N/A",
-          responseBodySize: "N/A",
+          library: 'Fetch API',
+          headersResponseTime: 'N/A',
+          totalResponseTime: 'N/A',
+          responseBodySize: 'N/A',
         },
         request: {
           method: testData.method,
           url: testData.target_url,
-          path: "/",
+          path: apiDetails?.path,
           headers: requestHeaders,
-          curl: curlCommand,
-        },
+          curl: curlCommand
+        }
       });
+
+      console.log("@@@@@@",response)
+
     } catch (error) {
-      console.error("Error making test request:", error);
+      console.error('Error making test request:', error);
       setResponse({
         status: 500,
-        statusText: "Error",
-        data: { error: "Failed to make test request" },
+        statusText: 'Error',
+        data: { error: 'Failed to make test request' },
+        info: {
+          date: new Date().toISOString(),
+          url: testData.target_url,
+          status: `${response.status} ${response.statusText}`,
+          library: 'Fetch API',
+          headersResponseTime: 'N/A',
+          totalResponseTime: 'N/A',
+          responseBodySize: 'N/A',
+        },
         request: {
           method: testData.method,
           url: testData.target_url,
-          path: "/",
+          path: '/',
           headers: testData.headers,
-          curl: generateResponseCurlCommand(testData),
-        },
+          curl: generateCurlCommand(testData)
+        }
       });
     }
   };
@@ -264,7 +278,7 @@ export default function EndpointViewer({
                         <SelectValue placeholder="Select a URL" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="veil">https://veil.com</SelectItem>
+                        <SelectItem value={process.env.NEXT_PUBLIC_VEIL_URL || "https://veil.com"}>https://veil.com</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -391,7 +405,7 @@ export default function EndpointViewer({
             <Card>
               <CardContent className="p-4">
                 <pre className="whitespace-pre-wrap overflow-x-auto bg-gray-100 p-4 rounded-md">
-                  {generateCurlCommand()}
+                  {generateCurlCode()}
                 </pre>
               </CardContent>
             </Card>
@@ -419,19 +433,20 @@ export default function EndpointViewer({
                   <CardTitle className="text-sm">Results</CardTitle>
                   <Button
                     onClick={() => {
+console.log("endpoint----------->",endpoint);
+                      console.log("path--->",endpoint.path)
                       const testData: TestRequestData = {
                         method: endpoint?.method || "GET",
-                        target_url: selectedUrl,
+                        target_url: selectedUrl+"/"+apiDetails?.path,
                         headers: Object.entries(headerValues).map(
                           ([name, value]) => ({
                             name,
                             value: value.value,
                           })
                         ),
-                        path: endpoint.path,
                       };
                       handleTest(testData);
-                      setIsTestLoading(true); // Trigger loading state
+                      // setIsTestLoading(true); // Trigger loading state
                     }}
                     disabled={isTestLoading}
                     size="sm"
