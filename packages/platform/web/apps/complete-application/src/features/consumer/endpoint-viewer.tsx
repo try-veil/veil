@@ -44,6 +44,11 @@ export default function EndpointViewer({
   endpoint,
   apiDetails,
 }: EndpointViewerProps) {
+
+
+  console.log("Endpoint::::",endpoint);
+  console.log("API Details",apiDetails);
+
   const [headerValues, setHeaderValues] = useState<Record<string, HeaderValue>>(
     {}
   );
@@ -78,7 +83,7 @@ export default function EndpointViewer({
   const generateCurlCode = () => {
     if (!apiDetails) return "No API details available";
 
-    let curl = `curl -X ${apiDetails.method} '${process.env.NEXT_PUBLIC_VEIL_URL}/${apiDetails.path}'`;
+    let curl = `curl -X ${apiDetails.method} '${process.env.NEXT_PUBLIC_VEIL_URL}/${apiDetails.api_id}${apiDetails.path}'`;
 
     // Add headers with current values
     if (apiDetails.required_headers && apiDetails.required_headers.length > 0) {
@@ -127,6 +132,7 @@ export default function EndpointViewer({
         requestHeaders[header.name] = header.value;
       });
 
+      console.log("Target URL:",testData.target_url)
       const response = await fetch(testData.target_url, {
         method: testData.method,
         headers: requestHeaders
@@ -170,7 +176,7 @@ export default function EndpointViewer({
         info: {
           date: new Date().toISOString(),
           url: testData.target_url,
-          status: `${response.status} ${response.statusText}`,
+          status: 500,
           library: 'Fetch API',
           headersResponseTime: 'N/A',
           totalResponseTime: 'N/A',
@@ -184,6 +190,7 @@ export default function EndpointViewer({
           curl: generateCurlCommand(testData)
         }
       });
+      console.log("Res after error:",response)
     }
   };
 
@@ -433,11 +440,11 @@ export default function EndpointViewer({
                   <CardTitle className="text-sm">Results</CardTitle>
                   <Button
                     onClick={() => {
-console.log("endpoint----------->",endpoint);
+                      console.log("endpoint----------->",endpoint);
                       console.log("path--->",endpoint.path)
                       const testData: TestRequestData = {
                         method: endpoint?.method || "GET",
-                        target_url: selectedUrl+"/"+apiDetails?.path,
+                        target_url: selectedUrl+"/"+apiDetails?.api_id+apiDetails?.path,
                         headers: Object.entries(headerValues).map(
                           ([name, value]) => ({
                             name,
