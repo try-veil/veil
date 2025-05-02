@@ -23,7 +23,7 @@ export default function PlaygroundPage() {
   const [apiDetails, setApiDetails] = useState<OnboardAPI | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { user, isAuthenticated, accessToken } = useAuth();
+  const { accessToken } = useAuth();
 
   const pathname = usePathname();
   const projectId = pathname.split("/")[2];

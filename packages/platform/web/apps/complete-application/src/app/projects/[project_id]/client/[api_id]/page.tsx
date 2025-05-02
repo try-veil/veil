@@ -195,7 +195,7 @@ export default function RequestPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState<any>(null);
   const [viewportHeight, setViewportHeight] = useState(0);
-  const { user, accessToken } = useAuth();
+  const { accessToken } = useAuth();
   const { selectedProject, setSelectedProjectId, refreshProject } =
     useProject();
   const [showTargetUrlModal, setShowTargetUrlModal] = useState(false);

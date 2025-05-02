@@ -14,13 +14,14 @@ import { useProject } from "@/context/project-context";
 export default function Projects() {
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
-  const { user, isAuthenticated, accessToken } = useAuth();
-  const { user: userContext, isLoading: isUserLoading } = useUser();
-  console.log("userContext", userContext, user);
+  const { isAuthenticated, accessToken } = useAuth();
   const { projectList, setProjectList } = useProject();
+  const { user } = useUser();
+  console.log("user", user);
   const fetchProjects = async () => {
     try {
       const token = accessToken;
+      console.log("token", {token});
       if (!token) {
         throw new Error("No authentication token found");
       }
@@ -57,7 +58,7 @@ export default function Projects() {
   if (error) return <p style={{ color: "red" }}>{error}</p>;
 
   // Check if projects array is empty before showing CreateTenantForm
-  if (projectList.length === 0 && !isLoading) {
+  if (user && user.tenantId === null && !isLoading) {
     return (
       <main className="flex flex-col">
         <Navbar session={isAuthenticated} user={user} />
