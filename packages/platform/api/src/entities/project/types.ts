@@ -17,6 +17,7 @@ export interface Project {
   description?: string;
   status: ProjectStatus;
   ownerId: string;
+  tenant: string;
   createdAt: Date;
   updatedAt: Date;
 }

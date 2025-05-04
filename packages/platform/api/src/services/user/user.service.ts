@@ -13,6 +13,7 @@ export interface UpdateUserDto {
   description?: string;
   bio?: string;
   thumbnail?: string;
+  tenantId?:string;
   // Arrays are optional and will be replaced entirely if provided
   parents?: string[];
   publishedApisList?: string[];

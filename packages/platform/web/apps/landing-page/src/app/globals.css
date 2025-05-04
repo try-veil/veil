@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import fonts */
+@font-face {
+  font-family: 'Inter';
+  src: url('https://ext.same-assets.com/4258207962/677619616.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('https://ext.same-assets.com/4258207962/1532028570.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('https://ext.same-assets.com/4258207962/2304419762.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('https://ext.same-assets.com/4258207962/4283427719.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    /* Veil brand colors */
+    --veil-bg: 28 76% 93%;      /* #F1E3D9 */
+    --veil-primary: 214 78% 54%; /* #2E7DE6 */
+    --veil-secondary: 198 77% 60%; /* #4DB9E8 */
+
+    --background: var(--veil-bg);
+    --foreground: 215 25% 27%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 27%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 27%;
+    --primary: var(--veil-primary);
+    --primary-foreground: 0 0% 100%;
+    --secondary: var(--veil-secondary);
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 215 25% 40%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 215 25% 27%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: var(--veil-primary);
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 215 25% 27%;
+    --foreground: 0 0% 98%;
+    --card: 215 25% 27%;
+    --card-foreground: 0 0% 98%;
+    --popover: 215 25% 27%;
+    --popover-foreground: 0 0% 98%;
+    --primary: var(--veil-primary);
+    --primary-foreground: 0 0% 98%;
+    --secondary: var(--veil-secondary);
+    --secondary-foreground: 215 25% 27%;
+    --muted: 215 25% 20%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 215 25% 20%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 215 25% 20%;
+    --input: 215 25% 20%;
+    --ring: var(--veil-primary);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  h1, h2, h3, h4, h5, blockquote {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 600;
+  }
+}
+
+@layer utilities {
+  .veil-container {
+    @apply max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .veil-button {
+    @apply rounded-lg px-4 py-1.5 text-sm font-medium transition-all;
+  }
+
+  .veil-primary-button {
+    @apply veil-button bg-primary text-white hover:bg-primary/90;
+  }
+
+  .veil-secondary-button {
+    @apply veil-button bg-secondary text-white hover:bg-secondary/80;
+  }
+}
