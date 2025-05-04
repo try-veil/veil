@@ -42,7 +42,7 @@ import {
 const targetUrlSchema = z.object({
   target_url: z.string().url({
     message: "Please enter a valid URL.",
-  }),
+  })
 });
 
 type TargetUrlFormValues = z.infer<typeof targetUrlSchema>;
@@ -60,6 +60,7 @@ function TargetUrlModal({
   const { selectedProject, refreshProject } = useProject();
   const { accessToken } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [trailingSlashError, setTrailingSlashError] = useState(false);
   const router = useRouter();
 
   const form = useForm<TargetUrlFormValues>({
@@ -77,6 +78,15 @@ function TargetUrlModal({
   };
 
   async function onSubmit(data: TargetUrlFormValues) {
+    // Reset the trailing slash error
+    setTrailingSlashError(false);
+
+    // Check for trailing slash
+    if (data.target_url.endsWith('/')) {
+      setTrailingSlashError(true);
+      return;
+    }
+
     try {
       setIsLoading(true);
       if (!selectedProject?.id || !accessToken) {
@@ -135,10 +145,19 @@ function TargetUrlModal({
                   <FormControl>
                     <Input placeholder="https://api.example.com" {...field} />
                   </FormControl>
-                  <FormDescription>
-                    The base URL for your API endpoints
+                  <FormDescription className="flex flex-col gap-1">
+                    <span>The base URL for your API endpoints</span>
+                    {trailingSlashError && (
+                      <span className="text-destructive text-sm">
+                        URL should not end with a forward slash (/)
+                      </span>
+                    )}
+                    {form.formState.errors.target_url?.message && (
+                      <span className="text-destructive text-sm">
+                        {form.formState.errors.target_url.message}
+                      </span>
+                    )}
                   </FormDescription>
-                  <FormMessage />
                 </FormItem>
               )}
             />
