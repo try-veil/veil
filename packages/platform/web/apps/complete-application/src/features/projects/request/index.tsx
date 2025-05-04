@@ -25,9 +25,9 @@ import { z } from "zod";
 const requestFormSchema = z.object({
   name: z.string().min(1, { message: "Endpoint name is required" }),
   description: z.string().optional(),
-  path: z.string()
-    .min(1, { message: "Path is required" })
-    .startsWith("/", { message: "Path must start with /" }),
+  // path: z.string()
+  //   .min(1, { message: "Path is required" })
+  //   .startsWith("/", { message: "Path must start with /" }),
   documentation_url: z.union([
     z.string().url({ message: "Please enter a valid URL" }),
     z.string().length(0)
@@ -100,56 +100,12 @@ export default function Request({
     documentation_url?: string;
   }>();
 
-  const handleDeleteAPI = async () => {
-    try {
-      setIsDeleteLoading(true);
-      if (!selectedProject?.id || !initialData?.api_id || !accessToken) {
-        toast({
-          title: "Error",
-          description: "Missing required information to delete API",
-          variant: "destructive",
-        });
-        return;
-      }
-      // Show loading toast
-      toast({
-        title: "Deleting API...",
-        description: "Please wait while we process your request",
-        variant: "default",
-      });
-      await deleteAPI(
-        selectedProject.id.toString(),
-        initialData.api_id.toString(),
-        accessToken
-      );
-      await refreshProject();
-      toast({
-        title: "Success",
-        description: "API deleted successfully",
-        variant: "default",
-      });
-      router.push(`/projects/${selectedProject.id}/client/add-request`);
-    } catch (error) {
-      // Show error toast
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to delete API",
-        variant: "destructive",
-      });
-    }
-  };
-  const [method, setMethod] = useState(
-    initialData?.method?.toLowerCase() || "get"
-  );
   const [name, setName] = useState(initialData?.name || "");
-  const [description, setDescription] = useState(
-    initialData?.description || ""
-  );
-  const [documentationUrl, setDocumentationUrl] = useState(
-    initialData?.documentation_url || ""
-  );
-  const [path, setPath] = useState(initialData?.path || "");
+  const [path, setPath] = useState("");
+  const [storedUuid, setStoredUuid] = useState("");
+  const [method, setMethod] = useState<string>(initialData?.method || "GET");
+  const [description, setDescription] = useState(initialData?.description || "");
+  const [documentationUrl, setDocumentationUrl] = useState(initialData?.documentation_url || "");
   const [headers, setHeaders] = useState<{ name: string; value: string }[]>(
     initialData?.required_headers?.map((h) => ({
       name: h.name,
@@ -176,10 +132,29 @@ export default function Request({
     }
   }, [initialData]);
 
+  useEffect(() => {
+    if (initialData?.path) {
+      const pathParts = initialData.path.split('/');
+      if (pathParts.length > 1) {
+        setStoredUuid(pathParts[0]);
+        setPath('/' + pathParts.slice(1).join('/'));
+      } else {
+        setPath(initialData.path);
+      }
+    }
+  }, [initialData?.path]);
+
+  const handlePathChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let newPath = e.target.value;
+    if (!newPath.startsWith('/')) {
+      newPath = '/' + newPath;
+    }
+    setPath(newPath);
+  };
+
   const handleHeadersChange = (
     newHeaders: { id: string; name: string; value: string }[]
   ) => {
-    // Filter out empty headers and remove the id field
     const processedHeaders = newHeaders
       .filter(
         (header) => header.name.trim() !== "" && header.value.trim() !== ""
@@ -187,21 +162,26 @@ export default function Request({
       .map(({ name, value }) => ({ name, value }));
     setHeaders(processedHeaders);
   };
+
   const targetUrl = selectedProject?.target_url;
-  const handleSave = () => {
-    try {
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const finalPath = initialData?.path ? `${storedUuid}${path}` : path;
+    
     const formData = {
       name,
       description,
-      path,
+      path: finalPath,
       documentation_url: documentationUrl,
       method,
       headers,
       target_url: targetUrl,
     };
+
     const result = requestFormSchema.safeParse(formData);
     if (!result.success) {
-      // Format and set errors
       const formattedErrors = result.error.format();
       setErrors({
         name: formattedErrors.name?._errors[0],
@@ -210,15 +190,10 @@ export default function Request({
       });
       return;
     }
-    // Clear errors if validation passes
     setErrors({});
     
-    console.log("Request Data", targetUrl);
     if (onSave) {
       onSave(formData as RequestData);
-    }}
-    catch (error) {
-      console.error("Form validation error:", error);
     }
   };
 
@@ -243,9 +218,46 @@ export default function Request({
     setIsTestLoading(false);
   };
 
+  const handleDeleteAPI = async () => {
+    try {
+      setIsDeleteLoading(true);
+      if (!selectedProject?.id || !initialData?.api_id || !accessToken) {
+        toast({
+          title: "Error",
+          description: "Missing required information to delete API",
+          variant: "destructive",
+        });
+        return;
+      }
+      toast({
+        title: "Deleting API...",
+        description: "Please wait while we process your request",
+        variant: "default",
+      });
+      await deleteAPI(
+        selectedProject.id.toString(),
+        initialData.api_id.toString(),
+        accessToken
+      );
+      await refreshProject();
+      toast({
+        title: "Success",
+        description: "API deleted successfully",
+        variant: "default",
+      });
+      router.push(`/projects/${selectedProject.id}/client/add-request`);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to delete API",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
-      {/* URL Bar */}
       <div className="flex-none p-4 border-b">
         <div className="flex flex-col sm:flex-row gap-4 items-center">
           <Select value={method} onValueChange={setMethod}>
@@ -264,10 +276,10 @@ export default function Request({
             </SelectContent>
           </Select>
           <Input
-            placeholder="Enter your endpoint"
+            placeholder="Enter your endpoint (e.g. /users)"
             className="flex-1"
             value={path}
-            onChange={(e) => setPath(e.target.value)}
+            onChange={handlePathChange}
           />
            <div className="flex gap-2">
             <Button
@@ -290,7 +302,7 @@ export default function Request({
               )}
             </Button>
             <Button
-              onClick={handleSave}
+              onClick={handleSubmit}
               disabled={isLoading}
               variant="default"
               size="sm"
@@ -334,7 +346,6 @@ export default function Request({
         {errors?.path && <p className="text-sm text-red-500 mt-1 ml-1">{errors.path}</p>}
       </div>
 
-      {/* Tabs Section */}
       <div className="flex-1 flex flex-col min-h-0">
         <Tabs defaultValue="overview" className="flex flex-col h-full">
           <div className="flex-none px-4">
@@ -371,14 +382,6 @@ export default function Request({
                       onChange={(e) => setDescription(e.target.value)}
                     />
                   </div>
-                  {/* <div className="space-y-2">
-                    <Label>Path</Label>
-                    <Input
-                      placeholder="/your-api-path"
-                      value={path}
-                      onChange={(e) => setPath(e.target.value)}
-                    />
-                  </div> */}
                   <div className="space-y-2">
                     <Label>Documentation URL</Label>
                     <Input
