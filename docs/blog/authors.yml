@@ -1,0 +1,20 @@
+techsavvyash:
+  name: Yash Mittal
+  title: Engineer @ Zomato
+  url: https://github.com/techsavvyash
+  image_url: https://github.com/techsavvyash.png
+  page: true
+  socials:
+    x: techsavvyash_
+    github: techsavvyash
+    newsletter: https://techsavvyash.dev
+
+chakshugautam:
+  name: Chakshu Gautam
+  title: Shipping @ TheFlywheel
+  url: https://github.com/chakshugautam
+  image_url: https://github.com/chakshugautam.png
+  socials:
+    x: __chaks__
+    github: chakshugautam
+    

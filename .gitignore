@@ -13,8 +13,14 @@ config/
 ## compiled binary
 veil
 
-node_modules/
-.next/
-.env
-.env.local
+## other build files
+dist
+osxcross
 
+.docusaurus
+node_modules
+
+packages/platform/api/src/research
+packages/caddy/configs
+
+.DS_Store

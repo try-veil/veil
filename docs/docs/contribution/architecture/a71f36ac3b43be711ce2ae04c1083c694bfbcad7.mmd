@@ -1,0 +1,10 @@
+graph TD
+    A[Client] --> B[Gateway]
+    B --> C[Auth Service]
+    C --> D[Rate Limiter]
+    D --> E[Transform]
+    E --> F[API Provider]
+
+    B --> G[Logging]
+    G --> H[Metrics]
+    H --> I[Alerts]

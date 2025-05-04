@@ -28,6 +28,111 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
+          sudo apt-get install -y rpm gcc g++ make gcc-mingw-w64 g++-mingw-w64 gcc-multilib clang llvm lld
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+      
+      - name: Install macOS cross-compilation tools
+        run: |
+          # Install dependencies
+          sudo apt-get update
+          sudo apt-get install -y \
+          clang llvm-dev libxml2-dev uuid-dev libssl-dev bash patch make tar xz-utils bzip2 gzip \
+          sed cpio libbz2-dev zlib1g-dev
+
+          # Set up osxcross
+          git clone https://github.com/tpoechtrager/osxcross
+          cd osxcross
+    
+          # You need the macOS SDK
+          # Either download it or use a cached version
+          # For example:
+          wget -nc https://github.com/joseluisq/macosx-sdks/releases/download/12.3/MacOSX12.3.sdk.tar.xz -O tarballs/MacOSX12.3.sdk.tar.xz
+    
+          # Build osxcross with SDK
+          UNATTENDED=1 ./build.sh
+    
+          # Add to PATH
+          echo "$(pwd)/target/bin" >> $GITHUB_PATH
+          cd ..
+
+      - name: Verify installed compilers
+        run: |
+          which clang
+          which aarch64-linux-gnu-gcc
+          clang --version
+          aarch64-linux-gnu-gcc --version
+
+      - name: Install SSH key for AUR
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          known_hosts: ${{ secrets.AUR_KNOWN_HOSTS }}
+          if_key_exists: replace
+
+      - name: Install xcaddy
+        run: |
+          echo "Installing xcaddy..."
+          XCADDY_PATH=$(which xcaddy)
+          echo "xcaddy installed at: $XCADDY_PATH"
+          xcaddy version
+
+      - name: Set up build environment
+        run: |
+          make setup
+      - name: Build Veil
+        run: |
+          make build
+          
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: 2
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          AUR_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+          CGO_ENABLED: 1
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: dist/* 
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:  # Allow manual triggering of the workflow
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '>=1.22.0'
+          cache: true
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
           sudo apt-get install -y rpm gcc g++ make
           go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 
