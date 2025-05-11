@@ -37,6 +37,13 @@ class RefundPaymentDto {
   reason?: string;
 }
 
+class CapturePaymentDto {
+  razorpayPaymentId: string;
+  razorpayOrderId: string;
+  amount: number;
+  razorpaySignature?: string;
+}
+
 @ApiTags('payment')
 @Controller('internal/payment')
 export class PaymentController {
@@ -55,6 +62,7 @@ export class PaymentController {
       type: 'object',
       properties: {
         payment_id: { type: 'string' },
+        order_id: { type: 'string' },
         status: { type: 'string' },
         amount: { type: 'number' },
         credits_added: { type: 'number' },
@@ -80,7 +88,6 @@ export class PaymentController {
   @ApiResponse({ status: 404, description: 'Wallet not found' })
   async processPayment(@Body() processPaymentDto: ProcessPaymentDto) {
     try {
-      // Find wallet for user
       const wallet = await this.walletService.findWalletByUserId(
         processPaymentDto.userId,
       );
@@ -105,11 +112,17 @@ export class PaymentController {
         },
       });
 
+      // TODO: This route should be create order, not process payment
+      // The payment status will be updated by the webhook
+      // TODO: Redeisgn the routes: this route can never respond SUCCEEDED, it will only create order
+      // Frontend will use orderId to pay
+      // Will have to capture webhook to decide if payment was successful or not
       // If payment was successful, add credits to the wallet
       if (payment.paymentStatus === 'SUCCEEDED') {
         // Convert currency amount to credits (simplified 1:1 for this example)
         const creditsToAdd = processPaymentDto.amount;
 
+        // TODO: fix later -> Add credits to wallet (integrate walet service)
         await this.walletService.addCredits(
           wallet.id,
           creditsToAdd,
@@ -119,8 +132,10 @@ export class PaymentController {
           processPaymentDto.description || 'Credit purchase',
         );
 
+        // IF status == PENDING or FAILED
         return {
           payment_id: payment.id,
+          order_id: payment.orderId,
           status: payment.paymentStatus,
           amount: payment.amount,
           credits_added: creditsToAdd,
@@ -130,6 +145,7 @@ export class PaymentController {
 
       return {
         payment_id: payment.id,
+        order_id: payment.orderId,
         status: payment.paymentStatus,
         amount: payment.amount,
         error: payment.errorMessage,
@@ -289,6 +305,66 @@ export class PaymentController {
         throw new NotFoundException(error.message);
       }
       throw new BadRequestException(error.message);
+    }
+  }
+
+  @Post('capture')
+  @ApiOperation({ summary: 'Capture a payment after Razorpay checkout' })
+  @ApiBody({ type: CapturePaymentDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment captured successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        payment_id: { type: 'string' },
+        status: { type: 'string' },
+        amount: { type: 'number' },
+        processed_at: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 404, description: 'Payment not found' })
+  async capturePayment(@Body() capturePaymentDto: CapturePaymentDto) {
+    try {
+      const payment = await this.paymentService.captureRazorpayPayment(
+        capturePaymentDto.razorpayPaymentId,
+        capturePaymentDto.amount,
+        capturePaymentDto.razorpayOrderId
+      );
+
+      // If successful, find wallet and add credits
+      if (payment.paymentStatus === 'SUCCEEDED' && payment.metadata?.userId && payment.metadata?.walletId) {
+        const walletId = payment.metadata.walletId as string;
+        const creditsToAdd = payment.amount;
+
+        await this.walletService.addCredits(
+          walletId,
+          creditsToAdd,
+          undefined,
+          undefined,
+          payment.id,
+          payment.metadata?.description as string || 'Credit purchase via Razorpay',
+        );
+
+        return {
+          payment_id: payment.id,
+          status: payment.paymentStatus,
+          amount: payment.amount,
+          credits_added: creditsToAdd,
+          processed_at: payment.succeededAt,
+        };
+      }
+
+      return {
+        payment_id: payment.id,
+        status: payment.paymentStatus,
+        amount: payment.amount,
+        processed_at: payment.succeededAt || payment.updatedAt,
+      };
+    } catch (error) {
+      throw new BadRequestException(`Payment capture failed: ${error.message}`);
     }
   }
 }

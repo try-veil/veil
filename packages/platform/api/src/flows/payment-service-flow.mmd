@@ -1,0 +1,83 @@
+sequenceDiagram
+    actor User
+    participant Frontend
+    participant PaymentController
+    participant PaymentService
+    participant RazorpayAPI as Razorpay API
+    participant WebhookController
+    participant PrismaService
+    participant PaymentUtils
+
+    %% Payment Initialization Flow
+    User->>Frontend: Initiates payment
+    Frontend->>+PaymentController: POST /payments/create
+    PaymentController->>+PaymentService: processPayment(payload)
+    PaymentService->>PaymentService: Create idempotency key
+    PaymentService->>+PrismaService: Create payment record (PENDING)
+    PrismaService-->>-PaymentService: payment record
+    PaymentService->>+PaymentUtils: formatAmountForRazorpay(amount)
+    PaymentUtils-->>-PaymentService: formatted amount (in subunits)
+    PaymentService->>+RazorpayAPI: orders.create({amount, currency, receipt, notes})
+    RazorpayAPI-->>-PaymentService: order details (id, status, etc.)
+    PaymentService->>+PrismaService: Update payment with gatewayOrderId
+    PrismaService-->>-PaymentService: updated payment
+    PaymentService-->>-PaymentController: order details
+    PaymentController-->>-Frontend: order details for Checkout UI
+
+    %% Payment Execution on Frontend
+    Frontend->>+RazorpayAPI: Show Checkout UI (with order_id)
+    User->>RazorpayAPI: Enter payment details
+    RazorpayAPI-->>Frontend: Payment success callback (payment_id, signature)
+
+    %% Payment Verification Flow
+    Frontend->>+PaymentController: POST /payments/verify
+    PaymentController->>+PaymentUtils: verifyPaymentSignature(order, payment_id, signature)
+    PaymentUtils-->>-PaymentController: verification result
+    
+    alt Signature Valid
+        PaymentController->>+PaymentService: capturePayment(order_id, payment_id)
+        PaymentService->>+RazorpayAPI: payments.capture(payment_id, amount)
+        RazorpayAPI-->>-PaymentService: capture response
+        PaymentService->>+PrismaService: Update payment (COMPLETED)
+        PrismaService-->>-PaymentService: updated payment
+        PaymentService-->>-PaymentController: capture success
+        PaymentController-->>-Frontend: Payment successful
+    else Signature Invalid
+        PaymentController-->>Frontend: Payment verification failed
+    end
+
+    %% Webhook Handling Flow
+    RazorpayAPI->>+WebhookController: POST /razorpay-webhooks (event data)
+    WebhookController->>+PaymentUtils: Verify webhook signature
+    PaymentUtils-->>-WebhookController: verification result
+    
+    alt Event: payment.captured
+        WebhookController->>+PaymentService: handlePaymentCaptured(eventData)
+        PaymentService->>+PrismaService: Find payment by gatewayPaymentId
+        PrismaService-->>-PaymentService: payment record
+        PaymentService->>+PrismaService: Update payment status (COMPLETED)
+        PrismaService-->>-PaymentService: updated payment
+        PaymentService-->>-WebhookController: success response
+    else Event: payment.failed
+        WebhookController->>+PaymentService: handlePaymentFailed(eventData)
+        PaymentService->>+PrismaService: Find payment by gatewayPaymentId
+        PrismaService-->>-PaymentService: payment record
+        PaymentService->>+PrismaService: Update payment status (FAILED)
+        PrismaService-->>-PaymentService: updated payment
+        PaymentService-->>-WebhookController: success response
+    end
+    
+    WebhookController-->>-RazorpayAPI: 200 OK
+
+    %% Refund Flow
+    User->>Frontend: Request refund
+    Frontend->>+PaymentController: POST /payments/:id/refund
+    PaymentController->>+PaymentService: refundPayment(id, amount)
+    PaymentService->>+PrismaService: Find payment by id
+    PrismaService-->>-PaymentService: payment record
+    PaymentService->>+RazorpayAPI: payments.refund(paymentId, {amount, speed})
+    RazorpayAPI-->>-PaymentService: refund details
+    PaymentService->>+PrismaService: Create refund record & update payment
+    PrismaService-->>-PaymentService: refund record
+    PaymentService-->>-PaymentController: refund details
+    PaymentController-->>-Frontend: Refund initiated

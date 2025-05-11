@@ -319,6 +319,7 @@ export interface Payment {
   amount: number;
   currency: string;
   paymentStatus: PaymentStatus;
+  orderId?: string; // Optional, if the payment is linked to an order (usually in case of Razorpay) this is needed to be passed to frontend
   trackAttempts: boolean;
   metadata?: Record<string, any>;
   succeededAt?: Date;

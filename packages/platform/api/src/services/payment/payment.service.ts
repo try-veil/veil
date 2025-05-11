@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import {
   Payment,
@@ -9,16 +14,27 @@ import {
   PaymentAttemptStatus,
 } from '../../entities/billing/types';
 import { PrismaService } from '../prisma/prisma.service';
+const Razorpay = require('razorpay');
+import { validateWebhookSignature } from 'razorpay/dist/utils/razorpay-utils';
 
 @Injectable()
 export class PaymentService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(PaymentService.name);
+  private readonly razorpay: any;
+
+  constructor(private prisma: PrismaService) {
+    // Initialize Razorpay with credentials from environment variables
+    this.razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID || '',
+      key_secret: process.env.RAZORPAY_KEY_SECRET || '',
+    });
+  }
 
   /**
    * Convert Prisma Payment to Entity Payment
    */
   private mapToPayment(prismaPayment: any): Payment {
-    return {
+    const paymentReturn: Payment = {
       id: prismaPayment.id,
       tenantId: prismaPayment.tenantId,
       idempotencyKey: prismaPayment.idempotencyKey,
@@ -30,6 +46,7 @@ export class PaymentService {
       gatewayPaymentId: prismaPayment.gatewayPaymentId,
       amount: prismaPayment.amount,
       currency: prismaPayment.currency,
+      orderId: prismaPayment.metadata?.razorpayOrderId,
       paymentStatus: prismaPayment.paymentStatus as PaymentStatus,
       trackAttempts: prismaPayment.trackAttempts,
       metadata: prismaPayment.metadata,
@@ -40,6 +57,8 @@ export class PaymentService {
       createdAt: prismaPayment.createdAt,
       updatedAt: prismaPayment.updatedAt,
     };
+    // console.log('Payment Return', paymentReturn);
+    return paymentReturn;
   }
 
   /**
@@ -59,9 +78,8 @@ export class PaymentService {
       updatedAt: prismaAttempt.updatedAt,
     };
   }
-
   /**
-   * Process a payment (mock implementation)
+   * Process a payment using Razorpay
    */
   async processPayment(data: {
     tenantId: string;
@@ -74,27 +92,155 @@ export class PaymentService {
   }): Promise<Payment> {
     const idempotencyKey = uuidv4(); // In a real system, this would be provided by the client
 
-    // Create payment record
-    const prismaPayment = await this.prisma.payment.create({
-      data: {
-        id: uuidv4(),
-        tenantId: data.tenantId,
-        idempotencyKey,
-        destinationType: data.destinationType as any, // Prisma enum conversion
-        destinationId: data.destinationId,
-        paymentMethodType: data.paymentMethodType as any, // Prisma enum conversion
-        amount: data.amount,
-        currency: data.currency,
-        paymentStatus: PaymentStatus.PENDING as any, // Prisma enum conversion
-        trackAttempts: true,
-        metadata: data.metadata || {},
-      },
-    });
+    try {
+      // Create payment record in our database first
+      const paymentId = uuidv4();
+      const prismaPayment = await this.prisma.payment.create({
+        data: {
+          id: paymentId,
+          tenantId: data.tenantId,
+          idempotencyKey,
+          destinationType: data.destinationType as any, // Prisma enum conversion
+          destinationId: data.destinationId,
+          paymentMethodType: data.paymentMethodType as any, // Prisma enum conversion
+          amount: data.amount,
+          currency: data.currency,
+          paymentStatus: PaymentStatus.PENDING as any, // Prisma enum conversion
+          trackAttempts: true,
+          metadata: data.metadata || {},
+        },
+      }); // Determine if we need to create a Razorpay order or process directly
+      // In Razorpay, amount is in subunits (paise for INR, cents for USD)
+      const amountInSubunits = Math.round(data.amount * 100);
+      const receipt = `receipt_${paymentId}`.replace(/-/g, '_');
 
-    // Simulate payment processing
-    const processedPayment =
-      await this.simulatePaymentProcessing(prismaPayment);
-    return this.mapToPayment(processedPayment);
+      // Dev Debug logs
+      // console.log(
+      //   `Creating Razorpay order with amount: ${amountInSubunits}, currency: ${data.currency}, receipt: ${receipt}`,
+      // );
+
+      // Create a Razorpay order with specific error handling
+      let razorpayOrder;
+      try {
+        // Create Razorpay order
+        const options = {
+          amount: amountInSubunits, // Amount in subunits
+          currency: data.currency || 'INR',
+          receipt: receipt.slice(0, 10), // Passing only first 10 characters (NOTE: longer receipts will cause failure)
+          notes: {
+            tenantId: data.tenantId,
+            destinationType: data.destinationType,
+            destinationId: data.destinationId,
+            ...data.metadata,
+          },
+        };
+        razorpayOrder = await this.razorpay.orders.create(options);
+
+        this.logger.log(
+          `Created Razorpay order: ${JSON.stringify(razorpayOrder)}`,
+        );
+      } catch (razorpayError) {
+        this.logger.error(
+          `Razorpay API error: ${razorpayError.message}`,
+          razorpayError.stack,
+        );
+
+        // Update the payment record to reflect the failure
+        await this.prisma.payment.update({
+          where: { id: paymentId },
+          data: {
+            paymentStatus: PaymentStatus.FAILED as any,
+            failedAt: new Date(),
+            errorMessage: `Razorpay order creation failed: ${razorpayError.message}`,
+          },
+        });
+
+        throw new BadRequestException(
+          `Failed to create Razorpay order: ${razorpayError.message}`,
+        );
+      }
+      // Update our payment with Razorpay order details
+      const updatedPayment = await this.prisma.payment.update({
+        where: { id: paymentId },
+        data: {
+          gatewayPaymentId: razorpayOrder.id,
+          paymentGateway: 'RAZORPAY',
+          metadata: {
+            ...(data.metadata || {}),
+            razorpayOrderId: razorpayOrder.id,
+            razorpayOrderAmount: razorpayOrder.amount,
+            razorpayOrderCurrency: razorpayOrder.currency,
+            razorpayOrderReceipt: razorpayOrder.receipt,
+            razorpayOrderStatus: razorpayOrder.status,
+          },
+        },
+      });
+
+      // TODO: Certain Things to be wired up after frontend checkout
+      // For Direct or Card payments (depending on configuration)
+      // if (data.paymentMethodType === PaymentMethodType.CARD) {
+      //   // This would typically involve capturing payment after frontend checkout
+      //   return this.mapToPayment(updatedPayment);
+      // }
+
+      // For other payment methods
+      return this.mapToPayment(updatedPayment);
+    } catch (error) {
+      this.logger.error(
+        `Error processing payment: ${error.message}`,
+        error.stack,
+      );
+
+      try {
+        // Try to find if a payment was already created with this idempotency key
+        const existingPayment = await this.prisma.payment.findUnique({
+          where: { idempotencyKey },
+        });
+
+        if (existingPayment) {
+          // Update the existing payment to failed status
+          const updatedPayment = await this.prisma.payment.update({
+            where: { id: existingPayment.id },
+            data: {
+              paymentStatus: PaymentStatus.FAILED as any,
+              failedAt: new Date(),
+              errorMessage: error.message,
+            },
+          });
+          return this.mapToPayment(updatedPayment);
+        } else {
+          // Create a new failed payment record with a different idempotency key
+          const failedPayment = await this.prisma.payment.create({
+            data: {
+              id: uuidv4(),
+              tenantId: data.tenantId,
+              idempotencyKey: `failed-${uuidv4()}`, // Generate a new unique key
+              destinationType: data.destinationType as any,
+              destinationId: data.destinationId,
+              paymentMethodType: data.paymentMethodType as any,
+              amount: data.amount,
+              currency: data.currency,
+              paymentStatus: PaymentStatus.FAILED as any,
+              trackAttempts: true,
+              failedAt: new Date(),
+              errorMessage: error.message,
+              metadata: data.metadata || {},
+            },
+          });
+          return this.mapToPayment(failedPayment);
+        }
+      } catch (secondaryError) {
+        this.logger.error(
+          `Secondary error in payment error handling: ${secondaryError.message}`,
+          secondaryError.stack,
+        );
+
+        // If everything fails, re-throw the original error with context
+        throw new BadRequestException(
+          `Payment processing failed: ${error.message}`,
+        );
+      }
+    }
   }
 
   /**
@@ -123,99 +269,415 @@ export class PaymentService {
 
     return attempts.map((attempt) => this.mapToPaymentAttempt(attempt));
   }
-
   /**
-   * Process refund
+   * TODO: Process refund through Razorpay
    */
   async processRefund(paymentId: string, amount?: number): Promise<Payment> {
-    // Get payment
-    const payment = await this.getPayment(paymentId);
+    try {
+      // Get payment from our database
+      const payment = await this.getPayment(paymentId);
 
-    if (payment.paymentStatus !== 'SUCCEEDED') {
-      throw new Error('Cannot refund a payment that is not successful');
+      if (payment.paymentStatus !== 'SUCCEEDED') {
+        throw new Error('Cannot refund a payment that is not successful');
+      }
+
+      const refundAmount = amount || payment.amount;
+      if (refundAmount > payment.amount) {
+        throw new Error('Refund amount cannot exceed original payment amount');
+      }
+
+      // Check if this is a Razorpay payment
+      if (payment.paymentGateway !== 'RAZORPAY' || !payment.gatewayPaymentId) {
+        throw new Error('Cannot process refund: Not a valid Razorpay payment');
+      }
+
+      // Calculate refund amount in subunits (paise for INR, cents for USD)
+      const refundAmountInSubunits = Math.round(refundAmount * 100);
+
+      // Process refund through Razorpay
+      const refund = await this.razorpay.payments.refund(
+        payment.gatewayPaymentId,
+        {
+          amount: refundAmountInSubunits,
+          speed: 'normal', // or 'optimum'
+          notes: {
+            paymentId,
+            reason: 'Customer requested refund',
+          },
+        },
+      );
+
+      this.logger.log(
+        `Processed refund through Razorpay: ${JSON.stringify(refund)}`,
+      );
+
+      // Update payment status based on refund amount
+      const newStatus =
+        refundAmount === payment.amount
+          ? PaymentStatus.REFUNDED
+          : PaymentStatus.PARTIALLY_REFUNDED;
+
+      // Update payment in our database
+      const updatedPayment = await this.prisma.payment.update({
+        where: { id: paymentId },
+        data: {
+          paymentStatus: newStatus as any, // Prisma enum conversion
+          refundedAt: new Date(),
+          metadata: {
+            ...payment.metadata,
+            refundId: refund.id,
+            refundAmount: refundAmount,
+            refundedAt: new Date().toISOString(),
+          },
+        },
+      });
+
+      return this.mapToPayment(updatedPayment);
+    } catch (error) {
+      this.logger.error(
+        `Failed to process refund: ${error.message}`,
+        error.stack,
+      );
+      throw new BadRequestException(`Refund failed: ${error.message}`);
     }
-
-    const refundAmount = amount || payment.amount;
-    if (refundAmount > payment.amount) {
-      throw new Error('Refund amount cannot exceed original payment amount');
-    }
-
-    // Update payment status
-    const newStatus =
-      refundAmount === payment.amount
-        ? PaymentStatus.REFUNDED
-        : PaymentStatus.PARTIALLY_REFUNDED;
-
-    // Update payment
-    const updatedPayment = await this.prisma.payment.update({
-      where: { id: paymentId },
-      data: {
-        paymentStatus: newStatus as any, // Prisma enum conversion
-        refundedAt: new Date(),
-      },
-    });
-
-    return this.mapToPayment(updatedPayment);
   }
-
   /**
-   * Private method to simulate payment processing
-   * In a real implementation, this would call a payment gateway
+   * Create a payment attempt record
    */
-  private async simulatePaymentProcessing(payment: any): Promise<any> {
-    // Create a payment attempt
-    const attempt = await this.prisma.paymentAttempt.create({
+  private async createPaymentAttempt(
+    payment: any,
+    status: PaymentAttemptStatus,
+    metadata: Record<string, any> = {},
+    errorMessage?: string,
+  ): Promise<any> {
+    return this.prisma.paymentAttempt.create({
       data: {
         id: uuidv4(),
         tenantId: payment.tenantId,
         paymentId: payment.id,
-        attemptNumber: 1,
-        paymentStatus: PaymentAttemptStatus.PROCESSING as any, // Prisma enum conversion
+        attemptNumber: 1, // Would need logic to increment this based on previous attempts
+        paymentStatus: status as any,
+        errorMessage: errorMessage,
+        metadata: metadata,
       },
     });
+  }
 
-    // Simulate processing delay
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    // Simulate success (90% of the time)
-    const isSuccessful = Math.random() < 0.9;
-
-    if (isSuccessful) {
-      // Update attempt
-      await this.prisma.paymentAttempt.update({
-        where: { id: attempt.id },
-        data: {
-          paymentStatus: PaymentAttemptStatus.SUCCEEDED as any, // Prisma enum conversion
+  /**
+   * Captures a payment in Razorpay after frontend checkout is completed
+   * @param razorpayPaymentId The payment ID received from Razorpay frontend checkout
+   * @param amount The amount to capture
+   */ async captureRazorpayPayment(
+    razorpayPaymentId: string,
+    amount: number,
+    orderId: string,
+  ): Promise<Payment> {
+    try {
+      // Find the payment in our database
+      const payment = await this.prisma.payment.findFirst({
+        where: {
+          gatewayPaymentId: orderId,
+          paymentGateway: 'RAZORPAY',
         },
       });
 
-      // Update payment
-      return this.prisma.payment.update({
+      if (!payment) {
+        throw new NotFoundException(
+          `No payment found for Razorpay order ${orderId}`,
+        );
+      }
+
+      // Convert amount to subunits
+      const amountInSubunits = Math.round(amount * 100);
+
+      // Capture the payment in Razorpay
+      const capturedPayment = await this.razorpay.payments.capture(
+        razorpayPaymentId,
+        amountInSubunits,
+        'INR',
+      );
+      this.logger.log(`Payment captured: ${JSON.stringify(capturedPayment)}`);
+
+      const paymentMetadata = (payment.metadata as Record<string, any>) || {};
+
+      // Update our payment record
+      const updatedPayment = await this.prisma.payment.update({
         where: { id: payment.id },
         data: {
-          paymentStatus: PaymentStatus.SUCCEEDED as any, // Prisma enum conversion
+          paymentStatus: PaymentStatus.SUCCEEDED as any,
           succeededAt: new Date(),
-        },
-      });
-    } else {
-      // Update attempt
-      await this.prisma.paymentAttempt.update({
-        where: { id: attempt.id },
-        data: {
-          paymentStatus: PaymentAttemptStatus.FAILED as any, // Prisma enum conversion
-          errorMessage: 'Payment failed',
+          metadata: {
+            ...paymentMetadata,
+            razorpayPaymentId,
+            capturedAt: new Date().toISOString(),
+          },
         },
       });
 
-      // Update payment
-      return this.prisma.payment.update({
-        where: { id: payment.id },
+      // Create a payment attempt record
+      await this.prisma.paymentAttempt.create({
         data: {
-          paymentStatus: PaymentStatus.FAILED as any, // Prisma enum conversion
-          failedAt: new Date(),
-          errorMessage: 'Payment failed',
+          id: uuidv4(),
+          tenantId: payment.tenantId,
+          paymentId: payment.id,
+          attemptNumber: 1,
+          gatewayAttemptId: razorpayPaymentId,
+          paymentStatus: PaymentAttemptStatus.SUCCEEDED as any,
+          metadata: {
+            captureResponse: {
+              paymentId: razorpayPaymentId,
+              amount: amountInSubunits,
+              captured: true,
+            },
+          },
         },
       });
+
+      return this.mapToPayment(updatedPayment);
+    } catch (error) {
+      this.logger.error(
+        `Failed to capture payment: ${error.message}`,
+        error.stack,
+      );
+      throw new BadRequestException(`Payment capture failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Verify a Razorpay webhook signature
+   */
+  verifyWebhookSignature(payload: string, signature: string): boolean {
+    try {
+      return validateWebhookSignature(
+        payload,
+        signature,
+        process.env.RAZORPAY_WEBHOOK_SECRET || '',
+      );
+    } catch (error) {
+      this.logger.error(
+        `Webhook signature verification failed: ${error.message}`,
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Process Razorpay webhook events
+   */
+  async processWebhookEvent(eventType: string, eventData: any): Promise<void> {
+    this.logger.log(`Processing webhook event: ${eventType}`);
+
+    switch (eventType) {
+      case 'payment.captured':
+        await this.handlePaymentCaptured(eventData.payment);
+        break;
+
+      case 'payment.failed':
+        await this.handlePaymentFailed(eventData.payment);
+        break;
+
+      case 'refund.processed':
+        await this.handleRefundProcessed(eventData.refund);
+        break;
+
+      default:
+        this.logger.log(`Unhandled webhook event type: ${eventType}`);
+    }
+  }
+  /**
+   * Handle payment.captured webhook event
+   */
+  private async handlePaymentCaptured(razorpayPayment: any): Promise<void> {
+    try {
+      // Find the corresponding payment in our system
+      const payment = await this.prisma.payment.findFirst({
+        where: {
+          gatewayPaymentId: razorpayPayment.order_id,
+          paymentGateway: 'RAZORPAY',
+        },
+      });
+
+      if (!payment) {
+        this.logger.warn(
+          `Payment not found for Razorpay order ${razorpayPayment.order_id}`,
+        );
+        return;
+      }
+
+      const paymentMetadata = (payment.metadata as Record<string, any>) || {};
+
+      // Update payment status
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          paymentStatus: PaymentStatus.SUCCEEDED as any,
+          succeededAt: new Date(),
+          metadata: {
+            ...paymentMetadata,
+            razorpayPaymentId: razorpayPayment.id,
+            razorpayPaymentStatus: razorpayPayment.status,
+            webhookProcessedAt: new Date().toISOString(),
+          },
+        },
+      });
+
+      this.logger.log(`Payment ${payment.id} marked as successful via webhook`);
+    } catch (error) {
+      this.logger.error(
+        `Error handling payment.captured webhook: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Handle payment.failed webhook event
+   */
+  private async handlePaymentFailed(razorpayPayment: any): Promise<void> {
+    try {
+      // Find the corresponding payment in our system
+      const payment = await this.prisma.payment.findFirst({
+        where: {
+          gatewayPaymentId: razorpayPayment.order_id,
+          paymentGateway: 'RAZORPAY',
+        },
+      });
+
+      if (!payment) {
+        this.logger.warn(
+          `Payment not found for Razorpay order ${razorpayPayment.order_id}`,
+        );
+        return;
+      }
+
+      const paymentMetadata = (payment.metadata as Record<string, any>) || {};
+
+      // Update payment status
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          paymentStatus: PaymentStatus.FAILED as any,
+          failedAt: new Date(),
+          errorMessage: razorpayPayment.error_description || 'Payment failed',
+          metadata: {
+            ...paymentMetadata,
+            razorpayPaymentId: razorpayPayment.id,
+            razorpayPaymentStatus: razorpayPayment.status,
+            razorpayErrorCode: razorpayPayment.error_code,
+            razorpayErrorDescription: razorpayPayment.error_description,
+            webhookProcessedAt: new Date().toISOString(),
+          },
+        },
+      });
+
+      this.logger.log(`Payment ${payment.id} marked as failed via webhook`);
+    } catch (error) {
+      this.logger.error(
+        `Error handling payment.failed webhook: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Handle refund.processed webhook event
+   */
+  private async handleRefundProcessed(razorpayRefund: any): Promise<void> {
+    try {
+      const razorpayPaymentId = razorpayRefund.payment_id;
+
+      // Find the payment in our database using a JSON query for metadata
+      const payments = await this.prisma.payment.findMany({
+        where: {
+          paymentGateway: 'RAZORPAY',
+        },
+      });
+
+      // Filter manually since Prisma's JSON querying may have limitations
+      const payment = payments.find((p) => {
+        const metadata = (p.metadata as Record<string, any>) || {};
+        return metadata.razorpayPaymentId === razorpayPaymentId;
+      });
+
+      if (!payment) {
+        this.logger.warn(
+          `Payment not found for Razorpay payment ID ${razorpayPaymentId}`,
+        );
+        return;
+      }
+
+      const paymentMetadata = (payment.metadata as Record<string, any>) || {};
+
+      // Determine refund status
+      const refundAmount = razorpayRefund.amount / 100; // Convert from subunits
+      const newStatus =
+        refundAmount >= payment.amount
+          ? PaymentStatus.REFUNDED
+          : PaymentStatus.PARTIALLY_REFUNDED;
+
+      // Update payment status
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          paymentStatus: newStatus as any,
+          refundedAt: new Date(),
+          metadata: {
+            ...paymentMetadata,
+            refundId: razorpayRefund.id,
+            refundAmount: refundAmount,
+            refundStatus: razorpayRefund.status,
+            refundProcessedAt: new Date().toISOString(),
+          },
+        },
+      });
+
+      this.logger.log(`Refund processed for payment ${payment.id} via webhook`);
+    } catch (error) {
+      this.logger.error(
+        `Error handling refund.processed webhook: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Fetch payment details from Razorpay
+   */
+  async fetchRazorpayPaymentDetails(razorpayPaymentId: string): Promise<any> {
+    try {
+      const paymentDetails =
+        await this.razorpay.payments.fetch(razorpayPaymentId);
+      return paymentDetails;
+    } catch (error) {
+      this.logger.error(
+        `Error fetching Razorpay payment details: ${error.message}`,
+      );
+      throw new BadRequestException(
+        `Failed to fetch payment details: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Create a Razorpay order without immediately processing payment
+   */
+  async createRazorpayOrder(
+    amount: number,
+    currency: string,
+    receipt: string,
+    notes?: Record<string, string>,
+  ): Promise<any> {
+    try {
+      const amountInSubunits = Math.round(amount * 100);
+      const order = await this.razorpay.orders.create({
+        amount: amountInSubunits,
+        currency,
+        receipt,
+        notes: notes || {},
+      });
+
+      this.logger.log(`Created Razorpay order: ${JSON.stringify(order)}`);
+      return order;
+    } catch (error) {
+      this.logger.error(`Error creating Razorpay order: ${error.message}`);
+      throw new BadRequestException(`Failed to create order: ${error.message}`);
     }
   }
 }
