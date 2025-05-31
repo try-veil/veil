@@ -1,5 +1,5 @@
-import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
-import sidebar from './docs/swagger/sidebar';
+import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
+import sidebar from "./docs/swagger/sidebar";
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -16,36 +16,33 @@ import sidebar from './docs/swagger/sidebar';
 const sidebars: SidebarsConfig = {
   docs: [
     {
-      type: 'category',
-      label: 'API Documentation',
+      type: "category",
+      label: "API Documentation",
       items: [
-        'intro',
+        "intro",
         {
-          type: 'category',
-          label: 'Provider APIs',
+          type: "category",
+          label: "Provider APIs",
           items: [
-            'api/provider/onboarding',
-            'api/provider/validate',
-            'api/provider/update',
-            'api/provider/delete',
+            "api/provider/onboarding",
+            "api/provider/validate",
+            "api/provider/update",
+            "api/provider/delete",
           ],
         },
         {
-          type: 'category',
-          label: 'Consumer APIs',
+          type: "category",
+          label: "Consumer APIs",
           items: [
-            'api/user/register',
-            'api/user/api-keys',
-            'api/consumer/subscriptions',
+            "api/user/register",
+            "api/user/keys",
+            "api/consumer/subscriptions",
           ],
         },
         {
-          type: 'category',
-          label: 'Analytics APIs',
-          items: [
-            'api/analytics/usage',
-            'api/analytics/rate-limits',
-          ],
+          type: "category",
+          label: "Analytics APIs",
+          items: ["api/analytics/usage", "api/analytics/rate-limits"],
         },
       ],
     },
@@ -57,8 +54,6 @@ const sidebars: SidebarsConfig = {
           type: "category",
           label: "Veil Core",
           items: [
-
-
             {
               type: "doc",
               id: "swagger/veil-api-management",
@@ -71,7 +66,7 @@ const sidebars: SidebarsConfig = {
             },
             {
               type: "doc",
-              id: "swagger/add-new-api-keys",
+              id: "swagger/add-new-keys",
               label: "Add new API keys",
               className: "api-method post",
             },
@@ -81,7 +76,7 @@ const sidebars: SidebarsConfig = {
               label: "Update API key status",
               className: "api-method put",
             },
-          ]
+          ],
         },
       ],
     },

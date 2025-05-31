@@ -1,0 +1,119 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+[veil_handler.go](mdc:packages/caddy/internal/handlers/veil_handler.go)
+
+# Veil API Gateway Management
+
+## API Routes Management
+
+### Create a New API Route
+```sh
+curl --location --request POST 'http://localhost:2020/veil/api/routes' \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--header 'X-API-Key: <X-API-Key>' \
+--data '{
+  "path": "/api/v1/products/*",
+  "upstream": "http://localhost:8081",
+  "required_subscription": "premium",
+  "methods": [
+    "GET",
+    "POST"
+  ],
+  "required_headers": [
+    "X-API-Key",
+    "X-Request-ID"
+  ],
+  "parameters": [
+    {
+      "name": "category",
+      "type": "query",
+      "required": true
+    }
+  ],
+  "api_keys": [
+    {
+      "key": "test-key-123",
+      "name": "Weather Test Key",
+      "is_active": true
+    }
+  ]
+}'
+```
+
+### Update an Existing API Route
+```sh
+curl --location --request PUT 'http://localhost:2020/veil/api/routes/api_id_or_path' \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--header 'X-API-Key: <X-API-Key>' \
+--data '{
+  "path": "/api/v1/products/*",
+  "upstream": "http://localhost:8081",
+  "required_subscription": "premium",
+  "methods": [
+    "GET",
+    "PUT",
+    "DELETE"
+  ],
+  "required_headers": [
+    "X-API-Key",
+    "X-Request-ID"
+  ]
+}'
+```
+
+### Delete an API Route
+```sh
+curl --location --request DELETE 'http://localhost:2020/veil/api/routes/api_id_or_path' \
+--header 'Accept: application/json' \
+--header 'X-API-Key: <X-API-Key>'
+```
+
+## API Key Management
+
+### Add New API Keys
+```sh
+curl --location --request PUT 'http://localhost:2020/veil/api/keys' \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--header 'X-API-Key: <X-API-Key>' \
+--data '{
+  "path": "/api/v1/products/*",
+  "api_keys": [
+    {
+      "key": "test-key-123",
+      "name": "Weather Test Key",
+      "is_active": true
+    }
+  ]
+}'
+```
+
+### Update API Key Status
+```sh
+curl --location --request PUT 'http://localhost:2020/veil/api/keys/status' \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--header 'X-API-Key: <X-API-Key>' \
+--data '{
+  "path": "/api/v1/products/*",
+  "api_key": "test-key-123",
+  "is_active": false
+}'
+```
+
+## Using the API
+
+### Access an API Endpoint
+```sh
+curl --location 'http://localhost:2020/api/v1/products/1' \
+--header 'X-Subscription-Key: test-key-123' \
+--header 'X-API-Key: your-api-key' \
+--header 'X-Request-ID: request-12345'
+```
+
+Note: API endpoints are proxied through port 2021, while management endpoints are on port 2020.

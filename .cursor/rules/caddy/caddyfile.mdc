@@ -1,0 +1,76 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+{
+    "apps": {
+        "http": {
+            "servers": {
+                "example": {
+                    "listen": [
+                        ":2015"
+                    ],
+                    "routes": [
+                        {
+                            "handle": [
+                                {
+                                    "handler": "reverse_proxy",
+                                    "headers": {
+                                        "request": {
+                                            "add": {},
+                                            "delete": [
+                                                "Authorization"
+                                            ],
+                                            "set": {
+                                                "Authorization": [
+                                                    "Bearer test-token-123"
+                                                ],
+                                                "X-Forwarded-For": [
+                                                    "{http.request.remote.host}"
+                                                ],
+                                                "X-Forwarded-Proto": [
+                                                    "{http.request.scheme}"
+                                                ],
+                                                "X-Real-IP": [
+                                                    "{http.request.remote.host}"
+                                                ],
+                                                "X-Veil-Key": [
+                                                    ""
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "rewrite": {
+                                        "method": "GET",
+                                        "path_regexp": [
+                                            {
+                                                "find": "/api/bf05f9ba-ec66-4f4e-b6de-55a9250412ad/echo/",
+                                                "replace": "/echo/"
+                                            }
+                                        ]
+                                    },
+                                    "upstreams": [
+                                        {
+                                            "dial": "localhost:8081"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "match": [
+                                {
+                                    "method": [
+                                        "GET"
+                                    ],
+                                    "path": [
+                                        "/api/bf05f9ba-ec66-4f4e-b6de-55a9250412ad/echo*"
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}

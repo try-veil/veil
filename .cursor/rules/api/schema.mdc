@@ -1,0 +1,15 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+[schema.prisma](mdc:packages/platform/api/prisma/schema.prisma)
+[auth-service.md](mdc:docs/docs/services/auth-service.md)
+[credit-management-service.md](mdc:docs/docs/services/credit-management-service.md)
+[credit-service.md](mdc:docs/docs/services/credit-service.md)
+[gateway-service.md](mdc:docs/docs/services/gateway-service.md)
+[onboarding-service.md](mdc:docs/docs/services/onboarding-service.md)
+[subscription-service.md](mdc:docs/docs/services/subscription-service.md)
+[swagger.json](mdc:docs/docs/services/swagger.json)
+
+Use Yarn for dependency management.

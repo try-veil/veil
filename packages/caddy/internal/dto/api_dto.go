@@ -14,12 +14,13 @@ type APIKeyDTO struct {
 
 // APIOnboardRequestDTO represents the request body for API onboarding
 type APIOnboardRequestDTO struct {
-	Path                 string      `json:"path" binding:"required"`
-	Upstream             string      `json:"upstream" binding:"required"`
-	RequiredSubscription string      `json:"required_subscription"`
-	Methods              []string    `json:"methods" binding:"required"`
-	RequiredHeaders      []string    `json:"required_headers"`
-	APIKeys              []APIKeyDTO `json:"api_keys"`
+	Path                 string         `json:"path" binding:"required"`
+	Upstream             string         `json:"upstream" binding:"required"`
+	RequiredSubscription string         `json:"required_subscription"`
+	Methods              []string       `json:"methods" binding:"required"`
+	RequiredHeaders      []string       `json:"required_headers"`
+	Parameters           []ParameterDTO `json:"parameters"`
+	APIKeys              []APIKeyDTO    `json:"api_keys"`
 }
 
 // APIKeysRequestDTO represents the request body for adding API keys
@@ -40,4 +41,11 @@ type APIResponseDTO struct {
 	Status  string      `json:"status"`
 	Message string      `json:"message"`
 	API     interface{} `json:"api,omitempty"`
+}
+
+// ParameterDTO represents an API parameter in requests and responses
+type ParameterDTO struct {
+	Name     string `json:"name"`
+	Type     string `json:"type"` // query, path, header, body
+	Required bool   `json:"required"`
 }
