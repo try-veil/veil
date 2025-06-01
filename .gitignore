@@ -12,6 +12,7 @@ config/
 
 ## compiled binary
 veil
+veil.exe
 
 ## other build files
 dist
