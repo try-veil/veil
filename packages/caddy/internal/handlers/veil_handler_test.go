@@ -339,8 +339,8 @@ func TestVeilHandler_handleOnboard(t *testing.T) {
 				RequiredHeaders:      []string{"X-Test-Header"},
 				APIKeys: []models.APIKey{
 					{
-						Key:  "test-key",
-						Name: "Test Key",
+						Key:  "test-key-1",
+						Name: "Test Key-1",
 					},
 				},
 			},
@@ -373,7 +373,7 @@ func TestVeilHandler_handleOnboard(t *testing.T) {
 			assert.NoError(t, err)
 
 			// Create request
-			req := httptest.NewRequest("POST", "/veil/api/routes", bytes.NewBuffer(body))
+			req := httptest.NewRequest("POST", "/veil/api/onboard", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
 
 			// Create response recorder
