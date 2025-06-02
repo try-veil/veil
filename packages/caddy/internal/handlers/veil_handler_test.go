@@ -15,6 +15,10 @@ import (
 	"go.uber.org/zap"
 )
 
+// var tmpDB = "file::memory:?cache=shared"
+var active = true
+var inactive = false
+
 func TestVeilHandler_Provision(t *testing.T) {
 	// Setup
 	tmpDB := "test_veil.db"
@@ -116,6 +120,10 @@ func TestVeilHandler_ServeHTTP(t *testing.T) {
 					"srv0": {
 						"listen": [":2020"],
 						"routes": []
+					},
+					"srv1": {
+						"listen": [":2021"],
+						"routes": []
 					}
 				}
 			}`),
@@ -133,30 +141,33 @@ func TestVeilHandler_ServeHTTP(t *testing.T) {
 		{
 			Key:      "test-key",
 			Name:     "Test Key",
-			IsActive: true,
+			IsActive: &active,
 		},
 		{
 			Key:      "inactive-key",
 			Name:     "Inactive Key",
-			IsActive: false,
+			IsActive: &inactive,
 		},
 	})
-	err = handler.store.CreateAPI(api)
-	assert.NoError(t, err)
+	existing, _ := handler.store.GetAPIByPath("/test/endpoint")
+	if existing == nil {
+		err = handler.store.CreateAPI(api)
+		assert.NoError(t, err)
+	}
 
 	// Verify the inactive key is properly set
 	savedAPI, err := handler.store.GetAPIByPath("/test/endpoint")
 	assert.NoError(t, err)
 	assert.NotNil(t, savedAPI)
-	// var foundInactiveKey bool
-	// for _, key := range savedAPI.APIKeys {
-	// 	if key.Key == "inactive-key" {
-	// 		assert.False(t, key.IsActive, "inactive-key should be inactive")
-	// 		foundInactiveKey = true
-	// 		break
-	// 	}
-	// }
-	// assert.True(t, foundInactiveKey, "inactive-key should exist in the database")
+	var foundInactiveKey bool
+	for _, key := range savedAPI.APIKeys {
+		if key.Key == "inactive-key" {
+			assert.False(t, *key.IsActive, "inactive-key should be inactive")
+			foundInactiveKey = true
+			break
+		}
+	}
+	assert.True(t, foundInactiveKey, "inactive-key should exist in the database")
 
 	tests := []struct {
 		name         string
@@ -208,29 +219,25 @@ func TestVeilHandler_ServeHTTP(t *testing.T) {
 			},
 			isManagement: false,
 		},
-		// {
-		// 	name:   "Management API Request",
-		// 	path:   "/veil/api/onboard",
-		// 	method: http.MethodPost,
-		// 	headers: map[string]string{
-		// 		"Content-Type": "application/json",
-		// 	},
-		// 	expectedCode: http.StatusCreated,
-		// 	nextHandler: func(w http.ResponseWriter, r *http.Request) {
-		// 		w.WriteHeader(http.StatusOK)
-		// 	},
-		// 	isManagement: true,
-		// },
+		{
+			name:   "Management API Request",
+			path:   "/veil/api/routes",
+			method: http.MethodPost,
+			headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+			expectedCode: http.StatusCreated,
+			nextHandler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			},
+			isManagement: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create request
-			req := httptest.NewRequest(tt.method, tt.path, nil)
-			for k, v := range tt.headers {
-				req.Header.Set(k, v)
-			}
-
+			var req *http.Request
+		
 			if tt.isManagement {
 				// Add a test API config to the request body
 				testAPI := models.APIOnboardRequest{
@@ -248,23 +255,31 @@ func TestVeilHandler_ServeHTTP(t *testing.T) {
 				}
 				body, err := json.Marshal(testAPI)
 				assert.NoError(t, err)
+		
 				req = httptest.NewRequest(tt.method, tt.path, bytes.NewBuffer(body))
-				req.Header.Set("Content-Type", "application/json")
+			} else {
+				req = httptest.NewRequest(tt.method, tt.path, nil)
 			}
-
+		
+			// Apply headers after creating the request
+			for k, v := range tt.headers {
+				req.Header.Set(k, v)
+			}
+		
 			// Create response recorder
 			w := httptest.NewRecorder()
-
+		
 			// Create next handler
 			next := &mockHandler{fn: tt.nextHandler}
-
+		
 			// Serve request
-			err = handler.ServeHTTP(w, req, next)
+			err := handler.ServeHTTP(w, req, next)
 			assert.NoError(t, err)
-
+		
 			// Check response
 			assert.Equal(t, tt.expectedCode, w.Code)
 		})
+		
 	}
 }
 
@@ -293,6 +308,10 @@ func TestVeilHandler_handleOnboard(t *testing.T) {
 					"srv0": {
 						"listen": [":2020"],
 						"routes": []
+					},
+					"srv1": {
+						"listen": [":2021"],
+						"routes": []
 					}
 				}
 			}`),
@@ -310,23 +329,23 @@ func TestVeilHandler_handleOnboard(t *testing.T) {
 		request      models.APIOnboardRequest
 		expectedCode int
 	}{
-		// {
-		// 	name: "Valid Onboard Request",
-		// 	request: models.APIOnboardRequest{
-		// 		Path:                 "/test/*",
-		// 		Upstream:             "http://localhost:8082",
-		// 		RequiredSubscription: "test-subscription",
-		// 		Methods:              []string{"GET"},
-		// 		RequiredHeaders:      []string{"X-Test-Header"},
-		// 		APIKeys: []models.APIKey{
-		// 			{
-		// 				Key:  "test-key",
-		// 				Name: "Test Key",
-		// 			},
-		// 		},
-		// 	},
-		// 	expectedCode: http.StatusCreated,
-		// },
+		{
+			name: "Valid Onboard Request",
+			request: models.APIOnboardRequest{
+				Path:                 "/test/*",
+				Upstream:             "http://localhost:8082",
+				RequiredSubscription: "test-subscription",
+				Methods:              []string{"GET"},
+				RequiredHeaders:      []string{"X-Test-Header"},
+				APIKeys: []models.APIKey{
+					{
+						Key:  "test-key",
+						Name: "Test Key",
+					},
+				},
+			},
+			expectedCode: http.StatusCreated,
+		},
 		{
 			name: "Invalid Request - Missing Path",
 			request: models.APIOnboardRequest{
@@ -354,7 +373,7 @@ func TestVeilHandler_handleOnboard(t *testing.T) {
 			assert.NoError(t, err)
 
 			// Create request
-			req := httptest.NewRequest("POST", "/veil/api/onboard", bytes.NewBuffer(body))
+			req := httptest.NewRequest("POST", "/veil/api/routes", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
 
 			// Create response recorder
@@ -399,31 +418,35 @@ func TestVeilHandler_validateAPIKey(t *testing.T) {
 		{
 			Key:      "test-key",
 			Name:     "Test Key",
-			IsActive: true,
+			IsActive: &active,
 		},
 		// TODO: Fix this
-		// {
-		// 	Key:      "inactive-key",
-		// 	Name:     "Inactive Key",
-		// 	IsActive: false,
-		// },
+		{
+			Key:      "inactive-key",
+			Name:     "Inactive Key",
+			IsActive: &inactive,
+		},
 	})
-	err = handler.store.CreateAPI(api)
-	assert.NoError(t, err)
+	existing, _ := handler.store.GetAPIByPath("/test/endpoint")
+	if existing == nil {
+		err = handler.store.CreateAPI(api)
+		assert.NoError(t, err)
+	}
 
 	// Verify the inactive key is properly set
 	savedAPI, err := handler.store.GetAPIByPath("/test/endpoint")
 	assert.NoError(t, err)
 	assert.NotNil(t, savedAPI)
-	// var foundInactiveKey bool
-	// for _, key := range savedAPI.APIKeys {
-	// 	if key.Key == "inactive-key" {
-	// 		assert.False(t, key.IsActive, "inactive-key should be inactive")
-	// foundInactiveKey = true
-	// 		break
-	// 	}
-	// }
-	// assert.True(t, foundInactiveKey, "inactive-key should exist in the database")
+
+	var foundInactiveKey bool
+	for _, key := range savedAPI.APIKeys {
+		if key.Key == "inactive-key" {
+			assert.False(t, *key.IsActive, "inactive-key should be inactive")
+			foundInactiveKey = true
+			break
+		}
+	}
+	assert.True(t, foundInactiveKey, "inactive-key should exist in the database")
 
 	tests := []struct {
 		name       string
@@ -447,13 +470,13 @@ func TestVeilHandler_validateAPIKey(t *testing.T) {
 			wantConfig: nil,
 		},
 		// TODO: Fix this
-		// {
-		// 	name:       "Inactive API Key",
-		// 	path:       "/test/endpoint",
-		// 	apiKey:     "inactive-key",
-		// 	wantErr:    true,
-		// 	wantConfig: nil,
-		// },
+		{
+			name:       "Inactive API Key",
+			path:       "/test/endpoint",
+			apiKey:     "inactive-key",
+			wantErr:    true,
+			wantConfig: nil,
+		},
 		{
 			name:       "Empty API Key",
 			path:       "/test/endpoint",

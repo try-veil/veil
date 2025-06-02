@@ -37,7 +37,7 @@ func (s *APIStore) CreateAPI(config *models.APIConfig) error {
 		s.logger.Debug("API key to be created",
 			zap.String("key_name", key.Name),
 			zap.String("key_value", key.Key),
-			zap.Bool("is_active", key.IsActive))
+			zap.Bool("is_active", *key.IsActive))
 	}
 
 	err := s.db.Create(config).Error
@@ -98,7 +98,7 @@ func (s *APIStore) GetAPIByPath(path string) (*models.APIConfig, error) {
 			s.logger.Debug("found API key",
 				zap.String("key_name", key.Name),
 				zap.String("key_value", key.Key),
-				zap.Bool("is_active", key.IsActive))
+				zap.Bool("is_active", *key.IsActive))
 		}
 	}
 
@@ -131,7 +131,7 @@ func (s *APIStore) GetAPIByPath(path string) (*models.APIConfig, error) {
 			s.logger.Debug("matched configuration API key",
 				zap.String("key_name", key.Name),
 				zap.String("key_value", key.Key),
-				zap.Bool("is_active", key.IsActive))
+				zap.Bool("is_active", *key.IsActive))
 		}
 	} else {
 		s.logger.Debug("no matching API configuration found",
@@ -170,10 +170,10 @@ func (s *APIStore) ValidateAPIKey(apiConfig *models.APIConfig, apiKey string) bo
 		s.logger.Debug("checking API key",
 			zap.String("key_name", key.Name),
 			zap.String("key_value", key.Key),
-			zap.Bool("is_active", key.IsActive),
+			zap.Bool("is_active", *key.IsActive),
 			zap.Bool("matches", key.Key == apiKey))
 
-		if key.Key == apiKey && key.IsActive {
+		if key.Key == apiKey && *key.IsActive {
 			// Check expiration if set
 			if key.ExpiresAt != nil && key.ExpiresAt.Before(time.Now()) {
 				s.logger.Debug("API key expired",
@@ -395,9 +395,10 @@ func (s *APIStore) AddAPIKeys(path string, newKeys []models.APIKey) error {
 				break
 			}
 		}
+		active := true
 		if !isDuplicate {
 			newKey.APIConfigID = apiConfig.ID
-			newKey.IsActive = true
+			newKey.IsActive = &active
 			keysToAdd = append(keysToAdd, newKey)
 		}
 	}
@@ -515,3 +516,8 @@ func (s *APIStore) GetAPIByID(id uint) (*models.APIConfig, error) {
 	}
 	return &api, nil
 }
+
+func (s *APIStore) DeleteAPIByPath(path string) error {
+    return s.db.Unscoped().Where("path = ?", path).Delete(&models.APIConfig{}).Error
+}
+

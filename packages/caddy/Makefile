@@ -10,11 +10,12 @@ setup:
 build:
 	make clean
 	make setup
-	CGO_ENABLED=1 xcaddy build --with github.com/try-veil/veil/packages/caddy=. --output veil
+	CGO_ENABLED=1 xcaddy build --with github.com/try-veil/veil/packages/caddy=. --output veil.exe
 
 # Clean build artifacts
 clean:
 	rm -f veil
+	rm -f veil.exe
 
 clean-db:
 	rm -f ./*.db
