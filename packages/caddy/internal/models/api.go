@@ -12,7 +12,7 @@ type APIKey struct {
 	APIConfigID uint       `json:"api_config_id" gorm:"index"`
 	Key         string     `json:"key" gorm:"uniqueIndex;not null"`
 	Name        string     `json:"name" gorm:"not null"`
-	IsActive    *bool       `json:"is_active" gorm:"default:true"`
+	IsActive    *bool      `json:"is_active,omitempty" gorm:"default:true"`
 	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
 }
 

@@ -8,7 +8,7 @@ import (
 type APIKeyDTO struct {
 	Key       string     `json:"key"`
 	Name      string     `json:"name"`
-	IsActive  bool       `json:"is_active,omitempty"`
+	IsActive  *bool       `json:"is_active,omitempty"`
 	ExpiresAt *time.Time `json:"expires_at,omitempty"`
 }
 

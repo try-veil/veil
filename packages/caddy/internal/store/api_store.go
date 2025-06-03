@@ -398,7 +398,9 @@ func (s *APIStore) AddAPIKeys(path string, newKeys []models.APIKey) error {
 		active := true
 		if !isDuplicate {
 			newKey.APIConfigID = apiConfig.ID
-			newKey.IsActive = &active
+			if newKey.IsActive == nil {
+				newKey.IsActive = &active
+			}
 			keysToAdd = append(keysToAdd, newKey)
 		}
 	}
@@ -516,8 +518,3 @@ func (s *APIStore) GetAPIByID(id uint) (*models.APIConfig, error) {
 	}
 	return &api, nil
 }
-
-func (s *APIStore) DeleteAPIByPath(path string) error {
-    return s.db.Unscoped().Where("path = ?", path).Delete(&models.APIConfig{}).Error
-}
-

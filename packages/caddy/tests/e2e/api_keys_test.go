@@ -8,9 +8,20 @@ import (
 	"os/exec"
 	"testing"
 	"time"
+	"fmt"
+
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestCleaning(t *testing.T) {
+    if err := os.Remove("./veil.db"); err != nil {
+        fmt.Println("Error removing veil.db:", err)
+    }
+    if err := os.RemoveAll("./configs"); err != nil {
+        fmt.Println("Error removing ./configs:", err)
+    }
+}
 
 func TestAPIKeyManagement(t *testing.T) {
 	// Clean up any existing database and configs
@@ -18,30 +29,32 @@ func TestAPIKeyManagement(t *testing.T) {
 	os.RemoveAll("./configs")
 
 	// Start the test upstream server
-	upstreamCmd := exec.Command("python3", "../upstream/test-weather.py")
-	upstreamCmd.Stdout = os.Stdout
-	upstreamCmd.Stderr = os.Stderr
-	err := upstreamCmd.Start()
-	assert.NoError(t, err, "Failed to start upstream server")
-	defer upstreamCmd.Process.Kill()
+	// upstreamCmd := exec.Command("python3", "../upstream/test-weather.py")
+	// upstreamCmd.Stdout = os.Stdout
+	// upstreamCmd.Stderr = os.Stderr
+	// err := upstreamCmd.Start()
+	// assert.NoError(t, err, "Failed to start upstream server")
+	// defer upstreamCmd.Process.Kill()
 
 	// Start Caddy server
 	caddyCmd := exec.Command("./veil", "run", "--config", "Caddyfile")
 	caddyCmd.Stdout = os.Stdout
 	caddyCmd.Stderr = os.Stderr
-	err = caddyCmd.Start()
+	err := caddyCmd.Start()
 	assert.NoError(t, err, "Failed to start Caddy server")
-	defer caddyCmd.Process.Kill()
+	// defer caddyCmd.Process.Kill()
 
 	// Wait for servers to be ready
 	time.Sleep(2 * time.Second)
+
+	active := true
 
 	// Test cases
 	t.Run("Complete API Key Management Flow", func(t *testing.T) {
 		// 1. First onboard an API
 		weatherOnboardReq := APIOnboardRequest{
 			Path:                 "/weather/*",
-			Upstream:             "http://localhost:8082/weather",
+			Upstream:             "http://localhost:8083/weather",
 			RequiredSubscription: "weather-subscription",
 			Methods:              []string{"GET"},
 			RequiredHeaders:      []string{"X-Test-Header"},
@@ -49,7 +62,7 @@ func TestAPIKeyManagement(t *testing.T) {
 				{
 					Key:      "initial-key",
 					Name:     "Initial Key",
-					IsActive: true,
+					IsActive: &active,
 				},
 			},
 		}
@@ -57,7 +70,7 @@ func TestAPIKeyManagement(t *testing.T) {
 		reqBody, err := json.Marshal(weatherOnboardReq)
 		assert.NoError(t, err, "Failed to marshal weather onboard request")
 
-		resp, err := http.Post("http://localhost:2020/veil/api/onboard",
+		resp, err := http.Post("http://localhost:2020/veil/api/routes",
 			"application/json",
 			bytes.NewBuffer(reqBody))
 		assert.NoError(t, err, "Failed to send weather onboard request")
@@ -90,7 +103,7 @@ func TestAPIKeyManagement(t *testing.T) {
 				"application/json",
 				bytes.NewBuffer(reqBody))
 			assert.NoError(t, err, "Failed to send add keys request")
-			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
 			var response map[string]interface{}
 			err = json.NewDecoder(resp.Body).Decode(&response)
@@ -107,7 +120,7 @@ func TestAPIKeyManagement(t *testing.T) {
 		t.Run("API Access with Different Keys", func(t *testing.T) {
 			// Test with initial key
 			t.Run("Initial Key Access", func(t *testing.T) {
-				req, _ := http.NewRequest("GET", "http://localhost:2020/weather/current", nil)
+				req, _ := http.NewRequest("GET", "http://localhost:2021/weather/current", nil)
 				req.Header.Set("X-Subscription-Key", "initial-key")
 				req.Header.Set("X-Test-Header", "test")
 
@@ -119,7 +132,7 @@ func TestAPIKeyManagement(t *testing.T) {
 
 			// Test with new key 1
 			t.Run("New Key 1 Access", func(t *testing.T) {
-				req, _ := http.NewRequest("GET", "http://localhost:2020/weather/current", nil)
+				req, _ := http.NewRequest("GET", "http://localhost:2021/weather/current", nil)
 				req.Header.Set("X-Subscription-Key", "new-key-1")
 				req.Header.Set("X-Test-Header", "test")
 
@@ -131,7 +144,7 @@ func TestAPIKeyManagement(t *testing.T) {
 
 			// Test with invalid key
 			t.Run("Invalid Key Access", func(t *testing.T) {
-				req, _ := http.NewRequest("GET", "http://localhost:2020/weather/current", nil)
+				req, _ := http.NewRequest("GET", "http://localhost:2021/weather/current", nil)
 				req.Header.Set("X-Subscription-Key", "invalid-key")
 				req.Header.Set("X-Test-Header", "test")
 
@@ -142,13 +155,15 @@ func TestAPIKeyManagement(t *testing.T) {
 			})
 		})
 
+		inactive :=false
+
 		// 4. Test updating API key status
 		t.Run("Update API Key Status", func(t *testing.T) {
 			// Deactivate new-key-1
 			updateReq := APIKeyStatusRequest{
 				Path:     "/weather/*",
 				APIKey:   "new-key-1",
-				IsActive: false,
+				IsActive: &inactive,
 			}
 
 			reqBody, err := json.Marshal(updateReq)
@@ -164,7 +179,7 @@ func TestAPIKeyManagement(t *testing.T) {
 			resp.Body.Close()
 
 			// Try to access API with deactivated key
-			req, _ = http.NewRequest("GET", "http://localhost:2020/weather/current", nil)
+			req, _ = http.NewRequest("GET", "http://localhost:2021/weather/current", nil)
 			req.Header.Set("X-Subscription-Key", "new-key-1")
 			req.Header.Set("X-Test-Header", "test")
 
@@ -174,7 +189,7 @@ func TestAPIKeyManagement(t *testing.T) {
 			resp.Body.Close()
 
 			// Verify other keys still work
-			req, _ = http.NewRequest("GET", "http://localhost:2020/weather/current", nil)
+			req, _ = http.NewRequest("GET", "http://localhost:2021/weather/current", nil)
 			req.Header.Set("X-Subscription-Key", "new-key-2")
 			req.Header.Set("X-Test-Header", "test")
 
@@ -205,7 +220,7 @@ func TestAPIKeyManagement(t *testing.T) {
 					"application/json",
 					bytes.NewBuffer(reqBody))
 				assert.NoError(t, err)
-				assert.Equal(t, http.StatusOK, resp.StatusCode)
+				assert.Equal(t, http.StatusConflict, resp.StatusCode)
 
 				var response map[string]interface{}
 				err = json.NewDecoder(resp.Body).Decode(&response)
@@ -223,7 +238,7 @@ func TestAPIKeyManagement(t *testing.T) {
 				updateReq := APIKeyStatusRequest{
 					Path:     "/weather/*",
 					APIKey:   "non-existent-key",
-					IsActive: false,
+					IsActive: &inactive,
 				}
 
 				reqBody, err := json.Marshal(updateReq)
@@ -268,7 +283,7 @@ func TestAPIKeyManagement(t *testing.T) {
 		// First onboard an API
 		onboardRequest := APIOnboardRequest{
 			Path:                 "/weather/*",
-			Upstream:             "http://localhost:8080",
+			Upstream:             "http://localhost:8083",
 			RequiredSubscription: "weather-subscription",
 			Methods:              []string{"GET"},
 			RequiredHeaders:      []string{"X-Test-Header"},
@@ -284,7 +299,7 @@ func TestAPIKeyManagement(t *testing.T) {
 		assert.NoError(t, err, "Failed to marshal request")
 
 		// Use port 2020 for management API
-		resp, err := http.Post("http://localhost:2020/veil/api/onboard",
+		resp, err := http.Post("http://localhost:2020/veil/api/routes",
 			"application/json",
 			bytes.NewBuffer(requestBody))
 		assert.NoError(t, err, "Failed to send onboard request")
@@ -313,7 +328,7 @@ func TestAPIKeyManagement(t *testing.T) {
 		assert.NoError(t, err, "Failed to send add keys request")
 		defer resp.Body.Close()
 
-		assert.Equal(t, http.StatusOK, resp.StatusCode, "Expected status OK")
+		assert.Equal(t, http.StatusCreated, resp.StatusCode, "Expected status 201")
 
 		// Test access with new API key using port 2021
 		t.Run("Test API Access with New Key", func(t *testing.T) {

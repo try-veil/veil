@@ -47,6 +47,10 @@ curl -v http://localhost:2020/order/current \
 -H "X-Subscription-Key: order-test-key-2" \
 -H "X-Test-Header: test" | jq
 
+curl -v http://localhost:2021/order/current \
+-H "X-Subscription-Key: order-test-key-2" \
+-H "X-Test-Header: test" | jq
+
 curl -v http://localhost:2020/order/current \
 -H "X-Subscription-Key: weather-test-key-2" \
 -H "X-Test-Header: test" | jq
