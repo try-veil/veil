@@ -29,23 +29,23 @@ func TestAPIKeyManagement(t *testing.T) {
 	os.RemoveAll("./configs")
 
 	// Start the test upstream server
-	// upstreamCmd := exec.Command("python3", "../upstream/test-weather.py")
-	// upstreamCmd.Stdout = os.Stdout
-	// upstreamCmd.Stderr = os.Stderr
-	// err := upstreamCmd.Start()
-	// assert.NoError(t, err, "Failed to start upstream server")
-	// defer upstreamCmd.Process.Kill()
+	upstreamCmd := exec.Command("python3", "../upstream/test-weather.py")
+	upstreamCmd.Stdout = os.Stdout
+	upstreamCmd.Stderr = os.Stderr
+	err := upstreamCmd.Start()
+	assert.NoError(t, err, "Failed to start upstream server")
+	defer upstreamCmd.Process.Kill()
 
 	// Start Caddy server
 	caddyCmd := exec.Command("./veil", "run", "--config", "Caddyfile")
 	caddyCmd.Stdout = os.Stdout
 	caddyCmd.Stderr = os.Stderr
-	err := caddyCmd.Start()
+	err = caddyCmd.Start()
 	assert.NoError(t, err, "Failed to start Caddy server")
 	// defer caddyCmd.Process.Kill()
 
 	// Wait for servers to be ready
-	time.Sleep(2 * time.Second)
+	time.Sleep(8 * time.Second)
 
 	active := true
 
@@ -88,6 +88,7 @@ func TestAPIKeyManagement(t *testing.T) {
 					{
 						Key:  "new-key-1",
 						Name: "New Key 1",
+						IsActive: &active,
 					},
 					{
 						Key:  "new-key-2",

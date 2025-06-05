@@ -19,31 +19,31 @@ func TestAPIOnboardingAndValidation(t *testing.T) {
 	os.RemoveAll("./configs")
 
 	// Start the test upstream server
-	// upstreamCmd := exec.Command("python3", "../upstream/test-weather.py")
-	// upstreamCmd.Stdout = os.Stdout
-	// upstreamCmd.Stderr = os.Stderr
-	// err := upstreamCmd.Start()
-	// assert.NoError(t, err, "Failed to start upstream server")
-	// defer upstreamCmd.Process.Kill()
+	upstreamCmd := exec.Command("python3", "../upstream/test-weather.py")
+	upstreamCmd.Stdout = os.Stdout
+	upstreamCmd.Stderr = os.Stderr
+	err := upstreamCmd.Start()
+	assert.NoError(t, err, "Failed to start upstream server")
+	defer upstreamCmd.Process.Kill()
 
 	// Start the test upstream server
-	// upstreamCmd1 := exec.Command("python3", "../upstream/test-orders.py")
-	// upstreamCmd1.Stdout = os.Stdout
-	// upstreamCmd1.Stderr = os.Stderr
-	// err = upstreamCmd1.Start()
-	// assert.NoError(t, err, "Failed to start upstream server")
-	// defer upstreamCmd1.Process.Kill()
+	upstreamCmd1 := exec.Command("python3", "../upstream/test-orders.py")
+	upstreamCmd1.Stdout = os.Stdout
+	upstreamCmd1.Stderr = os.Stderr
+	err = upstreamCmd1.Start()
+	assert.NoError(t, err, "Failed to start upstream server")
+	defer upstreamCmd1.Process.Kill()
 
 	// Start Caddy server
 	caddyCmd := exec.Command("./veil", "run", "--config", "Caddyfile")
 	caddyCmd.Stdout = os.Stdout
 	caddyCmd.Stderr = os.Stderr
-	err := caddyCmd.Start()
+	err = caddyCmd.Start()
 	assert.NoError(t, err, "Failed to start Caddy server")
 	defer caddyCmd.Process.Kill()
 
 	// Wait for servers to be ready
-	time.Sleep(2 * time.Second)
+	time.Sleep(5 * time.Second)
 
 	active := true
 	// Test cases
