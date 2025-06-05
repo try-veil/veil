@@ -15,7 +15,6 @@ build:
 # Clean build artifacts
 clean:
 	rm -f veil
-	rm -f veil.exe
 
 clean-db:
 	rm -f ./*.db

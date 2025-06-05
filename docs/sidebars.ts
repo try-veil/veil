@@ -35,7 +35,7 @@ const sidebars: SidebarsConfig = {
           label: "Consumer APIs",
           items: [
             "api/user/register",
-            "api/user/api-keys",
+            "api/user/keys",
             "api/consumer/subscriptions",
           ],
         },

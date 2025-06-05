@@ -45,7 +45,7 @@ func TestAPIKeyManagement(t *testing.T) {
 	// defer caddyCmd.Process.Kill()
 
 	// Wait for servers to be ready
-	time.Sleep(8 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	active := true
 

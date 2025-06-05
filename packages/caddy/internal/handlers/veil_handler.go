@@ -620,7 +620,6 @@ func (h *VeilHandler) handleManagementAPI(w http.ResponseWriter, r *http.Request
 	switch resource {
 	case "routes":
 		// Handle API routes: /veil/api/routes or /veil/api/routes/{id}
-		println("Values : ======================",w,r)
 		return h.handleOnboard(w, r)
 	case "keys":
 		// Check if this is a status update request

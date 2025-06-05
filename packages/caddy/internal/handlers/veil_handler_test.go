@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -90,9 +89,7 @@ type mockHandler struct {
 }
 
 func (h *mockHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) error {
-    if h.fn != nil {
-        h.fn(w, r)
-    }
+    h.fn(w, r)
     return nil
 }
 
@@ -111,9 +108,6 @@ func TestVeilHandler_ServeHTTP(t *testing.T) {
 		Context: nil,
 	}
 	err := handler.Provision(ctx)
-	if err != nil {
-		t.Fatalf("Provision failed: %v", err)
-	}
 	
 	assert.NoError(t, err)
 
@@ -278,7 +272,6 @@ func TestVeilHandler_ServeHTTP(t *testing.T) {
 			// Create next handler
 			next := &mockHandler{fn: tt.nextHandler}
 
-			fmt.Printf("===============================%v", next.fn != nil)
 
 			// Serve request
 			err = handler.ServeHTTP(w, req, next)
@@ -305,9 +298,7 @@ func TestVeilHandler_handleOnboard(t *testing.T) {
 		Context: nil,
 	}
 	err := handler.Provision(ctx)
-	if err != nil {
-		t.Fatalf("Provision failed: %v", err)
-	}
+	
 	assert.NoError(t, err)
 
 	// Mock the admin API call for config updates
