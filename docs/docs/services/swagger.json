@@ -41,7 +41,7 @@
         }
     ],
     "paths": {
-        "/onboard": {
+        "/routes": {
             "put": {
                 "tags": [
                     "onboarding"
