@@ -7,7 +7,7 @@ The API onboarding endpoint allows providers to register their APIs with the mar
 ## Base URL
 
 ```
-POST /v1/apis/onboard
+POST /v1/apis/routes
 ```
 
 ## Request Body

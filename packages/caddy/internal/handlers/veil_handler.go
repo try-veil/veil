@@ -113,7 +113,7 @@ func (h *VeilHandler) validateAPIKey(path string, apiKey string) (*models.APICon
 	// Validate API key
 	valid := false
 	for _, key := range api.APIKeys {
-		if key.Key == apiKey && key.IsActive {
+		if key.Key == apiKey && *key.IsActive {
 			valid = true
 			break
 		}
@@ -746,12 +746,17 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		})
 	}
 
+
 	// Create API keys
 	for _, key := range req.APIKeys {
+		isActive := true
+		if key.IsActive != nil{
+			isActive = *key.IsActive
+		}
 		config.APIKeys = append(config.APIKeys, models.APIKey{
 			Key:      key.Key,
 			Name:     key.Name,
-			IsActive: true,
+			IsActive: &isActive,
 		})
 	}
 
@@ -771,7 +776,12 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 
 	// Store in database
 	h.logger.Info("storing API config in database")
-	if err := h.store.CreateAPI(config); err != nil {
+
+	existingConfig, _ := h.store.GetAPIByPath(config.Path)
+	
+	if existingConfig == nil{
+		err = h.store.CreateAPI(config)
+		
 		h.logger.Error("failed to store API config",
 			zap.Error(err),
 			zap.String("db_path", h.DBPath),
@@ -909,7 +919,7 @@ func (h *VeilHandler) handleAddAPIKeys(w http.ResponseWriter, r *http.Request) e
 		newKeys[i] = models.APIKey{
 			Key:      key.Key,
 			Name:     key.Name,
-			IsActive: true,
+			IsActive: key.IsActive,
 		}
 	}
 

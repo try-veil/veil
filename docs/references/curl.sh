@@ -1,4 +1,4 @@
-curl -X POST http://localhost:2020/veil/api/onboard \
+curl -X POST http://localhost:2020/veil/api/routes \
 -H "Content-Type: application/json" \
 -d '{
   "path": "/weather/*",
@@ -31,7 +31,7 @@ curl -v http://localhost:2020/weather/current \
 
 # ---------- Ordr ---------- #
 
-curl -X POST http://localhost:2020/veil/api/onboard \
+curl -X POST http://localhost:2020/veil/api/routes \
 -H "Content-Type: application/json" \
 -d '{
   "path": "/order/*",
@@ -44,6 +44,10 @@ curl -X POST http://localhost:2020/veil/api/onboard \
 
 
 curl -v http://localhost:2020/order/current \
+-H "X-Subscription-Key: order-test-key-2" \
+-H "X-Test-Header: test" | jq
+
+curl -v http://localhost:2021/order/current \
 -H "X-Subscription-Key: order-test-key-2" \
 -H "X-Test-Header: test" | jq
 
@@ -85,7 +89,7 @@ curl -X PUT http://localhost:2020/veil/api/keys/status \
 
 
 # -- HTTP BIN ---
-curl -X POST http://localhost:2020/veil/api/onboard \
+curl -X POST http://localhost:2020/veil/api/routes \
 -H "Content-Type: application/json" \
 -d '{
   "path": "/bin/*",
@@ -101,7 +105,7 @@ curl http://localhost:2020/bin/get \
 -H "X-Test-Header: test" | jq
 
 
-curl -X POST http://localhost:2020/veil/api/onboard \
+curl -X POST http://localhost:2020/veil/api/routes \
 -H "Content-Type: application/json" \
 -d '{
   "path": "/todos/*",
@@ -128,7 +132,7 @@ curl http://localhost:2020/todos/1 \
 -H "X-Subscription-Key: random-key" \
 -H "X-Test-Header: test" | jq
 
-curl -X POST http://localhost:2020/veil/api/onboard \
+curl -X POST http://localhost:2020/veil/api/routes \
 -H "Content-Type: application/json" \
 -d '{
   "path": "/todos",
@@ -144,7 +148,7 @@ curl http://localhost:2020/todos \
 -H "X-Test-Header: test" | jq
 
 
-curl -X POST http://localhost:2020/veil/api/onboard \
+curl -X POST http://localhost:2020/veil/api/routes \
 -H "Content-Type: application/json" \
 -d '{
   "path": "/todo",

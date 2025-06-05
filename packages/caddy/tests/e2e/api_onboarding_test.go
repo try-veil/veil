@@ -13,7 +13,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
-
 func TestAPIOnboardingAndValidation(t *testing.T) {
 	// Clean up any existing database and configs
 	os.Remove("./veil.db")
@@ -27,6 +26,14 @@ func TestAPIOnboardingAndValidation(t *testing.T) {
 	assert.NoError(t, err, "Failed to start upstream server")
 	defer upstreamCmd.Process.Kill()
 
+	// Start the test upstream server
+	upstreamCmd1 := exec.Command("python3", "../upstream/test-orders.py")
+	upstreamCmd1.Stdout = os.Stdout
+	upstreamCmd1.Stderr = os.Stderr
+	err = upstreamCmd1.Start()
+	assert.NoError(t, err, "Failed to start upstream server")
+	defer upstreamCmd1.Process.Kill()
+
 	// Start Caddy server
 	caddyCmd := exec.Command("./veil", "run", "--config", "Caddyfile")
 	caddyCmd.Stdout = os.Stdout
@@ -38,6 +45,7 @@ func TestAPIOnboardingAndValidation(t *testing.T) {
 	// Wait for servers to be ready
 	time.Sleep(2 * time.Second)
 
+	active := true
 	// Test cases
 	t.Run("Complete API Onboarding Flow", func(t *testing.T) {
 		// 1. Onboard the Weather API
@@ -51,7 +59,7 @@ func TestAPIOnboardingAndValidation(t *testing.T) {
 				{
 					Key:      "weather-test-key-2",
 					Name:     "Weather Test Key 2",
-					IsActive: true,
+					IsActive: &active,
 				},
 			},
 		}
@@ -59,7 +67,7 @@ func TestAPIOnboardingAndValidation(t *testing.T) {
 		reqBody, err := json.Marshal(weatherOnboardReq)
 		assert.NoError(t, err, "Failed to marshal weather onboard request")
 
-		resp, err := http.Post("http://localhost:2020/veil/api/onboard",
+		resp, err := http.Post("http://localhost:2020/veil/api/routes",
 			"application/json",
 			bytes.NewBuffer(reqBody))
 		assert.NoError(t, err, "Failed to send weather onboard request")
@@ -78,29 +86,29 @@ func TestAPIOnboardingAndValidation(t *testing.T) {
 		// Wait for configuration to be applied
 		time.Sleep(1 * time.Second)
 
-		// 2. Onboard the Ordr API
-		ordrOnboardReq := APIOnboardRequest{
-			Path:                 "/ordr/*",
-			Upstream:             "http://localhost:8083/ordr",
-			RequiredSubscription: "ordr-subscription",
+		// 2. Onboard the Order API
+		orderOnboardReq := APIOnboardRequest{
+			Path:                 "/order/*",
+			Upstream:             "http://localhost:8082/order",
+			RequiredSubscription: "order-subscription",
 			Methods:              []string{"GET"},
 			RequiredHeaders:      []string{"X-Test-Header"},
 			APIKeys: []APIKey{
 				{
-					Key:      "ordr-test-key-2",
-					Name:     "Ordr Test Key 2",
-					IsActive: true,
+					Key:      "order-test-key-2",
+					Name:     "Order Test Key 2",
+					IsActive: &active,
 				},
 			},
 		}
 
-		reqBody, err = json.Marshal(ordrOnboardReq)
-		assert.NoError(t, err, "Failed to marshal ordr onboard request")
+		reqBody, err = json.Marshal(orderOnboardReq)
+		assert.NoError(t, err, "Failed to marshal order onboard request")
 
-		resp, err = http.Post("http://localhost:2020/veil/api/onboard",
+		resp, err = http.Post("http://localhost:2020/veil/api/routes",
 			"application/json",
 			bytes.NewBuffer(reqBody))
-		assert.NoError(t, err, "Failed to send ordr onboard request")
+		assert.NoError(t, err, "Failed to send order onboard request")
 
 		body, err = io.ReadAll(resp.Body)
 		assert.NoError(t, err, "Failed to read response body")
@@ -158,12 +166,15 @@ func TestAPIOnboardingAndValidation(t *testing.T) {
 			})
 		})
 
-		// Test Ordr API Access
-		t.Run("Ordr API Access", func(t *testing.T) {
+		// Wait for configuration to be applied
+		time.Sleep(1 * time.Second)
+
+		// Test Order API Access
+		t.Run("Order API Access", func(t *testing.T) {
 			// Test with valid API key and headers
 			t.Run("Valid API Key and Headers", func(t *testing.T) {
-				req, _ := http.NewRequest("GET", "http://localhost:2021/ordr/current", nil)
-				req.Header.Set("X-Subscription-Key", "ordr-test-key-2")
+				req, _ := http.NewRequest("GET", "http://localhost:2021/order/current", nil)
+				req.Header.Set("X-Subscription-Key", "order-test-key-2")
 				req.Header.Set("X-Test-Header", "test")
 
 				resp, err := http.DefaultClient.Do(req)
@@ -174,12 +185,12 @@ func TestAPIOnboardingAndValidation(t *testing.T) {
 				assert.NoError(t, err)
 				resp.Body.Close()
 
-				fmt.Printf("Ordr API Response: %s\n", string(body))
+				fmt.Printf("Order API Response: %s\n", string(body))
 			})
 
 			// Test with invalid API key
 			t.Run("Invalid API Key", func(t *testing.T) {
-				req, _ := http.NewRequest("GET", "http://localhost:2021/ordr/current", nil)
+				req, _ := http.NewRequest("GET", "http://localhost:2021/order/current", nil)
 				req.Header.Set("X-Subscription-Key", "invalid-key")
 				req.Header.Set("X-Test-Header", "test")
 
@@ -191,8 +202,8 @@ func TestAPIOnboardingAndValidation(t *testing.T) {
 
 			// Test with missing required header
 			t.Run("Missing Required Header", func(t *testing.T) {
-				req, _ := http.NewRequest("GET", "http://localhost:2021/ordr/current", nil)
-				req.Header.Set("X-Subscription-Key", "ordr-test-key-2")
+				req, _ := http.NewRequest("GET", "http://localhost:2021/order/current", nil)
+				req.Header.Set("X-Subscription-Key", "order-test-key-2")
 
 				resp, err := http.DefaultClient.Do(req)
 				assert.NoError(t, err)
@@ -230,7 +241,7 @@ func TestAPIOnboardingAndValidation(t *testing.T) {
 			routes, ok := srv1["routes"].([]interface{})
 			assert.True(t, ok, "Routes not found in config")
 
-			// Verify that we have at least 3 routes (management API, weather API, and ordr API)
+			// Verify that we have at least 3 routes (management API, weather API, and order API)
 			assert.GreaterOrEqual(t, len(routes), 2, "Expected at least 2 routes in config")
 		})
 	})

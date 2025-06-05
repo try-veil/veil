@@ -184,7 +184,7 @@ describe('JSONPlaceholder API Onboarding Flow (e2e)', () => {
     it('should onboard GET /posts endpoint', async () => {
       const apiId = uuidv4();
       const response = await request(app.getHttpServer())
-        .put('/onboard')
+        .put('/routes')
         .set('Content-Type', 'application/json')
         .set('Authorization', `Bearer ${providerJwtToken}`)
         .send({
