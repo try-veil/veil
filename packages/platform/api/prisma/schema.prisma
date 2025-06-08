@@ -96,6 +96,8 @@ model Tenant {
     wallets      Wallet[]
     payments     Payment[]
     Subscription Subscription[]
+    projects     Project[]  
+    users        User[] 
 
     @@map("tenants")
 }
@@ -121,6 +123,8 @@ model User {
     wallets            Wallet[]
     createdAt          DateTime            @default(now())
     updatedAt          DateTime            @updatedAt
+    tenantId           String?
+    tenant             Tenant?   @relation(fields: [tenantId], references: [id])
 
     @@map("users")
 }
@@ -161,6 +165,7 @@ model Project {
     favorite           Boolean             @default(false)
     xMashapeKey        String?
     enableLimitsToAPIs Boolean?
+    target_url         String?
     projectAllowedAPIs ProjectAllowedAPI[]
     projectAcls        ProjectAcl[]
     apis               Api[]               @relation("ProjectToApi")
@@ -168,6 +173,9 @@ model Project {
     updatedAt          DateTime            @updatedAt
     ProjectPricing     ProjectPricing[]
     Subscription       Subscription[]
+    tenantId           String
+    tenant             Tenant              @relation(fields: [tenantId], references: [id])
+    hubListing         HubListing?         @relation("ProjectToHubListing")
 
     @@map("projects")
 }
@@ -507,3 +515,45 @@ model ApiUsage {
 
     @@map("api_usages")
 }
+
+
+model HubListing {
+  id                    String      @id @default(uuid())
+  logo                  String?
+  category              String
+  shortDescription      String?
+  longDescription       String?
+  website               String?
+  termsOfUse            String?
+  visibleToPublic       Boolean
+  healthCheckUrl        String?
+  apiDocumentation      String?
+  proxySecret           String?
+  requestSizeLimitMb    Int?
+  proxyTimeoutSeconds   Int?
+
+  basicPlanId           String?    @unique
+  basicPlan             PlanConfig? @relation("BasicPlan", fields: [basicPlanId], references: [id])
+
+  proPlanId             String?    @unique
+  proPlan               PlanConfig? @relation("ProPlan", fields: [proPlanId], references: [id])
+
+  ultraPlanId           String?    @unique
+  ultraPlan             PlanConfig? @relation("UltraPlan", fields: [ultraPlanId], references: [id])
+
+  projectId             Int         @unique
+  project               Project     @relation("ProjectToHubListing", fields: [projectId], references: [id])
+}
+
+model PlanConfig {
+  id                    String   @id @default(uuid())
+  enabled               Boolean
+  pricePerMonth         Float
+  requestQuotaPerMonth  Float
+  hardLimitQuota        Float
+
+  basicOf               HubListing? @relation("BasicPlan")
+  proOf                 HubListing? @relation("ProPlan")
+  ultraOf               HubListing? @relation("UltraPlan")
+}
+
