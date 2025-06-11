@@ -42,7 +42,7 @@ func TestAPIKeyManagement(t *testing.T) {
 	caddyCmd.Stderr = os.Stderr
 	err = caddyCmd.Start()
 	assert.NoError(t, err, "Failed to start Caddy server")
-	// defer caddyCmd.Process.Kill()
+	defer caddyCmd.Process.Kill()
 
 	// Wait for servers to be ready
 	time.Sleep(2 * time.Second)
