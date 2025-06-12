@@ -12,7 +12,7 @@ servers:
     description: Local development server
 
 paths:
-  /veil/api/onboard:
+  /veil/api/routes:
     post:
       summary: Onboard a new API
       description: Register a new API with Veil for subscription-based access control

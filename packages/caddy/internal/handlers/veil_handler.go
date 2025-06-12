@@ -113,7 +113,7 @@ func (h *VeilHandler) validateAPIKey(path string, apiKey string) (*models.APICon
 	// Validate API key
 	valid := false
 	for _, key := range api.APIKeys {
-		if key.Key == apiKey && key.IsActive {
+		if key.Key == apiKey && *key.IsActive {
 			valid = true
 			break
 		}
@@ -748,10 +748,14 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 
 	// Create API keys
 	for _, key := range req.APIKeys {
+		isActive := true
+		if key.IsActive != nil{
+			isActive = *key.IsActive
+		}
 		config.APIKeys = append(config.APIKeys, models.APIKey{
 			Key:      key.Key,
 			Name:     key.Name,
-			IsActive: true,
+			IsActive: &isActive,
 		})
 	}
 
@@ -909,7 +913,7 @@ func (h *VeilHandler) handleAddAPIKeys(w http.ResponseWriter, r *http.Request) e
 		newKeys[i] = models.APIKey{
 			Key:      key.Key,
 			Name:     key.Name,
-			IsActive: true,
+			IsActive: key.IsActive,
 		}
 	}
 
@@ -965,7 +969,7 @@ func (h *VeilHandler) handleUpdateAPIKeyStatus(w http.ResponseWriter, r *http.Re
 	}
 
 	// Update key status
-	if err := h.store.UpdateAPIKeyStatus(req.Path, req.APIKey, req.IsActive); err != nil {
+	if err := h.store.UpdateAPIKeyStatus(req.Path, req.APIKey, *req.IsActive); err != nil {
 		if err == gorm.ErrRecordNotFound {
 			http.Error(w, "API not found", http.StatusNotFound)
 			return nil
