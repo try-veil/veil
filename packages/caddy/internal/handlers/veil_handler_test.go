@@ -160,15 +160,15 @@ func TestVeilHandler_ServeHTTP(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, savedAPI)
 
-	// var foundInactiveKey bool
-	// for _, key := range savedAPI.APIKeys {
-	// 	if key.Key == "inactive-key" {
-	// 		assert.False(t, key.IsActive, "inactive-key should be inactive")
-	// 		foundInactiveKey = true
-	// 		break
-	// 	}
-	// }
-	// assert.True(t, foundInactiveKey, "inactive-key should exist in the database")
+	var foundInactiveKey bool
+	for _, key := range savedAPI.APIKeys {
+		if key.Key == "inactive-key" {
+			assert.False(t, *key.IsActive, "inactive-key should be inactive")
+			foundInactiveKey = true
+			break
+		}
+	}
+	assert.True(t, foundInactiveKey, "inactive-key should exist in the database")
 
 	tests := []struct {
 		name         string
@@ -220,19 +220,19 @@ func TestVeilHandler_ServeHTTP(t *testing.T) {
 			},
 			isManagement: false,
 		},
-		// {
-		// 	name:   "Management API Request",
-		// 	path:   "/veil/api/routes",
-		// 	method: http.MethodPost,
-		// 	headers: map[string]string{
-		// 		"Content-Type": "application/json",
-		// 	},
-		// 	expectedCode: http.StatusCreated,
-		// 	nextHandler: func(w http.ResponseWriter, r *http.Request) {
-		// 		w.WriteHeader(http.StatusOK)
-		// 	},
-		// 	isManagement: true,
-		// },
+		{
+			name:   "Management API Request",
+			path:   "/veil/api/routes",
+			method: http.MethodPost,
+			headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+			expectedCode: http.StatusCreated,
+			nextHandler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			},
+			isManagement: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -328,23 +328,23 @@ func TestVeilHandler_handleOnboard(t *testing.T) {
 		request      models.APIOnboardRequest
 		expectedCode int
 	}{
-		// {
-		// 	name: "Valid Onboard Request",
-		// 	request: models.APIOnboardRequest{
-		// 		Path:                 "/test/*",
-		// 		Upstream:             "http://localhost:8082",
-		// 		RequiredSubscription: "test-subscription",
-		// 		Methods:              []string{"GET"},
-		// 		RequiredHeaders:      []string{"X-Test-Header"},
-		// 		APIKeys: []models.APIKey{
-		// 			{
-		// 				Key:  "test-key-1",
-		// 				Name: "Test Key-1",
-		// 			},
-		// 		},
-		// 	},
-		// 	expectedCode: http.StatusCreated,
-		// },
+		{
+			name: "Valid Onboard Request",
+			request: models.APIOnboardRequest{
+				Path:                 "/test/*",
+				Upstream:             "http://localhost:8082",
+				RequiredSubscription: "test-subscription",
+				Methods:              []string{"GET"},
+				RequiredHeaders:      []string{"X-Test-Header"},
+				APIKeys: []models.APIKey{
+					{
+						Key:  "test-key-1",
+						Name: "Test Key-1",
+					},
+				},
+			},
+			expectedCode: http.StatusCreated,
+		},
 		{
 			name: "Invalid Request - Missing Path",
 			request: models.APIOnboardRequest{

@@ -23,7 +23,7 @@ type APIOnboardRequest struct {
 type APIKey struct {
 	Key      string `json:"key"`
 	Name     string `json:"name"`
-	IsActive *bool  `json:"is_active"`
+	IsActive *bool  `json:"is_active,omitempty"`
 }
 
 type APIOnboardResponse struct {

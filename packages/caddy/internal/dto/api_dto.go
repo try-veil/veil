@@ -33,7 +33,7 @@ type APIKeysRequestDTO struct {
 type APIKeyStatusRequestDTO struct {
 	Path     string `json:"path" binding:"required"`
 	APIKey   string `json:"api_key" binding:"required"`
-	IsActive bool   `json:"is_active,omitempty"`
+	IsActive *bool   `json:"is_active,omitempty"`
 }
 
 // APIResponseDTO represents the common response structure

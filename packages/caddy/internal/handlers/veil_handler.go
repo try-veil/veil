@@ -746,7 +746,6 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		})
 	}
 
-
 	// Create API keys
 	for _, key := range req.APIKeys {
 		isActive := true
@@ -776,12 +775,7 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 
 	// Store in database
 	h.logger.Info("storing API config in database")
-
-	existingConfig, _ := h.store.GetAPIByPath(config.Path)
-	
-	if existingConfig == nil{
-		err = h.store.CreateAPI(config)
-		
+	if err := h.store.CreateAPI(config); err != nil {
 		h.logger.Error("failed to store API config",
 			zap.Error(err),
 			zap.String("db_path", h.DBPath),
@@ -975,7 +969,7 @@ func (h *VeilHandler) handleUpdateAPIKeyStatus(w http.ResponseWriter, r *http.Re
 	}
 
 	// Update key status
-	if err := h.store.UpdateAPIKeyStatus(req.Path, req.APIKey, req.IsActive); err != nil {
+	if err := h.store.UpdateAPIKeyStatus(req.Path, req.APIKey, *req.IsActive); err != nil {
 		if err == gorm.ErrRecordNotFound {
 			http.Error(w, "API not found", http.StatusNotFound)
 			return nil
