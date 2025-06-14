@@ -9,9 +9,7 @@ datasource db {
 }
 
 // Enable seeding
-generator seeding {
-    provider = "ts-node prisma/seed.ts"
-}
+
 
 // Authorization Models (Not being used yet)
 model ApplicationAuthorization {
