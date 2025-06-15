@@ -89,8 +89,9 @@ export class PaymentService {
     amount: number;
     currency: string;
     metadata?: Record<string, any>;
+    idempotencyKey?: string; 
   }): Promise<Payment> {
-    const idempotencyKey = uuidv4(); // In a real system, this would be provided by the client
+    const idempotencyKey = data.idempotencyKey || uuidv4(); // In a real system, this would be provided by the client -ok
 
     try {
       // Create payment record in our database first
@@ -115,9 +116,9 @@ export class PaymentService {
       const receipt = `receipt_${paymentId}`.replace(/-/g, '_');
 
       // Dev Debug logs
-      // console.log(
-      //   `Creating Razorpay order with amount: ${amountInSubunits}, currency: ${data.currency}, receipt: ${receipt}`,
-      // );
+      console.log(
+        `Creating Razorpay order with amount: ${amountInSubunits}, currency: ${data.currency}, receipt: ${receipt}`,
+      );
 
       // Create a Razorpay order with specific error handling
       let razorpayOrder;
@@ -176,12 +177,17 @@ export class PaymentService {
         },
       });
 
-      // TODO: Certain Things to be wired up after frontend checkout
+      // TODO: Certain Things to be wired up after frontend checkout --> To be done
       // For Direct or Card payments (depending on configuration)
       // if (data.paymentMethodType === PaymentMethodType.CARD) {
       //   // This would typically involve capturing payment after frontend checkout
       //   return this.mapToPayment(updatedPayment);
       // }
+      
+      if (data.paymentMethodType === PaymentMethodType.CARD) {
+        // Do not return yet — let webhook handle final success confirmation
+        this.logger.log('Card payment initiated; awaiting Razorpay webhook for confirmation.');
+      }
 
       // For other payment methods
       return this.mapToPayment(updatedPayment);
@@ -270,7 +276,7 @@ export class PaymentService {
     return attempts.map((attempt) => this.mapToPaymentAttempt(attempt));
   }
   /**
-   * TODO: Process refund through Razorpay
+   * TODO: Process refund through Razorpay -  ****DONE****
    */
   async processRefund(paymentId: string, amount?: number): Promise<Payment> {
     try {
@@ -293,6 +299,7 @@ export class PaymentService {
 
       // Calculate refund amount in subunits (paise for INR, cents for USD)
       const refundAmountInSubunits = Math.round(refundAmount * 100);
+      this.logger.debug(`Attempting refund for ${payment.gatewayPaymentId} with amount ${refundAmountInSubunits}`);
 
       // Process refund through Razorpay
       const refund = await this.razorpay.payments.refund(
@@ -334,12 +341,23 @@ export class PaymentService {
 
       return this.mapToPayment(updatedPayment);
     } catch (error) {
-      this.logger.error(
-        `Failed to process refund: ${error.message}`,
-        error.stack,
-      );
-      throw new BadRequestException(`Refund failed: ${error.message}`);
-    }
+        this.logger.error(
+          `Failed to process refund: ${error?.message || 'No error.message'}`,
+          error?.stack || 'No error.stack',
+        );
+
+        // 👇 Force detailed inspection of Razorpay error
+        try {
+          const serializedError = JSON.stringify(error, Object.getOwnPropertyNames(error), 2);
+          this.logger.error(`Serialized Razorpay error: ${serializedError}`);
+          this.logger.debug("🔍 Razorpay error (full):", serializedError); // Production-safe detailed logging
+        } catch (serializationErr) {
+          this.logger.debug('❌ Failed to serialize error. Fallback:', error?.toString?.() || error);
+        }
+
+        throw new BadRequestException(`Refund failed: ${error?.message || 'Unknown error'}`);
+      }
+
   }
   /**
    * Create a payment attempt record
@@ -367,7 +385,8 @@ export class PaymentService {
    * Captures a payment in Razorpay after frontend checkout is completed
    * @param razorpayPaymentId The payment ID received from Razorpay frontend checkout
    * @param amount The amount to capture
-   */ async captureRazorpayPayment(
+   */ 
+  async captureRazorpayPayment(
     razorpayPaymentId: string,
     amount: number,
     orderId: string,
@@ -376,7 +395,7 @@ export class PaymentService {
       // Find the payment in our database
       const payment = await this.prisma.payment.findFirst({
         where: {
-          gatewayPaymentId: orderId,
+          gatewayPaymentId: razorpayPaymentId, //updated here*********
           paymentGateway: 'RAZORPAY',
         },
       });
@@ -389,6 +408,21 @@ export class PaymentService {
 
       // Convert amount to subunits
       const amountInSubunits = Math.round(amount * 100);
+      this.logger.debug(`Calling Razorpay.capture with:`, {
+        paymentId: razorpayPaymentId,
+        amount: amountInSubunits,
+      });
+      this.logger.debug(`Payment found in DB:`, {
+        status: payment.paymentStatus,
+        gatewayPaymentId: payment.gatewayPaymentId,
+      });
+      if (payment.paymentStatus === 'SUCCEEDED') {
+        throw new BadRequestException('Payment is already captured.');
+      }
+
+      
+
+
 
       // Capture the payment in Razorpay
       const capturedPayment = await this.razorpay.payments.capture(
@@ -434,14 +468,31 @@ export class PaymentService {
       });
 
       return this.mapToPayment(updatedPayment);
-    } catch (error) {
-      this.logger.error(
-        `Failed to capture payment: ${error.message}`,
-        error.stack,
+    }  catch (error) {
+      
+        if (error.statusCode === 400 && error.error) {
+        this.logger.error(`Razorpay 400 Error: ${JSON.stringify(error.error, null, 2)}`);
+      }
+
+    let parsedError = 'Unknown error';
+    try {
+      const fullError = JSON.parse(
+        JSON.stringify(error, Object.getOwnPropertyNames(error)),
       );
-      throw new BadRequestException(`Payment capture failed: ${error.message}`);
+      parsedError =
+        fullError?.error?.description ||
+        fullError?.error?.message ||
+        fullError?.message ||
+        'Unknown error';
+      this.logger.error(`Razorpay capture error: ${parsedError}`);
+      this.logger.error(`Full Razorpay error: ${JSON.stringify(fullError, null, 2)}`);
+    } catch (e) {
+      this.logger.error('Failed to parse Razorpay error:', e);
     }
+
+    throw new BadRequestException(`Payment capture failed: ${parsedError}`);
   }
+}
 
   /**
    * Verify a Razorpay webhook signature
@@ -464,70 +515,82 @@ export class PaymentService {
   /**
    * Process Razorpay webhook events
    */
+
   async processWebhookEvent(eventType: string, eventData: any): Promise<void> {
     this.logger.log(`Processing webhook event: ${eventType}`);
+    // this.logger.debug(`eventData.payment: ${JSON.stringify(eventData.payment)}`);
+    // this.logger.debug(`eventData.payment.entity: ${JSON.stringify(eventData.payment?.entity)}`);
+
+
+    // Safe to skip:
+    // payment.authorized: only needed for manual capture flows.
+    // order.paid: just a summary event, and your payment.captured handler already does the work.
 
     switch (eventType) {
       case 'payment.captured':
-        await this.handlePaymentCaptured(eventData.payment);
+        await this.handlePaymentCaptured(eventData.payment?.entity);
         break;
 
       case 'payment.failed':
-        await this.handlePaymentFailed(eventData.payment);
+        await this.handlePaymentFailed(eventData.payment?.entity);
         break;
 
       case 'refund.processed':
-        await this.handleRefundProcessed(eventData.refund);
+        await this.handleRefundProcessed(eventData.refund?.entity);
         break;
 
       default:
         this.logger.log(`Unhandled webhook event type: ${eventType}`);
     }
-  }
+}
+
+
   /**
    * Handle payment.captured webhook event
    */
+  
   private async handlePaymentCaptured(razorpayPayment: any): Promise<void> {
-    try {
-      // Find the corresponding payment in our system
-      const payment = await this.prisma.payment.findFirst({
-        where: {
-          gatewayPaymentId: razorpayPayment.order_id,
-          paymentGateway: 'RAZORPAY',
-        },
-      });
-
-      if (!payment) {
-        this.logger.warn(
-          `Payment not found for Razorpay order ${razorpayPayment.order_id}`,
-        );
-        return;
-      }
-
-      const paymentMetadata = (payment.metadata as Record<string, any>) || {};
-
-      // Update payment status
-      await this.prisma.payment.update({
-        where: { id: payment.id },
-        data: {
-          paymentStatus: PaymentStatus.SUCCEEDED as any,
-          succeededAt: new Date(),
-          metadata: {
-            ...paymentMetadata,
-            razorpayPaymentId: razorpayPayment.id,
-            razorpayPaymentStatus: razorpayPayment.status,
-            webhookProcessedAt: new Date().toISOString(),
-          },
-        },
-      });
-
-      this.logger.log(`Payment ${payment.id} marked as successful via webhook`);
-    } catch (error) {
-      this.logger.error(
-        `Error handling payment.captured webhook: ${error.message}`,
-      );
+  try {
+    if (!razorpayPayment?.order_id) {
+      this.logger.warn('order_id missing in payment.captured payload');
+      return;
     }
+
+    const payment = await this.prisma.payment.findFirst({
+      where: {
+        gatewayPaymentId: razorpayPayment.order_id,
+        paymentGateway: 'RAZORPAY',
+      },
+    });
+
+    if (!payment) {
+      this.logger.warn(`Payment not found for Razorpay order ${razorpayPayment.order_id}`);
+      return;
+    }
+
+    const paymentMetadata = (payment.metadata as Record<string, any>) || {};
+    
+    await this.prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        paymentStatus: PaymentStatus.SUCCEEDED as any,
+        succeededAt: new Date(),
+        gatewayPaymentId: razorpayPayment.id, //here to pay-*** attention to the fact that this is the payment ID, not the order ID
+        metadata: {
+          ...paymentMetadata,
+          razorpayPaymentId: razorpayPayment.id,
+          razorpayPaymentStatus: razorpayPayment.status,
+          webhookProcessedAt: new Date().toISOString(),
+        },
+      },
+    });
+
+    this.logger.log(`Payment ${payment.id} marked as successful via webhook`);
+  } catch (error) {
+    this.logger.error(`Error handling payment.captured webhook: ${error.message}`);
   }
+}
+
 
   /**
    * Handle payment.failed webhook event
@@ -603,6 +666,7 @@ export class PaymentService {
         );
         return;
       }
+       
 
       const paymentMetadata = (payment.metadata as Record<string, any>) || {};
 
@@ -631,10 +695,23 @@ export class PaymentService {
 
       this.logger.log(`Refund processed for payment ${payment.id} via webhook`);
     } catch (error) {
-      this.logger.error(
-        `Error handling refund.processed webhook: ${error.message}`,
-      );
-    }
+  this.logger.error(
+    `Failed to process refund: ${error?.message || 'No error.message'}`,
+    error?.stack || 'No error.stack',
+  );
+
+  // 🔍 Log full error object — forced serialization
+  try {
+    const serializedError = JSON.stringify(error, Object.getOwnPropertyNames(error), 2);
+    this.logger.error(`Serialized Razorpay error: ${serializedError}`);
+  } catch (serializationErr) {
+    this.logger.error('Error serializing Razorpay error object:', serializationErr);
+  }
+
+  throw new BadRequestException(`Refund failed: ${error?.message || 'Unknown error'}`);
+}
+
+
   }
 
   /**

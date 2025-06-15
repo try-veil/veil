@@ -118,11 +118,15 @@ export class PaymentController {
       // Frontend will use orderId to pay
       // Will have to capture webhook to decide if payment was successful or not
       // If payment was successful, add credits to the wallet
+
       if (payment.paymentStatus === 'SUCCEEDED') {
         // Convert currency amount to credits (simplified 1:1 for this example)
         const creditsToAdd = processPaymentDto.amount;
 
-        // TODO: fix later -> Add credits to wallet (integrate walet service)
+      // TODO: fix later -> Add credits to wallet (integrate walet service)
+      
+      // here only create order->webhook handles->add credits to wallet.  
+
         await this.walletService.addCredits(
           wallet.id,
           creditsToAdd,
@@ -148,8 +152,8 @@ export class PaymentController {
         order_id: payment.orderId,
         status: payment.paymentStatus,
         amount: payment.amount,
-        error: payment.errorMessage,
-        processed_at: payment.failedAt || payment.updatedAt,
+        // error: payment.errorMessage,
+        // processed_at: payment.failedAt || payment.updatedAt,
       };
     } catch (error) {
       throw new BadRequestException(error.message);
@@ -363,8 +367,16 @@ export class PaymentController {
         amount: payment.amount,
         processed_at: payment.succeededAt || payment.updatedAt,
       };
-    } catch (error) {
-      throw new BadRequestException(`Payment capture failed: ${error.message}`);
-    }
+    } 
+    // catch (error) {
+    //   throw new BadRequestException(`Payment capture failed: ${error.message}`);
+    // }
+    catch (error) {
+    const message =
+      error?.response?.data?.error?.description ||
+      error?.message ||
+      'Unknown error';
+    throw new BadRequestException(`Payment capture failed: ${message}`);
+  }
   }
 }

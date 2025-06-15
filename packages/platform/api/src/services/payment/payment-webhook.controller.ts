@@ -55,8 +55,10 @@ export class PaymentWebhookController {
         throw new BadRequestException('Missing event type');
       }
 
+      this.logger.debug(`Passing payload to service: ${JSON.stringify(rawBody.payload, null, 2)}`);
+
       // Process the event
-      await this.paymentService.processWebhookEvent(eventType, rawBody);
+      await this.paymentService.processWebhookEvent(eventType, rawBody.payload);
 
       return {
         status: 'success',
