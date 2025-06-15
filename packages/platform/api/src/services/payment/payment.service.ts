@@ -350,9 +350,9 @@ export class PaymentService {
         try {
           const serializedError = JSON.stringify(error, Object.getOwnPropertyNames(error), 2);
           this.logger.error(`Serialized Razorpay error: ${serializedError}`);
-          console.log("🔍 Razorpay error (full):", serializedError); // 🔥 Console output for terminal
+          this.logger.debug("🔍 Razorpay error (full):", serializedError); // Production-safe detailed logging
         } catch (serializationErr) {
-          console.log('❌ Failed to serialize error. Fallback:', error?.toString?.() || error);
+          this.logger.debug('❌ Failed to serialize error. Fallback:', error?.toString?.() || error);
         }
 
         throw new BadRequestException(`Refund failed: ${error?.message || 'Unknown error'}`);
