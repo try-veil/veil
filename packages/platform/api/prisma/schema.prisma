@@ -13,7 +13,6 @@ generator seeding {
     provider = "ts-node prisma/seed.ts"
 }
 
-
 // Authorization Models (Not being used yet)
 model ApplicationAuthorization {
     id                  String              @id @default(uuid())
