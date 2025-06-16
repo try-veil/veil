@@ -627,6 +627,9 @@ func (h *VeilHandler) handleManagementAPI(w http.ResponseWriter, r *http.Request
 			// Handle status update: /veil/api/keys/status
 			return h.handleUpdateAPIKeyStatus(w, r)
 		}
+		if r.Method == http.MethodDelete {
+			return h.handleDeleteAPIKey(w, r)
+		}
 		// Handle API keys: /veil/api/keys
 		return h.handleAddAPIKeys(w, r)
 	default:
@@ -655,7 +658,7 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 	// Check if this is an operation on a specific API
 	var apiID string
 	if len(cleanSegments) > 3 {
-		apiID = cleanSegments[3]
+		apiID = "/" + strings.Join(cleanSegments[3:], "/")	// This will include the leading slash
 		h.logger.Debug("operation on specific API",
 			zap.String("api_id", apiID))
 	}
@@ -670,7 +673,7 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 
 	// For DELETE requests, we need an API ID
 	if r.Method == http.MethodDelete {
-		if apiID == "" {
+		if apiID == "" || apiID == "/" {
 			h.logger.Warn("API ID required for DELETE")
 			http.Error(w, "API ID required for DELETE", http.StatusBadRequest)
 			return nil
@@ -749,7 +752,7 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 	// Create API keys
 	for _, key := range req.APIKeys {
 		isActive := true
-		if key.IsActive != nil{
+		if key.IsActive != nil {
 			isActive = *key.IsActive
 		}
 		config.APIKeys = append(config.APIKeys, models.APIKey{
@@ -820,16 +823,20 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 // handleUpdateAPI handles updating an existing API
 func (h *VeilHandler) handleUpdateAPI(w http.ResponseWriter, r *http.Request, apiID string, newConfig *models.APIConfig) error {
 	// Get existing API to verify it exists
-	if _, err := h.store.GetAPIByPath(newConfig.Path); err != nil {
+	existing, err := h.store.GetAPIByPath(newConfig.Path)
+	if err != nil || existing == nil {
 		if err == gorm.ErrRecordNotFound {
 			http.Error(w, "API not found", http.StatusNotFound)
 			return nil
 		}
 		h.logger.Error("failed to get API",
 			zap.Error(err))
-		http.Error(w, "Failed to get API", http.StatusInternalServerError)
+		// http.Error(w, "Failed to get API", http.StatusInternalServerError)
+		http.Error(w, "API not found", http.StatusNotFound)
 		return nil
 	}
+
+	newConfig.ID = existing.ID
 
 	// Update API in database
 	if err := h.store.UpdateAPI(newConfig); err != nil {
@@ -870,6 +877,11 @@ func (h *VeilHandler) handleDeleteAPI(w http.ResponseWriter, r *http.Request, ap
 		return nil
 	}
 
+	if api == nil {
+		http.Error(w, "API not found", http.StatusNotFound)
+		return nil
+	}
+
 	// Delete API from database
 	if err := h.store.DeleteAPI(api.Path); err != nil {
 		h.logger.Error("failed to delete API",
@@ -882,6 +894,41 @@ func (h *VeilHandler) handleDeleteAPI(w http.ResponseWriter, r *http.Request, ap
 	return json.NewEncoder(w).Encode(dto.APIResponseDTO{
 		Status:  "success",
 		Message: "API deleted successfully",
+	})
+}
+
+func (h *VeilHandler) handleDeleteAPIKey(w http.ResponseWriter, r *http.Request) error {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return nil
+	}
+
+	var req dto.APIKeyDeleteRequestDTO
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.logger.Error("failed to decode delete key request", zap.Error(err))
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return nil
+	}
+
+	if req.Path == "" || req.APIKey == "" {
+		http.Error(w, "Path and API key are required", http.StatusBadRequest)
+		return nil
+	}
+
+	if err := h.store.DeleteAPIKey(req.Path, req.APIKey); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			http.Error(w, "API or API key not found", http.StatusNotFound)
+			return nil
+		}
+		h.logger.Error("failed to delete API key", zap.Error(err))
+		http.Error(w, "Failed to delete API key", http.StatusInternalServerError)
+		return nil
+	}
+
+	w.WriteHeader(http.StatusOK)
+	return json.NewEncoder(w).Encode(dto.APIResponseDTO{
+		Status:  "success",
+		Message: "API key deleted successfully",
 	})
 }
 

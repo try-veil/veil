@@ -11,6 +11,7 @@ import (
 	"github.com/bytedance/mockey"
 	"github.com/caddyserver/caddy/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/try-veil/veil/packages/caddy/internal/dto"
 	"github.com/try-veil/veil/packages/caddy/internal/models"
 	"go.uber.org/zap"
 )
@@ -149,11 +150,9 @@ func TestVeilHandler_ServeHTTP(t *testing.T) {
 			IsActive: &inactive,
 		},
 	})
-	existing, _ := handler.store.GetAPIByPath("/test/endpoint")
-	if existing == nil {
-		err = handler.store.CreateAPI(api)
-		assert.NoError(t, err)
-	}
+
+	err = handler.store.CreateAPI(api)
+	assert.NoError(t, err)
 
 	// Verify the inactive key is properly set
 	savedAPI, err := handler.store.GetAPIByPath("/test/endpoint")
@@ -422,7 +421,6 @@ func TestVeilHandler_validateAPIKey(t *testing.T) {
 			Name:     "Test Key",
 			IsActive: &active,
 		},
-		// TODO: Fix this
 		{
 			Key:      "inactive-key",
 			Name:     "Inactive Key",
@@ -471,7 +469,6 @@ func TestVeilHandler_validateAPIKey(t *testing.T) {
 			wantErr:    true,
 			wantConfig: nil,
 		},
-		// TODO: Fix this
 		{
 			name:       "Inactive API Key",
 			path:       "/test/endpoint",
@@ -505,6 +502,216 @@ func TestVeilHandler_validateAPIKey(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotNil(t, api)
 				assert.Equal(t, tt.wantConfig.Path, api.Path)
+			}
+		})
+	}
+}
+
+func TestVeilHandler_handleDeleteAPI(t *testing.T) {
+	// Setup
+	tmpDB := "test_veil.db"
+	defer os.Remove(tmpDB)
+
+	handler := &VeilHandler{
+		DBPath:          tmpDB,
+		SubscriptionKey: "X-Subscription-Key",
+		logger:          zap.NewNop(),
+	}
+
+	ctx := caddy.Context{
+		Context: nil,
+	}
+	err := handler.Provision(ctx)
+
+	assert.NoError(t, err)
+
+	// Mock the admin API call for config updates
+	mockConfig := &caddy.Config{
+		AppsRaw: map[string]json.RawMessage{
+			"http": json.RawMessage(`{
+				"servers": {
+					"srv0": {
+						"listen": [":2020"],
+						"routes": []
+					},
+					"srv1": {
+						"listen": [":2021"],
+						"routes": []
+					}
+				}
+			}`),
+		},
+	}
+
+	// Mock getCurrentConfig and caddy.Load
+	configMocker := mockey.Mock((*VeilHandler).getCurrentConfig).Return(mockConfig, nil).Build()
+	loadMocker := mockey.Mock(caddy.Load).Return(nil).Build()
+	defer configMocker.Release()
+	defer loadMocker.Release()
+
+	active := true
+
+	// Create test API configuration
+	api := CreateAPI(t, "/test/endpoint", "http://localhost:8082", "test-subscription", []string{"GET, DELETE"}, []string{"X-Test-Header"}, []models.APIKey{
+		{
+			Key:      "test-key",
+			Name:     "Test Key",
+			IsActive: &active,
+		},
+	})
+
+	err = handler.store.CreateAPI(api)
+	assert.NoError(t, err)
+
+	tests := []struct {
+		name           string
+		apiID          string
+		expectCode     int
+		expectResponse string
+	}{
+		{
+			name:           "Successful deletion",
+			apiID:          "/test/endpoint",
+			expectCode:     http.StatusOK,
+			expectResponse: "API deleted successfully",
+		},
+		{
+			name:           "Non-existent API",
+			apiID:          "/notfound",
+			expectCode:     http.StatusNotFound,
+			expectResponse: "API not found",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodDelete, "/veil/api/routes"+tt.apiID, nil)
+
+			err := handler.handleOnboard(w, req)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectCode, w.Code)
+
+			if w.Code == http.StatusOK {
+				var resp dto.APIResponseDTO
+				err := json.NewDecoder(w.Body).Decode(&resp)
+				assert.NoError(t, err)
+				assert.Equal(t, "success", resp.Status)
+				assert.Equal(t, tt.expectResponse, resp.Message)
+			} else {
+				body := w.Body.String()
+				assert.Contains(t, body, tt.expectResponse)
+			}
+		})
+	}
+}
+
+func TestVeilHandler_handleUpdateAPI(t *testing.T) {
+	tmpDB := "test_veil.db"
+	defer os.Remove(tmpDB)
+
+	handler := &VeilHandler{
+		DBPath:          tmpDB,
+		SubscriptionKey: "X-Subscription-Key",
+		logger:          zap.NewNop(),
+	}
+	err := handler.Provision(caddy.Context{})
+	assert.NoError(t, err)
+
+	// Mock the admin API call for config updates
+	mockConfig := &caddy.Config{
+		AppsRaw: map[string]json.RawMessage{
+			"http": json.RawMessage(`{
+				"servers": {
+					"srv0": {
+						"listen": [":2020"],
+						"routes": []
+					},
+					"srv1": {
+						"listen": [":2021"],
+						"routes": []
+					}
+				}
+			}`),
+		},
+	}
+
+	// Mock getCurrentConfig and caddy.Load
+	configMocker := mockey.Mock((*VeilHandler).getCurrentConfig).Return(mockConfig, nil).Build()
+	loadMocker := mockey.Mock(caddy.Load).Return(nil).Build()
+	defer configMocker.Release()
+	defer loadMocker.Release()
+
+	active := true
+
+	// Create test API configuration
+	api := CreateAPI(t, "/test/update", "http://localhost:8082", "test-subscription", []string{"GET", "POST"}, []string{"X-Test-Header"}, []models.APIKey{
+		{
+			Key:      "test-key",
+			Name:     "Test Key",
+			IsActive: &active,
+		},
+	})
+
+	err = handler.store.CreateAPI(api)
+	assert.NoError(t, err)
+
+	tests := []struct {
+		name           string
+		apiID          string
+		requestDTO     dto.APIOnboardRequestDTO
+		expectCode     int
+		expectResponse string
+	}{
+		{
+			name:  "Successful update",
+			apiID: "/test/update",
+			requestDTO: dto.APIOnboardRequestDTO{
+				Path:                 "/test/update",
+				Upstream:             "http://localhost:8086",
+				RequiredSubscription: "sub",
+				Methods:              []string{"POST"},
+				RequiredHeaders:      []string{"X-Test-Header"},
+			},
+			expectCode:     http.StatusCreated,
+			expectResponse: "API updated successfully",
+		},
+		{
+			name:  "Non-existent API",
+			apiID: "/nonexistent",
+			requestDTO: dto.APIOnboardRequestDTO{
+				Path:     "/nonexistent",
+				Upstream: "http://localhost:9000",
+				Methods:  []string{"GET"},
+			},
+			expectCode:     http.StatusNotFound,
+			expectResponse: "API not found",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			body, err := json.Marshal(tt.requestDTO)
+			assert.NoError(t, err)
+
+			req := httptest.NewRequest(http.MethodPatch, "/veil/api/routes"+tt.apiID, bytes.NewBuffer(body))
+			req.Header.Set("Content-Type", "application/json")
+
+			err = handler.handleOnboard(w, req)
+			assert.NoError(t, err)
+
+			assert.Equal(t, tt.expectCode, w.Code)
+
+			if w.Code == http.StatusCreated {
+				var resp dto.APIResponseDTO
+				err := json.NewDecoder(w.Body).Decode(&resp)
+				assert.NoError(t, err)
+				assert.Equal(t, "success", resp.Status)
+				assert.Equal(t, tt.expectResponse, resp.Message)
+			} else {
+				body := w.Body.String()
+				assert.Contains(t, body, tt.expectResponse)
 			}
 		})
 	}

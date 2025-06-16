@@ -322,6 +322,7 @@ func (s *APIStore) UpdateAPI(config *models.APIConfig) error {
 
 	// Create new methods
 	for i := range config.Methods {
+		config.Methods[i].ID = 0
 		config.Methods[i].APIConfigID = config.ID
 		if err := tx.Create(&config.Methods[i]).Error; err != nil {
 			tx.Rollback()
@@ -331,6 +332,7 @@ func (s *APIStore) UpdateAPI(config *models.APIConfig) error {
 
 	// Create new API keys
 	for i := range config.APIKeys {
+		config.APIKeys[i].ID = 0
 		config.APIKeys[i].APIConfigID = config.ID
 		if err := tx.Create(&config.APIKeys[i]).Error; err != nil {
 			tx.Rollback()
@@ -351,6 +353,14 @@ func (s *APIStore) UpdateAPI(config *models.APIConfig) error {
 		zap.Uint("id", config.ID))
 
 	return nil
+}
+
+func (s *APIStore) DeleteAPIKey(path, key string) error {
+	api, err := s.GetAPIByPath(path)
+	if err != nil {
+		return err
+	}
+	return s.db.Where("api_config_id = ? AND key = ?", api.ID, key).Delete(&models.APIKey{}).Error
 }
 
 // AddAPIKeys adds new API keys to an existing API configuration

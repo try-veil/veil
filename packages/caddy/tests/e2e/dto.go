@@ -31,3 +31,8 @@ type APIOnboardResponse struct {
 	Message string      `json:"message"`
 	API     interface{} `json:"api"`
 }
+
+type APIKeyDeleteRequest struct {
+	Path   string `json:"path"`
+	APIKey string `json:"api_key"`
+}

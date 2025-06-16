@@ -3,12 +3,16 @@ package e2e
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
 	"testing"
 	"time"
 
+	"database/sql"
+
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -197,15 +201,80 @@ func TestAPIKeyManagement(t *testing.T) {
 			resp.Body.Close()
 		})
 
-		// 5. Test edge cases
+		// 5. Test deleting an API key
+		t.Run("Delete API Key", func(t *testing.T) {
+			// Prepare the request to delete an existing key
+			deleteReq := APIKeyDeleteRequest{
+				Path:   "/weather/*",
+				APIKey: "new-key-2", // Key to delete
+			}
+
+			reqBody, err := json.Marshal(deleteReq)
+			assert.NoError(t, err, "Failed to marshal delete key request")
+
+			// Send DELETE request to management API
+			req, err := http.NewRequest("DELETE", "http://localhost:2020/veil/api/keys",
+				bytes.NewBuffer(reqBody))
+			assert.NoError(t, err, "Failed to create delete request")
+			req.Header.Set("Content-Type", "application/json")
+
+			resp, err := http.DefaultClient.Do(req)
+			assert.NoError(t, err, "Failed to send delete key request")
+			assert.Equal(t, http.StatusOK, resp.StatusCode, "Expected status OK for deletion")
+			resp.Body.Close()
+
+			// Try to access the resource using deleted key
+			t.Run("Access With Deleted Key", func(t *testing.T) {
+				req, _ := http.NewRequest("GET", "http://localhost:2021/weather/current", nil)
+				req.Header.Set("X-Subscription-Key", "new-key-2")
+				req.Header.Set("X-Test-Header", "test")
+
+				resp, err := http.DefaultClient.Do(req)
+				assert.NoError(t, err, "Failed to make request with deleted key")
+				assert.Equal(t, http.StatusUnauthorized, resp.StatusCode, "Deleted key should be unauthorized")
+				resp.Body.Close()
+			})
+		})
+
+		// 6. Test edge cases
+
 		t.Run("Edge Cases", func(t *testing.T) {
-			// Test adding duplicate key
 			t.Run("Add Duplicate Key", func(t *testing.T) {
+				// DB Query Before
+				db, err := sql.Open("sqlite3", "./veil.db")
+				assert.NoError(t, err, "Failed to open database")
+				defer db.Close()
+
+				getKeyRows := func() []string {
+					rows, err := db.Query(`
+						SELECT key, name, is_active, deleted_at
+						FROM api_keys
+						WHERE api_config_id = (SELECT id FROM api_configs WHERE path = '/weather/*')
+					`)
+					assert.NoError(t, err, "Failed to query key rows")
+
+					defer rows.Close()
+					var keys []string
+					for rows.Next() {
+						var key, name string
+						var isActive sql.NullBool
+						var deletedAt sql.NullString
+						err := rows.Scan(&key, &name, &isActive, &deletedAt)
+						assert.NoError(t, err)
+
+						keys = append(keys, fmt.Sprintf("%s|%s|%v|%s", key, name, isActive.Bool, deletedAt.String))
+					}
+					return keys
+				}
+
+				before := getKeyRows()
+
+				// Add duplicate key
 				addKeysReq := APIKeyRequest{
 					Path: "/weather/*",
 					APIKeys: []APIKey{
 						{
-							Key:  "new-key-2", // Already exists
+							Key:  "initial-key", // Already exists
 							Name: "Duplicate Key",
 						},
 					},
@@ -225,10 +294,16 @@ func TestAPIKeyManagement(t *testing.T) {
 				assert.NoError(t, err)
 				resp.Body.Close()
 
+				// DB Query After
+				after := getKeyRows()
+
+				// Final Assertion
+				assert.Equal(t, before, after, "Database state should remain unchanged when adding duplicate key")
+
 				// Verify key count hasn't changed
 				api := response["api"].(map[string]interface{})
 				apiKeys := api["api_keys"].([]interface{})
-				assert.Equal(t, 3, len(apiKeys), "Duplicate key should not be added")
+				assert.Equal(t, 2, len(apiKeys), "Duplicate key should not be added")
 			})
 
 			// Test updating non-existent key
@@ -277,71 +352,4 @@ func TestAPIKeyManagement(t *testing.T) {
 		})
 	})
 
-	t.Run("Add API Keys", func(t *testing.T) {
-		// First onboard an API
-		onboardRequest := APIOnboardRequest{
-			Path:                 "/order/*",
-			Upstream:             "http://localhost:8082",
-			RequiredSubscription: "order-subscription",
-			Methods:              []string{"GET"},
-			RequiredHeaders:      []string{"X-Test-Header"},
-			APIKeys: []APIKey{
-				{
-					Key:  "order-key-1",
-					Name: "order Key 1",
-				},
-			},
-		}
-
-		requestBody, err := json.Marshal(onboardRequest)
-		assert.NoError(t, err, "Failed to marshal request")
-
-		// Use port 2020 for management API
-		resp, err := http.Post("http://localhost:2020/veil/api/routes",
-			"application/json",
-			bytes.NewBuffer(requestBody))
-		assert.NoError(t, err, "Failed to send onboard request")
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusCreated, resp.StatusCode, "Expected status created")
-
-		// Add new API keys
-		addKeysRequest := APIKeyRequest{
-			Path: "/order/*",
-			APIKeys: []APIKey{
-				{
-					Key:  "order-key-2",
-					Name: "order Key 2",
-				},
-			},
-		}
-
-		requestBody, err = json.Marshal(addKeysRequest)
-		assert.NoError(t, err, "Failed to marshal request")
-
-		// Use port 2020 for management API
-		resp, err = http.Post("http://localhost:2020/veil/api/keys",
-			"application/json",
-			bytes.NewBuffer(requestBody))
-		assert.NoError(t, err, "Failed to send add keys request")
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusCreated, resp.StatusCode, "Expected status 201")
-
-		// Test access with new API key using port 2021
-		t.Run("Test API Access with New Key", func(t *testing.T) {
-			client := &http.Client{}
-			req, err := http.NewRequest("GET", "http://localhost:2021/order/current", nil)
-			assert.NoError(t, err, "Failed to create request")
-
-			req.Header.Set("X-Subscription-Key", "order-key-2")
-			req.Header.Set("X-Test-Header", "test")
-
-			resp, err := client.Do(req)
-			assert.NoError(t, err, "Failed to send request")
-			defer resp.Body.Close()
-
-			assert.Equal(t, http.StatusOK, resp.StatusCode, "Expected status OK")
-		})
-	})
 }
