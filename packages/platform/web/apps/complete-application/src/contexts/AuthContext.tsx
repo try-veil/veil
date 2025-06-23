@@ -42,42 +42,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
   // Load auth data from localStorage on initial load
-  useEffect(() => {
-    // Skip localStorage access during SSR
-    if (typeof window === 'undefined') {
-      setIsInitialized(true);
-      return;
+useEffect(() => {
+  // Skip during SSR
+  if (typeof window === 'undefined') {
+    setIsInitialized(true);
+    return;
+  }
+
+  try {
+    console.log('Running auth initialization in browser environment');
+    
+    const storedAccessToken = Cookies.get('accessToken') || '';
+    const storedRefreshToken = Cookies.get('refreshToken') || '';
+
+    if (storedAccessToken) {
+      // Set state from cookies
+      setAccessToken(storedAccessToken);
+      setRefreshToken(storedRefreshToken);
+      setIsAuthenticated(true);
+
+      // ✅ Set cookies using stored values, not state
+      Cookies.set('accessToken', storedAccessToken, COOKIE_OPTIONS);
+      Cookies.set('refreshToken', storedRefreshToken, COOKIE_OPTIONS);
+
+      console.log('Auth: User authenticated from cookies');
+    } else {
+      console.log('Auth: No valid auth data in cookies');
     }
-
-    try {
-      console.log('Running auth initialization in browser environment');
-      const storedAccessToken = Cookies.get('accessToken') || '';
-      const storedRefreshToken = Cookies.get('refreshToken') || '';
-
-      // console.log('Auth initialization - stored tokens:', {
-      //   hasAccessToken: !!storedAccessToken,
-      //   hasRefreshToken: !!storedRefreshToken
-      // });
-
-      if (storedAccessToken) {
-        setAccessToken(storedAccessToken);
-        setRefreshToken(storedRefreshToken);
-        setIsAuthenticated(true);
-
-        // Set auth cookie for middleware
-      Cookies.set('accessToken', `${accessToken}`, COOKIE_OPTIONS);
-
-
-        console.log('Auth: User authenticated from localStorage');
-      } else {
-        console.log('Auth: No valid auth data in localStorage');
-      }
-    } catch (error) {
-      console.error('Error loading auth from localStorage:', error);
-    } finally {
-      setIsInitialized(true);
-    }
-  }, []);
+  } catch (error) {
+    console.error('Error loading auth from cookies:', error);
+  } finally {
+    setIsInitialized(true);
+  }
+}, []);
 
   const login = (accessToken: string, refreshToken: string) => {
     console.log('Auth: Logging in user');
