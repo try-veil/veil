@@ -44,6 +44,7 @@ export default function PlaygroundPage() {
               name: details.name ?? item.apiId, // fallback if name missing
               method: details.method ?? "GET",  // fallback method
               version: details.version ?? "v1",
+              path:item.apiId
             };
           } catch (e) {
             console.error(`Failed to fetch details for ${item.apiId}`, e);
@@ -52,12 +53,15 @@ export default function PlaygroundPage() {
               name: item.apiId,
               method: "GET", // fallback on error
               version: "v1",
+              path:item.apiId
             };
           }
         })
       );
   
       setEndpoints(enrichedEndpoints);
+
+      console.log("Enriched Endpoints:",enrichedEndpoints)
     } catch (error) {
       console.error("Error fetching projects:", error);
       setError(error instanceof Error ? error.message : "Failed to fetch projects");
