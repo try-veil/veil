@@ -58,7 +58,7 @@ export default function SignupPage() {
       if (response.ok && data.success) {
         console.log("Signup successful, data:", data);
         // Use our auth context to store user data and tokens
-        login(data.user, data.accessToken, data.refreshToken);
+        login(data.accessToken, data.refreshToken);
         console.log("Redirecting to dashboard...");
 
         // Add a small delay to ensure localStorage is updated

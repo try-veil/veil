@@ -15,7 +15,7 @@ export function middleware(request: NextRequest) {
   if (isProtectedRoute) {
     // For client-side auth with localStorage, we need to set a cookie in the browser
     // when we set the localStorage value. Here we check for that cookie.
-    const authCookie = request.cookies.get('auth-token')?.value;
+    const authCookie = request.cookies.get('accessToken')?.value;
 
     console.log('Protected route detected, auth cookie present:', !!authCookie);
 

@@ -51,13 +51,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     try {
       console.log('Running auth initialization in browser environment');
-      const storedAccessToken = localStorage.getItem('accessToken');
-      const storedRefreshToken = localStorage.getItem('refreshToken');
+      const storedAccessToken = Cookies.get('accessToken') || '';
+      const storedRefreshToken = Cookies.get('refreshToken') || '';
 
-      console.log('Auth initialization - stored tokens:', {
-        hasAccessToken: !!storedAccessToken,
-        hasRefreshToken: !!storedRefreshToken
-      });
+      // console.log('Auth initialization - stored tokens:', {
+      //   hasAccessToken: !!storedAccessToken,
+      //   hasRefreshToken: !!storedRefreshToken
+      // });
 
       if (storedAccessToken) {
         setAccessToken(storedAccessToken);
@@ -65,7 +65,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setIsAuthenticated(true);
 
         // Set auth cookie for middleware
-        Cookies.set('auth-token', 'true', COOKIE_OPTIONS);
+      Cookies.set('accessToken', `${accessToken}`, COOKIE_OPTIONS);
+
 
         console.log('Auth: User authenticated from localStorage');
       } else {
@@ -86,11 +87,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Store in localStorage
     if (typeof window !== 'undefined') {
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
+      // localStorage.setItem('accessToken', accessToken);
+      // localStorage.setItem('refreshToken', refreshToken);
 
       // Set auth cookie for middleware
-      Cookies.set('auth-token', 'true', COOKIE_OPTIONS);
+      Cookies.set('accessToken', `${accessToken}`, COOKIE_OPTIONS);
+      Cookies.set('refreshToken', `${refreshToken}`, COOKIE_OPTIONS);
     }
   };
 
@@ -102,9 +104,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Clear localStorage and cookies
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      Cookies.remove('auth-token');
+      // localStorage.removeItem('accessToken');
+      // localStorage.removeItem('refreshToken');
+      Cookies.remove('accessToken');
+      Cookies.remove('refreshToken');
     }
   };
 
@@ -115,11 +118,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Update localStorage
     if (typeof window !== 'undefined') {
-      localStorage.setItem('accessToken', newAccessToken);
-      localStorage.setItem('refreshToken', newRefreshToken);
-
-      // Ensure auth cookie is set
-      Cookies.set('auth-token', 'true', COOKIE_OPTIONS);
+      Cookies.set('accessToken', `${accessToken}`, COOKIE_OPTIONS);
+      Cookies.set('refreshToken', `${refreshToken}`, COOKIE_OPTIONS);
     }
   };
 
