@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/context/theme-context";
 import { FontProvider } from "@/context/font-context";
-import AuthProvider from "@/components/auth-provider";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/toaster";
 import { UserProvider } from "@/contexts/UserContext";
 // import { SessionDebug } from '@/components/SessionDebug';

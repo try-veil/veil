@@ -2,6 +2,7 @@
 
 import Navbar from '@/features/home/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -10,7 +11,8 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const { user } = useUser();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
 

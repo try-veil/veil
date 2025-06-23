@@ -2,51 +2,39 @@
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@/contexts/UserContext";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
-interface User {
-  id?: string;
-  name?: string;
-  email?: string;
-}
-
-interface LoginButtonProps {
-  session: boolean;
-  user: User | null;
-}
-
-export default function LoginButton({ session, user }: LoginButtonProps) {
+export default function LoginButton() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
+  const { user } = useUser();
 
-  if (session && user) {
-    return (
-      <Button
-        onClick={() => {
-          try {
-            console.log("Initiating logout...");
-            logout();
-            router.push("/");
-          } catch (error) {
-            console.error("Logout request error:", error);
-          }
-        }}
-        variant="primary-scale"
-      >
-        Sign out
-      </Button>
-    );
-  }
+  const handleClick = () => {
+    if (isAuthenticated) {
+      logout();
+      router.push("/");
+    } else {
+      router.push("/login");
+    }
+  };
 
   return (
-    <Button
-      variant="primary-scale"
-      onClick={() => {
-        console.log("Initiating login...");
-        router.push("/login");
-      }}
-    >
-      Sign in
-    </Button>
+    // <Button
+    //   // variant="ghost"
+    //   // size="sm"
+    //   onClick={handleClick}
+    //   className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
+
+    // >
+    //   {isAuthenticated ? "Logout" : "Login"}
+    // </Button>
+     <div
+     onClick={handleClick}
+     className=" bg-black py-1 px-3 rounded-md  text-white  dark:text-white hover:text-gray-300 transition-colors duration-200 hover:cursor-pointer"
+   >
+     {isAuthenticated ? "Logout" : "Login"}
+   </div>
   );
 }

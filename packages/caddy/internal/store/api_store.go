@@ -242,19 +242,28 @@ func (s *APIStore) DeleteAPI(path string) error {
 	s.logger.Info("deleting API configuration",
 		zap.String("path", path))
 
-	result := s.db.Where("path = ?", path).Delete(&models.APIConfig{})
-	if result.Error != nil {
-		s.logger.Error("failed to delete API configuration",
-			zap.Error(result.Error),
-			zap.String("path", path))
-		return result.Error
-	}
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// Get API config to delete
+		var api models.APIConfig
+		if err := tx.Where("path = ?", path).First(&api).Error; err != nil {
+			return err
+		}
 
-	s.logger.Info("API configuration deleted successfully",
-		zap.String("path", path),
-		zap.Int64("rows_affected", result.RowsAffected))
+		// Delete associated methods and API keys
+		if err := tx.Where("api_config_id = ?", api.ID).Delete(&models.APIMethod{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("api_config_id = ?", api.ID).Delete(&models.APIKey{}).Error; err != nil {
+			return err
+		}
 
-	return nil
+		// Delete the API config
+		if err := tx.Delete(&api).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
 
 // AutoMigrate performs database migrations for API-related models
@@ -286,13 +295,23 @@ func (s *APIStore) UpdateAPI(config *models.APIConfig) error {
 		zap.String("subscription", config.RequiredSubscription),
 		zap.Int("api_keys", len(config.APIKeys)))
 
-	// Begin a transaction
+	// Begin transaction
 	tx := s.db.Begin()
 	if tx.Error != nil {
 		return tx.Error
 	}
 
-	// Update the API configuration
+	// Delete existing methods and API keys
+	if err := tx.Where("api_config_id = ?", config.ID).Delete(&models.APIMethod{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	if err := tx.Where("api_config_id = ?", config.ID).Delete(&models.APIKey{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Update API config
 	if err := tx.Save(config).Error; err != nil {
 		tx.Rollback()
 		s.logger.Error("failed to update API configuration",
@@ -301,7 +320,25 @@ func (s *APIStore) UpdateAPI(config *models.APIConfig) error {
 		return err
 	}
 
-	// Commit the transaction
+	// Create new methods
+	for i := range config.Methods {
+		config.Methods[i].APIConfigID = config.ID
+		if err := tx.Create(&config.Methods[i]).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// Create new API keys
+	for i := range config.APIKeys {
+		config.APIKeys[i].APIConfigID = config.ID
+		if err := tx.Create(&config.APIKeys[i]).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// Commit transaction
 	if err := tx.Commit().Error; err != nil {
 		s.logger.Error("failed to commit transaction",
 			zap.Error(err),
@@ -467,4 +504,14 @@ func (s *APIStore) GetAPIWithKeys(path string) (*models.APIConfig, error) {
 	}
 
 	return &apiConfig, nil
+}
+
+// GetAPIByID gets an API config by ID
+func (s *APIStore) GetAPIByID(id uint) (*models.APIConfig, error) {
+	var api models.APIConfig
+	result := s.db.Preload("Methods").Preload("APIKeys").First(&api, id)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &api, nil
 }

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@/contexts/UserContext";
 import { Button } from "@/components/ui/button";
 
 export default function Login() {
@@ -12,17 +13,18 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams?.get("redirect") || "/";
+  const redirectPath = searchParams?.get("redirect") || "/projects";
   const { login, isAuthenticated } = useAuth();
+  const { user, setUser } = useUser();
 
-  // If already authenticated, redirect to dashboard or the original requested page
+  // If already authenticated, redirect to projects page
   useEffect(() => {
     console.log("Login page - isAuthenticated:", isAuthenticated);
-    if (isAuthenticated) {
-      console.log("Already authenticated, redirecting to:", redirectPath);
-      router.push(redirectPath);
+    if (isAuthenticated && user) {
+      // console.log("Already authenticated, redirecting to:", redirectPath);
+      router.push("/projects");
     }
-  }, [isAuthenticated, redirectPath, router]);
+  }, [isAuthenticated, user, router]);
 
   const handlePasswordSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -42,12 +44,13 @@ export default function Login() {
       if (response.ok) {
         console.log("Login successful, data:", data);
         // Use our custom auth context instead of NextAuth
-        login(data.user, data.accessToken, data.refreshToken);
-        console.log("Redirecting to:", redirectPath);
+        login(data?.accessToken, data?.refreshToken);
+        setUser(data?.user);
+        // console.log("Redirecting to:", redirectPath);
 
         // Allow a small delay to ensure localStorage and cookies are set
         setTimeout(() => {
-          router.push(redirectPath);
+          router.push("/projects");
         }, 300);
       } else {
         setError(data.error_description || "Login failed");

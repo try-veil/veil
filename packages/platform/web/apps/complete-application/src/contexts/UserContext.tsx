@@ -21,6 +21,7 @@ interface UserContextType {
   isLoading: boolean;
   error: string | null;
   refreshUserData: () => Promise<void>;
+  setUser: (user: UserContextData | null) => void;
 }
 
 const UserContext = createContext<UserContextType>({
@@ -28,6 +29,7 @@ const UserContext = createContext<UserContextType>({
   isLoading: true,
   error: null,
   refreshUserData: async () => {},
+  setUser: (user: UserContextData | null) => {},
 });
 
 export const useUser = () => useContext(UserContext);
@@ -40,10 +42,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [user, setUser] = useState<UserContextData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const { user: authUser, accessToken, refreshToken, isAuthenticated } = useAuth();
+  const { accessToken, refreshToken, isAuthenticated } = useAuth();
 
   const refreshUserData = async () => {
-    if (!accessToken || !authUser) {
+    if (!accessToken ) {
       setUser(null);
       setIsLoading(false);
       return;
@@ -52,17 +54,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     setIsLoading(true);
     try {
       // Fetch user data from API
-      const userData = await fetchUserData(accessToken);
+        const userData = await fetchUserData(accessToken);
       
-      // Fetch projects
-      const projects = await fetchAllProjects(accessToken);
+
       
-      setUser({
-        ...userData,
-        projects,
-        accessToken,
-        refreshToken
-      });
+      setUser(userData);
       setError(null);
     } catch (err) {
       console.error('Error fetching user data:', err);
@@ -73,16 +69,16 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    if (isAuthenticated && authUser) {
+    if (isAuthenticated) {
       refreshUserData();
     } else {
       setUser(null);
       setIsLoading(false);
     }
-  }, [isAuthenticated, authUser?.id, accessToken]);
+  }, [isAuthenticated, accessToken]);
 
   return (
-    <UserContext.Provider value={{ user, isLoading, error, refreshUserData }}>
+    <UserContext.Provider value={{ user, isLoading, error, refreshUserData, setUser }}>
       {children}
     </UserContext.Provider>
   );

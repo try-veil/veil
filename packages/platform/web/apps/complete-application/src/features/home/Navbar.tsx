@@ -95,7 +95,7 @@ export default function Navbar({ session, user }: NavbarProps) {
                 Marketplace
               </Link>
 
-              <LoginButton session={session} user={user} />
+              <LoginButton  />
             </div>
 
             {/* Mobile menu button */}

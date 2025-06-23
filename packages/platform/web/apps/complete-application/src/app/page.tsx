@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@/contexts/UserContext";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/features/home/Navbar";
@@ -13,7 +14,8 @@ import Footer03Page from "@/features/home/Footer";
 
 export default function Home() {
   const router = useRouter();
-  const { user, isAuthenticated, accessToken } = useAuth();
+  const { isAuthenticated, accessToken } = useAuth();
+  const { user } = useUser();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

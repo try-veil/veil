@@ -1,8 +1,10 @@
 "use client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@/contexts/UserContext";
 
 export default function DebugPage() {
-  const { user, accessToken, refreshToken } = useAuth();
+  const { accessToken, refreshToken } = useAuth();
+  const { user } = useUser();
 
   if (!user) {
     return <p>Not authenticated</p>;

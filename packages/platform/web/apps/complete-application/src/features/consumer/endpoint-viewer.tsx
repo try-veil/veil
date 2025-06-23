@@ -14,7 +14,7 @@ import { JsonViewer } from "@/features/projects/request/components/json-tree-vie
 import { OnboardAPI } from "@/app/api/onboard-api/route";
 import ResponseViewer from "@/features/projects/request/components/response-viewer";
 import { Button } from "@/components/ui/button";
-import { Send, Play, Loader2 } from "lucide-react";
+import { Send, Play, Loader2, Copy, Check } from "lucide-react";
 
 interface Endpoint {
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
@@ -59,6 +59,7 @@ export default function EndpointViewer({
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState<any>(null);
   const [isTestLoading, setIsTestLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const authTypes = {
     api_key: "API Key",
@@ -111,6 +112,18 @@ export default function EndpointViewer({
     }
 
     return curl;
+  };
+
+  const getFullUrl = () => {
+    if (!apiDetails?.path) return selectedUrl;
+    return `${selectedUrl}/${apiDetails.path}`;
+  };
+
+  const handleCopyUrl = async () => {
+    const url = getFullUrl();
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   // If no endpoint is selected, show a message
@@ -270,6 +283,26 @@ export default function EndpointViewer({
                     <div>
                       <Label className="font-bold">Version</Label>
                       <p>{apiDetails?.version || ""}</p>
+                    </div>
+                    <div>
+                      <Label className="font-bold">URL</Label>
+                      <div className="flex items-center gap-2">
+                        <p className="font-mono text-sm bg-gray-100 dark:bg-gray-800 p-2 rounded flex-1">
+                          {getFullUrl()}
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={handleCopyUrl}
+                          className="h-8 w-8"
+                        >
+                          {copied ? (
+                            <Check className="h-4 w-4" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
                     <div>
                       <Label className="font-bold">Documentation URL</Label>

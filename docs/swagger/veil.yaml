@@ -1,0 +1,291 @@
+openapi: 3.0.0
+info:
+  title: Veil Core - OpenAPI Reference
+  description: API reference for the veil core module which is an extension with our custom module.
+  version: 1.0.0
+  contact:
+    name: Veil Support
+    url: https://github.com/try-veil/veil
+
+servers:
+  - url: http://localhost:2020
+    description: Local development server
+
+paths:
+  /veil/api/onboard:
+    post:
+      summary: Onboard a new API
+      description: Register a new API with Veil for subscription-based access control
+      tags:
+        - API Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/APIOnboardRequest"
+      responses:
+        "201":
+          description: API successfully onboarded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIOnboardResponse"
+        "400":
+          description: Invalid request body or missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /veil/api/keys:
+    post:
+      summary: Add new API keys
+      description: Add new API keys to an existing API
+      tags:
+        - API Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - path
+                - apiKeys
+              properties:
+                path:
+                  type: string
+                  description: The API path to which the keys will be added
+                  example: "/weather/*"
+                apiKeys:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/APIKey"
+      responses:
+        "200":
+          description: API keys added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  api:
+                    type: object
+                    properties:
+                      api_keys:
+                        type: array
+                        items:
+                          type: string
+                          example: "new-key-1"
+        "400":
+          description: Invalid request body or missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: API not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /veil/api/keys/status:
+    put:
+      summary: Update API key status
+      description: Update the status of an existing API key
+      tags:
+        - API Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - path
+                - apiKey
+                - isActive
+              properties:
+                path:
+                  type: string
+                  description: The API path associated with the key
+                  example: "/weather/*"
+                apiKey:
+                  type: string
+                  description: The API key to update
+                  example: "new-key-1"
+                isActive:
+                  type: boolean
+                  description: The new status of the API key
+                  example: false
+      responses:
+        "200":
+          description: API key status updated successfully
+        "404":
+          description: API key not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    APIOnboardRequest:
+      type: object
+      required:
+        - path
+        - upstream
+        - required_subscription
+        - methods
+      properties:
+        path:
+          type: string
+          description: The API path pattern to match
+          example: /api/v1/products/*
+        upstream:
+          type: string
+          description: The upstream service URL
+          example: http://localhost:8081
+        required_subscription:
+          type: string
+          description: Required subscription level for access
+          example: premium
+        methods:
+          type: array
+          description: Allowed HTTP methods
+          items:
+            type: string
+            enum: [GET, POST, PUT, DELETE, PATCH]
+          example: [GET, POST]
+        required_headers:
+          type: array
+          description: Required request headers
+          items:
+            type: string
+          example: [X-API-Key, X-Request-ID]
+        parameters:
+          type: array
+          description: Required request parameters
+          items:
+            $ref: "#/components/schemas/Parameter"
+        api_keys:
+          type: array
+          description: List of valid API keys
+          items:
+            $ref: "#/components/schemas/APIKey"
+
+    Parameter:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+          description: Parameter name
+          example: category
+        type:
+          type: string
+          enum: [query, header, path]
+          description: Parameter type
+          example: query
+        required:
+          type: boolean
+          description: Whether the parameter is required
+          example: true
+
+    APIKey:
+      type: object
+      required:
+        - key
+        - name
+        - is_active
+      properties:
+        key:
+          type: string
+          description: API key value
+          example: test-key-123
+        name:
+          type: string
+          description: Name of the API key
+          example: Weather Test Key
+        is_active:
+          type: boolean
+          description: Whether the API key is active
+          example: true
+
+    APIOnboardResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: API onboarded successfully
+        api:
+          $ref: "#/components/schemas/APIConfig"
+
+    APIConfig:
+      type: object
+      properties:
+        path:
+          type: string
+          example: /api/v1/products/*
+        upstream:
+          type: string
+          example: http://localhost:8081
+        required_subscription:
+          type: string
+          example: premium
+        methods:
+          type: array
+          items:
+            type: string
+          example: [GET, POST]
+        required_headers:
+          type: array
+          items:
+            type: string
+          example: [X-API-Key, X-Request-ID]
+        parameters:
+          type: array
+          items:
+            $ref: "#/components/schemas/Parameter"
+        api_keys:
+          type: array
+          items:
+            $ref: "#/components/schemas/APIKey"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: Invalid request body
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    SubscriptionAuth:
+      type: apiKey
+      in: header
+      name: X-Subscription-Key
+
+security:
+  - ApiKeyAuth: []
+  - SubscriptionAuth: []

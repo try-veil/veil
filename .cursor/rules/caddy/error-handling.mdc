@@ -1,0 +1,215 @@
+---
+description: Error handling patterns and best practices in Go
+globs: packages/**/*.go
+alwaysApply: false
+---
+# Go Error Handling
+
+## Basic Principles
+
+Error handling in Go should be explicit, informative, and consistent. Follow these guidelines:
+
+1. Always check error returns from function calls
+2. Wrap errors with context using `fmt.Errorf("context: %w", err)`
+3. Return errors early in functions to avoid deep nesting
+4. Log errors at their handling point, not where they occur
+5. Use specific error types for expected error conditions
+
+## Error Handling Patterns
+
+### Pattern: Early Return
+
+```go
+// Good: Early return pattern
+func processRequest(req *Request) (*Response, error) {
+    // Validate request
+    if err := validateRequest(req); err != nil {
+        return nil, fmt.Errorf("validating request: %w", err)
+    }
+    
+    // Fetch data
+    data, err := fetchData(req.ID)
+    if err != nil {
+        return nil, fmt.Errorf("fetching data: %w", err)
+    }
+    
+    // Process data
+    result, err := processData(data)
+    if err != nil {
+        return nil, fmt.Errorf("processing data: %w", err)
+    }
+    
+    return createResponse(result), nil
+}
+
+// Bad: Nested conditionals
+func processRequestBad(req *Request) (*Response, error) {
+    // Validate request
+    if err := validateRequest(req); err == nil {
+        // Fetch data
+        data, err := fetchData(req.ID)
+        if err == nil {
+            // Process data
+            result, err := processData(data)
+            if err == nil {
+                return createResponse(result), nil
+            } else {
+                return nil, fmt.Errorf("processing data: %w", err)
+            }
+        } else {
+            return nil, fmt.Errorf("fetching data: %w", err)
+        }
+    } else {
+        return nil, fmt.Errorf("validating request: %w", err)
+    }
+}
+```
+
+### Pattern: Error Wrapping
+
+Always add context to errors when returning them up the call stack.
+
+```go
+// Good: Wrapped errors with context
+func updateUser(id string, data UserData) error {
+    user, err := findUser(id)
+    if err != nil {
+        return fmt.Errorf("finding user %s: %w", id, err)
+    }
+    
+    if err := validateUserData(data); err != nil {
+        return fmt.Errorf("validating data for user %s: %w", id, err)
+    }
+    
+    if err := saveUser(user); err != nil {
+        return fmt.Errorf("saving user %s: %w", id, err)
+    }
+    
+    return nil
+}
+
+// Bad: No context added to errors
+func updateUserBad(id string, data UserData) error {
+    user, err := findUser(id)
+    if err != nil {
+        return err // Missing context
+    }
+    
+    if err := validateUserData(data); err != nil {
+        return err // Missing context
+    }
+    
+    if err := saveUser(user); err != nil {
+        return err // Missing context
+    }
+    
+    return nil
+}
+```
+
+### Pattern: Sentinel Errors
+
+Define sentinel errors for expected error conditions.
+
+```go
+// Define sentinel errors
+var (
+    ErrUserNotFound = errors.New("user not found")
+    ErrInvalidData  = errors.New("invalid user data")
+    ErrDatabaseConnection = errors.New("database connection error")
+)
+
+// Use sentinel errors
+func findUser(id string) (*User, error) {
+    user, found := userCache[id]
+    if !found {
+        return nil, ErrUserNotFound
+    }
+    return user, nil
+}
+
+// Check for specific errors
+func handleUserRequest(w http.ResponseWriter, r *http.Request) {
+    id := r.URL.Query().Get("id")
+    user, err := findUser(id)
+    
+    if err != nil {
+        if errors.Is(err, ErrUserNotFound) {
+            http.Error(w, "User not found", http.StatusNotFound)
+            return
+        }
+        http.Error(w, "Internal server error", http.StatusInternalServerError)
+        return
+    }
+    
+    // Handle successful case
+}
+```
+
+### Pattern: Custom Error Types
+
+Use custom error types for errors with additional context.
+
+```go
+// Custom error type
+type ValidationError struct {
+    Field string
+    Value interface{}
+    Reason string
+}
+
+func (e ValidationError) Error() string {
+    return fmt.Sprintf("validation failed for field %s with value %v: %s",
+                      e.Field, e.Value, e.Reason)
+}
+
+// Using custom error types
+func validateUser(user User) error {
+    if user.Name == "" {
+        return ValidationError{
+            Field: "name", 
+            Value: user.Name,
+            Reason: "cannot be empty",
+        }
+    }
+    
+    if user.Age < 0 {
+        return ValidationError{
+            Field: "age",
+            Value: user.Age,
+            Reason: "must be positive",
+        }
+    }
+    
+    return nil
+}
+
+// Handling custom error types
+func handleValidation(err error) {
+    var valErr ValidationError
+    if errors.As(err, &valErr) {
+        fmt.Printf("Validation error on field: %s\n", valErr.Field)
+    }
+}
+```
+
+## Logging Errors
+
+Always log errors with context and at the appropriate level. Use structured logging.
+
+```go
+// Good: Structured error logging
+func processData(logger *zap.Logger, data []byte) error {
+    result, err := parseData(data)
+    if err != nil {
+        logger.Error("failed to parse data",
+            zap.Error(err),
+            zap.Int("data_length", len(data)),
+            zap.String("data_type", detectDataType(data)))
+        return fmt.Errorf("parsing data: %w", err)
+    }
+    
+    // Process the parsed data
+    return nil
+}
+``` 

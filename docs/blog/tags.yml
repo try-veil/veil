@@ -1,0 +1,19 @@
+core:
+  label: Core
+  permalink: /core
+  description: Related to the core of Veil
+
+platform:
+  label: Platform
+  permalink: /platform
+  description: Related to the SaaS platform of Veil
+
+contributions:
+  label: Contributions
+  permalink: /contributions
+  description: Related to the open source contributions to Veil
+
+general:
+  label: General
+  permalink: /general
+  description: General tag description
