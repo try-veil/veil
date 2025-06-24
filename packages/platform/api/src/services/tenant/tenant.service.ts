@@ -13,6 +13,7 @@ import {
 } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { ApiProperty } from '@nestjs/swagger';
+import {ProjectResponseDto} from "../project/dto/project.dto"
 
 export interface CreateTenantDto {
   name: string;
@@ -37,6 +38,12 @@ export class TenantResponseDto {
 
   @ApiProperty({ description: 'Slugified key for the tenant' })
   slugifiedKey: string;
+
+  @ApiProperty({
+    description: 'Projects under this tenant',
+    type: [ProjectResponseDto],
+  })
+  projects?: ProjectResponseDto[];
 
   // Removed createdAt and updatedAt as they are not on the Tenant model
   // @ApiProperty({ description: 'Creation timestamp' })
@@ -91,7 +98,7 @@ export class TenantService {
     });
   }
 
-  async createTenant(data: CreateTenantDto): Promise<TenantResponseDto> {
+  async createTenant(data: CreateTenantDto,userId:string): Promise<TenantResponseDto> {
     const { name, domain } = data;
 
     // Generate slugified key from name
@@ -147,6 +154,15 @@ export class TenantService {
           },
         });
 
+        await tx.user.update({
+          where: {
+            id: userId,
+          },
+          data: {
+            tenantId: tenant.id,
+          },
+        });
+
         return tenant;
       });
 
@@ -169,6 +185,7 @@ export class TenantService {
         name: true,
         domain: true,
         slugifiedKey: true,
+        projects:true
       },
     });
   }
@@ -181,6 +198,7 @@ export class TenantService {
         name: true,
         domain: true,
         slugifiedKey: true,
+        projects:true
       },
     });
 
@@ -199,6 +217,7 @@ export class TenantService {
         name: true,
         domain: true,
         slugifiedKey: true,
+        projects:true
       },
     });
 

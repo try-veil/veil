@@ -1,0 +1,8 @@
+{
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "@typescript-eslint/no-unused-vars": "off",
+    "react-refresh/only-export-components": "off",
+    "@next/next/no-img-element": "off"
+  }
+}

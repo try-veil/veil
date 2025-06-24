@@ -12,6 +12,7 @@ describe('Project CRUD API (e2e)', () => {
   let configService: ConfigService;
   let testUser: any;
   let testApi: any;
+  let testTenant: any;
   let providerJwtToken: string;
   let consumerJwtToken: string;
   let createdProjectId: number;
@@ -72,6 +73,14 @@ describe('Project CRUD API (e2e)', () => {
     try {
       // Clean up any existing test data first
       await cleanupTestData();
+
+      testTenant = await prisma.tenant.create({
+        data: {
+          name: `Tenant ${timestamp}`,
+          domain: `tenant${timestamp}.com`,
+          slugifiedKey: `tenant-${timestamp}`,
+        },
+      });
 
       // Create test user - we'll use this as our provider
       testUser = await prisma.user.create({
@@ -190,6 +199,7 @@ describe('Project CRUD API (e2e)', () => {
         thumbnail: 'https://example.com/thumb.png',
         favorite: true,
         enableLimitsToAPIs: false,
+        tenantId: testTenant.id,
       };
 
       const response = await request(app.getHttpServer())
@@ -430,7 +440,7 @@ describe('Project CRUD API (e2e)', () => {
 
         // Now test consumer access
         const response = await request(app.getHttpServer())
-          .get(`/projects/${dedicatedProjectId}`)
+          .get(`/projects/marketplace/${dedicatedProjectId}`)
           .set('Authorization', `Bearer ${consumerJwtToken}`);
 
         console.log('Consumer access response status:', response.status);
