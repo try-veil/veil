@@ -1,6 +1,6 @@
 "use client";
 import {useState, useEffect } from "react";
-import { ChevronsUpDown, Plus } from "lucide-react";
+import { ChevronsUpDown, CommandIcon, Plus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,7 +75,8 @@ export function TeamSwitcher({
   <activeTeam.logo className="size-4" />
 ) : (
   // Fallback when logo is undefined
-  <div className="size-4 bg-gray-200 rounded-full"></div>
+  // <div className="size-4 bg-gray-200 rounded-full"></div>
+  <CommandIcon className="size-4" />
 )}
                   </div>
                 )}
@@ -101,6 +102,7 @@ export function TeamSwitcher({
               Projects
             </DropdownMenuLabel>
             {teams.map((team, index) => (
+              <Link href={`/projects/${team.id}/hub-listing`}>
               <DropdownMenuItem
                 key={team.id}
                 onClick={() => setActiveTeam(team)}
@@ -115,11 +117,12 @@ export function TeamSwitcher({
   <div className="size-4 bg-gray-200 rounded-full"></div>
 )}
                 </div>
-                <Link href={`/projects/${team.id}/hub-listing`}>
+                
                   {team.name}
-                </Link>
+                
                 <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
               </DropdownMenuItem>
+              </Link>
             ))}
             <DropdownMenuSeparator />
             <DropdownMenuItem className="gap-2 p-2">
