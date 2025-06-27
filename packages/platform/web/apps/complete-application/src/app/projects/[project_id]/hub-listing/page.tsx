@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ImageIcon } from "lucide-react";
+import { ImageIcon, Upload } from "lucide-react";
 import ContentSection from "@/features/settings/components/content-section";
 import { useProject } from "@/context/project-context";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,6 +22,7 @@ import { updateProject } from "@/lib/api";
 
 export default function HubListingPage() {
   const { selectedProject, refreshProject } = useProject();
+  const { accessToken } = useAuth();
 
   const [formData, setFormData] = useState({
     logo: "",
@@ -35,42 +36,60 @@ export default function HubListingPage() {
   });
 
   const [isDirty, setIsDirty] = useState(false);
-
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const { accessToken } = useAuth();
-
-  useEffect(() => {
-    if (selectedProject?.hubListing) {
-      setFormData({
-        logo: selectedProject.hubListing.logo || "",
-        category: selectedProject.hubListing.category || "",
-        shortDescription: selectedProject.hubListing.shortDescription || "",
-        longDescription: selectedProject.hubListing.longDescription || "",
-        website: selectedProject.hubListing.website || "",
-        termsOfUse: selectedProject.hubListing.termsOfUse || "",
-        visibleToPublic: selectedProject.hubListing.visibleToPublic || false,
-        healthCheckUrl: selectedProject.hubListing.healthCheckUrl || "",
-      });
-    }
-  }, [selectedProject]);
-
-  function handleChange(field: string, value: any) {
+  const handleChange = useCallback((field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setIsDirty(true);
-  }
+  }, []);
 
-  async function handleSave() {
-    if (!selectedProject) return;
-    setIsLoading(true);
-    updateProject;
+  const handleImageUpload = useCallback(async (file: File) => {
+    if (!file) return;
+    
+    setIsUploading(true);
     try {
-      
-      if (!selectedProject?.id || !accessToken) {
-        throw new Error("Project ID or access token not found");
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
       }
 
-      // Show loading toast
+      const result = await response.json();
+      handleChange("logo", result.url);
+      
+      toast({
+        title: "Success",
+        description: "Image uploaded successfully",
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  }, [handleChange]);
+
+  const handleSave = useCallback(async () => {
+    if (!selectedProject || !accessToken) return;
+    
+    setIsLoading(true);
+    
+    try {
+      if (!selectedProject?.id) {
+        throw new Error("Project ID not found");
+      }
+
       toast({
         title: "Updating Project...",
         description: "Please wait while we process your request",
@@ -89,7 +108,6 @@ export default function HubListingPage() {
         healthCheckUrl: formData.healthCheckUrl,
       } as any);
       
-
       setIsDirty(false);
 
       toast({
@@ -100,10 +118,17 @@ export default function HubListingPage() {
       await refreshProject();
     } catch (error) {
       console.error("Failed to save:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update project",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-  }
+  }, [selectedProject, accessToken, formData, refreshProject]);
 
-  function handleDiscard() {
+  const handleDiscard = useCallback(() => {
     if (selectedProject?.hubListing) {
       setFormData({
         logo: selectedProject.hubListing.logo || "",
@@ -117,7 +142,22 @@ export default function HubListingPage() {
       });
     }
     setIsDirty(false);
-  }
+  }, [selectedProject]);
+
+  useEffect(() => {
+    if (selectedProject?.hubListing) {
+      setFormData({
+        logo: selectedProject.hubListing.logo || "",
+        category: selectedProject.hubListing.category || "",
+        shortDescription: selectedProject.hubListing.shortDescription || "",
+        longDescription: selectedProject.hubListing.longDescription || "",
+        website: selectedProject.hubListing.website || "",
+        termsOfUse: selectedProject.hubListing.termsOfUse || "",
+        visibleToPublic: selectedProject.hubListing.visibleToPublic || false,
+        healthCheckUrl: selectedProject.hubListing.healthCheckUrl || "",
+      });
+    }
+  }, [selectedProject]);
 
   return (
     <ContentSection
@@ -136,39 +176,41 @@ export default function HubListingPage() {
           <div className="flex items-start gap-4">
             <div className="flex flex-col justify-between h-24 pt-1">
               <Label>Upload Logo</Label>
-              {/* <Input
+              <Input
                 type="file"
                 accept="image/jpeg,image/png"
                 className="h-9 w-full max-w-2xl"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      handleChange("logo", reader.result as string);
-                    };
-                    reader.readAsDataURL(file);
+                    handleImageUpload(file);
                   }
                 }}
-              /> */}
+                disabled={isUploading}
+              />
               <p className="text-sm text-muted-foreground">
                 Maximum Size: 500 x 500px, JPEG / PNG
               </p>
             </div>
             <div className="w-24 h-24 border rounded-md overflow-hidden bg-muted flex items-center justify-center">
               {formData.logo ? (
-                <></>
+                <Image
+                  src={formData.logo}
+                  alt="Logo preview"
+                  width={96}
+                  height={96}
+                  className="object-contain"
+                />
               ) : (
-                // <Image
-                //   src={formData.logo}
-                //   alt="Logo preview"
-                //   width={96}
-                //   height={96}
-                //   className="object-contain"
-                // />
                 <div className="flex flex-col items-center justify-center text-muted-foreground">
-                  <ImageIcon className="w-8 h-8 mb-1" />
-                  <span className="text-xs">No logo</span>
+                  {isUploading ? (
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                  ) : (
+                    <>
+                      <ImageIcon className="w-8 h-8 mb-1" />
+                      <span className="text-xs">No logo</span>
+                    </>
+                  )}
                 </div>
               )}
             </div>
