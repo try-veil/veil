@@ -22,8 +22,6 @@ import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-
 const requestFormSchema = z.object({
   name: z.string().min(1, { message: "Endpoint name is required" }),
   description: z.string().optional(),
@@ -48,7 +46,6 @@ interface RequestProps {
   isLoading?: boolean;
   onSave?: (data: RequestData) => void;
   onTest?: (data: TestRequestData) => void;
-  project_id?: number;
   initialData?: {
     name: string;
     api_id: string;
@@ -56,7 +53,6 @@ interface RequestProps {
     path: string;
     documentation_url: string;
     method: string;
-    version?: string;
     required_headers?: { name: string; value: string; is_variable: boolean }[];
   };
 }
@@ -92,7 +88,6 @@ export default function Request({
   isLoading,
   onSave,
   onTest,
-  project_id,
   initialData,
 }: RequestProps) {
   const { accessToken } = useAuth();
@@ -111,7 +106,6 @@ export default function Request({
   const [method, setMethod] = useState<string>(initialData?.method || "GET");
   const [description, setDescription] = useState(initialData?.description || "");
   const [documentationUrl, setDocumentationUrl] = useState(initialData?.documentation_url || "");
-  const [version, setVersion] = useState(initialData?.version || "1.0.0");
   const [headers, setHeaders] = useState<{ name: string; value: string }[]>(
     initialData?.required_headers?.map((h) => ({
       name: h.name,
@@ -129,7 +123,6 @@ export default function Request({
       setDescription(initialData.description || "");
       setDocumentationUrl(initialData.documentation_url || "");
       setPath(initialData.path || "");
-      setVersion(initialData.version || "1.0.0");
       setHeaders(
         initialData.required_headers?.map((h) => ({
           name: h.name,
@@ -192,6 +185,7 @@ export default function Request({
       const formattedErrors = result.error.format();
       setErrors({
         name: formattedErrors.name?._errors[0],
+        path: formattedErrors.path?._errors[0],
         documentation_url: formattedErrors.documentation_url?._errors[0],
       });
       return;
@@ -209,52 +203,19 @@ export default function Request({
       return;
     }
 
-    if (!project_id) {
-      alert("Project ID is required");
-      return;
-    }
-
     setIsTestLoading(true);
 
-    try {
-      const payload = {
-        api_id: initialData?.api_id,
-        project_id: project_id,
-        name,
-        path,
-        target_url: targetUrl,
-        method,
-        version,
-        required_headers: headers.map(h => ({
-          name: h.name,
-          value: h.value,
-          is_variable: false,
-        })),
-        description,
-        documentation_url: documentationUrl,
-      };
+    const testData: TestRequestData = {
+      method,
+      target_url: `${targetUrl}${path}`,
+      headers,
+    };
 
-      const response = await fetch(`${API_BASE_URL}/onboard/test`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || "Test API call failed");
-      }
-
-      alert("Test successful: " + JSON.stringify(result.data));
-    } catch (error) {
-      alert("Test failed: " + (error instanceof Error ? error.message : error));
-    } finally {
-      setIsTestLoading(false);
+    if (onTest) {
+      await onTest(testData);
     }
+
+    setIsTestLoading(false);
   };
 
   const handleDeleteAPI = async () => {
@@ -419,14 +380,6 @@ export default function Request({
                       placeholder="Set Description"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Version</Label>
-                    <Input
-                      placeholder="1.0.0"
-                      value={version}
-                      onChange={(e) => setVersion(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">

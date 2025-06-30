@@ -318,14 +318,7 @@ export default function EndpointViewer({
                         <SelectValue placeholder="Select a URL" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={process.env.NEXT_PUBLIC_VEIL_URL || "https://veil.com"}>
-                          {process.env.NEXT_PUBLIC_VEIL_URL || "https://veil.com"} (Gateway)
-                        </SelectItem>
-                        {apiDetails?.target_url && (
-                          <SelectItem value={apiDetails.target_url}>
-                            {apiDetails.target_url} (Direct - Debug)
-                          </SelectItem>
-                        )}
+                        <SelectItem value={process.env.NEXT_PUBLIC_VEIL_URL || "https://veil.com"}>https://veil.com</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

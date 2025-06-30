@@ -10,8 +10,6 @@ import {
   Req,
   HttpStatus,
   Res,
-  Post,
-  BadRequestException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { OnboardingService } from './onboarding.service';
@@ -37,9 +35,7 @@ import {
 @Controller('onboard')
 @UseGuards(AuthGuard, RoleGuard)
 export class OnboardingController {
-  constructor(
-    private readonly onboardingService: OnboardingService,
-  ) {}
+  constructor(private readonly onboardingService: OnboardingService) {}
 
   @Put()
   @Roles('provider')
@@ -127,24 +123,5 @@ export class OnboardingController {
     @Req() req: any,
   ): Promise<void> {
     return this.onboardingService.deleteApi(apiId, req.user.id);
-  }
-
-  @Post('test')
-  @Roles('provider', 'consumer')
-  @ApiOperation({ summary: 'Test an API endpoint before buying subscription' })
-  @ApiBody({ type: ApiRegistrationRequestDto })
-  @ApiResponse({ status: 200, description: 'API test response' })
-  @ApiResponse({ status: 403, description: 'Rate limit exceeded' })
-  async testApi(
-    @Body() body: ApiRegistrationRequestDto,
-    @Req() req: any,
-  ) {
-    const authenticatedUserId = req.user.id;
-
-    if (!body.api_id || !body.path || !body.target_url) {
-      throw new BadRequestException('api_id, path, and target_url are required');
-    }
-
-    return this.onboardingService.testApiCall(body, authenticatedUserId);
   }
 }

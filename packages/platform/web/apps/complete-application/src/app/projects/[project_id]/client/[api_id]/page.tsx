@@ -223,7 +223,7 @@ export default function RequestPage() {
     api_id: "",
     name: "",
     path: "",
-    project_id: Number(params.project_id),
+    project_id: 1,
     target_url: "",
     method: "GET",
     version: "1.0",
@@ -303,21 +303,13 @@ export default function RequestPage() {
     try {
       const curlCommand = generateCurlCommand(testData);
 
-      // Use gateway URL instead of direct target URL
-      const gatewayBaseUrl = process.env.NEXT_PUBLIC_GATEWAY_URL;
-      const gatewayUrl = `${gatewayBaseUrl}${formData.path}`;
-
-      // Make the actual HTTP request through the gateway
+      // Make the actual HTTP request
       const requestHeaders: Record<string, string> = {};
       testData.headers.forEach((header) => {
         requestHeaders[header.name] = header.value;
       });
 
-      // Add required gateway headers
-      requestHeaders["X-Subscription-Key"] = "pk_proxy_weather_test"; // You should get this from the API details
-      requestHeaders["Content-Type"] = "application/json";
-
-      const response = await fetch(gatewayUrl, {
+      const response = await fetch(testData.target_url, {
         method: testData.method,
         headers: requestHeaders,
       });
@@ -331,7 +323,7 @@ export default function RequestPage() {
         data: responseData,
         info: {
           date: new Date().toISOString(),
-          url: gatewayUrl, // Show gateway URL in response
+          url: testData.target_url,
           status: `${response.status} ${response.statusText}`,
           library: "Fetch API",
           headersResponseTime: "N/A",
@@ -340,29 +332,12 @@ export default function RequestPage() {
         },
         request: {
           method: testData.method,
-          url: gatewayUrl, // Show gateway URL in request
-          path: formData.path,
+          url: testData.target_url,
+          path: "/",
           headers: requestHeaders,
           curl: curlCommand,
         },
       });
-
-      const payload = {
-        api_id: formData.api_id,
-        name: formData.name,
-        path: formData.path,
-        target_url: formData.target_url,
-        method: formData.method,
-        required_headers: formData.required_headers.map(h => ({
-          name: h.name,
-          value: h.value,
-          is_variable: h.is_variable,
-        })),
-        project_id: Number(params.project_id),
-        version: formData.version,
-      };
-
-      console.log("Test API payload:", payload);
     } catch (error) {
       console.error("Error making test request:", error);
       setResponse({
@@ -445,7 +420,7 @@ export default function RequestPage() {
           method: requestData.method.toUpperCase(),
           documentation_url: requestData.documentation_url,
           required_headers,
-          project_id: Number(params.project_id),
+          project_id: selectedProject?.id,
         };
 
         if (accessToken) {
@@ -459,7 +434,7 @@ export default function RequestPage() {
               variant: "default",
             });
             router.push(
-              `/projects/${params.project_id}/client/${generatedApiId}`
+              `/projects/${selectedProject?.id}/client/${generatedApiId}`
             );
           } catch (error: any) {
             console.error("Error onboarding API:", error);
@@ -491,8 +466,8 @@ export default function RequestPage() {
         variant: "destructive",
       });
     } finally {
-      if (params.project_id) {
-        setSelectedProjectId(String(params.project_id));
+      if (selectedProject?.id) {
+        setSelectedProjectId(String(selectedProject.id));
       }
       setIsLoading(false);
     }
@@ -567,7 +542,6 @@ export default function RequestPage() {
               isLoading={isLoading}
               onSave={handleSaveRequest}
               onTest={handleTest}
-              project_id={Number(params.project_id)}
               initialData={formData}
             />
           </ResizableBox>
