@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import {HubListingService } from "../hublisting/hublisting.service"
 import {
@@ -17,6 +18,7 @@ export class ProjectService {
   constructor(
     private readonly prisma: PrismaService,  
     private readonly hubListingService: HubListingService,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -154,8 +156,16 @@ export class ProjectService {
       throw new NotFoundException(`Project with ID ${id} not found`);
     }
   
+    const gatewayUrl = this.configService.get<string>('DEFAULT_GATEWAY_URL');
+    
+    // Generate unique test key per API following the same pattern as onboarding service
+    const uniqueTestKey = `test-key-${project.id || project.name.replace(/\s+/g, '_').toLowerCase()}`;
+    
     return {
       ...project,
+      // Replace target_url with gateway URL so frontend calls go through Veil gateway
+      target_url: gatewayUrl,
+      gateway_api_key: uniqueTestKey,
       description: null,
       apis: project.projectAllowedAPIs.map((api) => ({
         apiId: api.apiId,
@@ -243,14 +253,25 @@ export class ProjectService {
     }
 
     // Transform to expected format
+    const gatewayUrl = this.configService.get<string>('DEFAULT_GATEWAY_URL');
+    
+    console.log(`[ProjectService.findOne] Original target_url: ${project.target_url}`);
+    console.log(`[ProjectService.findOne] Gateway URL from config: ${gatewayUrl}`);
+    console.log(`[ProjectService.findOne] Returning target_url: ${gatewayUrl}`);
+    
+    // Generate unique test key per API following the same pattern as onboarding service
+    const uniqueTestKey = `test-key-${project.id || project.name.replace(/\s+/g, '_').toLowerCase()}`;
+    
     return {
       ...project,
-      description: null, // No description in DB, set to null for API consistency
+      // Replace target_url with gateway URL so frontend calls go through Veil gateway
+      target_url: gatewayUrl,
+      gateway_api_key: uniqueTestKey,
+      description: null,
       apis: project.projectAllowedAPIs.map((api) => ({
         apiId: api.apiId,
         apiVersionId: api.apiVersionId,
-        name: api.apiModel?.name ?? '', // Use apiModel
-
+        name: api.apiModel?.name ?? '',
       })),
     } as ProjectWithRelationsDto;
   }
@@ -366,6 +387,10 @@ export class ProjectService {
       }),
       // Delete project subscriptions (this might need additional logic depending on your business rules)
       this.prisma.subscription.deleteMany({
+        where: { projectId: id },
+      }),
+      // Delete hub listing and its related plans
+      this.prisma.hubListing.deleteMany({
         where: { projectId: id },
       }),
       // Finally delete the project

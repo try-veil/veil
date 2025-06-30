@@ -1732,6 +1732,39 @@
         ]
       }
     },
+    "/onboard/test": {
+      "post": {
+        "operationId": "OnboardingController_testApi",
+        "summary": "Test an API endpoint before buying subscription",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiRegistrationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "API test response"
+          },
+          "403": {
+            "description": "Rate limit exceeded"
+          }
+        },
+        "tags": [
+          "onboarding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/users/me": {
       "get": {
         "operationId": "UserController_getCurrentUser",
@@ -2645,6 +2678,11 @@
               "$ref": "#/components/schemas/ProjectAllowedApiDto"
             }
           },
+          "gateway_api_key": {
+            "type": "string",
+            "description": "API key for accessing APIs through the gateway",
+            "example": "pk_proxy_weather_test"
+          },
           "basicPlan": {
             "description": "Basic plan config",
             "allOf": [
@@ -3121,6 +3159,11 @@
             "description": "HTTP method for the API",
             "example": "POST"
           },
+          "version": {
+            "type": "string",
+            "description": "Version of the API",
+            "example": "1.0.0"
+          },
           "description": {
             "type": "string",
             "description": "Description of the API",
@@ -3137,6 +3180,11 @@
             "items": {
               "$ref": "#/components/schemas/HeaderParameterDto"
             }
+          },
+          "api_key": {
+            "type": "string",
+            "description": "API key for accessing through gateway",
+            "example": "pk_proxy_weather_test"
           },
           "status": {
             "type": "string",
@@ -3166,11 +3214,16 @@
           "name",
           "path",
           "method",
+          "version",
           "required_headers",
           "status",
           "created_at",
           "updated_at"
         ]
+      },
+      "NewsletterSubscribeDto": {
+        "type": "object",
+        "properties": {}
       }
     }
   }

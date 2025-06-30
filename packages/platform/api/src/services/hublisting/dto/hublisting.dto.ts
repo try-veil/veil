@@ -58,8 +58,8 @@ import {
   
     @ApiPropertyOptional({ description: 'API provider website URL', example: 'https://provider.com' })
     @IsOptional()
-    @IsUrl()
-    website?: string;
+    @IsString()
+    website?: string | null;
   
     @ApiPropertyOptional({ description: 'Terms of use for this API', example: 'https://provider.com/terms' })
     @IsOptional()
@@ -72,8 +72,8 @@ import {
   
     @ApiPropertyOptional({ description: 'URL used for health checks', example: 'https://provider.com/health' })
     @IsOptional()
-    @IsUrl()
-    healthCheckUrl?: string;
+    @IsString()
+    healthCheckUrl?: string | null;
   
     @ApiPropertyOptional({ description: 'URL to API documentation', example: 'https://docs.provider.com' })
     @IsOptional()

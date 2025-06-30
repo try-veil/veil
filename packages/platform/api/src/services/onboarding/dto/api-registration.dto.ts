@@ -265,6 +265,12 @@ export class ApiDetailsResponseDto {
   @ApiProperty({ description: 'HTTP method for the API', example: 'POST' })
   method: string;
 
+  @ApiProperty({
+    description: 'Version of the API',
+    example: '1.0.0',
+  })
+  version: string;
+
   @ApiPropertyOptional({
     description: 'Description of the API',
     example: 'Process payment transactions',
@@ -282,6 +288,12 @@ export class ApiDetailsResponseDto {
     type: [HeaderParameterDto],
   })
   required_headers: HeaderParameterDto[];
+
+  @ApiPropertyOptional({
+    description: 'API key for accessing through gateway',
+    example: 'pk_proxy_weather_test',
+  })
+  api_key?: string;
 
   @ApiProperty({
     description: 'Status of the API',
