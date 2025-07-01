@@ -15,7 +15,7 @@ To use this module during development, you need to build Caddy with this module 
 
 ```bash
 # From the project root directory
-xcaddy build --with github.com/techsavvyash/veil/packages/caddy=./packages/caddy
+xcaddy build --with github.com/try-veil/veil/packages/caddy=./packages/caddy
 ```
 
 This tells xcaddy to use the local code in `./packages/caddy` instead of fetching from GitHub.
@@ -23,7 +23,7 @@ This tells xcaddy to use the local code in `./packages/caddy` instead of fetchin
 Once the module is published, you can use:
 
 ```bash
-xcaddy build --with github.com/techsavvyash/veil/packages/caddy
+xcaddy build --with github.com/try-veil/veil/packages/caddy
 ```
 
 ## Configuration
@@ -67,7 +67,7 @@ Here's a complete example of how to use Veil:
 1. Build Caddy with the Veil module:
 
 ```bash
-xcaddy build --with github.com/techsavvyash/veil/packages/caddy
+xcaddy build --with github.com/try-veil/veil/packages/caddy=./packages/caddy
 ```
 
 2. Create a Caddyfile:
@@ -89,7 +89,8 @@ localhost:2019 {
 3. Start Caddy:
 
 ```bash
-./veil run
+cd packages\caddy
+.\caddy.exe run
 ```
 
 4. Make a request:
@@ -105,7 +106,7 @@ curl -H "X-Subscription-Key: premium" http://localhost:2019/api/v1/products
 First, build Caddy with the Veil module from the project root:
 
 ```bash
-xcaddy build --with github.com/techsavvyash/veil/packages/caddy=./packages/caddy
+xcaddy build --with github.com/try-veil/veil/packages/caddy=./packages/caddy
 ```
 
 This will create a `caddy` binary in your current directory.
@@ -199,7 +200,8 @@ python test-orders.py
 2. Start Caddy with your test configuration:
 
 ```bash
-./veil run --config Caddyfile
+cd packages\caddy
+.\caddy.exe run --config Caddyfile
 ```
 
 ### 5. Test the API Gateway
