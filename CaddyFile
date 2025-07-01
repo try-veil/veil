@@ -1,0 +1,28 @@
+{
+   order veil_handler before reverse_proxy
+    admin 0.0.0.0:2019
+    auto_https off
+    debug
+}
+
+# Management/Onboarding API (port 2020)
+:2020 {
+    log {
+        output stderr
+        format console
+        level DEBUG
+    }
+    handle /veil/api/* {
+        veil_handler ./veil.db X-Subscription-Key
+    }
+}
+
+# Public API Gateway (port 2021)
+:2021 {
+    log {
+        output stderr
+        format console
+        level DEBUG
+    }
+    # All dynamically onboarded routes will be added here by Veil
+}
