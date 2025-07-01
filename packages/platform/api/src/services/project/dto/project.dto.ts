@@ -272,12 +272,6 @@ export class ProjectWithRelationsDto extends ProjectResponseDto {
   })
   apis: ProjectAllowedApiDto[];
 
-  @ApiPropertyOptional({ 
-    description: 'API key for accessing APIs through the gateway',
-    example: 'pk_proxy_weather_test'
-  })
-  gateway_api_key?: string;
-  
   @ApiPropertyOptional({ description: 'Basic plan config', type: PlanConfig })
   basicPlan?: PlanConfig;
 

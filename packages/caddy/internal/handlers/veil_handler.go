@@ -177,6 +177,7 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 
 	// Create a rewrite rule with a direct replacement without capture groups
 	rewriteConfig := fmt.Sprintf(`"rewrite": {
+		"method": "GET",
 		"path_regexp": [
 			{
 				"find": "^%s",

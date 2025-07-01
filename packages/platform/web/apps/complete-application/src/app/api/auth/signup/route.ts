@@ -53,9 +53,6 @@ export async function POST(req: Request) {
 
     const registerData = await registerResponse.json().catch(() => ({})); 
 
-
-    console.log("FusionAuth registration response:", registerData);
-
     if (!registerResponse.ok) {
       const fieldError = registerData?.fieldErrors;
       const firstErrorMessage =
