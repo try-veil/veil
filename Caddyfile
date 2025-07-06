@@ -8,9 +8,9 @@
 # Management/Onboarding API (port 2020)
 :2020 {
     log {
-        output stderr
-        format console
-        level DEBUG
+        output file packages/caddy/logs/logs-2020.log
+        format json
+        level INFO
     }
     handle /veil/api/* {
         veil_handler ./veil.db X-Subscription-Key
@@ -20,9 +20,12 @@
 # Public API Gateway (port 2021)
 :2021 {
     log {
-        output stderr
-        format console
-        level DEBUG
+        output file packages/caddy/logs/logs-2021.log
+        format json
+        level INFO
+    }
+    handle /veil/api/* {
+        veil_handler ./veil.db X-Subscription-Key
     }
     # All dynamically onboarded routes will be added here by Veil
 }

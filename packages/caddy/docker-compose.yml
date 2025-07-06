@@ -1,0 +1,47 @@
+services:
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - ./data/minio:/data
+
+  loki:
+    image: grafana/loki:2.9.2
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki.yaml:/etc/loki/loki.yaml
+    command: -config.file=/etc/loki/loki.yaml
+    depends_on:
+      - minio
+
+  promtail:
+    image: grafana/promtail:2.9.2
+    container_name: promtail
+    volumes:
+      - ./logs:/packages/caddy/logs
+      - ./promtail.yaml:/etc/promtail/promtail.yaml
+    command: -config.file=/etc/promtail/promtail.yaml
+    depends_on:
+      - loki
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SERVER_ROOT_URL: http://localhost:3001
+    volumes:
+      - ./grafana.ini:/etc/grafana/grafana.ini
+    depends_on:
+      - loki
+      - minio

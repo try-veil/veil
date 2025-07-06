@@ -260,6 +260,72 @@ Or check the Caddy admin API for the current configuration:
 curl localhost:2019/config/
 ```
 
+## Running with Docker Compose
+
+All core services (MinIO, Loki, Promtail, Grafana) can be started together using Docker Compose.
+
+### Prerequisites
+- Docker and Docker Compose installed
+- All config files (`grafana.ini`, `loki.yaml`, `promtail.yaml`) and the `logs/` directory are present in `packages/caddy/`
+
+### Start All Services
+
+From the `packages/caddy/` directory, run:
+
+```sh
+docker-compose up -d
+```
+
+This will start MinIO, Loki, Promtail, and Grafana with the correct configuration and port mappings.
+
+### Stop All Services
+
+```sh
+docker-compose down
+```
+
+## Per-Provider API Logging with Loki, Promtail, and Grafana
+
+### 1. Ensure Caddy Logs Include provider_id
+
+All API request logs now include a `provider_id` field for per-provider log filtering. Example log line:
+```json
+{"level":"info","ts":...,"msg":"API request","provider_id":"provider123", ...}
+```
+
+### 2. Loki, Promtail, and Grafana Setup (with Docker Compose)
+
+All services are started with Docker Compose as described above. No need to run individual containers manually.
+
+- **Loki** is available on port 3100
+- **Promtail** scrapes logs from `./logs` and pushes to Loki
+- **Grafana** is available on port 3001
+- **MinIO** is available on ports 9000 (API) and 9001 (console)
+
+#### Add Loki as a Data Source in Grafana
+- URL: `http://loki:3100` (from Grafana's perspective inside Docker)
+- Or `http://localhost:3100` if accessing from your host
+
+#### Create a Dashboard with a LogQL Query
+```
+{job="caddy", provider_id="provider123"}
+```
+
+### 3. Provider Isolation & Security
+
+- Create a Grafana user for each provider.
+- Create a folder for each provider and move their dashboard into it.
+- Set folder permissions so only the provider can access their dashboard.
+- Each dashboard uses a LogQL query filtered by `provider_id`.
+
+### 4. Provider Experience
+
+Each provider logs in to Grafana and sees only their API logs, filtered by their unique `provider_id`.
+
+### 5. Optional Automation
+
+Use Grafana's provisioning API to automate user and dashboard creation for new providers.
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.

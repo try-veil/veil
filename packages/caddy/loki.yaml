@@ -1,0 +1,35 @@
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9095
+
+common:
+  path_prefix: /loki
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: 2020-10-24
+      store: boltdb-shipper
+      object_store: s3
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h
+
+storage_config:
+  boltdb_shipper:
+    active_index_directory: /loki/index
+    cache_location: /loki/index_cache
+    shared_store: s3
+  aws:
+    endpoint: http://minio:9000
+    bucketnames: loki
+    access_key_id: minioadmin
+    secret_access_key: minioadmin
+    s3forcepathstyle: true
+    insecure: true

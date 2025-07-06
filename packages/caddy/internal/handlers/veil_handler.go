@@ -588,9 +588,12 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 		}
 	}
 
-	h.logger.Debug("request authorized",
+	// Log the API request with provider_id for Loki/Grafana
+	h.logger.Info("API request",
+		zap.String("provider_id", api.ProviderID),
 		zap.String("path", r.URL.Path),
-		zap.String("method", r.Method))
+		zap.String("method", r.Method),
+	)
 
 	return next.ServeHTTP(w, r)
 }
@@ -727,6 +730,7 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		Upstream:             req.Upstream,
 		RequiredSubscription: req.RequiredSubscription,
 		RequiredHeaders:      req.RequiredHeaders,
+		ProviderID:           req.ProviderID,
 	}
 
 	// Create API methods
