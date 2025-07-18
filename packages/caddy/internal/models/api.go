@@ -45,6 +45,7 @@ type APIConfig struct {
 	Parameters           []APIParameter `json:"parameters" gorm:"foreignKey:APIConfigID"`
 	RequiredHeaders      []string       `json:"required_headers" gorm:"serializer:json"`
 	APIKeys              []APIKey       `json:"api_keys" gorm:"foreignKey:APIConfigID"`
+	ProviderID           string         `json:"provider_id" gorm:"not null"`
 }
 
 // APIOnboardRequest represents a request to onboard a new API

@@ -21,6 +21,7 @@ type APIOnboardRequestDTO struct {
 	RequiredHeaders      []string       `json:"required_headers"`
 	Parameters           []ParameterDTO `json:"parameters"`
 	APIKeys              []APIKeyDTO    `json:"api_keys"`
+	ProviderID           string         `json:"provider_id" binding:"required"`
 }
 
 // APIKeysRequestDTO represents the request body for adding API keys
