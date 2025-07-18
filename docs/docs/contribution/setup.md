@@ -1,40 +1,51 @@
 # Development Setup Guide
 
-## Prerequisites
+## Installation
+
+## Caddy Setup
+
+### Caddy Prerequisites
 
 - Caddy Server (v2.0 or higher)
 - cURL (for testing)
 
-## Installation
-
-### 1. Install Caddy Server
-
-```bash
-# macOS (using Homebrew)
-brew install caddy
-
-# Linux (Debian/Ubuntu)
-sudo apt install caddy
+1. Go to the project folder
+```
+cd packages/caddy/
+```
+2. Start caddy
+```
+make watch
 ```
 
-### 2. Start Caddy Server
-
-```bash
-caddy run
+## Backend Setup
+1. Go to the project folder
+```
+cd packages/platform/api/
+```
+3. Install packages
+```
+pnpm install
+```
+4. Set up your .env file
+   
+5. Create prisma client if required
+```
+pnpm prisma generate
+```
+6. Start your backend on port ```3000```
+```
+pnpm run start:dev
 ```
 
-### 3. Configure Gateway
-
-```bash
-# Load gateway configuration
-curl localhost:2019/load \
-  -H "Content-Type: application/json" \
-  -d @config/caddy.json
-
-# Verify configuration
-curl localhost:2019/config/
+If you are getting unauthorized on frontend, try enabling cors while developing locally in ```packages/platform/api/src/main.ts``` 
 ```
+app.enableCors({
+    origin: '*',
+})
+  ```
 
-## Next Steps
+## Frontend Setup
+Start your frontend on port ```3001```
 
-## Related Documentation
+Follow https://veil.apidocumentation.com/guide/getting-started for detailed guide
