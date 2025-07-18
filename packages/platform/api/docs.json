@@ -1325,7 +1325,7 @@
         ]
       }
     },
-    "/onboard": {
+    "/routes": {
       "put": {
         "operationId": "OnboardingController_registerApi",
         "summary": "Register a new API",
@@ -1368,7 +1368,7 @@
         ]
       }
     },
-    "/onboard/api/{apiId}": {
+    "/routes/api/{apiId}": {
       "get": {
         "operationId": "OnboardingController_getApiDetails",
         "summary": "Get API details",

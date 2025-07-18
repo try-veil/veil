@@ -14,7 +14,7 @@ The OnboardingService is responsible for handling the provider onboarding proces
 
 ### Provider API Onboarding
 
-**Endpoint:** `PUT /onboard`
+**Endpoint:** `PUT /routes`
 
 **Purpose:** Register a new API in the platform
 

@@ -8,7 +8,7 @@ type APIKeyRequest struct {
 type APIKeyStatusRequest struct {
 	Path     string `json:"path"`
 	APIKey   string `json:"api_key"`
-	IsActive bool   `json:"is_active"`
+	IsActive *bool  `json:"is_active,omitempty"`
 }
 
 type APIOnboardRequest struct {
@@ -23,11 +23,16 @@ type APIOnboardRequest struct {
 type APIKey struct {
 	Key      string `json:"key"`
 	Name     string `json:"name"`
-	IsActive bool   `json:"is_active"`
+	IsActive *bool  `json:"is_active,omitempty"`
 }
 
 type APIOnboardResponse struct {
 	Status  string      `json:"status"`
 	Message string      `json:"message"`
 	API     interface{} `json:"api"`
+}
+
+type APIKeyDeleteRequest struct {
+	Path   string `json:"path"`
+	APIKey string `json:"api_key"`
 }

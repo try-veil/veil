@@ -1,22 +1,22 @@
 {
-    order veil_handler before reverse_proxy
-    admin 0.0.0.0:2019
-    auto_https off  # Disable HTTPS for testing
-    debug
+	order veil_handler before reverse_proxy
+	admin 0.0.0.0:2019
+	auto_https off # Disable HTTPS for testing
+	debug
 }
 
 :2020 {
-    log {
-        output stderr
-        format console
-        level DEBUG
-    }
+	log {
+		output stderr
+		format console
+		level DEBUG
+	}
 
-    # Global veil handler configuration with database path and subscription header
-    veil_handler ./veil.db X-Subscription-Key
+	# Global veil handler configuration with database path and subscription header
+	veil_handler ./veil.db X-Subscription-Key
 
-    # Management API route - must be last
-    handle /veil/api/* {
-        veil_handler ./veil.db X-Subscription-Key
-    }
+	# Management API route - must be last
+	handle /veil/api/* {
+		veil_handler ./veil.db X-Subscription-Key
+	}
 }
