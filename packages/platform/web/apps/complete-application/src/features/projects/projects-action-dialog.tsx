@@ -1,7 +1,7 @@
 "use client";
 
 import { z } from "zod";
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "@/hooks/use-toast";
@@ -83,6 +83,7 @@ interface Props {
 export function ProjectsActionDialog({ open, onOpenChange, onSuccess }: Props) {
   const [selectedLogo, setSelectedLogo] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { accessToken } = useAuth();
@@ -101,12 +102,47 @@ export function ProjectsActionDialog({ open, onOpenChange, onSuccess }: Props) {
     },
   });
 
+  const handleImageUpload = useCallback(async (file: File) => {
+    if (!file) return;
+    
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const result = await response.json();
+      setSelectedLogo(result.url);
+      
+      toast({
+        title: "Success",
+        description: "Image uploaded successfully",
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  }, []);
+
   const onSubmit = async (values: AddForm) => {
     try {
       setIsLoading(true);
       const {
         name,
-        thumbnail,
         description,
         favorite,
         enableLimitsToAPIs,
@@ -114,32 +150,33 @@ export function ProjectsActionDialog({ open, onOpenChange, onSuccess }: Props) {
         category,
       } = values;
 
-      // Convert thumbnail file to base64 if it exists
-      let thumbnailBase64: string | undefined = undefined;
-      if (thumbnail instanceof File) {
-        thumbnailBase64 = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(thumbnail);
-        });
-      }
-
       if (!userContext?.tenantId) {
         throw new Error(
           "No tenant ID found. Please create an organization first."
         );
       }
 
-      // Create project object
+      // Create project object with uploaded image URL
       const projectData = {
         name,
         description,
-        thumbnail: thumbnailBase64,
+        thumbnail: selectedLogo || undefined, // Convert null to undefined
         favorite: favorite || false,
         enableLimitsToAPIs: enableLimitsToAPIs || false,
         tenantId: userContext.tenantId,
         target_url,
         category,
+        hubListing: {
+          id: "", // Empty string for new project
+          logo: selectedLogo || "",
+          category: category || "",
+          shortDescription: description || "",
+          longDescription: description || "",
+          website: target_url || "",
+          termsOfUse: "",
+          visibleToPublic: false,
+          healthCheckUrl: "",
+        },
       };
 
       if (!accessToken) {
@@ -233,14 +270,10 @@ export function ProjectsActionDialog({ open, onOpenChange, onSuccess }: Props) {
                             const file = e.target.files?.[0];
                             if (file) {
                               onChange(file);
-                              const reader = new FileReader();
-                              reader.onloadend = () => {
-                                setSelectedLogo(reader.result as string);
-                              };
-                              reader.readAsDataURL(file);
+                              handleImageUpload(file);
                             }
                           }}
-                          value={value?.filename || ""}
+                          disabled={isUploading}
                         />
                         <p className="text-sm text-muted-foreground mt-1">
                           Maximum Size: 500 x 500px, JPEG / PNG
@@ -258,8 +291,14 @@ export function ProjectsActionDialog({ open, onOpenChange, onSuccess }: Props) {
                           />
                         ) : (
                           <div className="flex flex-col items-center justify-center text-muted-foreground">
-                            <ImageIcon className="w-8 h-8 mb-1" />
-                            <span className="text-xs">No logo</span>
+                            {isUploading ? (
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                            ) : (
+                              <>
+                                <ImageIcon className="w-8 h-8 mb-1" />
+                                <span className="text-xs">No logo</span>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
@@ -328,8 +367,8 @@ export function ProjectsActionDialog({ open, onOpenChange, onSuccess }: Props) {
                 )}
               />
 
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Creating..." : "Add Project"}
+              <Button type="submit" disabled={isLoading || isUploading}>
+                {isLoading ? "Creating..." : isUploading ? "Uploading..." : "Add Project"}
               </Button>
             </form>
           </Form>

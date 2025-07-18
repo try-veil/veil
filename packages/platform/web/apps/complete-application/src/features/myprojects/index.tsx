@@ -19,6 +19,7 @@ import Link from "next/link";
 import { ProjectsActionDialog } from "../projects/projects-action-dialog";
 import { Project } from "@/app/api/project/route";
 import { useProject } from "@/context/project-context";
+import Image from "next/image";
 interface Props {
   projects: Project[];
   onProjectsChange: () => void;
@@ -121,9 +122,22 @@ export default function MyProjects({
                         />
                       ) : ( */}
                         <div className="flex h-full w-full items-center justify-center bg-muted">
-                          <span className="text-2xl font-bold text-muted-foreground">
-                            {project.name.charAt(0).toUpperCase()}
-                          </span>
+                          {project.thumbnail ? (
+                            <>
+                              <Image
+                                src={project.thumbnail || ""}
+                                alt={project.name}
+                                width={100}
+                                height={100}
+                              />
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-2xl font-bold text-muted-foreground">
+                                {project.name.charAt(0).toUpperCase()}
+                              </span>
+                            </>
+                          )}
                         </div>
                         {/* )} */}
                       </div>
