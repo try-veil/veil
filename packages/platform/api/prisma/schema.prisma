@@ -557,3 +557,9 @@ model PlanConfig {
   ultraOf               HubListing? @relation("UltraPlan")
 }
 
+model NewsletterSubscription {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
