@@ -1601,7 +1601,7 @@
         ]
       }
     },
-    "/onboard/api/{apiId}": {
+    "/routes/api/{apiId}": {
       "get": {
         "operationId": "OnboardingController_getApiDetails",
         "summary": "Get API details",
