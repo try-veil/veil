@@ -7,9 +7,16 @@ import * as fs from 'fs';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS for frontend
+  // Enable CORS
   app.enableCors({
-    origin: '*',
+    origin: [
+      'http://localhost:3001', // Your frontend URL
+      'http://localhost:3000', // Your API URL (for development)
+      'http://localhost:3002', // Additional frontend ports if needed
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
 
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
