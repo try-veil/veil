@@ -1559,7 +1559,6 @@
       }
     },
     "/routes": {
-    "/routes": {
       "put": {
         "operationId": "OnboardingController_registerApi",
         "summary": "Register a new API",
@@ -1721,39 +1720,6 @@
           },
           "404": {
             "description": "API not found"
-          }
-        },
-        "tags": [
-          "onboarding"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/onboard/test": {
-      "post": {
-        "operationId": "OnboardingController_testApi",
-        "summary": "Test an API endpoint before buying subscription",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApiRegistrationRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "API test response"
-          },
-          "403": {
-            "description": "Rate limit exceeded"
           }
         },
         "tags": [
@@ -2612,37 +2578,6 @@
           "hardLimitQuota"
         ]
       },
-      "PlanConfig": {
-        "type": "object",
-        "properties": {
-          "enabled": {
-            "type": "boolean",
-            "description": "Whether the plan is enabled",
-            "example": true
-          },
-          "pricePerMonth": {
-            "type": "number",
-            "description": "Monthly price in USD",
-            "example": 29.99
-          },
-          "requestQuotaPerMonth": {
-            "type": "number",
-            "description": "Monthly request quota",
-            "example": 100000
-          },
-          "hardLimitQuota": {
-            "type": "number",
-            "description": "Hard limit of requests per month",
-            "example": 150000
-          }
-        },
-        "required": [
-          "enabled",
-          "pricePerMonth",
-          "requestQuotaPerMonth",
-          "hardLimitQuota"
-        ]
-      },
       "ProjectWithRelationsDto": {
         "type": "object",
         "properties": {
@@ -2709,11 +2644,6 @@
             "items": {
               "$ref": "#/components/schemas/ProjectAllowedApiDto"
             }
-          },
-          "gateway_api_key": {
-            "type": "string",
-            "description": "API key for accessing APIs through the gateway",
-            "example": "pk_proxy_weather_test"
           },
           "basicPlan": {
             "description": "Basic plan config",
@@ -2807,46 +2737,6 @@
             "type": "string",
             "description": "Short description of the API",
             "example": "Short summary..."
-          },
-          "longDescription": {
-            "type": "string",
-            "description": "Long description of the API",
-            "example": "Detailed overview of your API and how it works."
-          },
-          "website": {
-            "type": "string",
-            "description": "API provider website URL",
-            "example": "https://provider.com"
-          },
-          "termsOfUse": {
-            "type": "string",
-            "description": "Terms of use for this API",
-            "example": "https://provider.com/terms"
-          },
-          "requestSizeLimitMb": {
-            "type": "number",
-            "description": "Maximum request size in MB",
-            "example": 10
-          },
-          "proxyTimeoutSeconds": {
-            "type": "number",
-            "description": "Proxy timeout in seconds",
-            "example": 60
-          },
-          "healthCheckUrl": {
-            "type": "string",
-            "description": "URL used for health checks",
-            "example": "https://provider.com/health"
-          },
-          "apiDocumentation": {
-            "type": "string",
-            "description": "URL to API documentation",
-            "example": "https://docs.provider.com"
-          },
-          "proxySecret": {
-            "type": "string",
-            "description": "Proxy secret for request authentication",
-            "example": "super-secret-key"
           },
           "longDescription": {
             "type": "string",
@@ -3231,11 +3121,6 @@
             "description": "HTTP method for the API",
             "example": "POST"
           },
-          "version": {
-            "type": "string",
-            "description": "Version of the API",
-            "example": "1.0.0"
-          },
           "description": {
             "type": "string",
             "description": "Description of the API",
@@ -3252,11 +3137,6 @@
             "items": {
               "$ref": "#/components/schemas/HeaderParameterDto"
             }
-          },
-          "api_key": {
-            "type": "string",
-            "description": "API key for accessing through gateway",
-            "example": "pk_proxy_weather_test"
           },
           "status": {
             "type": "string",
@@ -3286,16 +3166,11 @@
           "name",
           "path",
           "method",
-          "version",
           "required_headers",
           "status",
           "created_at",
           "updated_at"
         ]
-      },
-      "NewsletterSubscribeDto": {
-        "type": "object",
-        "properties": {}
       }
     }
   }
