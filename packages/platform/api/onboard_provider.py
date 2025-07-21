@@ -2,6 +2,8 @@ import os
 import requests
 import logging
 import json
+import traceback
+import time
 
 from dotenv import load_dotenv
 from minio import Minio
@@ -20,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Load credentials from environment variables
-GRAFANA_URL = os.environ.get("GRAFANA_URL", "http://localhost:3001")
+GRAFANA_URL = os.environ.get("GRAFANA_URL", "http://localhost:4000")
 GRAFANA_ADMIN_USER = os.environ.get("GRAFANA_ADMIN_USER", "admin")
 GRAFANA_ADMIN_PASSWORD = os.environ.get("GRAFANA_ADMIN_PASSWORD", "admin")
 
@@ -63,6 +65,19 @@ provider_password = "password123"
 
 auth = (GRAFANA_ADMIN_USER, GRAFANA_ADMIN_PASSWORD)
 headers = {"Content-Type": "application/json"}
+
+# Wait up to 30s for Grafana to be healthy
+for i in range(15):
+    try:
+        r = requests.get(f"{GRAFANA_URL}/api/health", timeout=2)
+        if r.status_code == 200 and r.json().get("database") == "ok":
+            break
+    except requests.exceptions.RequestException:
+        pass
+    print("Grafana not up yet, sleeping…")
+    time.sleep(2)
+else:
+    raise RuntimeError("Grafana never became healthy")
 
 try:
     # --- FusionAuth: Create user and register to Grafana app ---
@@ -119,19 +134,26 @@ try:
         "name": "Loki",
         "type": "loki",
         "access": "proxy",
-        "url": "http://host.docker.internal:3100",
+        "url": "http://host.docker.internal:3100",  # Changed for Docker compatibility
         "uid" : "loki",
         "basicAuth": False,
         "isDefault": True
     }
-    logger.info("Adding Loki data source...")
-    resp = requests.post(f"{GRAFANA_URL}/api/datasources", auth=auth, json=loki_datasource)
-    if resp.status_code == 409:
-        logger.info("Loki data source already exists.")
-    else:
-        resp.raise_for_status()
-        logger.info("Loki data source added successfully.")
-
+    logger.info(f"Adding Loki data source to Grafana at {GRAFANA_URL}/api/datasources")
+    logger.info(f"Payload: {json.dumps(loki_datasource)}")
+    try:
+        resp = requests.post(f"{GRAFANA_URL}/api/datasources", auth=auth, json=loki_datasource)
+        logger.info(f"Response status: {resp.status_code}")
+        logger.info(f"Response text: {resp.text}")
+        if resp.status_code == 409:
+            logger.info("Loki data source already exists.")
+        else:
+            resp.raise_for_status()
+            logger.info("Loki data source added successfully.")
+    except Exception as e:
+        logger.error(f"Exception while adding Loki data source: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise
 
     # 1. Create user
     new_user = {
@@ -141,11 +163,18 @@ try:
         "password": provider_password,
         "role": "Editor"
     }
-    logger.info("Creating user...")
-    resp = requests.post(f"{GRAFANA_URL}/api/admin/users", auth=auth, json=new_user)
-    resp.raise_for_status()
-    user_id = resp.json()["id"]
-    logger.info(f"User created successfully. ID: {user_id}")
+    logger.info(f"Creating user at {GRAFANA_URL}/api/admin/users with payload: {json.dumps(new_user)}")
+    try:
+        resp = requests.post(f"{GRAFANA_URL}/api/admin/users", auth=auth, json=new_user)
+        logger.info(f"Response status: {resp.status_code}")
+        logger.info(f"Response text: {resp.text}")
+        resp.raise_for_status()
+        user_id = resp.json()["id"]
+        logger.info(f"User created successfully. ID: {user_id}")
+    except Exception as e:
+        logger.error(f"Exception while creating user: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise
 
     # 1a. Explicitly add user to organization with Editor role
     org_add_url = f"{GRAFANA_URL}/api/org/users"
@@ -153,30 +182,47 @@ try:
         "loginOrEmail": provider_login,
         "role": "Editor"
     }
-    logger.info("Adding user to organization with Editor role...")
-    resp = requests.post(org_add_url, auth=auth, json=org_payload)
-    if resp.status_code == 409:
-        logger.info("User already in organization, updating role if needed...")
-        # Update the user's role
-        update_role_url = f"{GRAFANA_URL}/api/org/users/{user_id}"
-        update_payload = {"role": "Editor"}
-        resp2 = requests.patch(update_role_url, auth=auth, json=update_payload)
-        resp2.raise_for_status()
-        logger.info("User role updated to Editor.")
-    else:
-        resp.raise_for_status()
-        logger.info("User added to organization with Editor role successfully.")
+    logger.info(f"Adding user to organization at {org_add_url} with payload: {json.dumps(org_payload)}")
+    try:
+        resp = requests.post(org_add_url, auth=auth, json=org_payload)
+        logger.info(f"Response status: {resp.status_code}")
+        logger.info(f"Response text: {resp.text}")
+        if resp.status_code == 409:
+            logger.info("User already in organization, updating role if needed...")
+            # Update the user's role
+            update_role_url = f"{GRAFANA_URL}/api/org/users/{user_id}"
+            update_payload = {"role": "Editor"}
+            logger.info(f"Updating user role at {update_role_url} with payload: {json.dumps(update_payload)}")
+            resp2 = requests.patch(update_role_url, auth=auth, json=update_payload)
+            logger.info(f"Response status: {resp2.status_code}")
+            logger.info(f"Response text: {resp2.text}")
+            resp2.raise_for_status()
+            logger.info("User role updated to Editor.")
+        else:
+            resp.raise_for_status()
+            logger.info("User added to organization with Editor role successfully.")
+    except Exception as e:
+        logger.error(f"Exception while adding/updating user in organization: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise
 
     # 2. Create folder
     folder = {
         "uid": f"{provider_id}-folder",
         "title": f"{provider_id} Folder"
     }
-    logger.info("Creating folder...")
-    resp = requests.post(f"{GRAFANA_URL}/api/folders", auth=auth, json=folder)
-    resp.raise_for_status()
-    folder_uid = resp.json()["uid"]
-    logger.info(f"Folder created successfully. UID: {folder_uid}")
+    logger.info(f"Creating folder at {GRAFANA_URL}/api/folders with payload: {json.dumps(folder)}")
+    try:
+        resp = requests.post(f"{GRAFANA_URL}/api/folders", auth=auth, json=folder)
+        logger.info(f"Response status: {resp.status_code}")
+        logger.info(f"Response text: {resp.text}")
+        resp.raise_for_status()
+        folder_uid = resp.json()["uid"]
+        logger.info(f"Folder created successfully. UID: {folder_uid}")
+    except Exception as e:
+        logger.error(f"Exception while creating folder: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise
 
     # 3. Set folder permissions
     permissions = {
@@ -187,11 +233,17 @@ try:
             }
         ]
     }
-    logger.info("Setting folder permissions...")
-    resp = requests.post(f"{GRAFANA_URL}/api/folders/{folder_uid}/permissions", auth=auth, json=permissions)
-    resp.raise_for_status()
-    logger.info("Folder permissions set successfully.")
-
+    logger.info(f"Setting folder permissions at {GRAFANA_URL}/api/folders/{folder_uid}/permissions with payload: {json.dumps(permissions)}")
+    try:
+        resp = requests.post(f"{GRAFANA_URL}/api/folders/{folder_uid}/permissions", auth=auth, json=permissions)
+        logger.info(f"Response status: {resp.status_code}")
+        logger.info(f"Response text: {resp.text}")
+        resp.raise_for_status()
+        logger.info("Folder permissions set successfully.")
+    except Exception as e:
+        logger.error(f"Exception while setting folder permissions: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise
 
     dashboard = {
         "dashboard": {
@@ -216,10 +268,17 @@ try:
         "folderUid": folder_uid,
         "overwrite": False
     }
-    logger.info("Creating dashboard...")
-    resp = requests.post(f"{GRAFANA_URL}/api/dashboards/db", auth=auth, json=dashboard)
-    resp.raise_for_status()
-    logger.info("Dashboard created successfully.")
+    logger.info(f"Creating dashboard at {GRAFANA_URL}/api/dashboards/db with payload: {json.dumps(dashboard)}")
+    try:
+        resp = requests.post(f"{GRAFANA_URL}/api/dashboards/db", auth=auth, json=dashboard)
+        logger.info(f"Response status: {resp.status_code}")
+        logger.info(f"Response text: {resp.text}")
+        resp.raise_for_status()
+        logger.info("Dashboard created successfully.")
+    except Exception as e:
+        logger.error(f"Exception while creating dashboard: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise
 
     # Save dashboard JSON to file
     dashboard_filename = f"{provider_id}-dashboard.json"
@@ -227,16 +286,23 @@ try:
         json.dump(dashboard, f, indent=2)
 
     # Upload to MinIO
-    minio_client.fput_object(
-        bucket_name,           # Use your provider's bucket or a shared one
-        dashboard_filename,    # Object name in MinIO
-        dashboard_filename     # Local file path
-    )
-    print(f"Dashboard JSON uploaded to MinIO bucket '{bucket_name}' as '{dashboard_filename}'")
+    try:
+        minio_client.fput_object(
+            bucket_name,           # Use your provider's bucket or a shared one
+            dashboard_filename,    # Object name in MinIO
+            dashboard_filename     # Local file path
+        )
+        logger.info(f"Dashboard JSON uploaded to MinIO bucket '{bucket_name}' as '{dashboard_filename}'")
+    except Exception as e:
+        logger.error(f"Exception while uploading dashboard to MinIO: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise
 
     print(f"Provider {provider_id} setup complete! User ID: {user_id}, Folder UID: {folder_uid}")
 
 except requests.exceptions.HTTPError as e:
     logger.error(f"HTTP Error: {e.response.status_code} - {e.response.text}")
+    logger.error(traceback.format_exc())
 except Exception as e:
     logger.error(f"Error: {str(e)}")
+    logger.error(traceback.format_exc())

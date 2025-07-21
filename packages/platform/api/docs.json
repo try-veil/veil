@@ -1558,7 +1558,7 @@
         ]
       }
     },
-    "/routes": {
+    "/onboard": {
       "put": {
         "operationId": "OnboardingController_registerApi",
         "summary": "Register a new API",
@@ -1720,6 +1720,39 @@
           },
           "404": {
             "description": "API not found"
+          }
+        },
+        "tags": [
+          "onboarding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/onboard/test": {
+      "post": {
+        "operationId": "OnboardingController_testApi",
+        "summary": "Test an API endpoint before buying subscription",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiRegistrationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "API test response"
+          },
+          "403": {
+            "description": "Rate limit exceeded"
           }
         },
         "tags": [
@@ -2096,6 +2129,10 @@
       }
     },
     "schemas": {
+      "SignupDto": {
+        "type": "object",
+        "properties": {}
+      },
       "ProjectResponseDto": {
         "type": "object",
         "properties": {
@@ -2645,6 +2682,11 @@
               "$ref": "#/components/schemas/ProjectAllowedApiDto"
             }
           },
+          "gateway_api_key": {
+            "type": "string",
+            "description": "API key for accessing APIs through the gateway",
+            "example": "pk_proxy_weather_test"
+          },
           "basicPlan": {
             "description": "Basic plan config",
             "allOf": [
@@ -3158,12 +3200,10 @@
               "$ref": "#/components/schemas/HeaderParameterDto"
             }
           },
-          "parameters": {
-            "description": "Parameters for the API",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ParameterDto"
-            }
+          "api_key": {
+            "type": "string",
+            "description": "API key for accessing through gateway",
+            "example": "pk_proxy_weather_test"
           },
           "status": {
             "type": "string",
@@ -3186,6 +3226,13 @@
             "type": "string",
             "description": "When the API was last updated",
             "example": "2023-01-01T00:00:00Z"
+          },
+          "parameters": {
+            "description": "Parameters for the API",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParameterDto"
+            }
           }
         },
         "required": [
@@ -3201,6 +3248,10 @@
           "created_at",
           "updated_at"
         ]
+      },
+      "NewsletterSubscribeDto": {
+        "type": "object",
+        "properties": {}
       }
     }
   }

@@ -1,4 +1,5 @@
-   order veil_handler before reverse_proxy
+{
+    order veil_handler before reverse_proxy
     admin 0.0.0.0:2019
     auto_https off
     debug
