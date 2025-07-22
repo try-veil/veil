@@ -6,96 +6,191 @@ import * as crypto from 'crypto';
 @Injectable()
 export class GrafanaService {
   private readonly logger = new Logger(GrafanaService.name);
-  private url = this.config.get<string>('GRAFANA_URL');
-  private adminUser = this.config.get<string>('GRAFANA_ADMIN_USER');
-  private adminPassword = this.config.get<string>('GRAFANA_ADMIN_PASSWORD');
+  private grafanaUrl = this.config.get<string>('GRAFANA_URL') || 'http://localhost:4000';
+  private adminAuth = {
+    username: this.config.get<string>('GRAFANA_ADMIN_USER') || 'admin',
+    password: this.config.get<string>('GRAFANA_ADMIN_PASSWORD') || 'admin'
+  };
 
-  constructor(private config: ConfigService) {}
+  constructor(private config: ConfigService) { }
 
-  private auth() {
-    return { auth: { username: this.adminUser, password: this.adminPassword } };
-  }
-
-  async provisionProviderResources(providerId: string, providerEmail: string) {
-    // 0. Create Grafana user if missing
-    // const randomPass = crypto.randomBytes(12).toString('base64');
-    // await axios.post(
-    //   `${this.url}/api/admin/users`,
-    //   {
-    //     name: providerId,
-    //     email: providerEmail,
-    //     login: providerEmail,
-    //     password: randomPass,
-    //     role: 'Editor'
-    //   },
-    //   {
-    //     auth: {
-    //       username: process.env.GRAFANA_ADMIN_USER,
-    //       password: process.env.GRAFANA_ADMIN_PASSWORD
-    //     }
-    //   }
-    // ).catch(err => {
-    //   if (err.response?.status !== 409) throw err;
-    // });
-
-    // 1. Create folder
-    const folderUid = `${providerId}-folder`;
-    await axios.post(
-      `${this.url}/api/folders`,
-      { title: `${providerId} Folder`, uid: folderUid },
-      {
-        auth: {
-          username: process.env.GRAFANA_ADMIN_USER,
-          password: process.env.GRAFANA_ADMIN_PASSWORD
+  /**
+   * Create Grafana user with FusionAuth ID as login
+   */
+  async createGrafanaUser(email: string, fusionAuthId: string, userPassword: string): Promise<number> {
+    try {
+      // Check if user already exists by login (which will be the fusionAuthId)
+      try {
+        const existingUser = await axios.get(
+          `${this.grafanaUrl}/api/users/lookup?loginOrEmail=${fusionAuthId}`,
+          { auth: this.adminAuth }
+        );
+        this.logger.debug(`Grafana user already exists with FusionAuth ID: ${fusionAuthId}`);
+        return existingUser.data.id;
+      } catch (error) {
+        // User doesn't exist, create new one
+        if (error.response?.status !== 404) {
+          throw error;
         }
       }
-    ).catch(err => {
-      if (err.response?.status !== 409) throw err;
-    });
 
-    const dashboardUid = `${providerId}-dashboard`;
-    const dashboard = {
-      dashboard: {
-        title: `${providerId} Dashboard`,
-        uid: dashboardUid,
-        panels: [
+      // Create user with FusionAuth ID as login for consistent identification
+      const payload = {
+        name: email,                // Display name is still email for readability
+        email: email,               // Email for notifications
+        login: fusionAuthId,        // Login is FusionAuth ID for consistent identification
+        password: userPassword,     // Use the same password they signed up with!
+        role: 'Editor'
+      };
+
+      this.logger.debug(`Creating new Grafana user with FusionAuth ID: ${fusionAuthId}`);
+      const response = await axios.post(
+        `${this.grafanaUrl}/api/admin/users`,
+        payload,
+        { auth: this.adminAuth }
+      );
+
+      // Ensure user is in the main organization with Editor role
+      try {
+        await axios.post(
+          `${this.grafanaUrl}/api/orgs/1/users`,
           {
-            type: 'logs',
-            title: 'Provider Logs',
-            datasource: { type: 'loki', uid: 'loki' },
-            targets: [
-              { expr: `{provider_id="${providerId}"}`, refId: 'A' }
-            ],
-            gridPos: { x: 0, y: 0, w: 24, h: 9 }
-          }
-        ]
-      },
-      folderUid,
-      overwrite: false
-    };
-    await axios.post(
-      `${this.url}/api/dashboards/db`,
-      dashboard,
-      this.auth()
-    ).catch(err => {
-      if (err.response?.status !== 412) throw err;
-    });
+            loginOrEmail: fusionAuthId,  // Use FusionAuth ID here too
+            role: 'Editor'
+          },
+          { auth: this.adminAuth }
+        );
+      } catch (orgError) {
+        // User might already be in the org, which is fine
+        this.logger.debug(`Note: ${orgError.message}`);
+      }
 
-    const userResp = await axios.get(
-      `${this.url}/api/users/lookup?loginOrEmail=${encodeURIComponent(providerEmail)}`,
-      this.auth()
-    );
-    const userId = userResp.data.id;
+      this.logger.debug(`Created Grafana user with ID: ${response.data.id} for FusionAuth ID: ${fusionAuthId}`);
+      return response.data.id;
 
-    await axios.post(
-      `${this.url}/api/folders/${folderUid}/permissions`,
-      {
-        items: [
-          { userId, permission: 1 }
-        ]
-      },
-      this.auth()
-    );
-    return { folderUid, dashboardUid };
+    } catch (error) {
+      this.logger.error(`Failed to create Grafana user for FusionAuth ID ${fusionAuthId}:`, error.message);
+      throw new Error(`Grafana user creation failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Create simple dashboard with Loki logs (public method for AuthService)
+   */
+  async createDashboard(email: string, fusionAuthId: string): Promise<string> {
+    try {
+      // Use FusionAuth ID for dashboard UID to ensure consistency
+      const dashboardUid = `fa-${fusionAuthId.substring(0, 8)}-dashboard`;
+
+      const dashboard = {
+        dashboard: {
+          title: `${email} Dashboard`,
+          uid: dashboardUid,
+          tags: ['provider', 'logs'],
+          timezone: 'browser',
+          refresh: '30s',
+          time: {
+            from: 'now-24h',
+            to: 'now'
+          },
+          panels: [
+            {
+              id: 1,
+              type: 'logs',
+              title: 'Your API Logs',
+              gridPos: { x: 0, y: 0, w: 24, h: 12 },
+              targets: [
+                {
+                  expr: `{fusionAuthId="${fusionAuthId}"}`,  // Filter by FusionAuth ID
+                  refId: 'A',
+                  legendFormat: 'API Logs'
+                }
+              ],
+              datasource: {
+                type: 'loki',
+                uid: 'loki'
+              },
+              options: {
+                showTime: true,
+                showLabels: true,
+                wrapLogMessage: true,
+                sortOrder: 'Descending'
+              }
+            }
+          ]
+        },
+        overwrite: true,
+        message: `Dashboard created for ${email} (${fusionAuthId})`
+      };
+
+      await axios.post(
+        `${this.grafanaUrl}/api/dashboards/db`,
+        dashboard,
+        { auth: this.adminAuth }
+      );
+
+      this.logger.debug(`Created dashboard: ${dashboardUid} for user: ${email} (${fusionAuthId})`);
+      return dashboardUid;
+
+    } catch (error) {
+      this.logger.error(`Failed to create dashboard for ${email} (${fusionAuthId}):`, error.message);
+      throw new Error(`Dashboard creation failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Main method: Provision complete Grafana resources for user
+   */
+  async provisionUserResources(email: string, fusionAuthId: string, userPassword: string): Promise<{
+    success: boolean;
+    dashboardUid?: string;
+    loginUrl?: string;
+    grafanaUserId?: number;
+    error?: string;
+  }> {
+    try {
+      this.logger.debug(`Starting Grafana provisioning for: ${email} (${fusionAuthId})`);
+
+      // Step 1: Create Grafana user with FusionAuth ID and same password
+      const grafanaUserId = await this.createGrafanaUser(email, fusionAuthId, userPassword);
+
+      // Step 2: Create dashboard
+      const dashboardUid = await this.createDashboard(email, fusionAuthId);
+
+      // Step 3: Generate standard login URL (same for all providers)
+      const loginUrl = `${this.grafanaUrl}/login/generic_oauth`;
+
+      this.logger.debug(`Successfully provisioned Grafana resources for: ${email} (${fusionAuthId})`);
+
+      return {
+        success: true,
+        dashboardUid,
+        loginUrl,
+        grafanaUserId
+      };
+
+    } catch (error) {
+      this.logger.error(`Grafana provisioning failed for ${email} (${fusionAuthId}):`, error.message);
+
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Simple health check
+   */
+  async healthCheck(): Promise<{ status: 'healthy' | 'unhealthy'; message: string }> {
+    try {
+      await axios.get(`${this.grafanaUrl}/api/health`, {
+        auth: this.adminAuth,
+        timeout: 5000
+      });
+      return { status: 'healthy', message: 'Grafana is accessible' };
+    } catch (error) {
+      return { status: 'unhealthy', message: `Grafana health check failed: ${error.message}` };
+    }
   }
 }

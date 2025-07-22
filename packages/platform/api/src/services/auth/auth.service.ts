@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
 import * as jwksClient from 'jwks-rsa';
@@ -7,7 +7,6 @@ import axios from 'axios';
 import slugify from 'slugify';
 import { PrismaService } from '../prisma/prisma.service';
 import { GrafanaService } from '../grafana/grafana.service';
-import { IsIn } from 'class-validator';
 
 interface JWTPayload {
   aud: string;
@@ -23,8 +22,11 @@ interface JWTPayload {
   tid: string;
 }
 
+
+
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private jwksClient: jwksClient.JwksClient;
   private faUrl: string;
   private faApiKey: string;
@@ -99,8 +101,12 @@ export class AuthService {
     return payload.roles.includes(requiredRole.toLowerCase());
   }
 
+
+
   async signup(dto: SignupDto) {
     const { email, password, name, role } = dto;
+
+    this.logger.debug(`Starting signup process for user: ${email} with role: ${role}`);
 
     // 1) Create or fetch FusionAuth user
     let fusionId: string;
@@ -111,16 +117,19 @@ export class AuthService {
         { headers: this.faHeaders },
       );
       fusionId = resp.data.user.id;
+      this.logger.debug(`Created new FusionAuth user: ${email}`);
     } catch (err: any) {
       if (err.response?.status === 400 &&
-          JSON.stringify(err.response.data).toLowerCase().includes('duplicate')
+        JSON.stringify(err.response.data).toLowerCase().includes('duplicate')
       ) {
         const resp = await axios.get(
           `${this.faUrl}/api/user?email=${encodeURIComponent(email)}`,
           { headers: this.faHeaders },
         );
         fusionId = resp.data.user.id;
+        this.logger.debug(`Found existing FusionAuth user: ${email}`);
       } else {
+        this.logger.error(`Failed to create FusionAuth user: ${email}`, err.message);
         throw err;
       }
     }
@@ -139,6 +148,7 @@ export class AuthService {
         registrationPayload,
         { headers: this.faHeaders }
       );
+      this.logger.debug(`Registered user ${email} with role: ${role}`);
     } catch (err: any) {
       if (
         err.response?.status === 400 &&
@@ -147,8 +157,9 @@ export class AuthService {
           .toLowerCase()
           .includes('already registered')
       ) {
-        console.log('User already registered to the application, skipping.');
+        this.logger.debug(`User ${email} already registered to application, skipping`);
       } else {
+        this.logger.error(`Failed to register user ${email} to application`, err.message);
         throw err;
       }
     }
@@ -175,6 +186,8 @@ export class AuthService {
       },
     });
 
+    this.logger.debug(`Created/updated local user record for: ${email}`);
+
     // 4) Exchange password for tokens via OAuth2
     const tokenUrl = `${this.faUrl}/oauth2/token`;
     const form = new URLSearchParams();
@@ -184,41 +197,78 @@ export class AuthService {
     form.append('client_id', this.faAppId);
     form.append('client_secret', this.faClientSecret);
 
-    let tokenResp;
+    let tokenResp: any;
     try {
       tokenResp = await axios.post(
         tokenUrl,
         form.toString(),
         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
       );
+      this.logger.debug(`Successfully obtained OAuth2 tokens for: ${email}`);
     } catch (err: any) {
-      console.error('OAuth2 password grant error:', err.response?.status, err.response?.data);
+      this.logger.error(`OAuth2 password grant error for ${email}:`, err.response?.status, err.response?.data);
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const accessToken = tokenResp.data.access_token;
     const refreshToken = tokenResp.data.refresh_token;
 
-    const grafanaBase = this.configService.get<string>('GRAFANA_URL');
-    // REMOVE: Do not provision Grafana resources here
-    // if (role === 'provider') {
-    //   await this.grafana.provisionProviderResources(slug, email);
-    // }
+    // 5) Handle Grafana provisioning for providers - Create dashboard only, let OAuth create user
+    if (role === 'provider') {
+      try {
+        // Only create dashboard, let OAuth handle user creation
+        const dashboardUid = `fa-${fusionId.substring(0, 8)}-dashboard`;
+        await this.grafana.createDashboard(email, fusionId);
+
+        const grafanaBase = this.configService.get<string>('GRAFANA_URL');
+        const loginUrl = `${grafanaBase}/login/generic_oauth?rd=/d/${dashboardUid}`;
+
+        this.logger.debug(`Signup completed successfully for provider: ${email} with dashboard creation`);
+
+        return {
+          user,
+          tokens: {
+            accessToken,
+            refreshToken
+          },
+          grafana: {
+            success: true,
+            dashboardUid,
+            loginUrl,
+            message: 'Dashboard created. Use OAuth login to access Grafana.'
+          }
+        };
+      } catch (error) {
+        // Return success anyway, but log the error
+        this.logger.error(`Dashboard creation failed for ${email}: ${error.message}`);
+
+        const grafanaBase = this.configService.get<string>('GRAFANA_URL');
+        return {
+          user,
+          tokens: {
+            accessToken,
+            refreshToken
+          },
+          grafana: {
+            success: false,
+            error: error.message,
+            loginUrl: `${grafanaBase}/login/generic_oauth`
+          }
+        };
+      }
+    }
+
+    // For consumers, return normal response
+    this.logger.debug(`Signup completed successfully for consumer: ${email}`);
     return {
       user,
       tokens: {
         accessToken,
         refreshToken
       },
-      grafana: role === 'provider'
-        ? {
-            loginUrl: `${grafanaBase}/login/generic_oauth`
-          }
-        : undefined,
+      grafana: undefined,
     };
   }
 
-  public async provisionGrafanaResourcesForUser(slug: string, email: string) {
-    return this.grafana.provisionProviderResources(slug, email);
-  }
+
 }
