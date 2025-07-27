@@ -125,6 +125,7 @@ model User {
     updatedAt          DateTime            @updatedAt
     tenantId           String?
     tenant             Tenant?   @relation(fields: [tenantId], references: [id])
+    grafanaDashboardUid String?
 
     @@map("users")
 }

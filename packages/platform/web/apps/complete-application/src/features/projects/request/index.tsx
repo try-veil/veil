@@ -21,6 +21,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
+import crypto from "crypto";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
@@ -218,7 +219,7 @@ export default function Request({
 
     try {
       const payload = {
-        api_id: initialData?.api_id,
+        api_id: initialData?.api_id && initialData.api_id !== "" ? initialData.api_id : crypto.randomUUID(),
         project_id: project_id,
         name,
         path,

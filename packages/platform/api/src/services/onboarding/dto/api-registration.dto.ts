@@ -257,12 +257,6 @@ export class ApiDetailsResponseDto {
   project_id: number;
 
   @ApiProperty({
-    description: 'Project ID that this API belongs to',
-    example: 1,
-  })
-  project_id: number;
-
-  @ApiProperty({
     description: 'Display name of the API',
     example: 'Payment Processing API',
   })
@@ -280,20 +274,8 @@ export class ApiDetailsResponseDto {
   })
   target_url: string;
 
-  @ApiProperty({
-    description: 'Target URL where the request will be forwarded',
-    example: 'https://api.example.com/payments',
-  })
-  target_url: string;
-
   @ApiProperty({ description: 'HTTP method for the API', example: 'POST' })
   method: string;
-
-  @ApiProperty({
-    description: 'Version of the API',
-    example: '1.0.0',
-  })
-  version: string;
 
   @ApiProperty({
     description: 'Version of the API',
@@ -306,12 +288,6 @@ export class ApiDetailsResponseDto {
     example: 'Process payment transactions',
   })
   description?: string;
-
-  @ApiPropertyOptional({
-    description: 'Required subscription level',
-    example: 'basic',
-  })
-  required_subscription?: string;
 
   @ApiPropertyOptional({
     description: 'Required subscription level',
@@ -355,4 +331,10 @@ export class ApiDetailsResponseDto {
     example: '2023-01-01T00:00:00Z',
   })
   updated_at: Date;
+
+  @ApiPropertyOptional({
+    description: 'Parameters for the API',
+    type: [ParameterDto],
+  })
+  parameters?: ParameterDto[];
 }
