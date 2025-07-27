@@ -190,6 +190,13 @@ export class OnboardingService {
   async getApiDetails(apiId: string): Promise<ApiDetailsResponseDto> {
     const api = await this.prisma.api.findUnique({
       where: { id: apiId },
+      include: {
+        projectAllowedAPIs: {
+          include: {
+            project: true,
+          },
+        },
+      },
     });
 
     if (!api) {
@@ -282,15 +289,25 @@ export class OnboardingService {
       }),
     );
 
+    // Get the first project ID (assuming one API can be linked to multiple projects)
+    const projectId = api.projectAllowedAPIs?.[0]?.projectId || null;
+
+    // Extract parameters from specification if available
+    const parameters = api.specification?.parameters || [];
+
     return {
       api_id: api.id,
+      project_id: projectId,
       name: api.name,
       path: api.path,
-      required_headers: headers,
+      target_url: api.specification?.target_url || '', // Extract from specification
       method: api.method,
       version: api.version,
       description: api.description,
+      required_subscription: api.specification?.required_subscription || 'basic', // Extract from specification
       documentation_url: api.documentationUrl,
+      required_headers: headers,
+      parameters: parameters,
       status: api.status,
       created_at: api.createdAt,
       updated_at: api.updatedAt,
