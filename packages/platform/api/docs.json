@@ -1601,7 +1601,7 @@
         ]
       }
     },
-    "/onboard/api/{apiId}": {
+    "/routes/api/{apiId}": {
       "get": {
         "operationId": "OnboardingController_getApiDetails",
         "summary": "Get API details",
@@ -3106,11 +3106,6 @@
             "description": "Unique identifier for the API",
             "example": "payment-api-v1"
           },
-          "project_id": {
-            "type": "number",
-            "description": "Project ID that this API belongs to",
-            "example": 1
-          },
           "name": {
             "type": "string",
             "description": "Display name of the API",
@@ -3121,30 +3116,15 @@
             "description": "Path for accessing the API",
             "example": "/api/payments"
           },
-          "target_url": {
-            "type": "string",
-            "description": "Target URL where the request will be forwarded",
-            "example": "https://api.example.com/payments"
-          },
           "method": {
             "type": "string",
             "description": "HTTP method for the API",
             "example": "POST"
           },
-          "version": {
-            "type": "string",
-            "description": "Version of the API",
-            "example": "1.0.0"
-          },
           "description": {
             "type": "string",
             "description": "Description of the API",
             "example": "Process payment transactions"
-          },
-          "required_subscription": {
-            "type": "string",
-            "description": "Required subscription level",
-            "example": "basic"
           },
           "documentation_url": {
             "type": "string",
@@ -3156,13 +3136,6 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/HeaderParameterDto"
-            }
-          },
-          "parameters": {
-            "description": "Parameters for the API",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ParameterDto"
             }
           },
           "status": {
@@ -3190,12 +3163,9 @@
         },
         "required": [
           "api_id",
-          "project_id",
           "name",
           "path",
-          "target_url",
           "method",
-          "version",
           "required_headers",
           "status",
           "created_at",

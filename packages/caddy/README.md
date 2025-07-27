@@ -89,7 +89,7 @@ localhost:2019 {
 3. Start Caddy:
 
 ```bash
-.\caddy.exe run
+./veil run
 ```
 
 4. Make a request:

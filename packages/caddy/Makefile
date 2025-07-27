@@ -11,20 +11,10 @@ build:
 	make clean
 	make setup
 	CGO_ENABLED=1 xcaddy build --with github.com/try-veil/veil/packages/caddy=. --output veil
-	@echo "Build complete. Testing binary..."
-	@if [ -f "./veil" ]; then \
-		./veil version; \
-	elif [ -f "./veil.exe" ]; then \
-		./veil.exe version; \
-	else \
-		echo "Binary not found"; \
-		exit 1; \
-	fi
 
 # Clean build artifacts
 clean:
-	@if [ -f "./veil" ]; then rm -f veil; fi
-	@if [ -f "./veil.exe" ]; then rm -f veil.exe; fi
+	rm -f veil
 
 clean-db:
 	rm -f ./*.db
@@ -32,19 +22,6 @@ clean-db:
 # Run tests with coverage
 test:
 	go test -v -race -coverprofile=coverage.out ./... && go tool cover -func=coverage.out
-
-# Windows-specific build target
-build-windows:
-	make clean
-	make setup
-	CGO_ENABLED=1 xcaddy build --with github.com/try-veil/veil/packages/caddy=. --output veil.exe
-	@echo "Build complete. Testing binary..."
-	@if [ -f "./veil.exe" ]; then \
-		./veil.exe version; \
-	else \
-		echo "Binary not found"; \
-		exit 1; \
-	fi
 
 test-e2e:
 	./run_e2e_test.sh
@@ -98,8 +75,7 @@ all: build
 # Help command
 help:
 	@echo "Available targets:"
-	@echo "  build         - Build Caddy with Veil module (Unix/Linux)"
-	@echo "  build-windows - Build Caddy with Veil module (Windows)"
+	@echo "  build         - Build Caddy with Veil module"
 	@echo "  clean         - Remove build artifacts"
 	@echo "  test          - Run tests"
 	@echo "  release       - Create a new release using goreleaser"

@@ -34,8 +34,8 @@ import {
 
 @ApiTags('onboarding')
 @ApiBearerAuth()
-@Controller('onboard')
-// @Controller('routes')
+// @Controller('onboard')
+@Controller('routes')
 @UseGuards(AuthGuard, RoleGuard)
 export class OnboardingController {
   constructor(
