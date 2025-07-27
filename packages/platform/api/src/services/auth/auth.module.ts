@@ -4,12 +4,11 @@ import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { PrismaModule } from '../prisma/prisma.module';
-import { GrafanaService } from '../grafana/grafana.service';
 
 @Module({
   imports: [ConfigModule, PrismaModule],
   controllers: [AuthController],
-  providers: [AuthGuard, AuthService, GrafanaService],
+  providers: [AuthGuard, AuthService],
   exports: [AuthGuard],
 })
 export class AuthModule {}

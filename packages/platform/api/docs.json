@@ -2129,10 +2129,6 @@
       }
     },
     "schemas": {
-      "SignupDto": {
-        "type": "object",
-        "properties": {}
-      },
       "ProjectResponseDto": {
         "type": "object",
         "properties": {
