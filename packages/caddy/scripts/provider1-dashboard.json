@@ -1,0 +1,38 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "provider1-dashboard",
+    "title": "provider1 Dashboard",
+    "tags": [
+      "provider1"
+    ],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 0,
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": {
+          "x": 0,
+          "y": 0,
+          "w": 24,
+          "h": 9
+        },
+        "title": "Logs",
+        "type": "logs",
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "targets": [
+          {
+            "expr": "{provider_id=\"provider1\"}",
+            "refId": "A"
+          }
+        ]
+      }
+    ]
+  },
+  "folderUid": "provider1-folder",
+  "overwrite": false
+}
