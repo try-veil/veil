@@ -287,3 +287,138 @@ export class ProjectWithRelationsDto extends ProjectResponseDto {
   @ApiPropertyOptional({ description: 'Ultra plan config', type: PlanConfig })
   ultraPlan?: PlanConfig;
 }
+
+export class HeaderParameterDto {
+  @ApiProperty({ 
+    description: 'Name of the header', 
+    example: 'X-RapidAPI-Key'
+  })
+  name: string;
+
+  @ApiProperty({ 
+    description: 'Value of the header', 
+    example: 'abc123def456ghi789jkl012mno345pqr678stu901vwx234yz'
+  })
+  value: string;
+
+  @ApiProperty({
+    description: 'Whether the value is a variable that users need to provide',
+    example: true,
+  })
+  is_variable: boolean;
+}
+
+export class ParameterDto {
+  @ApiProperty({ 
+    description: 'Name of the parameter', 
+    example: 'location'
+  })
+  name: string;
+
+  @ApiProperty({ 
+    description: 'Type of the parameter', 
+    example: 'string',
+    enum: ['string', 'number', 'boolean', 'array', 'object']
+  })
+  type: string;
+
+  @ApiProperty({
+    description: 'Whether the parameter is required',
+    example: true,
+  })
+  required: boolean;
+}
+
+export class ProjectApiDetailsDto {
+  @ApiProperty({
+    description: 'Unique identifier for the API',
+    example: 'weather-api-v2',
+  })
+  api_id: string;
+
+  @ApiProperty({
+    description: 'Project ID that this API belongs to',
+    example: 123,
+  })
+  project_id: number;
+
+  @ApiProperty({
+    description: 'Display name of the API',
+    example: 'Weather Forecast API',
+  })
+  name: string;
+
+  @ApiProperty({
+    description: 'Path for accessing the API',
+    example: '/api/v2/weather',
+  })
+  path: string;
+
+  @ApiProperty({
+    description: 'Target URL where the request will be forwarded',
+    example: 'https://weather-service.internal.com/v2/forecast',
+  })
+  target_url: string;
+
+  @ApiProperty({ 
+    description: 'HTTP method for the API', 
+    example: 'GET',
+    enum: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
+  })
+  method: string;
+
+  @ApiProperty({
+    description: 'Version of the API',
+    example: '2.0.0',
+  })
+  version: string;
+
+  @ApiPropertyOptional({
+    description: 'Description of the API',
+    example: 'Get current weather conditions and forecasts for any location worldwide',
+  })
+  description?: string;
+
+  @ApiPropertyOptional({
+    description: 'Required subscription level',
+    example: 'basic',
+  })
+  required_subscription?: string;
+
+  @ApiPropertyOptional({
+    description: 'URL to the API documentation',
+    example: 'https://docs.weather-api.com/v2/forecast',
+  })
+  documentation_url?: string;
+
+  @ApiProperty({
+    description: 'Required headers for the API',
+    type: [HeaderParameterDto],
+  })
+  required_headers: HeaderParameterDto[];
+
+  @ApiProperty({
+    description: 'Status of the API',
+    example: 'ACTIVE',
+    enum: ['ACTIVE', 'INACTIVE', 'DEPRECATED']
+  })
+  status: string;
+
+  @ApiProperty({
+    description: 'When the API was created',
+    example: '2023-01-01T00:00:00Z',
+  })
+  created_at: Date;
+
+  @ApiProperty({
+    description: 'When the API was last updated',
+    example: '2023-01-01T00:00:00Z',
+  })
+  updated_at: Date;
+
+  @ApiPropertyOptional({
+    description: 'Parameters for the API',
+    type: [ParameterDto],
+  })
+  parameters?: ParameterDto[];
+}

@@ -33,7 +33,7 @@ export class OnboardingService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private configService: ConfigService,
     private httpService: HttpService,
-  ) {}
+  ) { }
 
   async registerApi(
     request: ApiRegistrationRequestDto,
@@ -82,12 +82,17 @@ export class OnboardingService {
         id: apiId,
         name: request.name,
         path: request.path,
-        method: request.method, 
+        method: request.method,
         version: request.version,
         description: request.description,
         documentationUrl: request.documentation_url,
         providerId,
-        specification: request.specification || {},
+        specification: {
+          ...(request.specification || {}),
+          target_url: request.target_url,
+          required_subscription: request.required_subscription,
+          parameters: request.parameters || [],
+        },
         status: 'ACTIVE',
         requiredHeaders:
           request.required_headers?.reduce(
@@ -108,7 +113,12 @@ export class OnboardingService {
         description: request.description,
         documentationUrl: request.documentation_url,
         providerId,
-        specification: request.specification || {},
+        specification: {
+          ...(request.specification || {}),
+          target_url: request.target_url,
+          required_subscription: request.required_subscription,
+          parameters: request.parameters || [],
+        },
         status: 'ACTIVE',
         requiredHeaders:
           request.required_headers?.reduce(
@@ -170,7 +180,7 @@ export class OnboardingService {
       api_keys: request.api_keys,
     };
     const response = await this.gatewayService.onboardApi(gatewayRequest);
-    
+
     await this.prisma.user.update({
       where: {
         id: providerId,
@@ -387,13 +397,13 @@ export class OnboardingService {
       if (error instanceof ForbiddenException || error instanceof InternalServerErrorException) {
         throw error;
       }
-      
+
       this.logger.error('Unexpected error in test API call (via Caddy)', {
         error: error.message,
         caddyUrl: url,
         method: request.method,
       });
-      
+
       throw new InternalServerErrorException('Failed to test API via Caddy');
     }
   }

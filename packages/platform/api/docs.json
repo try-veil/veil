@@ -1308,6 +1308,50 @@
       }
     },
     "/projects/{id}/apis": {
+      "get": {
+        "operationId": "ProjectController_getProjectApis",
+        "summary": "Get all APIs under a project with full details",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Project ID",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns all APIs in the project with full details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectApiDetailsDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied to project"
+          },
+          "404": {
+            "description": "Project not found"
+          }
+        },
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
       "post": {
         "operationId": "ProjectController_addApiToProject",
         "summary": "Add an API to a project",
@@ -2719,6 +2763,174 @@
           "apis"
         ]
       },
+      "HeaderParameterDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the header",
+            "example": "X-RapidAPI-Key"
+          },
+          "value": {
+            "type": "string",
+            "description": "Value of the header",
+            "example": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"
+          },
+          "is_variable": {
+            "type": "boolean",
+            "description": "Whether the value is a variable that users need to provide",
+            "example": true
+          }
+        },
+        "required": [
+          "name",
+          "value",
+          "is_variable"
+        ]
+      },
+      "ParameterDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the parameter",
+            "example": "location"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of the parameter",
+            "example": "string",
+            "enum": [
+              "string",
+              "number",
+              "boolean",
+              "array",
+              "object"
+            ]
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether the parameter is required",
+            "example": true
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "required"
+        ]
+      },
+      "ProjectApiDetailsDto": {
+        "type": "object",
+        "properties": {
+          "api_id": {
+            "type": "string",
+            "description": "Unique identifier for the API",
+            "example": "weather-api-v2"
+          },
+          "project_id": {
+            "type": "number",
+            "description": "Project ID that this API belongs to",
+            "example": 123
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the API",
+            "example": "Weather Forecast API"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path for accessing the API",
+            "example": "/api/v2/weather"
+          },
+          "target_url": {
+            "type": "string",
+            "description": "Target URL where the request will be forwarded",
+            "example": "https://weather-service.internal.com/v2/forecast"
+          },
+          "method": {
+            "type": "string",
+            "description": "HTTP method for the API",
+            "example": "GET",
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "DELETE",
+              "PATCH"
+            ]
+          },
+          "version": {
+            "type": "string",
+            "description": "Version of the API",
+            "example": "2.0.0"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the API",
+            "example": "Get current weather conditions and forecasts for any location worldwide"
+          },
+          "required_subscription": {
+            "type": "string",
+            "description": "Required subscription level",
+            "example": "basic"
+          },
+          "documentation_url": {
+            "type": "string",
+            "description": "URL to the API documentation",
+            "example": "https://docs.weather-api.com/v2/forecast"
+          },
+          "required_headers": {
+            "description": "Required headers for the API",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HeaderParameterDto"
+            }
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of the API",
+            "example": "ACTIVE",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE",
+              "DEPRECATED"
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the API was created",
+            "example": "2023-01-01T00:00:00Z"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the API was last updated",
+            "example": "2023-01-01T00:00:00Z"
+          },
+          "parameters": {
+            "description": "Parameters for the API",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParameterDto"
+            }
+          }
+        },
+        "required": [
+          "api_id",
+          "project_id",
+          "name",
+          "path",
+          "target_url",
+          "method",
+          "version",
+          "required_headers",
+          "status",
+          "created_at",
+          "updated_at"
+        ]
+      },
       "UpdateProjectDto": {
         "type": "object",
         "properties": {
@@ -2944,56 +3156,6 @@
           "category",
           "visibleToPublic",
           "projectId"
-        ]
-      },
-      "HeaderParameterDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the header",
-            "example": "X-API-Key"
-          },
-          "value": {
-            "type": "string",
-            "description": "Value of the header",
-            "example": "your-api-key"
-          },
-          "is_variable": {
-            "type": "boolean",
-            "description": "Whether the value is a variable",
-            "example": false
-          }
-        },
-        "required": [
-          "name",
-          "value",
-          "is_variable"
-        ]
-      },
-      "ParameterDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the parameter",
-            "example": "userId"
-          },
-          "type": {
-            "type": "string",
-            "description": "Type of the parameter",
-            "example": "string"
-          },
-          "required": {
-            "type": "boolean",
-            "description": "Whether the parameter is required",
-            "example": true
-          }
-        },
-        "required": [
-          "name",
-          "type",
-          "required"
         ]
       },
       "ApiKeyDto": {
