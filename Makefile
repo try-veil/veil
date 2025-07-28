@@ -1,15 +1,25 @@
 .PHONY: setup run
 
 setup:
-	cd packages/platform/api && \
+	(cd packages/platform/api && \
 	pnpm install && \
-	cp -n .env.example .env && \
-	pnpm prisma migrate dev --name init && \
-	pnpm prisma generate
+	cp --update=none .env.example .env)
 
-	cd packages/platform/web/apps/complete-application && \
+	(cd packages/platform/web/apps/complete-application && \
 	pnpm install && \
-	cp -n .env.example .env
+	cp --update=none .env.example .env)
+
+migrate:
+	@echo "🐘 Starting Postgres if not already running..."
+	(cd packages/platform/api && docker-compose up -d)
+
+	@echo "⏳ Waiting for Postgres on port 5433..."
+	until nc -z localhost 5433; do sleep 1; done
+
+	@echo "✅ Postgres is up. Running Prisma migration..."
+	(cd packages/platform/api && \
+		pnpm prisma migrate dev --name init && \
+		pnpm prisma generate)
 
 run:
 	concurrently -n "CADDY,BACKEND,FRONTEND" -c "cyan,green,magenta" \
