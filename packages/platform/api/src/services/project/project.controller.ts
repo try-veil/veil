@@ -71,7 +71,7 @@ export class ProjectController {
   }
 
   @Get('marketplace')
-  // @Roles('consumer') 
+  // @Roles('consumer')
   @ApiOperation({ summary: 'Get all available projects for marketplace' })
   @ApiResponse({
     status: 200,

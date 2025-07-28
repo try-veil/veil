@@ -38,9 +38,7 @@ import {
 // @Controller('routes')
 @UseGuards(AuthGuard, RoleGuard)
 export class OnboardingController {
-  constructor(
-    private readonly onboardingService: OnboardingService,
-  ) {}
+  constructor(private readonly onboardingService: OnboardingService) {}
 
   @Put()
   @Roles('provider')
@@ -136,14 +134,13 @@ export class OnboardingController {
   @ApiBody({ type: ApiRegistrationRequestDto })
   @ApiResponse({ status: 200, description: 'API test response' })
   @ApiResponse({ status: 403, description: 'Rate limit exceeded' })
-  async testApi(
-    @Body() body: ApiRegistrationRequestDto,
-    @Req() req: any,
-  ) {
+  async testApi(@Body() body: ApiRegistrationRequestDto, @Req() req: any) {
     const authenticatedUserId = req.user.id;
 
     if (!body.api_id || !body.path || !body.target_url) {
-      throw new BadRequestException('api_id, path, and target_url are required');
+      throw new BadRequestException(
+        'api_id, path, and target_url are required',
+      );
     }
 
     return this.onboardingService.testApiCall(body, authenticatedUserId);

@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { MarketplaceService } from './marketplace.service';
 import {
   MarketplaceApiQueryDto,
@@ -29,12 +23,13 @@ import {
 @Controller('marketplace')
 @UseGuards(AuthGuard)
 export class MarketplaceController {
-  constructor(private readonly marketplaceService: MarketplaceService) { }
+  constructor(private readonly marketplaceService: MarketplaceService) {}
 
   @Get('apis')
   @ApiOperation({
     summary: 'Get all marketplace APIs',
-    description: 'Retrieve all publicly available APIs with filtering, search, and pagination support'
+    description:
+      'Retrieve all publicly available APIs with filtering, search, and pagination support',
   })
   @ApiQuery({
     name: 'category',
@@ -85,7 +80,8 @@ export class MarketplaceController {
   @Get('apis/:apiId')
   @ApiOperation({
     summary: 'Get API details for marketplace',
-    description: 'Retrieve detailed information about a specific API including headers, parameters, and pricing'
+    description:
+      'Retrieve detailed information about a specific API including headers, parameters, and pricing',
   })
   @ApiParam({
     name: 'apiId',
@@ -110,7 +106,7 @@ export class MarketplaceController {
   @Get('categories')
   @ApiOperation({
     summary: 'Get API categories',
-    description: 'Retrieve all available API categories with API counts'
+    description: 'Retrieve all available API categories with API counts',
   })
   @ApiResponse({
     status: 200,
@@ -124,7 +120,7 @@ export class MarketplaceController {
   @Get('search')
   @ApiOperation({
     summary: 'Search APIs',
-    description: 'Search for APIs by name, description, or other criteria'
+    description: 'Search for APIs by name, description, or other criteria',
   })
   @ApiQuery({
     name: 'q',

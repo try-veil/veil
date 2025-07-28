@@ -28,49 +28,61 @@ export class GatewayService {
       // FIXED: Convert NestJS request to Veil's expected format
       const veilRequest = {
         path: request.path,
-        upstream: request.target_url, 
+        upstream: request.target_url,
         required_subscription: request.required_subscription || 'free',
         methods: [request.method],
         required_headers: request.required_headers?.map((h) => h.name) || [],
-        parameters: request.parameters?.map(p => ({
-          name: p.name,
-          type: p.type,
-          required: p.required
-        })) || [],
-        api_keys: request.api_keys?.map(k => ({
-          key: k.key,
-          name: k.name,
-          is_active: k.is_active
-        })) || [],
+        parameters:
+          request.parameters?.map((p) => ({
+            name: p.name,
+            type: p.type,
+            required: p.required,
+          })) || [],
+        api_keys:
+          request.api_keys?.map((k) => ({
+            key: k.key,
+            name: k.name,
+            is_active: k.is_active,
+          })) || [],
       };
 
-      console.log("Veil onboarding payload:", JSON.stringify(veilRequest, null, 2));
+      console.log(
+        'Veil onboarding payload:',
+        JSON.stringify(veilRequest, null, 2),
+      );
 
       // POST to Veil's /veil/api/routes endpoint
       const response = await firstValueFrom(
         this.httpService.post<{ status: string; message: string; api: any }>(
-          `${this.gatewayUrl}/veil/api/routes`, 
+          `${this.gatewayUrl}/veil/api/routes`,
           veilRequest,
           {
             headers: {
               'Content-Type': 'application/json',
             },
             timeout: 10000, // 10 second timeout
-          }
+          },
         ),
       );
 
-      this.logger.log(` API onboarded successfully with Veil: ${response.data.message}`);
+      this.logger.log(
+        ` API onboarded successfully with Veil: ${response.data.message}`,
+      );
       return response.data;
     } catch (error) {
-      this.logger.error(` Failed to onboard API with Veil: ${error.message}`, error.stack);
-      
+      this.logger.error(
+        ` Failed to onboard API with Veil: ${error.message}`,
+        error.stack,
+      );
+
       // Log more details about the error
       if (error.response) {
         this.logger.error(`Response status: ${error.response.status}`);
-        this.logger.error(`Response data: ${JSON.stringify(error.response.data)}`);
+        this.logger.error(
+          `Response data: ${JSON.stringify(error.response.data)}`,
+        );
       }
-      
+
       throw error;
     }
   }

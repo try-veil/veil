@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { LoadBalancerStrategy } from "./types"
+import { LoadBalancerStrategy } from './types';
 
 export const planConfigSchema = z.object({
   id: z.string().uuid(),
@@ -19,7 +19,7 @@ export const hubListingSchema = z.object({
   termsOfUse: z.string().optional(),
   visibleToPublic: z.boolean(),
   loadBalancer: z.nativeEnum(LoadBalancerStrategy),
-  healthCheckUrl: z.string().optional().nullable(),
+  healthCheckUrl: z.string().url().optional(),
   apiDocumentation: z.string().optional(),
   proxySecret: z.string().optional(),
   requestSizeLimitMb: z.number().int().min(0).max(50).optional(),

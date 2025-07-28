@@ -33,7 +33,7 @@ export class OnboardingService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private configService: ConfigService,
     private httpService: HttpService,
-  ) { }
+  ) {}
 
   async registerApi(
     request: ApiRegistrationRequestDto,
@@ -66,7 +66,7 @@ export class OnboardingService {
     if (!request.api_keys) {
       request.api_keys = [];
     }
-    if (!request.api_keys.some(k => k.key === uniqueTestKey)) {
+    if (!request.api_keys.some((k) => k.key === uniqueTestKey)) {
       request.api_keys.push({
         key: uniqueTestKey,
         name: 'Platform Test Key',
@@ -314,7 +314,8 @@ export class OnboardingService {
       method: api.method,
       version: api.version,
       description: api.description,
-      required_subscription: api.specification?.required_subscription || 'basic', // Extract from specification
+      required_subscription:
+        api.specification?.required_subscription || 'basic', // Extract from specification
       documentation_url: api.documentationUrl,
       required_headers: headers,
       parameters: parameters,
@@ -331,8 +332,10 @@ export class OnboardingService {
     // Per-test-key rate limiting
     const uniqueTestKey = `test-key-${request.api_id || request.name.replace(/\s+/g, '_').toLowerCase()}`;
     const cacheKey = `test-key-limit:${uniqueTestKey}`;
-    const currentUsage = await this.cacheManager.get<number>(cacheKey) || 0;
-    const testLimit = parseInt(this.configService.get<string>('TEST_API_LIMIT') || '5');
+    const currentUsage = (await this.cacheManager.get<number>(cacheKey)) || 0;
+    const testLimit = parseInt(
+      this.configService.get<string>('TEST_API_LIMIT') || '5',
+    );
 
     if (currentUsage >= testLimit) {
       throw new ForbiddenException(
@@ -394,7 +397,10 @@ export class OnboardingService {
         limit: testLimit,
       };
     } catch (error) {
-      if (error instanceof ForbiddenException || error instanceof InternalServerErrorException) {
+      if (
+        error instanceof ForbiddenException ||
+        error instanceof InternalServerErrorException
+      ) {
         throw error;
       }
 

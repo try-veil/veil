@@ -23,7 +23,7 @@ import { MarketplaceModule } from './marketplace/marketplace.module';
     OnboardingModule,
     UserModule,
     HubListingModule,
-    MarketplaceModule
+    MarketplaceModule,
   ],
   exports: [
     PrismaModule,
@@ -36,7 +36,7 @@ import { MarketplaceModule } from './marketplace/marketplace.module';
     OnboardingModule,
     UserModule,
     HubListingModule,
-    MarketplaceModule
+    MarketplaceModule,
   ],
 })
 export class ServicesModule {}

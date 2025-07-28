@@ -9,8 +9,8 @@ import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
-    PrismaModule, 
-    HttpModule, 
+    PrismaModule,
+    HttpModule,
     ConfigModule,
     CacheModule.register({
       isGlobal: true,

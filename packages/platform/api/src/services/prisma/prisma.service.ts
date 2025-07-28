@@ -55,7 +55,7 @@ export class PrismaService
 
     const tables = [
       'HubListing',
-      'PlanConfig',  
+      'PlanConfig',
       'WalletTransaction',
       'Wallet',
       'PaymentAttempt',

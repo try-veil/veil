@@ -9,14 +9,10 @@ async function bootstrap() {
 
   // Enable CORS
   app.enableCors({
-    origin: [
-      'http://localhost:3001', // Your frontend URL
-      'http://localhost:3000', // Your API URL (for development)
-      'http://localhost:3002', // Additional frontend ports if needed
-    ],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    origin: process.env.CORS_ORIGINS?.split(','),
+    credentials: process.env.CORS_CREDENTIALS === 'true',
+    methods: process.env.CORS_METHODS?.split(','),
+    allowedHeaders: process.env.CORS_ALLOWED_HEADERS?.split(','),
   });
 
   app.useGlobalPipes(new ValidationPipe({ transform: true }));

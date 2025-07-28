@@ -9,4 +9,4 @@ import { AuthModule } from '../auth/auth.module';
   providers: [MarketplaceService],
   exports: [MarketplaceService],
 })
-export class MarketplaceModule { }
+export class MarketplaceModule {}

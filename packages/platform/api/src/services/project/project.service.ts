@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
-import { HubListingService } from "../hublisting/hublisting.service"
+import { HubListingService } from '../hublisting/hublisting.service';
 import {
   CreateProjectDto,
   UpdateProjectDto,
@@ -20,7 +20,7 @@ export class ProjectService {
     private readonly prisma: PrismaService,
     private readonly hubListingService: HubListingService,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   /**
    * Create a new project
@@ -42,7 +42,7 @@ export class ProjectService {
         thumbnail: createProjectDto.thumbnail,
         enableLimitsToAPIs: createProjectDto.enableLimitsToAPIs ?? false,
         tenant: {
-          connect: { id: createProjectDto.tenantId }
+          connect: { id: createProjectDto.tenantId },
         },
         target_url: createProjectDto.target_url,
         // Create initial ProjectAcl with OWNER role for the user who created it
@@ -54,14 +54,13 @@ export class ProjectService {
       },
     });
 
-
     await this.prisma.hubListing.create({
       data: {
         logo: createProjectDto.logo,
         category: createProjectDto.category,
         shortDescription: createProjectDto.description,
         longDescription: '',
-        website: '',
+        website: createProjectDto.website || '',
         termsOfUse: '',
         visibleToPublic: false,
         healthCheckUrl: '',
@@ -101,7 +100,6 @@ export class ProjectService {
       },
     });
 
-
     // Add back the fields for API response that aren't in the database
     return {
       ...project,
@@ -130,7 +128,6 @@ export class ProjectService {
       // you can optionally expose `project.hubListing.logo`, etc., here
     }));
   }
-
 
   async findOneForConsumer(id: number): Promise<ProjectWithRelationsDto> {
     const project = await this.prisma.project.findUnique({
@@ -175,7 +172,6 @@ export class ProjectService {
     };
   }
 
-
   /**
    * Find all projects accessible by user
    */
@@ -204,7 +200,10 @@ export class ProjectService {
   /**
    * Get all APIs under a project with full details
    */
-  async getProjectApis(projectId: number, userId: string): Promise<ProjectApiDetailsDto[]> {
+  async getProjectApis(
+    projectId: number,
+    userId: string,
+  ): Promise<ProjectApiDetailsDto[]> {
     // First verify user has access to the project
     const project = await this.prisma.project.findFirst({
       where: {
@@ -218,7 +217,9 @@ export class ProjectService {
     });
 
     if (!project) {
-      throw new NotFoundException(`Project with ID ${projectId} not found or access denied`);
+      throw new NotFoundException(
+        `Project with ID ${projectId} not found or access denied`,
+      );
     }
 
     // Get all API IDs linked to this project
@@ -237,7 +238,7 @@ export class ProjectService {
     }
 
     // Get full API details for all APIs in this project
-    const apiIds = projectAllowedApis.map(pa => pa.apiId);
+    const apiIds = projectAllowedApis.map((pa) => pa.apiId);
     const apis = await this.prisma.api.findMany({
       where: {
         id: {
@@ -259,18 +260,19 @@ export class ProjectService {
       );
 
       // Extract parameters from specification if available
-      const parameters = ((api.specification as any)?.parameters) || [];
+      const parameters = (api.specification as any)?.parameters || [];
 
       return {
         api_id: api.id,
         project_id: projectId,
         name: api.name,
         path: api.path,
-        target_url: ((api.specification as any)?.target_url) || '',
+        target_url: (api.specification as any)?.target_url || '',
         method: api.method,
         version: api.version,
         description: api.description,
-        required_subscription: ((api.specification as any)?.required_subscription) || 'basic',
+        required_subscription:
+          (api.specification as any)?.required_subscription || 'basic',
         documentation_url: api.documentationUrl,
         required_headers: headers,
         status: api.status,
@@ -336,8 +338,12 @@ export class ProjectService {
     // Transform to expected format
     const gatewayUrl = this.configService.get<string>('DEFAULT_GATEWAY_URL');
 
-    console.log(`[ProjectService.findOne] Original target_url: ${project.target_url}`);
-    console.log(`[ProjectService.findOne] Gateway URL from config: ${gatewayUrl}`);
+    console.log(
+      `[ProjectService.findOne] Original target_url: ${project.target_url}`,
+    );
+    console.log(
+      `[ProjectService.findOne] Gateway URL from config: ${gatewayUrl}`,
+    );
     console.log(`[ProjectService.findOne] Returning target_url: ${gatewayUrl}`);
 
     // Generate unique test key per API following the same pattern as onboarding service
@@ -369,14 +375,15 @@ export class ProjectService {
     await this.findOne(id, userId);
 
     // Extract only updatable fields that exist in the Project model
-    const { name, favorite, thumbnail, enableLimitsToAPIs, target_url } = updateProjectDto;
+    const { name, favorite, thumbnail, enableLimitsToAPIs, target_url } =
+      updateProjectDto;
 
     // Only include fields that are defined and exist in the schema
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
     if (favorite !== undefined) updateData.favorite = favorite;
     if (thumbnail !== undefined) updateData.thumbnail = thumbnail;
-    if (target_url !== undefined) updateData.target_url = target_url
+    if (target_url !== undefined) updateData.target_url = target_url;
     if (enableLimitsToAPIs !== undefined)
       updateData.enableLimitsToAPIs = enableLimitsToAPIs;
 
@@ -389,7 +396,7 @@ export class ProjectService {
     const hubListing = await this.prisma.hubListing.findUnique({
       where: { projectId: id },
     });
-    console.log("the hublisting is", hubListing)
+    console.log('the hublisting is', hubListing);
 
     if (hubListing) {
       const {
@@ -407,7 +414,7 @@ export class ProjectService {
         longDescription,
         healthCheckUrl,
         apiDocumentation,
-        proxySecret
+        proxySecret,
       } = updateProjectDto as any;
 
       await this.hubListingService.update(hubListing.id, {
@@ -426,7 +433,7 @@ export class ProjectService {
         longDescription,
         healthCheckUrl,
         apiDocumentation,
-        proxySecret
+        proxySecret,
       });
     }
 

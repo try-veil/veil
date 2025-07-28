@@ -8,4 +8,4 @@ import { PrismaModule } from '../prisma/prisma.module';
   controllers: [NewsletterController],
   providers: [NewsletterService],
 })
-export class NewsletterModule {} 
+export class NewsletterModule {}

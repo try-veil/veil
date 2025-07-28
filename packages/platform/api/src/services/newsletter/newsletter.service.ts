@@ -11,6 +11,8 @@ export class NewsletterService {
       where: { email: dto.email },
     });
     if (existing) throw new ConflictException('Email already subscribed');
-    return this.prisma.newsletterSubscription.create({ data: { email: dto.email } });
+    return this.prisma.newsletterSubscription.create({
+      data: { email: dto.email },
+    });
   }
 }

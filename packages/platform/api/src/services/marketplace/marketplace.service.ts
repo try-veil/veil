@@ -19,7 +19,13 @@ export class MarketplaceService {
   async getMarketplaceApis(
     query: MarketplaceApiQueryDto,
   ): Promise<MarketplaceApiListResponseDto> {
-    const { category, search, sort = 'created_at', page = 1, limit = 20 } = query;
+    const {
+      category,
+      search,
+      sort = 'created_at',
+      page = 1,
+      limit = 20,
+    } = query;
     const skip = (page - 1) * limit;
 
     // Build where clause
@@ -108,7 +114,7 @@ export class MarketplaceService {
     ]);
 
     // Get provider information separately
-    const providerIds = [...new Set(apis.map(api => api.providerId))];
+    const providerIds = [...new Set(apis.map((api) => api.providerId))];
     const providers = await this.prisma.user.findMany({
       where: {
         id: {
@@ -122,9 +128,11 @@ export class MarketplaceService {
       },
     });
 
-    const providerMap = new Map(providers.map(p => [p.id, p]));
+    const providerMap = new Map(providers.map((p) => [p.id, p]));
 
-    const mappedApis = apis.map((api) => this.mapToMarketplaceApi(api, providerMap));
+    const mappedApis = apis.map((api) =>
+      this.mapToMarketplaceApi(api, providerMap),
+    );
 
     return {
       apis: mappedApis,
@@ -138,7 +146,9 @@ export class MarketplaceService {
   /**
    * Get API details for marketplace
    */
-  async getMarketplaceApiDetails(apiId: string): Promise<MarketplaceApiDetailsDto> {
+  async getMarketplaceApiDetails(
+    apiId: string,
+  ): Promise<MarketplaceApiDetailsDto> {
     const api = await this.prisma.api.findFirst({
       where: {
         id: apiId,
@@ -171,7 +181,9 @@ export class MarketplaceService {
     });
 
     if (!api) {
-      throw new NotFoundException(`API with ID ${apiId} not found in marketplace`);
+      throw new NotFoundException(
+        `API with ID ${apiId} not found in marketplace`,
+      );
     }
 
     // Get provider information separately
@@ -223,7 +235,7 @@ export class MarketplaceService {
     query: MarketplaceSearchQueryDto,
   ): Promise<MarketplaceApiListResponseDto> {
     const { q, category, page = 1, limit = 20 } = query;
-    
+
     // Use the existing getMarketplaceApis method with search parameters
     return this.getMarketplaceApis({
       search: q,
@@ -237,7 +249,10 @@ export class MarketplaceService {
   /**
    * Map API to marketplace format
    */
-  private mapToMarketplaceApi(api: any, providerMap: Map<string, any>): MarketplaceApiDto {
+  private mapToMarketplaceApi(
+    api: any,
+    providerMap: Map<string, any>,
+  ): MarketplaceApiDto {
     const project = api.projectAllowedAPIs?.[0]?.project;
     const category = project?.hubListing?.category || 'general';
     const provider = providerMap.get(api.providerId);
@@ -265,9 +280,12 @@ export class MarketplaceService {
   /**
    * Map API to detailed marketplace format
    */
-  private mapToMarketplaceApiDetails(api: any, providerMap: Map<string, any>): MarketplaceApiDetailsDto {
+  private mapToMarketplaceApiDetails(
+    api: any,
+    providerMap: Map<string, any>,
+  ): MarketplaceApiDetailsDto {
     const baseApi = this.mapToMarketplaceApi(api, providerMap);
-    
+
     // Map required headers from JSON format to array
     const headers = Object.entries((api.requiredHeaders as any) || {}).map(
       ([name, details]: [string, any]) => ({
@@ -278,12 +296,13 @@ export class MarketplaceService {
     );
 
     // Extract parameters from specification if available
-    const parameters = ((api.specification as any)?.parameters) || [];
+    const parameters = (api.specification as any)?.parameters || [];
 
     return {
       ...baseApi,
-      target_url: ((api.specification as any)?.target_url) || '',
-      required_subscription: ((api.specification as any)?.required_subscription) || 'basic',
+      target_url: (api.specification as any)?.target_url || '',
+      required_subscription:
+        (api.specification as any)?.required_subscription || 'basic',
       required_headers: headers,
       parameters: parameters,
     };
@@ -295,7 +314,7 @@ export class MarketplaceService {
   private formatCategoryName(category: string): string {
     return category
       .split(/[-_\s]+/)
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
   }
 }
