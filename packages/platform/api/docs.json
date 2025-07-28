@@ -2838,6 +2838,11 @@
             "type": "string",
             "description": "Category of the project",
             "example": "Finance"
+          },
+          "website": {
+            "type": "string",
+            "description": "Website URL for the project",
+            "example": "https://example.com"
           }
         },
         "required": [

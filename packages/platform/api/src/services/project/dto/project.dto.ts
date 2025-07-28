@@ -82,6 +82,14 @@ export class CreateProjectDto {
   @IsString()
   @IsOptional()
   category?: string;
+
+  @ApiPropertyOptional({
+    description: 'Website URL for the project',
+    example: 'https://example.com',
+  })
+  @IsString()
+  @IsOptional()
+  website?: string;
 }
 
 export class UpdateProjectDto {

@@ -15,7 +15,7 @@ export const hubListingSchema = z.object({
   category: z.string(),
   shortDescription: z.string().optional(),
   longDescription: z.string().optional(),
-  website: z.string().optional().nullable(),
+  website: z.string().url().nullable(),
   termsOfUse: z.string().optional(),
   visibleToPublic: z.boolean(),
   loadBalancer: z.nativeEnum(LoadBalancerStrategy),
