@@ -24,7 +24,7 @@ export default function CallbackPage() {
     const state = searchParams.get("state");
     const storedState = sessionStorage.getItem("oauth_state");
     const selectedRole = sessionStorage.getItem("selected_role");
-    const redirectPath = sessionStorage.getItem("auth_redirect") || "/dashboard";
+    const redirectPath = sessionStorage.getItem("auth_redirect") || "/";
 
     // Log for debugging
     console.log("Callback params:", { code, error, state, storedState, selectedRole, redirectPath });
