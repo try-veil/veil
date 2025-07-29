@@ -67,7 +67,7 @@ Here's a complete example of how to use Veil:
 1. Build Caddy with the Veil module:
 
 ```bash
-xcaddy build --with github.com/try-veil/veil/packages/caddy=./packages/caddy
+xcaddy build --with github.com/try-veil/veil/packages/caddy
 ```
 
 2. Create a Caddyfile:
@@ -89,7 +89,6 @@ localhost:2019 {
 3. Start Caddy:
 
 ```bash
-cd packages\caddy
 .\caddy.exe run
 ```
 
@@ -200,8 +199,7 @@ python test-orders.py
 2. Start Caddy with your test configuration:
 
 ```bash
-cd packages\caddy
-.\caddy.exe run --config Caddyfile
+./veil run --config Caddyfile
 ```
 
 ### 5. Test the API Gateway

@@ -1308,6 +1308,50 @@
       }
     },
     "/projects/{id}/apis": {
+      "get": {
+        "operationId": "ProjectController_getProjectApis",
+        "summary": "Get all APIs under a project with full details",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Project ID",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns all APIs in the project with full details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectApiDetailsDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied to project"
+          },
+          "404": {
+            "description": "Project not found"
+          }
+        },
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
       "post": {
         "operationId": "ProjectController_addApiToProject",
         "summary": "Add an API to a project",
@@ -1732,6 +1776,39 @@
         ]
       }
     },
+    "/onboard/test": {
+      "post": {
+        "operationId": "OnboardingController_testApi",
+        "summary": "Test an API endpoint before buying subscription",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiRegistrationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "API test response"
+          },
+          "403": {
+            "description": "Rate limit exceeded"
+          }
+        },
+        "tags": [
+          "onboarding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/users/me": {
       "get": {
         "operationId": "UserController_getCurrentUser",
@@ -2070,6 +2147,244 @@
         },
         "tags": [
           "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/marketplace/apis": {
+      "get": {
+        "operationId": "MarketplaceController_getMarketplaceApis",
+        "summary": "Get all marketplace APIs",
+        "description": "Retrieve all publicly available APIs with filtering, search, and pagination support",
+        "parameters": [
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "Filter by category",
+            "schema": {
+              "example": "ai",
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search term for API name or description",
+            "schema": {
+              "example": "weather",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Sort order",
+            "schema": {
+              "enum": [
+                "popularity",
+                "name",
+                "created_at",
+                "updated_at"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number for pagination",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page (max 100)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns paginated list of marketplace APIs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketplaceApiListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid query parameters"
+          }
+        },
+        "tags": [
+          "marketplace"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/marketplace/apis/{apiId}": {
+      "get": {
+        "operationId": "MarketplaceController_getMarketplaceApiDetails",
+        "summary": "Get API details for marketplace",
+        "description": "Retrieve detailed information about a specific API including headers, parameters, and pricing",
+        "parameters": [
+          {
+            "name": "apiId",
+            "required": true,
+            "in": "path",
+            "description": "API identifier",
+            "schema": {
+              "example": "weather-api-v1",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns detailed API information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketplaceApiDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "API not found or not publicly available"
+          }
+        },
+        "tags": [
+          "marketplace"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/marketplace/categories": {
+      "get": {
+        "operationId": "MarketplaceController_getCategories",
+        "summary": "Get API categories",
+        "description": "Retrieve all available API categories with API counts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns list of available categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MarketplaceCategoryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "marketplace"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/marketplace/search": {
+      "get": {
+        "operationId": "MarketplaceController_searchApis",
+        "summary": "Search APIs",
+        "description": "Search for APIs by name, description, or other criteria",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "description": "Search query",
+            "schema": {
+              "example": "weather",
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "Filter by category",
+            "schema": {
+              "example": "data",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number for pagination",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page (max 100)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketplaceApiListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid search query"
+          }
+        },
+        "tags": [
+          "marketplace"
         ],
         "security": [
           {
@@ -2523,6 +2838,11 @@
             "type": "string",
             "description": "Category of the project",
             "example": "Finance"
+          },
+          "website": {
+            "type": "string",
+            "description": "Website URL for the project",
+            "example": "https://example.com"
           }
         },
         "required": [
@@ -2545,6 +2865,37 @@
         "required": [
           "apiId",
           "apiVersionId"
+        ]
+      },
+      "PlanConfig": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the plan is enabled",
+            "example": true
+          },
+          "pricePerMonth": {
+            "type": "number",
+            "description": "Monthly price in USD",
+            "example": 29.99
+          },
+          "requestQuotaPerMonth": {
+            "type": "number",
+            "description": "Monthly request quota",
+            "example": 100000
+          },
+          "hardLimitQuota": {
+            "type": "number",
+            "description": "Hard limit of requests per month",
+            "example": 150000
+          }
+        },
+        "required": [
+          "enabled",
+          "pricePerMonth",
+          "requestQuotaPerMonth",
+          "hardLimitQuota"
         ]
       },
       "ProjectWithRelationsDto": {
@@ -2613,6 +2964,35 @@
             "items": {
               "$ref": "#/components/schemas/ProjectAllowedApiDto"
             }
+          },
+          "gateway_api_key": {
+            "type": "string",
+            "description": "API key for accessing APIs through the gateway",
+            "example": "pk_proxy_weather_test"
+          },
+          "basicPlan": {
+            "description": "Basic plan config",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanConfig"
+              }
+            ]
+          },
+          "proPlan": {
+            "description": "Pro plan config",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanConfig"
+              }
+            ]
+          },
+          "ultraPlan": {
+            "description": "Ultra plan config",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanConfig"
+              }
+            ]
           }
         },
         "required": [
@@ -2626,35 +3006,172 @@
           "apis"
         ]
       },
-      "PlanConfig": {
+      "HeaderParameterDto": {
         "type": "object",
         "properties": {
-          "enabled": {
+          "name": {
+            "type": "string",
+            "description": "Name of the header",
+            "example": "X-RapidAPI-Key"
+          },
+          "value": {
+            "type": "string",
+            "description": "Value of the header",
+            "example": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"
+          },
+          "is_variable": {
             "type": "boolean",
-            "description": "Whether the plan is enabled",
+            "description": "Whether the value is a variable that users need to provide",
             "example": true
-          },
-          "pricePerMonth": {
-            "type": "number",
-            "description": "Monthly price in USD",
-            "example": 29.99
-          },
-          "requestQuotaPerMonth": {
-            "type": "number",
-            "description": "Monthly request quota",
-            "example": 100000
-          },
-          "hardLimitQuota": {
-            "type": "number",
-            "description": "Hard limit of requests per month",
-            "example": 150000
           }
         },
         "required": [
-          "enabled",
-          "pricePerMonth",
-          "requestQuotaPerMonth",
-          "hardLimitQuota"
+          "name",
+          "value",
+          "is_variable"
+        ]
+      },
+      "ParameterDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the parameter",
+            "example": "location"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of the parameter",
+            "example": "string",
+            "enum": [
+              "string",
+              "number",
+              "boolean",
+              "array",
+              "object"
+            ]
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether the parameter is required",
+            "example": true
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "required"
+        ]
+      },
+      "ProjectApiDetailsDto": {
+        "type": "object",
+        "properties": {
+          "api_id": {
+            "type": "string",
+            "description": "Unique identifier for the API",
+            "example": "weather-api-v2"
+          },
+          "project_id": {
+            "type": "number",
+            "description": "Project ID that this API belongs to",
+            "example": 123
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the API",
+            "example": "Weather Forecast API"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path for accessing the API",
+            "example": "/api/v2/weather"
+          },
+          "target_url": {
+            "type": "string",
+            "description": "Target URL where the request will be forwarded",
+            "example": "https://weather-service.internal.com/v2/forecast"
+          },
+          "method": {
+            "type": "string",
+            "description": "HTTP method for the API",
+            "example": "GET",
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "DELETE",
+              "PATCH"
+            ]
+          },
+          "version": {
+            "type": "string",
+            "description": "Version of the API",
+            "example": "2.0.0"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the API",
+            "example": "Get current weather conditions and forecasts for any location worldwide"
+          },
+          "required_subscription": {
+            "type": "string",
+            "description": "Required subscription level",
+            "example": "basic"
+          },
+          "documentation_url": {
+            "type": "string",
+            "description": "URL to the API documentation",
+            "example": "https://docs.weather-api.com/v2/forecast"
+          },
+          "required_headers": {
+            "description": "Required headers for the API",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HeaderParameterDto"
+            }
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of the API",
+            "example": "ACTIVE",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE",
+              "DEPRECATED"
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the API was created",
+            "example": "2023-01-01T00:00:00Z"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the API was last updated",
+            "example": "2023-01-01T00:00:00Z"
+          },
+          "parameters": {
+            "description": "Parameters for the API",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParameterDto"
+            }
+          }
+        },
+        "required": [
+          "api_id",
+          "project_id",
+          "name",
+          "path",
+          "target_url",
+          "method",
+          "version",
+          "required_headers",
+          "status",
+          "created_at",
+          "updated_at"
         ]
       },
       "UpdateProjectDto": {
@@ -2713,6 +3230,46 @@
             "type": "string",
             "description": "Short description of the API",
             "example": "Short summary..."
+          },
+          "longDescription": {
+            "type": "string",
+            "description": "Long description of the API",
+            "example": "Detailed overview of your API and how it works."
+          },
+          "website": {
+            "type": "string",
+            "description": "API provider website URL",
+            "example": "https://provider.com"
+          },
+          "termsOfUse": {
+            "type": "string",
+            "description": "Terms of use for this API",
+            "example": "https://provider.com/terms"
+          },
+          "requestSizeLimitMb": {
+            "type": "number",
+            "description": "Maximum request size in MB",
+            "example": 10
+          },
+          "proxyTimeoutSeconds": {
+            "type": "number",
+            "description": "Proxy timeout in seconds",
+            "example": 60
+          },
+          "healthCheckUrl": {
+            "type": "string",
+            "description": "URL used for health checks",
+            "example": "https://provider.com/health"
+          },
+          "apiDocumentation": {
+            "type": "string",
+            "description": "URL to API documentation",
+            "example": "https://docs.provider.com"
+          },
+          "proxySecret": {
+            "type": "string",
+            "description": "Proxy secret for request authentication",
+            "example": "super-secret-key"
           },
           "visibleToPublic": {
             "type": "boolean",
@@ -2842,56 +3399,6 @@
           "category",
           "visibleToPublic",
           "projectId"
-        ]
-      },
-      "HeaderParameterDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the header",
-            "example": "X-API-Key"
-          },
-          "value": {
-            "type": "string",
-            "description": "Value of the header",
-            "example": "your-api-key"
-          },
-          "is_variable": {
-            "type": "boolean",
-            "description": "Whether the value is a variable",
-            "example": false
-          }
-        },
-        "required": [
-          "name",
-          "value",
-          "is_variable"
-        ]
-      },
-      "ParameterDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the parameter",
-            "example": "userId"
-          },
-          "type": {
-            "type": "string",
-            "description": "Type of the parameter",
-            "example": "string"
-          },
-          "required": {
-            "type": "boolean",
-            "description": "Whether the parameter is required",
-            "example": true
-          }
-        },
-        "required": [
-          "name",
-          "type",
-          "required"
         ]
       },
       "ApiKeyDto": {
@@ -3042,6 +3549,11 @@
             "description": "Unique identifier for the API",
             "example": "payment-api-v1"
           },
+          "project_id": {
+            "type": "number",
+            "description": "Project ID that this API belongs to",
+            "example": 1
+          },
           "name": {
             "type": "string",
             "description": "Display name of the API",
@@ -3052,15 +3564,30 @@
             "description": "Path for accessing the API",
             "example": "/api/payments"
           },
+          "target_url": {
+            "type": "string",
+            "description": "Target URL where the request will be forwarded",
+            "example": "https://api.example.com/payments"
+          },
           "method": {
             "type": "string",
             "description": "HTTP method for the API",
             "example": "POST"
           },
+          "version": {
+            "type": "string",
+            "description": "Version of the API",
+            "example": "1.0.0"
+          },
           "description": {
             "type": "string",
             "description": "Description of the API",
             "example": "Process payment transactions"
+          },
+          "required_subscription": {
+            "type": "string",
+            "description": "Required subscription level",
+            "example": "basic"
           },
           "documentation_url": {
             "type": "string",
@@ -3073,6 +3600,11 @@
             "items": {
               "$ref": "#/components/schemas/HeaderParameterDto"
             }
+          },
+          "api_key": {
+            "type": "string",
+            "description": "API key for accessing through gateway",
+            "example": "pk_proxy_weather_test"
           },
           "status": {
             "type": "string",
@@ -3095,18 +3627,336 @@
             "type": "string",
             "description": "When the API was last updated",
             "example": "2023-01-01T00:00:00Z"
+          },
+          "parameters": {
+            "description": "Parameters for the API",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParameterDto"
+            }
           }
         },
         "required": [
           "api_id",
+          "project_id",
           "name",
           "path",
+          "target_url",
           "method",
+          "version",
           "required_headers",
           "status",
           "created_at",
           "updated_at"
         ]
+      },
+      "MarketplaceProviderDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Provider ID",
+            "example": "provider-123"
+          },
+          "name": {
+            "type": "string",
+            "description": "Provider name",
+            "example": "Weather Corp"
+          },
+          "logo": {
+            "type": "string",
+            "description": "Provider logo URL",
+            "example": "https://example.com/logo.png"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "MarketplaceApiDto": {
+        "type": "object",
+        "properties": {
+          "api_id": {
+            "type": "string",
+            "description": "API ID",
+            "example": "weather-api-v1"
+          },
+          "name": {
+            "type": "string",
+            "description": "API name",
+            "example": "Weather Forecast API"
+          },
+          "description": {
+            "type": "string",
+            "description": "API description",
+            "example": "Get current weather conditions and forecasts"
+          },
+          "category": {
+            "type": "string",
+            "description": "API category",
+            "example": "data"
+          },
+          "provider": {
+            "description": "API provider information",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MarketplaceProviderDto"
+              }
+            ]
+          },
+          "path": {
+            "type": "string",
+            "description": "API path",
+            "example": "/api/v1/weather"
+          },
+          "method": {
+            "type": "string",
+            "description": "HTTP method",
+            "example": "GET"
+          },
+          "version": {
+            "type": "string",
+            "description": "API version",
+            "example": "1.0.0"
+          },
+          "documentation_url": {
+            "type": "string",
+            "description": "Documentation URL",
+            "example": "https://docs.weather-api.com"
+          },
+          "status": {
+            "type": "string",
+            "description": "API status",
+            "example": "ACTIVE"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Creation date",
+            "example": "2023-01-01T00:00:00Z"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Last update date",
+            "example": "2023-01-01T00:00:00Z"
+          }
+        },
+        "required": [
+          "api_id",
+          "name",
+          "description",
+          "category",
+          "provider",
+          "path",
+          "method",
+          "version",
+          "status",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "MarketplaceApiListResponseDto": {
+        "type": "object",
+        "properties": {
+          "apis": {
+            "description": "List of APIs",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarketplaceApiDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of APIs",
+            "example": 150
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Items per page",
+            "example": 20
+          },
+          "total_pages": {
+            "type": "number",
+            "description": "Total number of pages",
+            "example": 8
+          }
+        },
+        "required": [
+          "apis",
+          "total",
+          "page",
+          "limit",
+          "total_pages"
+        ]
+      },
+      "MarketplaceApiDetailsDto": {
+        "type": "object",
+        "properties": {
+          "api_id": {
+            "type": "string",
+            "description": "API ID",
+            "example": "weather-api-v1"
+          },
+          "name": {
+            "type": "string",
+            "description": "API name",
+            "example": "Weather Forecast API"
+          },
+          "description": {
+            "type": "string",
+            "description": "API description",
+            "example": "Get current weather conditions and forecasts"
+          },
+          "category": {
+            "type": "string",
+            "description": "API category",
+            "example": "data"
+          },
+          "provider": {
+            "description": "API provider information",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MarketplaceProviderDto"
+              }
+            ]
+          },
+          "path": {
+            "type": "string",
+            "description": "API path",
+            "example": "/api/v1/weather"
+          },
+          "method": {
+            "type": "string",
+            "description": "HTTP method",
+            "example": "GET"
+          },
+          "version": {
+            "type": "string",
+            "description": "API version",
+            "example": "1.0.0"
+          },
+          "documentation_url": {
+            "type": "string",
+            "description": "Documentation URL",
+            "example": "https://docs.weather-api.com"
+          },
+          "status": {
+            "type": "string",
+            "description": "API status",
+            "example": "ACTIVE"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Creation date",
+            "example": "2023-01-01T00:00:00Z"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Last update date",
+            "example": "2023-01-01T00:00:00Z"
+          },
+          "target_url": {
+            "type": "string",
+            "description": "Target URL",
+            "example": "https://api.weather.com/v1"
+          },
+          "required_subscription": {
+            "type": "string",
+            "description": "Required subscription level",
+            "example": "basic"
+          },
+          "required_headers": {
+            "type": "array",
+            "description": "Required headers",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                },
+                "is_variable": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "parameters": {
+            "type": "array",
+            "description": "API parameters",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "required": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "api_id",
+          "name",
+          "description",
+          "category",
+          "provider",
+          "path",
+          "method",
+          "version",
+          "status",
+          "created_at",
+          "updated_at",
+          "target_url",
+          "required_subscription",
+          "required_headers",
+          "parameters"
+        ]
+      },
+      "MarketplaceCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Category name",
+            "example": "ai"
+          },
+          "display_name": {
+            "type": "string",
+            "description": "Category display name",
+            "example": "Artificial Intelligence"
+          },
+          "api_count": {
+            "type": "number",
+            "description": "Number of APIs in this category",
+            "example": 15
+          }
+        },
+        "required": [
+          "name",
+          "display_name",
+          "api_count"
+        ]
+      },
+      "NewsletterSubscribeDto": {
+        "type": "object",
+        "properties": {}
       }
     }
   }

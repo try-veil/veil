@@ -42,7 +42,7 @@ export interface OnboardUpdateAPI extends OnboardAPI {
 
 export async function onboardAPI(data: OnboardAPI, token: string): Promise<OnboardResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/onboard/`, {
+    const response = await fetch(`${API_BASE_URL}/onboard`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

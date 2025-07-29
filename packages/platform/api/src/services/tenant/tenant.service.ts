@@ -13,7 +13,7 @@ import {
 } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { ApiProperty } from '@nestjs/swagger';
-import {ProjectResponseDto} from "../project/dto/project.dto"
+import { ProjectResponseDto } from '../project/dto/project.dto';
 
 export interface CreateTenantDto {
   name: string;
@@ -98,7 +98,10 @@ export class TenantService {
     });
   }
 
-  async createTenant(data: CreateTenantDto,userId:string): Promise<TenantResponseDto> {
+  async createTenant(
+    data: CreateTenantDto,
+    userId: string,
+  ): Promise<TenantResponseDto> {
     const { name, domain } = data;
 
     // Generate slugified key from name
@@ -185,7 +188,7 @@ export class TenantService {
         name: true,
         domain: true,
         slugifiedKey: true,
-        projects:true
+        projects: true,
       },
     });
   }
@@ -198,7 +201,7 @@ export class TenantService {
         name: true,
         domain: true,
         slugifiedKey: true,
-        projects:true
+        projects: true,
       },
     });
 
@@ -217,7 +220,7 @@ export class TenantService {
         name: true,
         domain: true,
         slugifiedKey: true,
-        projects:true
+        projects: true,
       },
     });
 

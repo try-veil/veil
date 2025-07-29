@@ -7,9 +7,9 @@ import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports:[PrismaModule,HttpModule,ConfigModule],
+  imports: [PrismaModule, HttpModule, ConfigModule],
   controllers: [HubListingController],
   providers: [HubListingService, PrismaService],
-  exports: [HubListingService]
+  exports: [HubListingService],
 })
 export class HubListingModule {}
