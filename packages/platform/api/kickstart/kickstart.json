@@ -52,10 +52,12 @@
           ],
           "oauthConfiguration": {
             "authorizedRedirectURLs": [
-              "http://localhost:3001/callback"
+              "http://localhost:3001/callback",
+              "http://localhost:3002/login/generic_oauth"
             ],
             "authorizedRequestOriginURLs":[
-              "http://localhost:3001"
+              "http://localhost:3001",
+              "http://localhost:3002  "
             ],
             "logoutURL": "http://localhost:3001",
             "clientSecret": "#{clientSecret}",

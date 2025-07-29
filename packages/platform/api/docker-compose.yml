@@ -18,6 +18,8 @@ services:
     restart: unless-stopped
     volumes:
       - db_data:/var/lib/postgresql/data
+    networks:
+      - fusionauth_net
 
   # This is the main FusionAuth application.
   fusionauth:
@@ -51,6 +53,8 @@ services:
       - fusionauth_config:/usr/local/fusionauth/config
       - ${FUSIONAUTH_LOCAL_KICKSTART_DIRECTORY}:/usr/local/fusionauth/kickstart
       - ${FUSIONAUTH_LOCAL_PLUGIN_DIRECTORY}:/usr/local/fusionauth/plugins
+    networks:
+      - fusionauth_net
 
   # Open Search isn't technically required, but the `fusionauth` service currently depends on it, so we start it here.
   # You can change the search engine backend to `database` in the `.env` file if you would prefer to use that.
@@ -81,6 +85,8 @@ services:
       - 9600:9600 # Performance Analyzer
     volumes:
       - search_data:/usr/share/opensearch/data
+    networks:
+      - fusionauth_net
 
   #
   # Optional services
@@ -227,6 +233,35 @@ services:
       volumes:
         - my_postgres_data:/var/lib/postgresql/data
 
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    depends_on:
+      - fusionauth
+    ports:  
+      - "3002:3000"
+    environment:
+      GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
+      GF_AUTH_GENERIC_OAUTH_NAME: "FusionAuth"
+      GF_AUTH_GENERIC_OAUTH_CLIENT_ID: "e9fdb985-9173-4e01-9d73-ac2d60d1dc8e"
+      GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: "super-secret-secret-that-should-be-regenerated-for-production"
+      # Browser redirect URL (external)
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL: "http://localhost:9011/oauth2/authorize"
+      # Server-to-server URLs (internal Docker network)
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: "http://fusionauth:9011/oauth2/token"
+      GF_AUTH_GENERIC_OAUTH_API_URL: "http://fusionauth:9011/oauth2/userinfo"
+      GF_AUTH_GENERIC_OAUTH_SCOPES: "openid profile email"
+      GF_SERVER_ROOT_URL: "http://localhost:3002/"
+      # Additional OAuth settings that might help
+      GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP: "true"
+      GF_AUTH_GENERIC_OAUTH_AUTO_LOGIN: "false"
+      # Disable other auth methods if needed
+      GF_AUTH_DISABLE_LOGIN_FORM: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - fusionauth_net
+
 volumes:
   caddy_config:
   caddy_data:
@@ -236,3 +271,8 @@ volumes:
   prometheus_data:
   search_data:
   my_postgres_data:
+  grafana_data:
+
+networks:
+  fusionauth_net:
+    driver: bridge
