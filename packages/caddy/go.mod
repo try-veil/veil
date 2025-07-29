@@ -1,6 +1,6 @@
 module github.com/try-veil/veil/packages/caddy
 
-go 1.21
+go 1.22
 
 require (
 	github.com/bytedance/mockey v1.2.14

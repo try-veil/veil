@@ -112,7 +112,7 @@ export const authOptions: NextAuthOptions = {
       console.log("Token expired, refreshing...");
       // Refresh the token
       try {
-        const fusionAuthUrl = process.env.NEXT_PUBLIC_FUSIONAUTH_URL!;
+        const fusionAuthUrl = process.env.FUSIONAUTH_URL || process.env.NEXT_PUBLIC_FUSIONAUTH_URL!;
         const tenantId = process.env.FUSIONAUTH_TENANT_ID!;
 
         const response = await fetch(`${fusionAuthUrl}/api/jwt/refresh`, {

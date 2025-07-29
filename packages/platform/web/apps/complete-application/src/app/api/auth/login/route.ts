@@ -23,7 +23,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_FUSIONAUTH_URL}/api/login`, {
+    const fusionAuthUrl = process.env.FUSIONAUTH_URL || process.env.NEXT_PUBLIC_FUSIONAUTH_URL!;
+    const response = await fetch(`${fusionAuthUrl}/api/login`, {
       method: 'POST',
       headers: {
         "Content-Type": "application/json",

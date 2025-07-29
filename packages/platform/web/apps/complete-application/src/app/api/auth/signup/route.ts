@@ -21,7 +21,8 @@ export async function POST(req: Request) {
 
   const clientId = process.env.NEXT_PUBLIC_FUSIONAUTH_CLIENT_ID!;
   const clientSecret = process.env.FUSIONAUTH_CLIENT_SECRET!;
-  const fusionAuthUrl = process.env.NEXT_PUBLIC_FUSIONAUTH_URL!;
+  // Use server-side URL for API routes (Docker network hostname)
+  const fusionAuthUrl = process.env.FUSIONAUTH_URL || process.env.NEXT_PUBLIC_FUSIONAUTH_URL!;
   const apiKey = process.env.FUSIONAUTH_API_KEY!;
   const tenantId = process.env.FUSIONAUTH_TENANT_ID || ""; 
 

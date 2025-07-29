@@ -1,0 +1,238 @@
+services:
+  # Main application database
+  app_postgres:
+    image: postgres:16
+    container_name: veil_app_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydb
+    ports:
+      - "5433:5432"
+    volumes:
+      - app_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser -d mydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # FusionAuth database
+  fusionauth_db:
+    image: postgres:16.0-bookworm
+    container_name: veil_fusionauth_db
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: fusionauth
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    volumes:
+      - fusionauth_db_data:/var/lib/postgresql/data
+
+  # OpenSearch for FusionAuth
+  search:
+    image: opensearchproject/opensearch:2.11.0
+    container_name: veil_opensearch
+    environment:
+      cluster.name: fusionauth
+      discovery.type: single-node
+      node.name: search
+      plugins.security.disabled: "true"
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+    healthcheck:
+      interval: 10s
+      retries: 80
+      test: curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null http://localhost:9200/
+    restart: unless-stopped
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    volumes:
+      - search_data:/usr/share/opensearch/data
+
+  # FusionAuth application
+  fusionauth:
+    image: fusionauth/fusionauth-app:latest
+    container_name: veil_fusionauth
+    depends_on:
+      fusionauth_db:
+        condition: service_healthy
+      search:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: jdbc:postgresql://fusionauth_db:5432/fusionauth
+      DATABASE_ROOT_USERNAME: postgres
+      DATABASE_ROOT_PASSWORD: postgres
+      DATABASE_USERNAME: fusionauth
+      DATABASE_PASSWORD: hkaLBM3RVnyYeYeqE3WI1w2e4Avpy0Wd5O3s3
+      FUSIONAUTH_APP_KICKSTART_FILE: /usr/local/fusionauth/kickstart/kickstart.json
+      FUSIONAUTH_APP_MEMORY: 512M
+      FUSIONAUTH_APP_RUNTIME_MODE: development
+      FUSIONAUTH_APP_URL: http://fusionauth:9011
+      SEARCH_SERVERS: http://search:9200
+      SEARCH_TYPE: elasticsearch
+    healthcheck:
+      test: curl --silent --fail http://localhost:9011/api/status -o /dev/null -w "%{http_code}"
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    ports:
+      - "9011:9011"
+    volumes:
+      - fusionauth_config:/usr/local/fusionauth/config
+      - ./packages/platform/api/kickstart:/usr/local/fusionauth/kickstart
+      - ./packages/platform/api/plugins:/usr/local/fusionauth/plugins
+
+  # MinIO for file storage
+  minio:
+    image: minio/minio:latest
+    container_name: veil_minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server --console-address ":9001" /data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # Create MinIO buckets
+  createbuckets:
+    image: minio/mc:latest
+    container_name: veil_minio_setup
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set local http://minio:9000 minioadmin minioadmin;
+      mc mb --ignore-existing local/images;
+      mc anonymous set download local/images;
+      echo 'Bucket created ✔';
+      "
+
+  # Platform API
+  platform_api:
+    image: node:22-alpine
+    container_name: veil_platform_api
+    working_dir: /app
+    depends_on:
+      app_postgres:
+        condition: service_healthy
+      fusionauth:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://myuser:mypassword@app_postgres:5432/mydb
+      - NODE_ENV=development
+      - AUTH_BASE_URL=http://fusionauth:9011
+      - JWKS_URL=http://fusionauth:9011/.well-known/jwks.json
+      - DEFAULT_GATEWAY_URL=http://localhost:2020
+      - FUSIONAUTH_URL=http://fusionauth:9011
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./packages/platform/api:/app
+    command: ["sh", "-c", "npm install -g pnpm && pnpm install && pnpm prisma generate && pnpm run start:dev"]
+    restart: unless-stopped
+
+  # Platform Frontend
+  platform_frontend:
+    image: node:22-alpine
+    container_name: veil_platform_frontend
+    working_dir: /app
+    depends_on:
+      - platform_api
+      - minio
+      - fusionauth
+    environment:
+      # Client-side URLs (browser accessible)
+      - NEXT_PUBLIC_FUSIONAUTH_URL=http://localhost:9011
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:3000
+      - NEXT_PUBLIC_APP_URL=http://localhost:3001
+      - NEXT_PUBLIC_VEIL_URL=http://localhost:2021
+      # Server-side URLs (Docker network)
+      - FUSIONAUTH_URL=http://fusionauth:9011
+      - API_BASE_URL=http://platform_api:3000
+      - MINIO_ENDPOINT=http://minio:9000
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./packages/platform/web/apps/complete-application:/app
+    command: ["sh", "-c", "npm install -g pnpm && pnpm install && pnpm run dev"]
+    restart: unless-stopped
+
+  # Monitoring - Loki (optional)
+  loki:
+    image: grafana/loki:2.9.2
+    container_name: veil_loki
+    profiles:
+      - monitoring
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./packages/caddy/loki.yaml:/etc/loki/loki.yaml
+    command: -config.file=/etc/loki/loki.yaml
+    depends_on:
+      - minio
+
+  # Monitoring - Promtail (optional)
+  promtail:
+    image: grafana/promtail:2.9.2
+    container_name: veil_promtail
+    profiles:
+      - monitoring
+    volumes:
+      - ./packages/caddy/logs:/var/log/caddy
+      - ./packages/caddy/promtail.yaml:/etc/promtail/promtail.yaml
+    command: -config.file=/etc/promtail/promtail.yaml
+    depends_on:
+      - loki
+
+  # Monitoring - Grafana (optional)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: veil_grafana
+    profiles:
+      - monitoring
+    ports:
+      - "4000:3000"
+    environment:
+      GF_SERVER_ROOT_URL: http://localhost:4000
+    volumes:
+      - ./packages/logging/grafana/grafana.ini:/etc/grafana/grafana.ini
+    depends_on:
+      - loki
+      - minio
+
+volumes:
+  app_postgres_data:
+  fusionauth_db_data:
+  fusionauth_config:
+  search_data:
+  minio_data:
+
+networks:
+  default:
+    name: veil_network

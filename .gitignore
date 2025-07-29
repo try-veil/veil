@@ -20,6 +20,8 @@ osxcross
 .docusaurus
 node_modules
 
+**/*/.pnpm-store/*
+
 packages/platform/api/src/research
 packages/caddy/configs
 

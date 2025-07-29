@@ -1,0 +1,56 @@
+layout {
+    default_tab_template {
+        children
+        pane size=1 borderless=true {
+            plugin location="zellij:tab-bar"
+        }
+    }
+
+    tab name="Veil Dev" {
+        pane split_direction="vertical" {
+            pane name="Infrastructure Services" {
+                command "bash"
+                args "-c" "echo 'Starting infrastructure services...' && make infra && echo 'Infrastructure services started! Press Ctrl+C to stop when done.'"
+                cwd "/Users/techsavvyash/Documents/sweatAndBlood/try-veil/veil"
+            }
+            pane split_direction="horizontal" {
+                pane name="Caddy (Veil)" {
+                    command "bash"
+                    args "-c" "echo 'Waiting for services to start...' && sleep 20 && echo 'Starting Caddy with Veil module...' && cd packages/caddy && unset GOROOT && make watch"
+                    cwd "/Users/techsavvyash/Documents/sweatAndBlood/try-veil/veil"
+                }
+                pane name="Platform API" {
+                    command "bash"
+                    args "-c" "echo 'Waiting for database...' && sleep 25 && echo 'Starting Platform API...' && cp .env.local .env && pnpm prisma generate && pnpm run start:dev"
+                    cwd "/Users/techsavvyash/Documents/sweatAndBlood/try-veil/veil/packages/platform/api"
+                }
+                pane name="Platform Frontend" {
+                    command "bash"
+                    args "-c" "echo 'Waiting for API...' && sleep 30 && echo 'Starting Platform Frontend...' && cp .env.local .env && pnpm run dev"
+                    cwd "/Users/techsavvyash/Documents/sweatAndBlood/try-veil/veil/packages/platform/web/apps/complete-application"
+                }
+            }
+        }
+    }
+
+    tab name="Services Status" {
+        pane split_direction="horizontal" {
+            pane name="Infrastructure Status" {
+                command "bash"
+                args "-c" "watch -n 2 'docker-compose ps'"
+                cwd "/Users/techsavvyash/Documents/sweatAndBlood/try-veil/veil"
+            }
+            pane name="Infrastructure Logs" {
+                command "bash"
+                args "-c" "echo 'Infrastructure service logs (use Ctrl+C to exit):' && docker-compose logs -f app_postgres fusionauth_db fusionauth search minio createbuckets"
+                cwd "/Users/techsavvyash/Documents/sweatAndBlood/try-veil/veil"
+            }
+        }
+    }
+
+    tab name="Terminal" {
+        pane {
+            cwd "/Users/techsavvyash/Documents/sweatAndBlood/try-veil/veil"
+        }
+    }
+}

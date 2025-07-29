@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   const clientId = process.env.NEXT_PUBLIC_FUSIONAUTH_CLIENT_ID;
   const clientSecret = process.env.FUSIONAUTH_CLIENT_SECRET;
   const apiKey = process.env.FUSIONAUTH_API_KEY;
-  const fusionAuthUrl = process.env.NEXT_PUBLIC_FUSIONAUTH_URL;
+  const fusionAuthUrl = process.env.FUSIONAUTH_URL || process.env.NEXT_PUBLIC_FUSIONAUTH_URL;
   const tenantId = process.env.FUSIONAUTH_TENANT_ID || "";
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const redirectUri = `${appUrl}/callback`;
