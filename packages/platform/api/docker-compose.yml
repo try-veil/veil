@@ -241,6 +241,10 @@ services:
     ports:  
       - "3002:3000"
     environment:
+      # Disable all authentication methods except OAuth
+      GF_AUTH_BASIC_ENABLED: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+
       GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
       GF_AUTH_GENERIC_OAUTH_NAME: "FusionAuth"
       GF_AUTH_GENERIC_OAUTH_CLIENT_ID: "e9fdb985-9173-4e01-9d73-ac2d60d1dc8e"
@@ -254,9 +258,18 @@ services:
       GF_SERVER_ROOT_URL: "http://localhost:3002/"
       # Additional OAuth settings that might help
       GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP: "true"
-      GF_AUTH_GENERIC_OAUTH_AUTO_LOGIN: "false"
+      GF_AUTH_GENERIC_OAUTH_AUTO_LOGIN: "true"
+      # Multiple logout redirect configurations
+      GF_AUTH_SIGNOUT_REDIRECT_URL: "http://localhost:9011/oauth2/logout?client_id=e9fdb985-9173-4e01-9d73-ac2d60d1dc8e"
+      GF_AUTH_GENERIC_OAUTH_LOGOUT_REDIRECT_URL: "http://localhost:9011/oauth2/logout"
       # Disable other auth methods if needed
-      GF_AUTH_DISABLE_LOGIN_FORM: "false"
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_AUTH_DISABLE_SIGNOUT_MENU: "false"
+      # Session settings
+      GF_SESSION_COOKIE_SECURE: "false"
+      GF_SESSION_COOKIE_SAMESITE: "lax"
+      # Force OAuth login only
+      GF_AUTH_OAUTH_AUTO_LOGIN: "true"
     volumes:
       - grafana_data:/var/lib/grafana
     networks:
