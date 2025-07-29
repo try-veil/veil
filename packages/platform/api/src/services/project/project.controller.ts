@@ -21,6 +21,7 @@ import {
   ProjectResponseDto,
   ProjectWithRelationsDto,
   ProjectAllowedApiDto,
+  ProjectApiDetailsDto,
 } from './dto/project.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { RoleGuard } from '../auth/role.guard';
@@ -70,7 +71,7 @@ export class ProjectController {
   }
 
   @Get('marketplace')
-  // @Roles('consumer') 
+  // @Roles('consumer')
   @ApiOperation({ summary: 'Get all available projects for marketplace' })
   @ApiResponse({
     status: 200,
@@ -110,6 +111,23 @@ export class ProjectController {
     @Req() req: any,
   ): Promise<ProjectWithRelationsDto> {
     return this.projectService.findOne(id, req.user.id);
+  }
+
+  @Get(':id/apis')
+  @ApiOperation({ summary: 'Get all APIs under a project with full details' })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns all APIs in the project with full details',
+    type: [ProjectApiDetailsDto],
+  })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  @ApiResponse({ status: 403, description: 'Access denied to project' })
+  getProjectApis(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: any,
+  ): Promise<ProjectApiDetailsDto[]> {
+    return this.projectService.getProjectApis(id, req.user.id);
   }
 
   @Patch(':id')

@@ -50,9 +50,9 @@ export class TenantController {
   @ApiResponse({ status: 403, description: 'Forbidden resource' })
   async createTenant(
     @Body() createTenantDto: CreateTenantDto,
-    @Req() req:any
+    @Req() req: any,
   ): Promise<TenantResponseDto> {
-    return this.tenantService.createTenant(createTenantDto,req.user.id);
+    return this.tenantService.createTenant(createTenantDto, req.user.id);
   }
 
   @Get()

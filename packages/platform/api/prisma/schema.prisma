@@ -125,6 +125,7 @@ model User {
     updatedAt          DateTime            @updatedAt
     tenantId           String?
     tenant             Tenant?   @relation(fields: [tenantId], references: [id])
+    grafanaDashboardUid String?
 
     @@map("users")
 }
@@ -555,5 +556,11 @@ model PlanConfig {
   basicOf               HubListing? @relation("BasicPlan")
   proOf                 HubListing? @relation("ProPlan")
   ultraOf               HubListing? @relation("UltraPlan")
+}
+
+model NewsletterSubscription {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
 }
 

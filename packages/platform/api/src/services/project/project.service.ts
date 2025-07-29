@@ -3,20 +3,23 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
-import {HubListingService } from "../hublisting/hublisting.service"
+import { HubListingService } from '../hublisting/hublisting.service';
 import {
   CreateProjectDto,
   UpdateProjectDto,
   ProjectResponseDto,
   ProjectWithRelationsDto,
+  ProjectApiDetailsDto,
 } from './dto/project.dto';
 
 @Injectable()
 export class ProjectService {
   constructor(
-    private readonly prisma: PrismaService,  
+    private readonly prisma: PrismaService,
     private readonly hubListingService: HubListingService,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -39,10 +42,10 @@ export class ProjectService {
         thumbnail: createProjectDto.thumbnail,
         enableLimitsToAPIs: createProjectDto.enableLimitsToAPIs ?? false,
         tenant: {
-          connect: { id: createProjectDto.tenantId }
+          connect: { id: createProjectDto.tenantId },
         },
-        target_url:createProjectDto.target_url,
-          // Create initial ProjectAcl with OWNER role for the user who created it
+        target_url: createProjectDto.target_url,
+        // Create initial ProjectAcl with OWNER role for the user who created it
         projectAcls: {
           create: {
             userId: userId, // Use direct field instead of relation
@@ -51,14 +54,13 @@ export class ProjectService {
       },
     });
 
-
     await this.prisma.hubListing.create({
       data: {
         logo: createProjectDto.logo,
         category: createProjectDto.category,
         shortDescription: createProjectDto.description,
         longDescription: '',
-        website: '',
+        website: createProjectDto.website || '',
         termsOfUse: '',
         visibleToPublic: false,
         healthCheckUrl: '',
@@ -66,7 +68,7 @@ export class ProjectService {
         proxySecret: '',
         requestSizeLimitMb: 10,
         proxyTimeoutSeconds: 60,
-    
+
         basicPlan: {
           create: {
             enabled: true,
@@ -91,13 +93,12 @@ export class ProjectService {
             hardLimitQuota: 150000,
           },
         },
-    
+
         project: {
           connect: { id: project.id },
         },
       },
     });
-    
 
     // Add back the fields for API response that aren't in the database
     return {
@@ -120,24 +121,23 @@ export class ProjectService {
         hubListing: true, // if you want to access fields like logo/category later
       },
     });
-  
+
     return projects.map((project) => ({
       ...project,
       description: null, // if you want to hide this field
       // you can optionally expose `project.hubListing.logo`, etc., here
     }));
   }
-  
-  
+
   async findOneForConsumer(id: number): Promise<ProjectWithRelationsDto> {
     const project = await this.prisma.project.findUnique({
       where: { id },
       include: {
         hubListing: {
           include: {
-            basicPlan: true, 
-            proPlan: true,  
-            ultraPlan: true, 
+            basicPlan: true,
+            proPlan: true,
+            ultraPlan: true,
           },
         },
         projectAllowedAPIs: {
@@ -149,13 +149,21 @@ export class ProjectService {
         },
       },
     });
-  
+
     if (!project) {
       throw new NotFoundException(`Project with ID ${id} not found`);
     }
-  
+
+    const gatewayUrl = this.configService.get<string>('DEFAULT_GATEWAY_URL');
+
+    // Generate unique test key per API following the same pattern as onboarding service
+    const uniqueTestKey = `test-key-${project.id || project.name.replace(/\s+/g, '_').toLowerCase()}`;
+
     return {
       ...project,
+      // Replace target_url with gateway URL so frontend calls go through Veil gateway
+      target_url: gatewayUrl,
+      gateway_api_key: uniqueTestKey,
       description: null,
       apis: project.projectAllowedAPIs.map((api) => ({
         apiId: api.apiId,
@@ -163,7 +171,6 @@ export class ProjectService {
       })),
     };
   }
-  
 
   /**
    * Find all projects accessible by user
@@ -191,6 +198,92 @@ export class ProjectService {
   }
 
   /**
+   * Get all APIs under a project with full details
+   */
+  async getProjectApis(
+    projectId: number,
+    userId: string,
+  ): Promise<ProjectApiDetailsDto[]> {
+    // First verify user has access to the project
+    const project = await this.prisma.project.findFirst({
+      where: {
+        id: projectId,
+        projectAcls: {
+          some: {
+            userId,
+          },
+        },
+      },
+    });
+
+    if (!project) {
+      throw new NotFoundException(
+        `Project with ID ${projectId} not found or access denied`,
+      );
+    }
+
+    // Get all API IDs linked to this project
+    const projectAllowedApis = await this.prisma.projectAllowedAPI.findMany({
+      where: {
+        projectId: projectId,
+        status: 'ACTIVE', // Only return active APIs
+      },
+      select: {
+        apiId: true,
+      },
+    });
+
+    if (projectAllowedApis.length === 0) {
+      return []; // Return empty array if no APIs found
+    }
+
+    // Get full API details for all APIs in this project
+    const apiIds = projectAllowedApis.map((pa) => pa.apiId);
+    const apis = await this.prisma.api.findMany({
+      where: {
+        id: {
+          in: apiIds,
+        },
+        status: 'ACTIVE', // Only return active APIs
+      },
+    });
+
+    // Map to the response format
+    return apis.map((api) => {
+      // Map required headers from JSON format to array
+      const headers = Object.entries((api.requiredHeaders as any) || {}).map(
+        ([name, details]: [string, any]) => ({
+          name,
+          value: details.value,
+          is_variable: details.isVariable,
+        }),
+      );
+
+      // Extract parameters from specification if available
+      const parameters = (api.specification as any)?.parameters || [];
+
+      return {
+        api_id: api.id,
+        project_id: projectId,
+        name: api.name,
+        path: api.path,
+        target_url: (api.specification as any)?.target_url || '',
+        method: api.method,
+        version: api.version,
+        description: api.description,
+        required_subscription:
+          (api.specification as any)?.required_subscription || 'basic',
+        documentation_url: api.documentationUrl,
+        required_headers: headers,
+        status: api.status,
+        created_at: api.createdAt,
+        updated_at: api.updatedAt,
+        parameters: parameters,
+      };
+    });
+  }
+
+  /**
    * Find project by ID (with check if user has access)
    */
   async findOne(id: number, userId: string): Promise<ProjectWithRelationsDto> {
@@ -211,9 +304,9 @@ export class ProjectService {
       include: {
         hubListing: {
           include: {
-            basicPlan: true, 
-            proPlan: true,  
-            ultraPlan: true, 
+            basicPlan: true,
+            proPlan: true,
+            ultraPlan: true,
           },
         },
         projectAllowedAPIs: {
@@ -221,7 +314,7 @@ export class ProjectService {
             apiId: true,
             apiVersionId: true,
             status: true,
-            apiModel: { 
+            apiModel: {
               select: {
                 name: true,
               },
@@ -243,14 +336,29 @@ export class ProjectService {
     }
 
     // Transform to expected format
+    const gatewayUrl = this.configService.get<string>('DEFAULT_GATEWAY_URL');
+
+    console.log(
+      `[ProjectService.findOne] Original target_url: ${project.target_url}`,
+    );
+    console.log(
+      `[ProjectService.findOne] Gateway URL from config: ${gatewayUrl}`,
+    );
+    console.log(`[ProjectService.findOne] Returning target_url: ${gatewayUrl}`);
+
+    // Generate unique test key per API following the same pattern as onboarding service
+    const uniqueTestKey = `test-key-${project.id || project.name.replace(/\s+/g, '_').toLowerCase()}`;
+
     return {
       ...project,
-      description: null, // No description in DB, set to null for API consistency
+      // Replace target_url with gateway URL so frontend calls go through Veil gateway
+      target_url: gatewayUrl,
+      gateway_api_key: uniqueTestKey,
+      description: null,
       apis: project.projectAllowedAPIs.map((api) => ({
         apiId: api.apiId,
         apiVersionId: api.apiVersionId,
-        name: api.apiModel?.name ?? '', // Use apiModel
-
+        name: api.apiModel?.name ?? '',
       })),
     } as ProjectWithRelationsDto;
   }
@@ -267,14 +375,15 @@ export class ProjectService {
     await this.findOne(id, userId);
 
     // Extract only updatable fields that exist in the Project model
-    const { name, favorite, thumbnail, enableLimitsToAPIs,target_url } = updateProjectDto;
+    const { name, favorite, thumbnail, enableLimitsToAPIs, target_url } =
+      updateProjectDto;
 
     // Only include fields that are defined and exist in the schema
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
     if (favorite !== undefined) updateData.favorite = favorite;
     if (thumbnail !== undefined) updateData.thumbnail = thumbnail;
-    if (target_url !== undefined) updateData.target_url=target_url
+    if (target_url !== undefined) updateData.target_url = target_url;
     if (enableLimitsToAPIs !== undefined)
       updateData.enableLimitsToAPIs = enableLimitsToAPIs;
 
@@ -287,8 +396,8 @@ export class ProjectService {
     const hubListing = await this.prisma.hubListing.findUnique({
       where: { projectId: id },
     });
-    console.log("the hublisting is",hubListing)
-  
+    console.log('the hublisting is', hubListing);
+
     if (hubListing) {
       const {
         logo,
@@ -305,9 +414,9 @@ export class ProjectService {
         longDescription,
         healthCheckUrl,
         apiDocumentation,
-        proxySecret
+        proxySecret,
       } = updateProjectDto as any;
-  
+
       await this.hubListingService.update(hubListing.id, {
         logo,
         category,
@@ -324,7 +433,7 @@ export class ProjectService {
         longDescription,
         healthCheckUrl,
         apiDocumentation,
-        proxySecret
+        proxySecret,
       });
     }
 
@@ -366,6 +475,10 @@ export class ProjectService {
       }),
       // Delete project subscriptions (this might need additional logic depending on your business rules)
       this.prisma.subscription.deleteMany({
+        where: { projectId: id },
+      }),
+      // Delete hub listing and its related plans
+      this.prisma.hubListing.deleteMany({
         where: { projectId: id },
       }),
       // Finally delete the project

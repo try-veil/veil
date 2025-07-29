@@ -37,7 +37,7 @@ func (s *APIStore) CreateAPI(config *models.APIConfig) error {
 		s.logger.Debug("API key to be created",
 			zap.String("key_name", key.Name),
 			zap.String("key_value", key.Key),
-			zap.Bool("is_active", key.IsActive))
+			zap.Bool("is_active", *key.IsActive))
 	}
 
 	err := s.db.Create(config).Error
@@ -98,7 +98,7 @@ func (s *APIStore) GetAPIByPath(path string) (*models.APIConfig, error) {
 			s.logger.Debug("found API key",
 				zap.String("key_name", key.Name),
 				zap.String("key_value", key.Key),
-				zap.Bool("is_active", key.IsActive))
+				zap.Bool("is_active", *key.IsActive))
 		}
 	}
 
@@ -131,7 +131,7 @@ func (s *APIStore) GetAPIByPath(path string) (*models.APIConfig, error) {
 			s.logger.Debug("matched configuration API key",
 				zap.String("key_name", key.Name),
 				zap.String("key_value", key.Key),
-				zap.Bool("is_active", key.IsActive))
+				zap.Bool("is_active", *key.IsActive))
 		}
 	} else {
 		s.logger.Debug("no matching API configuration found",
@@ -170,10 +170,10 @@ func (s *APIStore) ValidateAPIKey(apiConfig *models.APIConfig, apiKey string) bo
 		s.logger.Debug("checking API key",
 			zap.String("key_name", key.Name),
 			zap.String("key_value", key.Key),
-			zap.Bool("is_active", key.IsActive),
+			zap.Bool("is_active", *key.IsActive),
 			zap.Bool("matches", key.Key == apiKey))
 
-		if key.Key == apiKey && key.IsActive {
+		if key.Key == apiKey && *key.IsActive {
 			// Check expiration if set
 			if key.ExpiresAt != nil && key.ExpiresAt.Before(time.Now()) {
 				s.logger.Debug("API key expired",
@@ -322,6 +322,7 @@ func (s *APIStore) UpdateAPI(config *models.APIConfig) error {
 
 	// Create new methods
 	for i := range config.Methods {
+		config.Methods[i].ID = 0
 		config.Methods[i].APIConfigID = config.ID
 		if err := tx.Create(&config.Methods[i]).Error; err != nil {
 			tx.Rollback()
@@ -331,6 +332,7 @@ func (s *APIStore) UpdateAPI(config *models.APIConfig) error {
 
 	// Create new API keys
 	for i := range config.APIKeys {
+		config.APIKeys[i].ID = 0
 		config.APIKeys[i].APIConfigID = config.ID
 		if err := tx.Create(&config.APIKeys[i]).Error; err != nil {
 			tx.Rollback()
@@ -351,6 +353,14 @@ func (s *APIStore) UpdateAPI(config *models.APIConfig) error {
 		zap.Uint("id", config.ID))
 
 	return nil
+}
+
+func (s *APIStore) DeleteAPIKey(path, key string) error {
+	api, err := s.GetAPIByPath(path)
+	if err != nil {
+		return err
+	}
+	return s.db.Where("api_config_id = ? AND key = ?", api.ID, key).Delete(&models.APIKey{}).Error
 }
 
 // AddAPIKeys adds new API keys to an existing API configuration
@@ -395,9 +405,12 @@ func (s *APIStore) AddAPIKeys(path string, newKeys []models.APIKey) error {
 				break
 			}
 		}
+		active := true
 		if !isDuplicate {
 			newKey.APIConfigID = apiConfig.ID
-			newKey.IsActive = true
+			if newKey.IsActive == nil {
+				newKey.IsActive = &active
+			}
 			keysToAdd = append(keysToAdd, newKey)
 		}
 	}

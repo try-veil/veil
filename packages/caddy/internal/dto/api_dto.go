@@ -8,7 +8,7 @@ import (
 type APIKeyDTO struct {
 	Key       string     `json:"key"`
 	Name      string     `json:"name"`
-	IsActive  bool       `json:"is_active,omitempty"`
+	IsActive  *bool      `json:"is_active,omitempty"`
 	ExpiresAt *time.Time `json:"expires_at,omitempty"`
 }
 
@@ -34,7 +34,7 @@ type APIKeysRequestDTO struct {
 type APIKeyStatusRequestDTO struct {
 	Path     string `json:"path" binding:"required"`
 	APIKey   string `json:"api_key" binding:"required"`
-	IsActive bool   `json:"is_active"`
+	IsActive *bool  `json:"is_active,omitempty"`
 }
 
 // APIResponseDTO represents the common response structure
@@ -49,4 +49,10 @@ type ParameterDTO struct {
 	Name     string `json:"name"`
 	Type     string `json:"type"` // query, path, header, body
 	Required bool   `json:"required"`
+}
+
+// APIKeyDeleteRequestDTO represents the request body for deleting an API key
+type APIKeyDeleteRequestDTO struct {
+	Path   string `json:"path"`
+	APIKey string `json:"api_key"`
 }

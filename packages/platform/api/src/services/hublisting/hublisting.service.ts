@@ -14,7 +14,9 @@ export class HubListingService {
     };
 
     if (basicPlan) {
-      const createdBasic = await this.prisma.planConfig.create({ data: basicPlan });
+      const createdBasic = await this.prisma.planConfig.create({
+        data: basicPlan,
+      });
       createData.basicPlanId = createdBasic.id;
     }
 
@@ -24,7 +26,9 @@ export class HubListingService {
     }
 
     if (ultraPlan) {
-      const createdUltra = await this.prisma.planConfig.create({ data: ultraPlan });
+      const createdUltra = await this.prisma.planConfig.create({
+        data: ultraPlan,
+      });
       createData.ultraPlanId = createdUltra.id;
     }
 
@@ -75,7 +79,9 @@ export class HubListingService {
           data: basicPlan,
         });
       } else {
-        const created = await this.prisma.planConfig.create({ data: basicPlan });
+        const created = await this.prisma.planConfig.create({
+          data: basicPlan,
+        });
         updateData.basicPlanId = created.id;
       }
     }
@@ -99,7 +105,9 @@ export class HubListingService {
           data: ultraPlan,
         });
       } else {
-        const created = await this.prisma.planConfig.create({ data: ultraPlan });
+        const created = await this.prisma.planConfig.create({
+          data: ultraPlan,
+        });
         updateData.ultraPlanId = created.id;
       }
     }
@@ -120,29 +128,28 @@ export class HubListingService {
         ultraPlanId: true,
       },
     });
-  
+
     // If associated plans exist, delete them
     if (hubListing) {
       const { basicPlanId, proPlanId, ultraPlanId } = hubListing;
-  
+
       // Delete associated plans (if they exist)
       if (basicPlanId) {
         await this.prisma.planConfig.delete({ where: { id: basicPlanId } });
       }
-  
+
       if (proPlanId) {
         await this.prisma.planConfig.delete({ where: { id: proPlanId } });
       }
-  
+
       if (ultraPlanId) {
         await this.prisma.planConfig.delete({ where: { id: ultraPlanId } });
       }
-  
+
       // Finally, delete the hubListing
       return this.prisma.hubListing.delete({ where: { id } });
     }
-  
+
     throw new Error('HubListing not found');
   }
-  
 }
