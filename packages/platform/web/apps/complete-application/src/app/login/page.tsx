@@ -13,7 +13,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams?.get("redirect") || "/projects";
+  const redirectPath = searchParams?.get("redirect") || "/";
   const { login, isAuthenticated } = useAuth();
   const { user, setUser } = useUser();
 
@@ -22,7 +22,7 @@ export default function Login() {
     console.log("Login page - isAuthenticated:", isAuthenticated);
     if (isAuthenticated && user) {
       // console.log("Already authenticated, redirecting to:", redirectPath);
-      router.push("/projects");
+      router.push("/");
     }
   }, [isAuthenticated, user, router]);
 
@@ -50,7 +50,7 @@ export default function Login() {
 
         // Allow a small delay to ensure localStorage and cookies are set
         setTimeout(() => {
-          router.push("/projects");
+          router.push("/");
         }, 300);
       } else {
         setError(data.error_description || "Login failed");
