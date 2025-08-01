@@ -19,6 +19,6 @@ import { CacheModule } from '@nestjs/cache-manager';
   ],
   controllers: [OnboardingController],
   providers: [OnboardingService, GatewayService],
-  exports: [OnboardingService],
+  exports: [OnboardingService, GatewayService],
 })
 export class OnboardingModule {}

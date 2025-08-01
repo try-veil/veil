@@ -26,8 +26,10 @@ export class GatewayService {
   ): Promise<{ status: string; message: string; api: any }> {
     try {
       // FIXED: Convert NestJS request to Veil's expected format
+      // Ensure path starts with / to match Caddy's r.URL.Path format
+      const normalizedPath = request.path.startsWith('/') ? request.path : `/${request.path}`;
       const veilRequest = {
-        path: request.path,
+        path: normalizedPath,
         upstream: request.target_url,
         required_subscription: request.required_subscription || 'free',
         methods: [request.method],
@@ -94,7 +96,7 @@ export class GatewayService {
     try {
       const response = await firstValueFrom(
         this.httpService.patch(`${this.gatewayUrl}/veil/api/routes/${apiId}`, {
-          path: request.path,
+          path: request.path.startsWith('/') ? request.path : `/${request.path}`,
           upstream: request.target_url,
           methods: [request.method],
           required_headers: request.required_headers?.map((h) => ({
@@ -146,7 +148,7 @@ export class GatewayService {
 
       const response = await firstValueFrom(
         this.httpService.put(`${this.gatewayUrl}/veil/api/keys`, {
-          path: api.path, // Use the actual API path instead of the ID
+          path: api.path.startsWith('/') ? api.path : `/${api.path}`, // Normalize path with leading slash
           api_keys: [
             {
               key: apiKey,
@@ -181,6 +183,17 @@ export class GatewayService {
         `Failed to delete API key: ${error.message}`,
         error.stack,
       );
+
+      // Log more details about the error
+      if (error.response) {
+        this.logger.error(`Response status: ${error.response.status}`);
+        this.logger.error(
+          `Response data: ${JSON.stringify(error.response.data)}`,
+        );
+        this.logger.error(`API key attempted to delete: ${apiKey}`);
+        this.logger.error(`Gateway URL: ${this.gatewayUrl}/veil/api/keys/${apiKey}`);
+      }
+
       throw error;
     }
   }

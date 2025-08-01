@@ -1050,6 +1050,973 @@
         ]
       }
     },
+    "/credits/{userId}/generate-api-key": {
+      "post": {
+        "operationId": "CreditController_generateApiKey",
+        "summary": "Generate API key and deduct credits",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateApiKeyRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "API key generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateApiKeyResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or insufficient credits"
+          }
+        },
+        "tags": [
+          "credits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/credits/{userId}/purchase": {
+      "post": {
+        "operationId": "CreditController_purchaseCredits",
+        "summary": "Purchase credits",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurchaseCreditsRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Credits purchased successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseCreditsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request"
+          }
+        },
+        "tags": [
+          "credits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/subscriptions/{userId}": {
+      "post": {
+        "operationId": "SubscriptionController_create",
+        "summary": "Create a new subscription",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSubscriptionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Subscription created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request"
+          }
+        },
+        "tags": [
+          "subscriptions"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "SubscriptionController_listSubscriptions",
+        "summary": "List subscriptions for a user",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "ACTIVE",
+                "INACTIVE",
+                "SUSPENDED",
+                "EXPIRED",
+                "CANCELLED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns list of subscriptions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "subscriptions"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/subscriptions/{userId}/{subscriptionId}": {
+      "get": {
+        "operationId": "SubscriptionController_findById",
+        "summary": "Get subscription by ID",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subscriptionId",
+            "required": true,
+            "in": "path",
+            "description": "Subscription ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the subscription",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Subscription not found"
+          }
+        },
+        "tags": [
+          "subscriptions"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "SubscriptionController_update",
+        "summary": "Update subscription",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subscriptionId",
+            "required": true,
+            "in": "path",
+            "description": "Subscription ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSubscriptionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Subscription updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Subscription not found"
+          }
+        },
+        "tags": [
+          "subscriptions"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/subscriptions/{userId}/tenant/{tenantId}": {
+      "get": {
+        "operationId": "SubscriptionController_findByTenantId",
+        "summary": "Get active subscription by tenant ID",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Tenant ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the active subscription",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active subscription found"
+          }
+        },
+        "tags": [
+          "subscriptions"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/subscriptions/{userId}/{subscriptionId}/details": {
+      "get": {
+        "operationId": "SubscriptionController_getSubscriptionDetails",
+        "summary": "Get detailed subscription information",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subscriptionId",
+            "required": true,
+            "in": "path",
+            "description": "Subscription ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns detailed subscription information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionDetailsResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Subscription not found"
+          }
+        },
+        "tags": [
+          "subscriptions"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/subscriptions/{userId}/{subscriptionId}/deactivate": {
+      "patch": {
+        "operationId": "SubscriptionController_deactivate",
+        "summary": "Deactivate subscription",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subscriptionId",
+            "required": true,
+            "in": "path",
+            "description": "Subscription ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Subscription deactivated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Subscription not found"
+          }
+        },
+        "tags": [
+          "subscriptions"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/subscriptions/{userId}/{subscriptionId}/regenerate-key": {
+      "patch": {
+        "operationId": "SubscriptionController_regenerateApiKey",
+        "summary": "Regenerate API key for subscription",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subscriptionId",
+            "required": true,
+            "in": "path",
+            "description": "Subscription ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "API key regenerated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Subscription not found"
+          }
+        },
+        "tags": [
+          "subscriptions"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/subscriptions/{userId}/{subscriptionId}/cancel": {
+      "delete": {
+        "operationId": "SubscriptionController_cancelSubscription",
+        "summary": "Cancel subscription",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subscriptionId",
+            "required": true,
+            "in": "path",
+            "description": "Subscription ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Subscription cancelled successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionCancellationResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Subscription not found"
+          }
+        },
+        "tags": [
+          "subscriptions"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/onboard": {
+      "put": {
+        "operationId": "OnboardingController_registerApi",
+        "summary": "Register a new API",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiRegistrationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "API registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiRegistrationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "403": {
+            "description": "Forbidden - requires provider role"
+          }
+        },
+        "tags": [
+          "onboarding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/onboard/api/{apiId}": {
+      "get": {
+        "operationId": "OnboardingController_getApiDetails",
+        "summary": "Get API details",
+        "parameters": [
+          {
+            "name": "apiId",
+            "required": true,
+            "in": "path",
+            "description": "API ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns API details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiDetailsResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "API not found"
+          }
+        },
+        "tags": [
+          "onboarding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "OnboardingController_updateApi",
+        "summary": "Update an API",
+        "parameters": [
+          {
+            "name": "apiId",
+            "required": true,
+            "in": "path",
+            "description": "API ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiRegistrationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "API updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiDetailsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "403": {
+            "description": "Forbidden - requires provider role"
+          },
+          "404": {
+            "description": "API not found"
+          }
+        },
+        "tags": [
+          "onboarding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "OnboardingController_deleteApi",
+        "summary": "Delete an API",
+        "parameters": [
+          {
+            "name": "apiId",
+            "required": true,
+            "in": "path",
+            "description": "API ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "API deleted successfully"
+          },
+          "403": {
+            "description": "Forbidden - requires provider role"
+          },
+          "404": {
+            "description": "API not found"
+          }
+        },
+        "tags": [
+          "onboarding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/onboard/test": {
+      "post": {
+        "operationId": "OnboardingController_testApi",
+        "summary": "Test an API endpoint before buying subscription",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiRegistrationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "API test response"
+          },
+          "403": {
+            "description": "Rate limit exceeded"
+          }
+        },
+        "tags": [
+          "onboarding"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/plans": {
+      "post": {
+        "operationId": "PlanController_create",
+        "summary": "Create a new plan",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Plan created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "409": {
+            "description": "Plan name already exists"
+          }
+        },
+        "tags": [
+          "plans"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "PlanController_findAll",
+        "summary": "Get all plans",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of all plans",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlanResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "plans"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/plans/{id}": {
+      "get": {
+        "operationId": "PlanController_findById",
+        "summary": "Get a plan by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Plan ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plan details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Plan not found"
+          }
+        },
+        "tags": [
+          "plans"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "PlanController_update",
+        "summary": "Update a plan",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Plan ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Plan updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Plan not found"
+          },
+          "409": {
+            "description": "Plan name already exists"
+          }
+        },
+        "tags": [
+          "plans"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "PlanController_delete",
+        "summary": "Delete a plan",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Plan ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Plan deleted successfully"
+          },
+          "404": {
+            "description": "Plan not found"
+          },
+          "409": {
+            "description": "Cannot delete plan with active subscriptions"
+          }
+        },
+        "tags": [
+          "plans"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/projects": {
       "post": {
         "operationId": "ProjectController_create",
@@ -1170,6 +2137,49 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProjectWithRelationsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found"
+          }
+        },
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/projects/marketplace/{id}/apis": {
+      "get": {
+        "operationId": "ProjectController_getMarketplaceProjectApis",
+        "summary": "Get all APIs under a marketplace project",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Project ID",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns all APIs in the marketplace project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectApiDetailsDto"
+                  }
                 }
               }
             }
@@ -1594,213 +2604,6 @@
         },
         "tags": [
           "hublistings"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/onboard": {
-      "put": {
-        "operationId": "OnboardingController_registerApi",
-        "summary": "Register a new API",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApiRegistrationRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "API registered successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiRegistrationResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "403": {
-            "description": "Forbidden - requires provider role"
-          }
-        },
-        "tags": [
-          "onboarding"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/onboard/api/{apiId}": {
-      "get": {
-        "operationId": "OnboardingController_getApiDetails",
-        "summary": "Get API details",
-        "parameters": [
-          {
-            "name": "apiId",
-            "required": true,
-            "in": "path",
-            "description": "API ID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns API details",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiDetailsResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden - requires provider role"
-          },
-          "404": {
-            "description": "API not found"
-          }
-        },
-        "tags": [
-          "onboarding"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "patch": {
-        "operationId": "OnboardingController_updateApi",
-        "summary": "Update an API",
-        "parameters": [
-          {
-            "name": "apiId",
-            "required": true,
-            "in": "path",
-            "description": "API ID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApiRegistrationRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "API updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiDetailsResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "403": {
-            "description": "Forbidden - requires provider role"
-          },
-          "404": {
-            "description": "API not found"
-          }
-        },
-        "tags": [
-          "onboarding"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "delete": {
-        "operationId": "OnboardingController_deleteApi",
-        "summary": "Delete an API",
-        "parameters": [
-          {
-            "name": "apiId",
-            "required": true,
-            "in": "path",
-            "description": "API ID",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "API deleted successfully"
-          },
-          "403": {
-            "description": "Forbidden - requires provider role"
-          },
-          "404": {
-            "description": "API not found"
-          }
-        },
-        "tags": [
-          "onboarding"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/onboard/test": {
-      "post": {
-        "operationId": "OnboardingController_testApi",
-        "summary": "Test an API endpoint before buying subscription",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApiRegistrationRequestDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "API test response"
-          },
-          "403": {
-            "description": "Rate limit exceeded"
-          }
-        },
-        "tags": [
-          "onboarding"
         ],
         "security": [
           {
@@ -2791,6 +3594,466 @@
           "adjustedBy"
         ]
       },
+      "GenerateApiKeyRequestDto": {
+        "type": "object",
+        "properties": {
+          "creditCost": {
+            "type": "number",
+            "description": "Cost in credits to generate the API key",
+            "example": 100
+          },
+          "keyName": {
+            "type": "string",
+            "description": "Name for the API key",
+            "example": "My API Key"
+          },
+          "apiId": {
+            "type": "string",
+            "description": "API ID to associate with the key",
+            "example": "api-123"
+          },
+          "projectId": {
+            "type": "number",
+            "description": "Project ID to associate with the key",
+            "example": 1
+          }
+        },
+        "required": [
+          "creditCost"
+        ]
+      },
+      "GenerateApiKeyResponseDto": {
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "type": "string",
+            "description": "Generated API key",
+            "example": "veil_1234567890abcdef"
+          },
+          "remainingCredits": {
+            "type": "number",
+            "description": "Remaining credits after deduction",
+            "example": 900
+          },
+          "subscriptionId": {
+            "type": "string",
+            "description": "Subscription ID for the generated key",
+            "example": "sub-123"
+          }
+        },
+        "required": [
+          "apiKey",
+          "remainingCredits",
+          "subscriptionId"
+        ]
+      },
+      "PurchaseCreditsRequestDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "description": "Amount of credits to purchase",
+            "example": 1000
+          },
+          "paymentMethodType": {
+            "type": "string",
+            "description": "Payment method type",
+            "example": "CARD",
+            "enum": [
+              "CARD",
+              "CREDITS",
+              "ACH",
+              "OFFLINE"
+            ]
+          },
+          "paymentMethodId": {
+            "type": "string",
+            "description": "Payment method ID",
+            "example": "pm_1234567890"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency for the purchase",
+            "example": "USD"
+          }
+        },
+        "required": [
+          "amount",
+          "paymentMethodType"
+        ]
+      },
+      "PurchaseCreditsResponseDto": {
+        "type": "object",
+        "properties": {
+          "transactionId": {
+            "type": "string",
+            "description": "Transaction ID",
+            "example": "txn_1234567890"
+          },
+          "creditsAdded": {
+            "type": "number",
+            "description": "Credits added to account",
+            "example": 1000
+          },
+          "newBalance": {
+            "type": "number",
+            "description": "New credit balance",
+            "example": 1900
+          },
+          "paymentStatus": {
+            "type": "string",
+            "description": "Payment status",
+            "example": "SUCCEEDED",
+            "enum": [
+              "PENDING",
+              "PROCESSING",
+              "SUCCEEDED",
+              "FAILED"
+            ]
+          }
+        },
+        "required": [
+          "transactionId",
+          "creditsAdded",
+          "newBalance",
+          "paymentStatus"
+        ]
+      },
+      "CreateSubscriptionDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SubscriptionResponseDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SubscriptionListResponseDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SubscriptionDetailsResponseDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateSubscriptionDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SubscriptionCancellationResponseDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "HeaderParameterDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the header",
+            "example": "X-API-Key"
+          },
+          "value": {
+            "type": "string",
+            "description": "Value of the header",
+            "example": "your-api-key"
+          },
+          "is_variable": {
+            "type": "boolean",
+            "description": "Whether the value is a variable",
+            "example": false
+          }
+        },
+        "required": [
+          "name",
+          "value",
+          "is_variable"
+        ]
+      },
+      "ParameterDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the parameter",
+            "example": "userId"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of the parameter",
+            "example": "string"
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether the parameter is required",
+            "example": true
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "required"
+        ]
+      },
+      "ApiKeyDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "API key",
+            "example": "pk_test_123456789"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the API key",
+            "example": "Test Key"
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "Whether the API key is active",
+            "example": true
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "is_active"
+        ]
+      },
+      "ApiRegistrationRequestDto": {
+        "type": "object",
+        "properties": {
+          "api_id": {
+            "type": "string",
+            "description": "Unique identifier for the API",
+            "example": "payment-api-v1"
+          },
+          "project_id": {
+            "type": "number",
+            "description": "Project ID that this API belongs to",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the API",
+            "example": "Payment Processing API"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path for accessing the API",
+            "example": "/api/payments"
+          },
+          "target_url": {
+            "type": "string",
+            "description": "Target URL where the request will be forwarded",
+            "example": "https://api.example.com/payments"
+          },
+          "method": {
+            "type": "string",
+            "description": "HTTP method for the API",
+            "example": "POST"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the API",
+            "example": "Process payment transactions"
+          },
+          "documentation_url": {
+            "type": "string",
+            "description": "URL to the API documentation",
+            "example": "https://docs.example.com/api/payments"
+          },
+          "required_headers": {
+            "description": "Required headers for the API",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HeaderParameterDto"
+            }
+          },
+          "specification": {
+            "type": "object",
+            "description": "API specification (OpenAPI/Swagger)"
+          },
+          "version": {
+            "type": "string",
+            "description": "Version of the API",
+            "example": "1.0.0"
+          },
+          "required_subscription": {
+            "type": "string",
+            "description": "Required subscription level",
+            "example": "premium"
+          },
+          "parameters": {
+            "description": "Parameters for the API",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParameterDto"
+            }
+          },
+          "api_keys": {
+            "description": "API keys that can access this API",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiKeyDto"
+            }
+          }
+        },
+        "required": [
+          "api_id",
+          "project_id",
+          "name",
+          "path",
+          "target_url",
+          "method",
+          "version"
+        ]
+      },
+      "ApiRegistrationResponseDto": {
+        "type": "object",
+        "properties": {
+          "api_id": {
+            "type": "string",
+            "description": "Unique identifier for the API",
+            "example": "payment-api-v1"
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of the API registration",
+            "example": "ACTIVE"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the API was created",
+            "example": "2023-01-01T00:00:00Z"
+          }
+        },
+        "required": [
+          "api_id",
+          "status",
+          "created_at"
+        ]
+      },
+      "ApiDetailsResponseDto": {
+        "type": "object",
+        "properties": {
+          "api_id": {
+            "type": "string",
+            "description": "Unique identifier for the API",
+            "example": "payment-api-v1"
+          },
+          "project_id": {
+            "type": "number",
+            "description": "Project ID that this API belongs to",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the API",
+            "example": "Payment Processing API"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path for accessing the API",
+            "example": "/api/payments"
+          },
+          "target_url": {
+            "type": "string",
+            "description": "Target URL where the request will be forwarded",
+            "example": "https://api.example.com/payments"
+          },
+          "method": {
+            "type": "string",
+            "description": "HTTP method for the API",
+            "example": "POST"
+          },
+          "version": {
+            "type": "string",
+            "description": "Version of the API",
+            "example": "1.0.0"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the API",
+            "example": "Process payment transactions"
+          },
+          "required_subscription": {
+            "type": "string",
+            "description": "Required subscription level",
+            "example": "basic"
+          },
+          "documentation_url": {
+            "type": "string",
+            "description": "URL to the API documentation",
+            "example": "https://docs.example.com/api/payments"
+          },
+          "required_headers": {
+            "description": "Required headers for the API",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HeaderParameterDto"
+            }
+          },
+          "api_key": {
+            "type": "string",
+            "description": "API key for accessing through gateway",
+            "example": "pk_proxy_weather_test"
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of the API",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE",
+              "DEPRECATED"
+            ],
+            "example": "ACTIVE"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the API was created",
+            "example": "2023-01-01T00:00:00Z"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the API was last updated",
+            "example": "2023-01-01T00:00:00Z"
+          },
+          "parameters": {
+            "description": "Parameters for the API",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParameterDto"
+            }
+          }
+        },
+        "required": [
+          "api_id",
+          "project_id",
+          "name",
+          "path",
+          "target_url",
+          "method",
+          "version",
+          "required_headers",
+          "status",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "CreatePlanDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "PlanResponseDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdatePlanDto": {
+        "type": "object",
+        "properties": {}
+      },
       "CreateProjectDto": {
         "type": "object",
         "properties": {
@@ -3004,63 +4267,6 @@
           "updatedAt",
           "tenantId",
           "apis"
-        ]
-      },
-      "HeaderParameterDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the header",
-            "example": "X-RapidAPI-Key"
-          },
-          "value": {
-            "type": "string",
-            "description": "Value of the header",
-            "example": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"
-          },
-          "is_variable": {
-            "type": "boolean",
-            "description": "Whether the value is a variable that users need to provide",
-            "example": true
-          }
-        },
-        "required": [
-          "name",
-          "value",
-          "is_variable"
-        ]
-      },
-      "ParameterDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the parameter",
-            "example": "location"
-          },
-          "type": {
-            "type": "string",
-            "description": "Type of the parameter",
-            "example": "string",
-            "enum": [
-              "string",
-              "number",
-              "boolean",
-              "array",
-              "object"
-            ]
-          },
-          "required": {
-            "type": "boolean",
-            "description": "Whether the parameter is required",
-            "example": true
-          }
-        },
-        "required": [
-          "name",
-          "type",
-          "required"
         ]
       },
       "ProjectApiDetailsDto": {
@@ -3399,255 +4605,6 @@
           "category",
           "visibleToPublic",
           "projectId"
-        ]
-      },
-      "ApiKeyDto": {
-        "type": "object",
-        "properties": {
-          "key": {
-            "type": "string",
-            "description": "API key",
-            "example": "pk_test_123456789"
-          },
-          "name": {
-            "type": "string",
-            "description": "Name of the API key",
-            "example": "Test Key"
-          },
-          "is_active": {
-            "type": "boolean",
-            "description": "Whether the API key is active",
-            "example": true
-          }
-        },
-        "required": [
-          "key",
-          "name",
-          "is_active"
-        ]
-      },
-      "ApiRegistrationRequestDto": {
-        "type": "object",
-        "properties": {
-          "api_id": {
-            "type": "string",
-            "description": "Unique identifier for the API",
-            "example": "payment-api-v1"
-          },
-          "project_id": {
-            "type": "number",
-            "description": "Project ID that this API belongs to",
-            "example": 1
-          },
-          "name": {
-            "type": "string",
-            "description": "Display name of the API",
-            "example": "Payment Processing API"
-          },
-          "path": {
-            "type": "string",
-            "description": "Path for accessing the API",
-            "example": "/api/payments"
-          },
-          "target_url": {
-            "type": "string",
-            "description": "Target URL where the request will be forwarded",
-            "example": "https://api.example.com/payments"
-          },
-          "method": {
-            "type": "string",
-            "description": "HTTP method for the API",
-            "example": "POST"
-          },
-          "description": {
-            "type": "string",
-            "description": "Description of the API",
-            "example": "Process payment transactions"
-          },
-          "documentation_url": {
-            "type": "string",
-            "description": "URL to the API documentation",
-            "example": "https://docs.example.com/api/payments"
-          },
-          "required_headers": {
-            "description": "Required headers for the API",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/HeaderParameterDto"
-            }
-          },
-          "specification": {
-            "type": "object",
-            "description": "API specification (OpenAPI/Swagger)"
-          },
-          "version": {
-            "type": "string",
-            "description": "Version of the API",
-            "example": "1.0.0"
-          },
-          "required_subscription": {
-            "type": "string",
-            "description": "Required subscription level",
-            "example": "premium"
-          },
-          "parameters": {
-            "description": "Parameters for the API",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ParameterDto"
-            }
-          },
-          "api_keys": {
-            "description": "API keys that can access this API",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ApiKeyDto"
-            }
-          }
-        },
-        "required": [
-          "api_id",
-          "project_id",
-          "name",
-          "path",
-          "target_url",
-          "method",
-          "version"
-        ]
-      },
-      "ApiRegistrationResponseDto": {
-        "type": "object",
-        "properties": {
-          "api_id": {
-            "type": "string",
-            "description": "Unique identifier for the API",
-            "example": "payment-api-v1"
-          },
-          "status": {
-            "type": "string",
-            "description": "Status of the API registration",
-            "example": "ACTIVE"
-          },
-          "created_at": {
-            "format": "date-time",
-            "type": "string",
-            "description": "When the API was created",
-            "example": "2023-01-01T00:00:00Z"
-          }
-        },
-        "required": [
-          "api_id",
-          "status",
-          "created_at"
-        ]
-      },
-      "ApiDetailsResponseDto": {
-        "type": "object",
-        "properties": {
-          "api_id": {
-            "type": "string",
-            "description": "Unique identifier for the API",
-            "example": "payment-api-v1"
-          },
-          "project_id": {
-            "type": "number",
-            "description": "Project ID that this API belongs to",
-            "example": 1
-          },
-          "name": {
-            "type": "string",
-            "description": "Display name of the API",
-            "example": "Payment Processing API"
-          },
-          "path": {
-            "type": "string",
-            "description": "Path for accessing the API",
-            "example": "/api/payments"
-          },
-          "target_url": {
-            "type": "string",
-            "description": "Target URL where the request will be forwarded",
-            "example": "https://api.example.com/payments"
-          },
-          "method": {
-            "type": "string",
-            "description": "HTTP method for the API",
-            "example": "POST"
-          },
-          "version": {
-            "type": "string",
-            "description": "Version of the API",
-            "example": "1.0.0"
-          },
-          "description": {
-            "type": "string",
-            "description": "Description of the API",
-            "example": "Process payment transactions"
-          },
-          "required_subscription": {
-            "type": "string",
-            "description": "Required subscription level",
-            "example": "basic"
-          },
-          "documentation_url": {
-            "type": "string",
-            "description": "URL to the API documentation",
-            "example": "https://docs.example.com/api/payments"
-          },
-          "required_headers": {
-            "description": "Required headers for the API",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/HeaderParameterDto"
-            }
-          },
-          "api_key": {
-            "type": "string",
-            "description": "API key for accessing through gateway",
-            "example": "pk_proxy_weather_test"
-          },
-          "status": {
-            "type": "string",
-            "description": "Status of the API",
-            "enum": [
-              "ACTIVE",
-              "INACTIVE",
-              "DEPRECATED"
-            ],
-            "example": "ACTIVE"
-          },
-          "created_at": {
-            "format": "date-time",
-            "type": "string",
-            "description": "When the API was created",
-            "example": "2023-01-01T00:00:00Z"
-          },
-          "updated_at": {
-            "format": "date-time",
-            "type": "string",
-            "description": "When the API was last updated",
-            "example": "2023-01-01T00:00:00Z"
-          },
-          "parameters": {
-            "description": "Parameters for the API",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ParameterDto"
-            }
-          }
-        },
-        "required": [
-          "api_id",
-          "project_id",
-          "name",
-          "path",
-          "target_url",
-          "method",
-          "version",
-          "required_headers",
-          "status",
-          "created_at",
-          "updated_at"
         ]
       },
       "MarketplaceProviderDto": {

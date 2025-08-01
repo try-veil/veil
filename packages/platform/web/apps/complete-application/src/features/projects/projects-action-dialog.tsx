@@ -30,6 +30,7 @@ import { createProject } from "@/app/api/project/route";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/contexts/UserContext";
+import { storeUpstreamUrl } from "@/utils/url-utils";
 import {
   SelectItem,
   SelectTrigger,
@@ -326,10 +327,10 @@ export function ProjectsActionDialog({ open, onOpenChange, onSuccess }: Props) {
                 name="target_url"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Base URL</FormLabel>
+                    <FormLabel>Target URL</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Set Base URL of your project"
+                        placeholder="Set Target URL of your project"
                         {...field}
                       />
                     </FormControl>

@@ -68,7 +68,7 @@ export class OnboardingController {
   }
 
   @Get('api/:apiId')
-  @Roles('provider')
+  @Roles('provider', 'consumer')
   @ApiOperation({ summary: 'Get API details' })
   @ApiParam({ name: 'apiId', description: 'API ID' })
   @ApiResponse({
@@ -77,10 +77,6 @@ export class OnboardingController {
     type: ApiDetailsResponseDto,
   })
   @ApiResponse({ status: 404, description: 'API not found' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - requires provider role',
-  })
   async getApiDetails(
     @Param('apiId') apiId: string,
   ): Promise<ApiDetailsResponseDto> {

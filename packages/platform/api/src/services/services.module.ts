@@ -4,12 +4,14 @@ import { PaymentModule } from './payment/payment.module';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { CreditModule } from './credit/credit.module';
+import { SubscriptionModule } from './subscription/subscription.module';
 import { TenantModule } from './tenant/tenant.module';
 import { ProjectModule } from './project/project.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
 import { UserModule } from './user/user.module';
 import { HubListingModule } from './hublisting/hublisting.module';
 import { MarketplaceModule } from './marketplace/marketplace.module';
+import { PlanModule } from './plan/plan.module';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { MarketplaceModule } from './marketplace/marketplace.module';
     WalletModule,
     PaymentModule,
     CreditModule,
+    SubscriptionModule,
+    PlanModule,
     ProjectModule,
     OnboardingModule,
     UserModule,
@@ -32,6 +36,8 @@ import { MarketplaceModule } from './marketplace/marketplace.module';
     WalletModule,
     PaymentModule,
     CreditModule,
+    SubscriptionModule,
+    PlanModule,
     ProjectModule,
     OnboardingModule,
     UserModule,
