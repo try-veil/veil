@@ -25,6 +25,7 @@ export class SubscriptionResponseDto {
   id: string;
   name: string;
   planId: string;
+  planName?: string;
   tenantId: string;
   apiId: string;
   userId: string;

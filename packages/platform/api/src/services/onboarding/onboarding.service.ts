@@ -33,7 +33,7 @@ export class OnboardingService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private configService: ConfigService,
     private httpService: HttpService,
-  ) {}
+  ) { }
 
   async registerApi(
     request: ApiRegistrationRequestDto,
@@ -359,9 +359,12 @@ export class OnboardingService {
       }
     }
 
-    // Build the Caddy gateway URL
+    // Build the Caddy gateway URL with API ID prefix
     const caddyGatewayBase = 'http://localhost:2021';
-    const url = caddyGatewayBase + request.path;
+    const apiId = request.api_id || request.name.replace(/\s+/g, '_').toLowerCase();
+    const url = `${caddyGatewayBase}/${apiId}${request.path}`;
+
+    this.logger.log(`Making test API call to: ${url} with headers:`, headers);
 
     try {
       // Make request to Caddy gateway (not direct to upstream)

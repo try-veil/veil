@@ -3,6 +3,7 @@ import {
   Logger,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GatewayService } from '../onboarding/gateway.service';
@@ -24,11 +25,33 @@ export class SubscriptionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly gatewayService: GatewayService,
-  ) {}
+  ) { }
 
   async create(
     createDto: CreateSubscriptionDto,
   ): Promise<SubscriptionResponseDto> {
+    // Validate that project exists and get tenant info
+    const project = await this.prisma.project.findUnique({
+      where: { id: createDto.projectId },
+      include: { tenant: true },
+    });
+    if (!project) {
+      throw new NotFoundException(`Project with ID ${createDto.projectId} not found`);
+    }
+
+    // Validate that API exists
+    const api = await this.prisma.api.findUnique({
+      where: { id: createDto.apiId },
+    });
+    if (!api) {
+      throw new NotFoundException(`API with ID ${createDto.apiId} not found`);
+    }
+
+    // Validate that tenant ID matches the project's tenant
+    if (createDto.tenantId !== project.tenantId) {
+      throw new BadRequestException('Tenant ID must match the project\'s tenant');
+    }
+
     const existingSubscription = await this.prisma.subscription.findFirst({
       where: {
         tenantId: createDto.tenantId,
@@ -55,6 +78,9 @@ export class SubscriptionService {
         apiKey,
         status: 'ACTIVE',
       },
+      include: {
+        plan: true,
+      },
     });
 
     return this.mapToResponseDto(subscription);
@@ -63,6 +89,9 @@ export class SubscriptionService {
   async findById(id: string): Promise<SubscriptionResponseDto> {
     const subscription = await this.prisma.subscription.findUnique({
       where: { id },
+      include: {
+        plan: true,
+      },
     });
 
     if (!subscription) {
@@ -77,6 +106,9 @@ export class SubscriptionService {
       where: {
         tenantId,
         status: 'ACTIVE',
+      },
+      include: {
+        plan: true,
       },
     });
 
@@ -98,6 +130,10 @@ export class SubscriptionService {
       data: {
         ...(updateDto.name && { name: updateDto.name }),
         ...(updateDto.planId && { planId: updateDto.planId }),
+        ...(updateDto.status && { status: updateDto.status }),
+      },
+      include: {
+        plan: true,
       },
     });
 
@@ -105,12 +141,28 @@ export class SubscriptionService {
   }
 
   async deactivate(id: string): Promise<SubscriptionResponseDto> {
+    // First check if subscription exists
+    const existingSubscription = await this.prisma.subscription.findUnique({
+      where: { id },
+      include: {
+        plan: true,
+      },
+    });
+
+    if (!existingSubscription) {
+      throw new NotFoundException(`Subscription with ID ${id} not found`);
+    }
+
+    console.log(`[SubscriptionService] Deactivating subscription ${id}, current status: ${existingSubscription.status}`);
+
     const subscription = await this.prisma.subscription.update({
       where: { id },
       data: {
         status: 'INACTIVE',
       },
     });
+
+    console.log(`[SubscriptionService] Subscription ${id} updated, new status: ${subscription.status}`);
 
     return this.mapToResponseDto(subscription);
   }
@@ -120,6 +172,9 @@ export class SubscriptionService {
       where: { id },
       data: {
         apiKey: this.generateApiKey(),
+      },
+      include: {
+        plan: true,
       },
     });
 
@@ -131,6 +186,7 @@ export class SubscriptionService {
       id: subscription.id,
       name: subscription.name,
       planId: subscription.planId,
+      planName: subscription.plan?.name,
       tenantId: subscription.tenantId,
       apiId: subscription.apiId,
       userId: subscription.userId,
@@ -239,8 +295,16 @@ export class SubscriptionService {
       throw new NotFoundException('Subscription not found');
     }
 
-    // Delete API key from gateway
-    await this.gatewayService.deleteApiKey(subscription.apiKey);
+    // Try to delete API key from gateway, but don't fail if it doesn't exist
+    try {
+      await this.gatewayService.deleteApiKey(subscription.apiKey);
+      this.logger.log(`API key deleted from gateway for subscription ${subscriptionId}`);
+    } catch (error) {
+      // Log the error but continue with cancellation
+      this.logger.warn(
+        `Failed to delete API key from gateway for subscription ${subscriptionId}: ${error.message}. Continuing with cancellation.`
+      );
+    }
 
     // Update subscription status
     const updatedSubscription = await this.prisma.subscription.update({

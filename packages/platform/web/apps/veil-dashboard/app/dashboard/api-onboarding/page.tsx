@@ -144,11 +144,11 @@ export default function ApiOnboardingPage() {
                     name="baseUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Base URL</FormLabel>
+                        <FormLabel>Target URL</FormLabel>
                         <FormControl>
                           <Input placeholder="https://api.example.com" {...field} />
                         </FormControl>
-                        <FormDescription>The base URL for your API endpoints.</FormDescription>
+                        <FormDescription>The target URL for your API endpoints.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

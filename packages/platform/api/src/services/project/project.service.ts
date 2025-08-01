@@ -20,7 +20,7 @@ export class ProjectService {
     private readonly prisma: PrismaService,
     private readonly hubListingService: HubListingService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   /**
    * Create a new project
@@ -118,14 +118,13 @@ export class ProjectService {
         updatedAt: 'desc',
       },
       include: {
-        hubListing: true, // if you want to access fields like logo/category later
+        hubListing: true,
       },
     });
 
     return projects.map((project) => ({
       ...project,
-      description: null, // if you want to hide this field
-      // you can optionally expose `project.hubListing.logo`, etc., here
+      description: project.hubListing?.shortDescription || null,
     }));
   }
 
@@ -170,6 +169,87 @@ export class ProjectService {
         apiVersionId: api.apiVersionId,
       })),
     };
+  }
+
+  /**
+   * Get all APIs under a marketplace project (public access)
+   */
+  async getMarketplaceProjectApis(projectId: number): Promise<ProjectApiDetailsDto[]> {
+    // First verify project is publicly visible
+    const project = await this.prisma.project.findFirst({
+      where: {
+        id: projectId,
+        hubListing: {
+          visibleToPublic: true,
+        },
+      },
+    });
+
+    if (!project) {
+      throw new NotFoundException(
+        `Public project with ID ${projectId} not found`,
+      );
+    }
+
+    // Get all API IDs linked to this project
+    const projectAllowedApis = await this.prisma.projectAllowedAPI.findMany({
+      where: {
+        projectId: projectId,
+        status: 'ACTIVE', // Only return active APIs
+      },
+      select: {
+        apiId: true,
+      },
+    });
+
+    if (projectAllowedApis.length === 0) {
+      return []; // Return empty array if no APIs found
+    }
+
+    // Get full API details for all APIs in this project
+    const apiIds = projectAllowedApis.map((pa) => pa.apiId);
+    const apis = await this.prisma.api.findMany({
+      where: {
+        id: {
+          in: apiIds,
+        },
+        status: 'ACTIVE', // Only return active APIs
+      },
+    });
+
+    // Map to the response format
+    return apis.map((api) => {
+      // Map required headers from JSON format to array
+      const headers = Object.entries((api.requiredHeaders as any) || {}).map(
+        ([name, details]: [string, any]) => ({
+          name,
+          value: details.value,
+          is_variable: details.isVariable,
+        }),
+      );
+
+      // Extract parameters from specification if available
+      const parameters = (api.specification as any)?.parameters || [];
+
+      return {
+        api_id: api.id,
+        project_id: projectId,
+        name: api.name,
+        path: api.path,
+        target_url: (api.specification as any)?.target_url || '',
+        method: api.method,
+        version: api.version,
+        description: api.description,
+        required_subscription:
+          (api.specification as any)?.required_subscription || 'basic',
+        documentation_url: api.documentationUrl,
+        required_headers: headers,
+        status: api.status,
+        created_at: api.createdAt,
+        updated_at: api.updatedAt,
+        parameters: parameters,
+      };
+    });
   }
 
   /**
@@ -344,15 +424,15 @@ export class ProjectService {
     console.log(
       `[ProjectService.findOne] Gateway URL from config: ${gatewayUrl}`,
     );
-    console.log(`[ProjectService.findOne] Returning target_url: ${gatewayUrl}`);
+    console.log(`[ProjectService.findOne] Returning target_url: ${project.target_url}`);
 
     // Generate unique test key per API following the same pattern as onboarding service
     const uniqueTestKey = `test-key-${project.id || project.name.replace(/\s+/g, '_').toLowerCase()}`;
 
     return {
       ...project,
-      // Replace target_url with gateway URL so frontend calls go through Veil gateway
-      target_url: gatewayUrl,
+      // Keep original target_url for onboarding, frontend should use gateway URL from config
+      target_url: project.target_url,
       gateway_api_key: uniqueTestKey,
       description: null,
       apis: project.projectAllowedAPIs.map((api) => ({

@@ -97,6 +97,21 @@ export class ProjectController {
     return this.projectService.findOneForConsumer(id);
   }
 
+  @Get('marketplace/:id/apis')
+  @ApiOperation({ summary: 'Get all APIs under a marketplace project' })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns all APIs in the marketplace project',
+    type: [ProjectApiDetailsDto],
+  })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  getMarketplaceProjectApis(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ProjectApiDetailsDto[]> {
+    return this.projectService.getMarketplaceProjectApis(id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a project by ID' })
   @ApiParam({ name: 'id', description: 'Project ID' })

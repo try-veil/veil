@@ -29,13 +29,19 @@ import {
   CreditBalanceResponseDto,
   DeductCreditsRequestDto,
 } from '../../entities/credit/dto';
+import {
+  GenerateApiKeyRequestDto,
+  GenerateApiKeyResponseDto,
+  PurchaseCreditsRequestDto,
+  PurchaseCreditsResponseDto,
+} from '../../entities/credit/api-key.dto';
 
 @ApiTags('credits')
 @ApiBearerAuth()
 @Controller('credits')
 @UseGuards(AuthGuard)
 export class CreditController {
-  constructor(private readonly creditService: CreditService) {}
+  constructor(private readonly creditService: CreditService) { }
 
   @Get(':userId')
   @ApiOperation({ summary: 'Get credit balance for a user' })
@@ -138,5 +144,61 @@ export class CreditController {
       body.adjustedBy,
       body.metadata,
     );
+  }
+
+  @Post(':userId/generate-api-key')
+  @ApiOperation({ summary: 'Generate API key and deduct credits' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiBody({ type: GenerateApiKeyRequestDto })
+  @ApiResponse({
+    status: 200,
+    description: 'API key generated successfully',
+    type: GenerateApiKeyResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid request or insufficient credits' })
+  async generateApiKey(
+    @Param('userId') userId: string,
+    @Body() body: GenerateApiKeyRequestDto,
+  ): Promise<GenerateApiKeyResponseDto> {
+    if (!body.creditCost || body.creditCost <= 0) {
+      throw new BadRequestException('Invalid credit cost');
+    }
+
+    return this.creditService.generateApiKeyWithCreditDeduction(
+      userId,
+      body.creditCost,
+      body.keyName,
+      body.apiId,
+      body.projectId,
+    );
+  }
+
+  @Post(':userId/purchase')
+  @ApiOperation({ summary: 'Purchase credits' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiBody({ type: PurchaseCreditsRequestDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Credits purchased successfully',
+    type: PurchaseCreditsResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid request' })
+  async purchaseCredits(
+    @Param('userId') userId: string,
+    @Body() body: PurchaseCreditsRequestDto,
+  ): Promise<PurchaseCreditsResponseDto> {
+    if (!body.amount || body.amount <= 0) {
+      throw new BadRequestException('Invalid amount');
+    }
+
+    if (!body.paymentMethodType) {
+      throw new BadRequestException('Payment method type is required');
+    }
+
+    return this.creditService.purchaseCredits(userId, body.amount, {
+      paymentMethodType: body.paymentMethodType,
+      paymentMethodId: body.paymentMethodId,
+      currency: body.currency,
+    });
   }
 }
