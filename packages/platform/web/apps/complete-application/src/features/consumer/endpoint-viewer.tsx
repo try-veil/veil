@@ -46,8 +46,8 @@ export default function EndpointViewer({
 }: EndpointViewerProps) {
 
 
-  console.log("Endpoint::::",endpoint);
-  console.log("API Details",apiDetails);
+  console.log("Endpoint::::", endpoint);
+  console.log("API Details", apiDetails);
 
   const [headerValues, setHeaderValues] = useState<Record<string, HeaderValue>>(
     {}
@@ -101,7 +101,7 @@ export default function EndpointViewer({
   };
 
   const generateCurlCommand = (data: TestRequestData) => {
-    console.log("data..........",data)
+    console.log("data..........", data)
     let curl = `curl -X ${data.method} ${data.target_url}`;
 
     // Add headers
@@ -135,17 +135,17 @@ export default function EndpointViewer({
     );
   }
 
- const handleTest = async (testData: TestRequestData) => {
+  const handleTest = async (testData: TestRequestData) => {
     try {
       const curlCommand = generateCurlCommand(testData);
-      
+
       // Make the actual HTTP request
       const requestHeaders: Record<string, string> = {};
       testData.headers.forEach(header => {
         requestHeaders[header.name] = header.value;
       });
 
-      console.log("Target URL:",testData.target_url)
+      console.log("Target URL:", testData.target_url)
       const response = await fetch(testData.target_url, {
         method: testData.method,
         headers: requestHeaders
@@ -153,7 +153,7 @@ export default function EndpointViewer({
 
       const responseData = await response.json();
 
-      console.log("^^^^^^^",responseData)
+      console.log("^^^^^^^", responseData)
 
       setResponse({
         status: response.status,
@@ -178,7 +178,7 @@ export default function EndpointViewer({
         }
       });
 
-      console.log("@@@@@@",response)
+      console.log("@@@@@@", response)
 
     } catch (error) {
       console.error('Error making test request:', error);
@@ -203,7 +203,7 @@ export default function EndpointViewer({
           curl: generateCurlCommand(testData)
         }
       });
-      console.log("Res after error:",response)
+      console.log("Res after error:", response)
     }
   };
 
@@ -480,17 +480,26 @@ export default function EndpointViewer({
                   <CardTitle className="text-sm">Results</CardTitle>
                   <Button
                     onClick={() => {
-                      console.log("endpoint----------->",endpoint);
-                      console.log("path--->",endpoint.path)
+                      console.log("endpoint----------->", endpoint);
+                      console.log("path--->", endpoint.path)
+
+                      // Generate the test key 
+                      const uniqueTestKey = `test-key-${apiDetails?.api_id || apiDetails?.name?.replace(/\s+/g, '_').toLowerCase()}`;
+
+                      // Prepare headers including required subscription key and content-type
+                      const requestHeaders = [
+                        { name: 'Content-Type', value: 'application/json' },
+                        { name: 'X-Subscription-Key', value: uniqueTestKey },
+                        ...Object.entries(headerValues).map(([name, value]) => ({
+                          name,
+                          value: value.value,
+                        }))
+                      ];
+
                       const testData: TestRequestData = {
                         method: endpoint?.method || "GET",
-                        target_url: selectedUrl+"/"+apiDetails?.api_id+apiDetails?.path,
-                        headers: Object.entries(headerValues).map(
-                          ([name, value]) => ({
-                            name,
-                            value: value.value,
-                          })
-                        ),
+                        target_url: selectedUrl + "/" + apiDetails?.api_id + apiDetails?.path,
+                        headers: requestHeaders,
                       };
                       handleTest(testData);
                       // setIsTestLoading(true); // Trigger loading state
