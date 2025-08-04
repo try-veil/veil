@@ -1,0 +1,221 @@
+version: "3.9"
+
+services:
+  my_postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydb
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - my_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser -d mydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./packages/platform/api
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://myuser:mypassword@my_postgres:5432/mydb
+      POSTGRES_USER: myuser
+      POSTGRES_DB: mydb
+      PGHOST: my_postgres
+      PGPORT: 5432
+    depends_on:
+      my_postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./packages/platform/web/apps/complete-application
+      dockerfile: Dockerfile
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://backend:3000
+      NEXT_PUBLIC_VEIL_URL: http://caddy:2021
+      NEXT_PUBLIC_FUSIONAUTH_URL: http://fusionauth:9011
+    depends_on:
+      - backend
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server --console-address ":9001" /data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+
+  createbuckets:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+        sleep 5;
+        mc alias set local http://minio:9000 minioadmin minioadmin;
+        mc mb --ignore-existing local/images;
+        mc anonymous set download local/images;
+        echo 'Bucket created ✔';
+      "
+
+  fusionauth_db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: fusionauth
+      POSTGRES_PASSWORD: hkaLBM3RVnyYeYeqE3WI1w2e4Avpy0Wd5O3s3
+      POSTGRES_DB: fusionauth
+    volumes:
+      - fusionauth_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fusionauth -d fusionauth"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  search:
+    image: opensearchproject/opensearch:2.11.0
+    environment:
+      cluster.name: fusionauth
+      discovery.type: single-node
+      node.name: search
+      plugins.security.disabled: "true"
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "9200:9200"
+    volumes:
+      - search_data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail http://localhost:9200/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  fusionauth:
+    image: fusionauth/fusionauth-app:latest
+    depends_on:
+      fusionauth_db:
+        condition: service_healthy
+      search:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: jdbc:postgresql://fusionauth_db:5432/fusionauth
+      DATABASE_ROOT_USERNAME: fusionauth
+      DATABASE_ROOT_PASSWORD: hkaLBM3RVnyYeYeqE3WI1w2e4Avpy0Wd5O3s3
+      DATABASE_USERNAME: fusionauth
+      DATABASE_PASSWORD: hkaLBM3RVnyYeYeqE3WI1w2e4Avpy0Wd5O3s3
+      FUSIONAUTH_APP_KICKSTART_FILE: /usr/local/fusionauth/kickstart/kickstart.json
+      FUSIONAUTH_APP_MEMORY: 512M
+      FUSIONAUTH_APP_RUNTIME_MODE: production
+      FUSIONAUTH_APP_URL: http://fusionauth:9011
+      SEARCH_SERVERS: http://search:9200
+      SEARCH_TYPE: elasticsearch
+    ports:
+      - "9011:9011"
+    volumes:
+      - ./packages/platform/api/kickstart:/usr/local/fusionauth/kickstart
+      - ./packages/platform/api/plugins:/usr/local/fusionauth/plugins
+      - fusionauth_config:/usr/local/fusionauth/config
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail http://localhost:9011/api/status || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  # Loki for logging
+  loki:
+    image: grafana/loki:2.9.2
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./packages/caddy/loki.yaml:/etc/loki/loki.yaml
+    command: -config.file=/etc/loki/loki.yaml
+    depends_on:
+      - minio
+    restart: unless-stopped
+
+  # Promtail for log aggregation
+  promtail:
+    image: grafana/promtail:2.9.2
+    container_name: promtail
+    volumes:
+      - ./packages/caddy/logs:/packages/caddy/logs
+      - ./packages/caddy/promtail.yaml:/etc/promtail/promtail.yaml
+    command: -config.file=/etc/promtail/promtail.yaml
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  # Grafana for monitoring
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "4000:3000"
+    environment:
+      GF_SERVER_ROOT_URL: http://localhost:4000
+    volumes:
+      - ./packages/caddy/grafana.ini:/etc/grafana/grafana.ini
+    depends_on:
+      - loki
+      - minio
+    restart: unless-stopped
+
+  caddy:
+    build:
+      context: ./packages/caddy
+      dockerfile: Dockerfile
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - "2020:2020"
+      - "2021:2021"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  my_postgres_data:
+  minio_data:
+  fusionauth_data:
+  fusionauth_config:
+  search_data:
+  caddy_data:
+  caddy_config:

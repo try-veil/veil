@@ -91,29 +91,102 @@ export class GatewayService {
 
   async updateApiRoute(
     apiId: string,
-    request: Partial<ApiRegistrationRequestDto>,
+    request: CaddyOnboardingRequestDto,
+    currentPath?: string,
   ) {
     try {
+      // Use currentPath if provided, otherwise fall back to apiId
+      const routeIdentifier = currentPath || apiId;
+      const normalizedIdentifier = routeIdentifier.startsWith('/') ? routeIdentifier : `/${routeIdentifier}`;
+      const updateUrl = `${this.gatewayUrl}/veil/api/routes${normalizedIdentifier}`;
+
+      // Build veilRequest with only provided fields (all optional for updates)
+      const veilRequest: any = {};
+
+      // Only include fields that are provided
+      if (request.path) {
+        veilRequest.path = request.path.startsWith('/') ? request.path : `/${request.path}`;
+      }
+
+      if (request.target_url) {
+        veilRequest.upstream = request.target_url;
+      }
+
+      if (request.required_subscription) {
+        veilRequest.required_subscription = request.required_subscription;
+      }
+
+      if (request.method) {
+        veilRequest.methods = [request.method];
+      }
+
+      if (request.required_headers && request.required_headers.length > 0) {
+        veilRequest.required_headers = request.required_headers.map((h) => h.name);
+      }
+
+      if (request.parameters && request.parameters.length > 0) {
+        veilRequest.parameters = request.parameters.map((p) => ({
+          name: p.name,
+          type: p.type,
+          required: p.required,
+        }));
+      }
+
+      if (request.api_keys && request.api_keys.length > 0) {
+        veilRequest.api_keys = request.api_keys.map((k) => ({
+          key: k.key,
+          name: k.name,
+          is_active: k.is_active,
+        }));
+        this.logger.log(`[updateApiRoute] Sending ${request.api_keys.length} API keys to Caddy: ${JSON.stringify(veilRequest.api_keys)}`);
+      } else {
+        this.logger.log(`[updateApiRoute] No API keys provided in request - Caddy will preserve existing keys`);
+      }
+
+      // Add additional fields from request if provided
+      if (request.provider_id) {
+        veilRequest.provider_id = request.provider_id;
+      }
+
+      if (request.project_id) {
+        veilRequest.project_id = request.project_id;
+      }
+
+      // Add API ID for reference (use from request or fallback to parameter)
+      veilRequest.api_id = request.api_id || apiId;
+
+      console.log(
+        'Veil update payload:',
+        JSON.stringify(veilRequest, null, 2),
+      );
+
+      // PATCH to Veil's /veil/api/routes endpoint
       const response = await firstValueFrom(
-        this.httpService.patch(`${this.gatewayUrl}/veil/api/routes/${apiId}`, {
-          path: request.path.startsWith('/') ? request.path : `/${request.path}`,
-          upstream: request.target_url,
-          methods: [request.method],
-          required_headers: request.required_headers?.map((h) => ({
-            name: h.name,
-            value: h.value,
-            is_static: !h.is_variable,
-          })),
+        this.httpService.patch(updateUrl, veilRequest, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000, // 10 second timeout
         }),
       );
 
-      this.logger.log(`API route updated successfully: ${apiId}`);
+      this.logger.log(`[updateApiRoute] API route updated successfully: ${apiId}`);
+      this.logger.log(`[updateApiRoute] Caddy response: ${JSON.stringify(response.data)}`);
       return response.data;
     } catch (error) {
       this.logger.error(
         `Failed to update API route: ${error.message}`,
         error.stack,
       );
+
+      // Log more details about the error
+      if (error.response) {
+        this.logger.error(`Response status: ${error.response.status}`);
+        this.logger.error(
+          `Response data: ${JSON.stringify(error.response.data)}`,
+        );
+      }
+
       throw error;
     }
   }

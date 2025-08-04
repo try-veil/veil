@@ -1,0 +1,14 @@
+node_modules
+.next
+.env
+.env.local
+.env.production.local
+.env.development.local
+.git
+.gitignore
+README.md
+*.log
+coverage
+.nyc_output
+.DS_Store
+Thumbs.db
