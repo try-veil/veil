@@ -3,7 +3,7 @@
 import { JsonViewer } from "./json-tree-viewer"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 const sampleData = {
   string: "Hello, world!",
@@ -23,10 +23,20 @@ const sampleData = {
   createdAt: new Date(),
 }
 
-export default function JsonEditor() {
+interface JsonEditorProps {
+  onJsonChange?: (data: any) => void;
+}
+
+export default function JsonEditor({ onJsonChange }: JsonEditorProps) {
   const [jsonInput, setJsonInput] = useState(JSON.stringify(sampleData, null, 2))
   const [parsedData, setParsedData] = useState(sampleData)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (onJsonChange && !error) {
+      onJsonChange(parsedData);
+    }
+  }, [parsedData, error, onJsonChange]);
 
   const handleJsonInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value
@@ -43,8 +53,8 @@ export default function JsonEditor() {
 
   return (
     <div className="container py-10 max-w-7xl">
-      <div className="grid grid-cols-1 gap-4 h-[calc(100vh-8rem)]">
-        <div className="border rounded-lg p-4 bg-card flex flex-col">
+      <div className="grid grid-cols-1 grid-rows-2 gap-4 h-[calc(100vh-22rem)]">
+        <div className="border rounded-lg p-4 bg-card flex flex-col h-full">
           <Textarea
             value={jsonInput}
             onChange={handleJsonInputChange}
@@ -58,7 +68,7 @@ export default function JsonEditor() {
             </Alert>
           )}
         </div>
-        <div className="border rounded-lg p-4 bg-card overflow-auto">
+        <div className="border rounded-lg p-4 bg-card overflow-auto h-full">
           <JsonViewer data={parsedData} rootName="data" />
         </div>
       </div>

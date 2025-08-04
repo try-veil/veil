@@ -84,7 +84,7 @@ export default function EndpointViewer({
   const generateCurlCode = () => {
     if (!apiDetails) return "No API details available";
 
-    let curl = `curl -X ${apiDetails.method} '${process.env.NEXT_PUBLIC_VEIL_URL}/${apiDetails.api_id}${apiDetails.path}'`;
+    let curl = `curl -X ${apiDetails.method} '${process.env.NEXT_PUBLIC_VEIL_URL}/${apiDetails.path}'`;
 
     // Add headers with current values
     if (apiDetails.required_headers && apiDetails.required_headers.length > 0) {
@@ -94,8 +94,21 @@ export default function EndpointViewer({
       });
     }
 
-    // Add authorization header
-    curl += `\n  -H 'x-veilapi-host: ${apiDetails.api_id}'`;
+      // Check if "X-Subscription-Key" is missing
+  const hasContentTypeKey = apiDetails.required_headers.some(
+    (header) => header.name.toLowerCase() === "Content-type".toLowerCase()
+  );
+  if (!hasContentTypeKey) {
+    curl += `\n  -H 'Content-Type: application/json'`;
+  }
+
+    // Check if "X-Subscription-Key" is missing
+  const hasSubscriptionKey = apiDetails.required_headers.some(
+    (header) => header.name.toLowerCase() === "X-subscription-key".toLowerCase()
+  );
+  if (!hasSubscriptionKey) {
+    curl += `\n  -H 'X-Subscription-Key: test-key-${apiDetails.api_id}'`;
+  }
 
     return curl;
   };
@@ -219,7 +232,6 @@ export default function EndpointViewer({
               App
             </TabsTrigger>
             <TabsTrigger
-              disabled
               value="params"
               className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
@@ -350,11 +362,19 @@ export default function EndpointViewer({
             <Card>
               <CardContent className="p-4">
                 <div className="space-y-4">
-                  <Label>X-VeilAPI-Host</Label>
+                  <Label>Content-type</Label>
                   <Input
                     disabled
                     placeholder=""
-                    value={`veil.com/${apiDetails?.api_id}`}
+                    value="application/json"
+                  />
+                  </div>
+                <div className="space-y-4 mt-4">
+                  <Label>X-Subscription-Key</Label>
+                  <Input
+                    disabled
+                    placeholder=""
+                    value={`test-key-${apiDetails?.api_id}`}
                   />
                 </div>
               </CardContent>
@@ -484,7 +504,7 @@ export default function EndpointViewer({
                       console.log("path--->", endpoint.path)
 
                       // Generate the test key 
-                      const uniqueTestKey = `test-key-${apiDetails?.api_id || apiDetails?.name?.replace(/\s+/g, '_').toLowerCase()}`;
+                      const uniqueTestKey = `test-key-${apiDetails?.api_id}`;
 
                       // Prepare headers including required subscription key and content-type
                       const requestHeaders = [
@@ -498,7 +518,7 @@ export default function EndpointViewer({
 
                       const testData: TestRequestData = {
                         method: endpoint?.method || "GET",
-                        target_url: selectedUrl + "/" + apiDetails?.api_id + apiDetails?.path,
+                        target_url: selectedUrl + "/" + apiDetails?.path,
                         headers: requestHeaders,
                       };
                       handleTest(testData);

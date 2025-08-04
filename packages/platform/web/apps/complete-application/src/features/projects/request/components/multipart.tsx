@@ -2,7 +2,11 @@
 
 import { KeyValuePair } from "./key-value-pair";
 
-export default function Multipart() {
+interface MultipartProps {
+  onFormDataChange?: (data: { key: string; value: string }[]) => void;
+}
+
+export default function Multipart({ onFormDataChange }: MultipartProps) {
   return (
     <KeyValuePair
       title="Multipart Form Data"
@@ -14,6 +18,12 @@ export default function Multipart() {
       onChange={(pairs) => {
         // Handle multipart form data changes
         console.log("Multipart form data:", pairs);
+        if (onFormDataChange) {
+          const formData = pairs
+            .filter(pair => pair.key.trim() !== "" && pair.value.trim() !== "")
+            .map(pair => ({ key: pair.key, value: pair.value }));
+          onFormDataChange(formData);
+        }
       }}
     />
   );

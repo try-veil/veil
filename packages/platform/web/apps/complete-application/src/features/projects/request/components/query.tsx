@@ -29,6 +29,10 @@ interface QueryPair {
   value: string;
 }
 
+interface QueryProps {
+  onQueryChange?: (queries: QueryPair[]) => void;
+}
+
 function SortableQueryItem({ query, index, updateQuery, removeQuery }: {
   query: QueryPair;
   index: number;
@@ -98,7 +102,7 @@ function SortableQueryItem({ query, index, updateQuery, removeQuery }: {
   );
 }
 
-export function Query() {
+export function Query({ onQueryChange }: QueryProps) {
   const [queries, setQueries] = useState<QueryPair[]>([
     { id: "1", key: "", value: "" }
   ]);
@@ -110,20 +114,33 @@ export function Query() {
     })
   );
 
+  const notifyQueryChange = (queriesList: QueryPair[]) => {
+    if (onQueryChange) {
+      const validQueries = queriesList.filter(
+        query => query.key.trim() !== '' && query.value.trim() !== ''
+      );
+      onQueryChange(validQueries);
+    }
+  };
+
   const addNewQuery = () => {
-    setQueries([...queries, { id: Date.now().toString(), key: "", value: "" }]);
+    const newQueries = [...queries, { id: Date.now().toString(), key: "", value: "" }];
+    setQueries(newQueries);
+    notifyQueryChange(newQueries);
   };
 
   const updateQuery = (id: string, field: "key" | "value", value: string) => {
-    setQueries(
-      queries.map((query) =>
-        query.id === id ? { ...query, [field]: value } : query
-      )
+    const newQueries = queries.map((query) =>
+      query.id === id ? { ...query, [field]: value } : query
     );
+    setQueries(newQueries);
+    notifyQueryChange(newQueries);
   };
 
   const removeQuery = (id: string) => {
-    setQueries(queries.filter((query) => query.id !== id));
+    const newQueries = queries.filter((query) => query.id !== id);
+    setQueries(newQueries);
+    notifyQueryChange(newQueries);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -132,8 +149,9 @@ export function Query() {
     if (over && active.id !== over.id) {
       const oldIndex = queries.findIndex((query) => query.id === active.id);
       const newIndex = queries.findIndex((query) => query.id === over.id);
-
-      setQueries(arrayMove(queries, oldIndex, newIndex));
+      const newQueries = arrayMove(queries, oldIndex, newIndex);
+      setQueries(newQueries);
+      notifyQueryChange(newQueries);
     }
   };
 
