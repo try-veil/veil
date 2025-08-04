@@ -392,7 +392,7 @@ export default function Request({
            <div className="flex gap-2">
             <Button
               onClick={handleTest}
-              disabled={isTestLoading}
+              disabled={isTestLoading || initialData?.path == "" }
               variant="secondary"
               size="sm"
               className="min-w-[80px]"
