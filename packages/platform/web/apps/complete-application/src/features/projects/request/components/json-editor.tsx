@@ -28,8 +28,8 @@ interface JsonEditorProps {
 }
 
 export default function JsonEditor({ onJsonChange }: JsonEditorProps) {
-  const [jsonInput, setJsonInput] = useState(JSON.stringify(sampleData, null, 2))
-  const [parsedData, setParsedData] = useState(sampleData)
+  const [jsonInput, setJsonInput] = useState("")
+  const [parsedData, setParsedData] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -59,7 +59,7 @@ export default function JsonEditor({ onJsonChange }: JsonEditorProps) {
             value={jsonInput}
             onChange={handleJsonInputChange}
             className="font-mono flex-1 resize-none"
-            placeholder="Enter your JSON here..."
+            placeholder={JSON.stringify(sampleData, null, 2)}
           />
           {error && (
             <Alert variant="destructive" className="mt-4">
@@ -69,7 +69,7 @@ export default function JsonEditor({ onJsonChange }: JsonEditorProps) {
           )}
         </div>
         <div className="border rounded-lg p-4 bg-card overflow-auto h-full">
-          <JsonViewer data={parsedData} rootName="data" />
+          <JsonViewer data={parsedData ?? {}} rootName="data" />
         </div>
       </div>
     </div>
