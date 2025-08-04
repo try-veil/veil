@@ -33,7 +33,7 @@ export default function SignupPage() {
   useEffect(() => {
     console.log("Signup page - isAuthenticated:", isAuthenticated);
     if (isAuthenticated) {
-      router.push("/dashboard");
+      router.push("/");
     }
   }, [isAuthenticated, router]);
 
@@ -63,7 +63,7 @@ export default function SignupPage() {
 
         // Add a small delay to ensure localStorage is updated
         setTimeout(() => {
-          router.push("/dashboard");
+          router.push("/");
         }, 500);
       } else {
         setError(data.error_description || "Signup failed");
