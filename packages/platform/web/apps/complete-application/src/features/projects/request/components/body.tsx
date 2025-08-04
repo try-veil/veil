@@ -17,7 +17,7 @@ interface BodyProps {
 }
 
 export default function Body({ onBodyChange }: BodyProps) {
-  const [bodyType, setBodyType] = useState("text");
+  const [bodyType, setBodyType] = useState("json");
   const [textContent, setTextContent] = useState("");
   const [graphqlContent, setGraphqlContent] = useState("");
   const [formData, setFormData] = useState<{ key: string; value: string }[]>([]);
