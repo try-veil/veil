@@ -80,9 +80,17 @@ interface RequestData {
 }
 
 interface TestRequestData {
-  method: string;
-  target_url: string;
   headers: { name: string; value: string }[];
+  api_id: string;
+  project_id: number;
+  name: string;
+  path: string;
+  target_url: string;
+  method: string;
+  version: string;
+  required_headers: { name: string; value: string; is_variable: boolean }[];
+  description: string;
+  documentation_url: string;
 }
 
 const options = new Map([
@@ -284,28 +292,12 @@ export default function Request({
       console.log("🧪 Testing API with payload:", payload);
       console.log("🌐 Making request to:", `${API_BASE_URL}/onboard/test`);
 
-      const response = await fetch(`${API_BASE_URL}/onboard/test`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-      console.log("📊 Test API response:", result);
-
-      if (!response.ok) {
-        console.log("❌ Test API failed with status:", response.status);
-        throw new Error(result.message || "Test API call failed");
-      }
-
+      if (onTest) {
+      await onTest(payload as TestRequestData);
+    }
       console.log("✅ Test API successful");
-      alert("Test successful: " + JSON.stringify(result.data));
     } catch (error) {
       console.log("❌ Test API error:", error);
-      alert("Test failed: " + (error instanceof Error ? error.message : error));
     } finally {
       setIsTestLoading(false);
     }

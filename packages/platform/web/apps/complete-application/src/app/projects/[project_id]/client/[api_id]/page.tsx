@@ -200,9 +200,17 @@ interface OnboardRequestData {
 }
 
 interface TestRequestData {
-  method: string;
-  target_url: string;
   headers: { name: string; value: string }[];
+  api_id: string;
+  project_id: number;
+  name: string;
+  path: string;
+  target_url: string;
+  method: string;
+  version: string;
+  required_headers: { name: string; value: string; is_variable: boolean }[];
+  description: string;
+  documentation_url: string;
 }
 
 // Create a properly typed wrapper for ResizableBox
@@ -303,26 +311,29 @@ export default function RequestPage() {
     try {
       const curlCommand = generateCurlCommand(testData);
 
-      // Use gateway URL instead of direct target URL
-      const gatewayBaseUrl = process.env.NEXT_PUBLIC_GATEWAY_URL;
-      const gatewayUrl = `${gatewayBaseUrl}${formData.path}`;
+      // Call the backend test endpoint instead of direct gateway call
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+      console.log("🧪 Testing API with payload:", testData);
+      console.log("🌐 Making request to:", `${API_BASE_URL}/onboard/test`);
 
-      // Make the actual HTTP request through the gateway
-      const requestHeaders: Record<string, string> = {};
-      testData.headers.forEach((header) => {
-        requestHeaders[header.name] = header.value;
-      });
-
-      // Add required gateway headers
-      requestHeaders["X-Subscription-Key"] = "pk_proxy_weather_test"; // You should get this from the API details
-      requestHeaders["Content-Type"] = "application/json";
-
-      const response = await fetch(gatewayUrl, {
-        method: testData.method,
-        headers: requestHeaders,
+      const response = await fetch(`${API_BASE_URL}/onboard/test`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify(testData),
       });
 
       const responseData = await response.json();
+      console.log("📊 Test API response:", responseData);
+
+      if (!response.ok) {
+        console.log("❌ Test API failed with status:", response.status);
+        throw new Error(responseData.message || "Test API call failed");
+      }
+
+      console.log("✅ Test API successful");
 
       setResponse({
         status: response.status,
@@ -331,7 +342,7 @@ export default function RequestPage() {
         data: responseData,
         info: {
           date: new Date().toISOString(),
-          url: gatewayUrl, // Show gateway URL in response
+          url: `${API_BASE_URL}/onboard/test`,
           status: `${response.status} ${response.statusText}`,
           library: "Fetch API",
           headersResponseTime: "N/A",
@@ -339,30 +350,17 @@ export default function RequestPage() {
           responseBodySize: "N/A",
         },
         request: {
-          method: testData.method,
-          url: gatewayUrl, // Show gateway URL in request
-          path: formData.path,
-          headers: requestHeaders,
+          method: "POST",
+          url: `${API_BASE_URL}/onboard/test`,
+          path: testData.path,
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
+          },
           curl: curlCommand,
         },
       });
 
-      const payload = {
-        api_id: formData.api_id,
-        name: formData.name,
-        path: formData.path,
-        target_url: formData.target_url,
-        method: formData.method,
-        required_headers: formData.required_headers.map(h => ({
-          name: h.name,
-          value: h.value,
-          is_variable: h.is_variable,
-        })),
-        project_id: Number(params.project_id),
-        version: formData.version,
-      };
-
-      console.log("Test API payload:", payload);
     } catch (error) {
       console.error("Error making test request:", error);
       setResponse({
@@ -372,7 +370,7 @@ export default function RequestPage() {
         request: {
           method: testData.method,
           url: testData.target_url,
-          path: "/",
+          path: testData.path,
           headers: testData.headers,
           curl: generateCurlCommand(testData),
         },
