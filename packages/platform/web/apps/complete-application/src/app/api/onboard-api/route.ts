@@ -16,6 +16,13 @@ export interface OnboardAPI {
   description: string;
   documentation_url: string;
   required_headers: RequiredHeader[];
+  query_params?: { key: string; value: string }[];
+  body?: {
+    type: string;
+    content: string;
+    form_data?: { key: string; value: string }[];
+    json_data?: any;
+  };
 }
 
 export interface OnboardResponse {
@@ -38,10 +45,21 @@ export interface OnboardUpdateAPI extends OnboardAPI {
     name: string;
     is_active: boolean;
   }[];
+  query_params?: { key: string; value: string }[];
+  body?: {
+    type: string;
+    content: string;
+    form_data?: { key: string; value: string }[];
+    json_data?: any;
+  };
 }
 
 export async function onboardAPI(data: OnboardAPI, token: string): Promise<OnboardResponse> {
   try {
+    console.log('[onboardAPI] Creating API with data:', data);
+    console.log('[onboardAPI] Query params:', data.query_params);
+    console.log('[onboardAPI] Body data:', data.body);
+
     const response = await fetch(`${API_BASE_URL}/onboard`, {
       method: 'PUT',
       headers: {
@@ -114,6 +132,11 @@ export async function getAllOnboardAPIs(token: string): Promise<OnboardAPI[]> {
 
 export async function updateOnboardAPI(apiId: string, data: OnboardUpdateAPI, token: string): Promise<OnboardResponse> {
   try {
+
+    console.log('[updateOnboardAPI] Updating API with data:', apiId, data);
+    console.log('[updateOnboardAPI] Query params:', data.query_params);
+    console.log('[updateOnboardAPI] Body data:', data.body);
+
     const response = await fetch(`${API_BASE_URL}/onboard/api/${apiId}`, {
       method: 'PATCH',
       headers: {
