@@ -401,6 +401,8 @@ export default function RequestPage() {
           version: "1.0",
           documentation_url: requestData.documentation_url,
           required_headers,
+          query_params: requestData.query_params,
+          body: requestData.body,
         };
 
         if (accessToken) {
@@ -443,6 +445,8 @@ export default function RequestPage() {
           method: requestData.method.toUpperCase(),
           documentation_url: requestData.documentation_url,
           required_headers,
+          query_params: requestData.query_params,
+          body: requestData.body,
           project_id: Number(params.project_id),
         };
 
