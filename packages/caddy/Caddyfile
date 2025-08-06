@@ -24,5 +24,18 @@
         format console
         level DEBUG
     }
-    # All dynamically onboarded routes will be added here by Veil
+    
+    # Handle CORS preflight requests
+    @options method OPTIONS
+    handle @options {
+        header Access-Control-Allow-Origin "*"
+        header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+        header Access-Control-Allow-Headers "Content-Type, Authorization, X-Subscription-Key, X-Requested-With"
+        header Access-Control-Allow-Credentials "true"
+        respond "" 200
+    }
+    
+    # Add CORS headers to all responses
+    header Access-Control-Allow-Origin "*"
+    header Access-Control-Allow-Credentials "true"
 }

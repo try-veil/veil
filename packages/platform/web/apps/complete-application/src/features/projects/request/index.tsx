@@ -70,12 +70,27 @@ interface RequestData {
   target_url: string;
   method: string;
   headers?: { name: string; value: string }[];
+  query_params?: { key: string; value: string }[];
+  body?: {
+    type: string;
+    content: string;
+    form_data?: { key: string; value: string }[];
+    json_data?: any;
+  };
 }
 
 interface TestRequestData {
-  method: string;
-  target_url: string;
   headers: { name: string; value: string }[];
+  api_id: string;
+  project_id: number;
+  name: string;
+  path: string;
+  target_url: string;
+  method: string;
+  version: string;
+  required_headers: { name: string; value: string; is_variable: boolean }[];
+  description: string;
+  documentation_url: string;
 }
 
 const options = new Map([
@@ -119,6 +134,18 @@ export default function Request({
       value: h.value,
     })) || []
   );
+  const [queryParams, setQueryParams] = useState<{ key: string; value: string }[]>([]);
+  const [bodyData, setBodyData] = useState<{
+    type: string;
+    content: string;
+    form_data?: { key: string; value: string }[];
+    json_data?: any;
+  }>({
+    type: "text",
+    content: "",
+    form_data: [],
+    json_data: null,
+  });
   const [isTestLoading, setIsTestLoading] = useState(false);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const { selectedProject } = useProject();
@@ -171,6 +198,26 @@ export default function Request({
     setHeaders(processedHeaders);
   };
 
+  const handleQueryChange = (
+    newQueries: { id: string; key: string; value: string }[]
+  ) => {
+    const processedQueries = newQueries
+      .filter(
+        (query) => query.key.trim() !== "" && query.value.trim() !== ""
+      )
+      .map(({ key, value }) => ({ key, value }));
+    setQueryParams(processedQueries);
+  };
+
+  const handleBodyChange = (data: {
+    type: string;
+    content: string;
+    form_data?: { key: string; value: string }[];
+    json_data?: any;
+  }) => {
+    setBodyData(data);
+  };
+
   const targetUrl = selectedProject?.target_url;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -185,12 +232,18 @@ export default function Request({
       documentation_url: documentationUrl,
       method,
       headers,
+      query_params: queryParams,
+      body: bodyData,
       target_url: targetUrl,
     };
+
+    console.log("🚀 Submitting API request with data:", formData);
+    console.log("📝 Request type:", initialData?.path !== "" ? "UPDATE" : "CREATE");
 
     const result = requestFormSchema.safeParse(formData);
     if (!result.success) {
       const formattedErrors = result.error.format();
+      console.log("❌ Form validation failed:", formattedErrors);
       setErrors({
         name: formattedErrors.name?._errors[0],
         documentation_url: formattedErrors.documentation_url?._errors[0],
@@ -199,6 +252,7 @@ export default function Request({
     }
     setErrors({});
     
+    console.log("✅ Form validation passed, calling onSave handler");
     if (onSave) {
       onSave(formData as RequestData);
     }
@@ -235,24 +289,15 @@ export default function Request({
         documentation_url: documentationUrl,
       };
 
-      const response = await fetch(`${API_BASE_URL}/onboard/test`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
+      console.log("🧪 Testing API with payload:", payload);
+      console.log("🌐 Making request to:", `${API_BASE_URL}/onboard/test`);
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || "Test API call failed");
-      }
-
-      alert("Test successful: " + JSON.stringify(result.data));
+      if (onTest) {
+      await onTest(payload as TestRequestData);
+    }
+      console.log("✅ Test API successful");
     } catch (error) {
-      alert("Test failed: " + (error instanceof Error ? error.message : error));
+      console.log("❌ Test API error:", error);
     } finally {
       setIsTestLoading(false);
     }
@@ -262,6 +307,11 @@ export default function Request({
     try {
       setIsDeleteLoading(true);
       if (!selectedProject?.id || !initialData?.api_id || !accessToken) {
+        console.log("❌ Delete API failed - missing required data:", {
+          projectId: selectedProject?.id,
+          apiId: initialData?.api_id,
+          hasAccessToken: !!accessToken
+        });
         toast({
           title: "Error",
           description: "Missing required information to delete API",
@@ -269,16 +319,25 @@ export default function Request({
         });
         return;
       }
+      
+      console.log("🗑️ Deleting API:", {
+        projectId: selectedProject.id,
+        apiId: initialData.api_id
+      });
+      
       toast({
         title: "Deleting API...",
         description: "Please wait while we process your request",
         variant: "default",
       });
+      
       await deleteAPI(
         selectedProject.id.toString(),
         initialData.api_id.toString(),
         accessToken
       );
+      
+      console.log("✅ API deleted successfully");
       await refreshProject();
       toast({
         title: "Success",
@@ -287,6 +346,7 @@ export default function Request({
       });
       router.push(`/projects/${selectedProject.id}/client/add-request`);
     } catch (error) {
+      console.log("❌ Delete API error:", error);
       toast({
         title: "Error",
         description:
@@ -324,7 +384,7 @@ export default function Request({
            <div className="flex gap-2">
             <Button
               onClick={handleTest}
-              disabled={isTestLoading}
+              disabled={isTestLoading || initialData?.path == "" }
               variant="secondary"
               size="sm"
               className="min-w-[80px]"
@@ -392,10 +452,10 @@ export default function Request({
             <TabsList className="w-full justify-start">
               <TabsTrigger value="overview">Description</TabsTrigger>
               <TabsTrigger value="headers">Headers</TabsTrigger>
-              <TabsTrigger disabled value="query">
+              <TabsTrigger value="query">
                 Query
               </TabsTrigger>
-              <TabsTrigger disabled value="body">
+              <TabsTrigger value="body">
                 Body
               </TabsTrigger>
             </TabsList>
@@ -449,11 +509,11 @@ export default function Request({
               </TabsContent>
 
               <TabsContent value="query" className="mt-0 h-full">
-                <Query />
+                <Query onQueryChange={handleQueryChange} />
               </TabsContent>
 
               <TabsContent value="body" className="mt-0 h-full">
-                <Body />
+                <Body onBodyChange={handleBodyChange} />
               </TabsContent>
             </div>
           </div>

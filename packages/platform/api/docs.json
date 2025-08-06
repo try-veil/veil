@@ -1791,7 +1791,8 @@
     "/onboard/test": {
       "post": {
         "operationId": "OnboardingController_testApi",
-        "summary": "Test an API endpoint before buying subscription",
+        "summary": "Test an onboarded API endpoint with rate limiting",
+        "description": "Test an API that has already been onboarded to the gateway. Use existing API ID and path from your onboarded APIs. Rate limited to 5 requests per 5 hours per API.",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -1805,10 +1806,95 @@
         },
         "responses": {
           "200": {
-            "description": "API test response"
+            "description": "API test successful - returns response from the upstream API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "example": {
+                        "service": "weather",
+                        "temperature": 25,
+                        "conditions": "sunny",
+                        "location": "New York"
+                      }
+                    },
+                    "status": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "headers": {
+                      "type": "object",
+                      "example": {
+                        "content-type": "application/json"
+                      }
+                    },
+                    "usage": {
+                      "type": "number",
+                      "example": 1
+                    },
+                    "limit": {
+                      "type": "number",
+                      "example": 5
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing required fields or API not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "api_id, path, and target_url are required"
+                    },
+                    "error": {
+                      "type": "string",
+                      "example": "Bad Request"
+                    },
+                    "statusCode": {
+                      "type": "number",
+                      "example": 400
+                    }
+                  }
+                }
+              }
+            }
           },
           "403": {
-            "description": "Rate limit exceeded"
+            "description": "Rate limit exceeded - maximum 5 requests per 5 hours per API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Test API rate limit exceeded for test key. Limit: 5 requests per 5 hours"
+                    },
+                    "error": {
+                      "type": "string",
+                      "example": "Forbidden"
+                    },
+                    "statusCode": {
+                      "type": "number",
+                      "example": 403
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3749,12 +3835,12 @@
           "name": {
             "type": "string",
             "description": "Name of the header",
-            "example": "X-API-Key"
+            "example": "X-Subscription-Key"
           },
           "value": {
             "type": "string",
             "description": "Value of the header",
-            "example": "your-api-key"
+            "example": "test-key-95714b01-c8c7-4fb1-9779-8de3ed66d9bf"
           },
           "is_variable": {
             "type": "boolean",
@@ -3774,7 +3860,7 @@
           "name": {
             "type": "string",
             "description": "Name of the parameter",
-            "example": "userId"
+            "example": "location"
           },
           "type": {
             "type": "string",
@@ -3784,7 +3870,7 @@
           "required": {
             "type": "boolean",
             "description": "Whether the parameter is required",
-            "example": true
+            "example": false
           }
         },
         "required": [
@@ -3799,12 +3885,12 @@
           "key": {
             "type": "string",
             "description": "API key",
-            "example": "pk_test_123456789"
+            "example": "test-key-95714b01-c8c7-4fb1-9779-8de3ed66d9bf"
           },
           "name": {
             "type": "string",
             "description": "Name of the API key",
-            "example": "Test Key"
+            "example": "Weather API Test Key"
           },
           "is_active": {
             "type": "boolean",
@@ -3824,7 +3910,7 @@
           "api_id": {
             "type": "string",
             "description": "Unique identifier for the API",
-            "example": "payment-api-v1"
+            "example": "95714b01-c8c7-4fb1-9779-8de3ed66d9bf"
           },
           "project_id": {
             "type": "number",
@@ -3834,32 +3920,32 @@
           "name": {
             "type": "string",
             "description": "Display name of the API",
-            "example": "Payment Processing API"
+            "example": "Weather Service API"
           },
           "path": {
             "type": "string",
             "description": "Path for accessing the API",
-            "example": "/api/payments"
+            "example": "/95714b01-c8c7-4fb1-9779-8de3ed66d9bf/w2"
           },
           "target_url": {
             "type": "string",
             "description": "Target URL where the request will be forwarded",
-            "example": "https://api.example.com/payments"
+            "example": "http://localhost:8083"
           },
           "method": {
             "type": "string",
             "description": "HTTP method for the API",
-            "example": "POST"
+            "example": "GET"
           },
           "description": {
             "type": "string",
             "description": "Description of the API",
-            "example": "Process payment transactions"
+            "example": "Weather service providing current conditions and forecasts"
           },
           "documentation_url": {
             "type": "string",
             "description": "URL to the API documentation",
-            "example": "https://docs.example.com/api/payments"
+            "example": "https://docs.weatherapi.com"
           },
           "required_headers": {
             "description": "Required headers for the API",
@@ -3880,7 +3966,7 @@
           "required_subscription": {
             "type": "string",
             "description": "Required subscription level",
-            "example": "premium"
+            "example": "free"
           },
           "parameters": {
             "description": "Parameters for the API",

@@ -20,7 +20,7 @@ RUN go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 WORKDIR /build
 
 # Copy only the necessary files for building
-COPY packages/caddy/ ./packages/caddy/
+COPY . ./packages/caddy/
 
 # Build the custom Caddy binary with Veil module
 RUN CGO_ENABLED=1 xcaddy build \

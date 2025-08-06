@@ -31,6 +31,7 @@ export class GatewayService {
       const veilRequest = {
         path: normalizedPath,
         upstream: request.target_url,
+        project_id: request.project_id,
         required_subscription: request.required_subscription || 'free',
         methods: [request.method],
         required_headers: request.required_headers?.map((h) => h.name) || [],
