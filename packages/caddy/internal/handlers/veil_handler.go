@@ -213,7 +213,7 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 		zap.String("matching_path", apiPathForMatching),
 		zap.String("rewrite_path", apiPathForRewrite))
 
-	// Create the new route JSON
+	// Create the new route JSON with CORS headers
 	newRouteJSON := fmt.Sprintf(`{
 		"match": [
 			{
@@ -227,6 +227,15 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 				"routes": [
 					{
 						"handle": [
+							{
+								"handler": "headers",
+								"response": {
+									"set": {
+										"Access-Control-Allow-Origin": ["*"],
+										"Access-Control-Allow-Credentials": ["true"]
+									}
+								}
+							},
 							{
 								"handler": "veil_handler",
 								"db_path": "./veil.db",

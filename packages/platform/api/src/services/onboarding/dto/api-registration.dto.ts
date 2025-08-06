@@ -12,11 +12,11 @@ import { ApiStatus } from '@prisma/client';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class HeaderParameterDto {
-  @ApiProperty({ description: 'Name of the header', example: 'X-API-Key' })
+  @ApiProperty({ description: 'Name of the header', example: 'X-Subscription-Key' })
   @IsString()
   name: string;
 
-  @ApiProperty({ description: 'Value of the header', example: 'your-api-key' })
+  @ApiProperty({ description: 'Value of the header', example: 'test-key-95714b01-c8c7-4fb1-9779-8de3ed66d9bf' })
   @IsString()
   value: string;
 
@@ -29,7 +29,7 @@ export class HeaderParameterDto {
 }
 
 export class ParameterDto {
-  @ApiProperty({ description: 'Name of the parameter', example: 'userId' })
+  @ApiProperty({ description: 'Name of the parameter', example: 'location' })
   @IsString()
   name: string;
 
@@ -39,18 +39,18 @@ export class ParameterDto {
 
   @ApiProperty({
     description: 'Whether the parameter is required',
-    example: true,
+    example: false,
   })
   @IsBoolean()
   required: boolean;
 }
 
 export class ApiKeyDto {
-  @ApiProperty({ description: 'API key', example: 'pk_test_123456789' })
+  @ApiProperty({ description: 'API key', example: 'test-key-95714b01-c8c7-4fb1-9779-8de3ed66d9bf' })
   @IsString()
   key: string;
 
-  @ApiProperty({ description: 'Name of the API key', example: 'Test Key' })
+  @ApiProperty({ description: 'Name of the API key', example: 'Weather API Test Key' })
   @IsString()
   name: string;
 
@@ -62,7 +62,7 @@ export class ApiKeyDto {
 export class ApiRegistrationRequestDto {
   @ApiProperty({
     description: 'Unique identifier for the API',
-    example: 'payment-api-v1',
+    example: '95714b01-c8c7-4fb1-9779-8de3ed66d9bf',
   })
   @IsString()
   api_id: string;
@@ -76,32 +76,32 @@ export class ApiRegistrationRequestDto {
 
   @ApiProperty({
     description: 'Display name of the API',
-    example: 'Payment Processing API',
+    example: 'Weather Service API',
   })
   @IsString()
   name: string;
 
   @ApiProperty({
     description: 'Path for accessing the API',
-    example: '/api/payments',
+    example: '/95714b01-c8c7-4fb1-9779-8de3ed66d9bf/w2',
   })
   @IsString()
   path: string;
 
   @ApiProperty({
     description: 'Target URL where the request will be forwarded',
-    example: 'https://api.example.com/payments',
+    example: 'http://localhost:8083',
   })
   @IsString()
   target_url: string;
 
-  @ApiProperty({ description: 'HTTP method for the API', example: 'POST' })
+  @ApiProperty({ description: 'HTTP method for the API', example: 'GET' })
   @IsString()
   method: string;
 
   @ApiPropertyOptional({
     description: 'Description of the API',
-    example: 'Process payment transactions',
+    example: 'Weather service providing current conditions and forecasts',
   })
   @IsString()
   @IsOptional()
@@ -109,7 +109,7 @@ export class ApiRegistrationRequestDto {
 
   @ApiPropertyOptional({
     description: 'URL to the API documentation',
-    example: 'https://docs.example.com/api/payments',
+    example: 'https://docs.weatherapi.com',
   })
   @IsOptional()
   documentation_url?: string;
@@ -137,7 +137,7 @@ export class ApiRegistrationRequestDto {
 
   @ApiPropertyOptional({
     description: 'Required subscription level',
-    example: 'premium',
+    example: 'free',
   })
   @IsString()
   @IsOptional()
@@ -168,14 +168,14 @@ export class ApiRegistrationRequestDto {
 export class CaddyOnboardingRequestDto {
   @ApiProperty({
     description: 'Path for accessing the API',
-    example: '/api/payments',
+    example: '/95714b01-c8c7-4fb1-9779-8de3ed66d9bf/w2',
   })
   @IsString()
   path: string;
 
   @ApiProperty({
     description: 'Target URL where the request will be forwarded',
-    example: 'https://api.example.com/payments',
+    example: 'http://localhost:8083',
   })
   @IsString()
   target_url: string;
@@ -221,6 +221,30 @@ export class CaddyOnboardingRequestDto {
   @Type(() => ApiKeyDto)
   @IsOptional()
   api_keys?: ApiKeyDto[];
+
+  @ApiPropertyOptional({
+    description: 'Provider ID who owns this API',
+    example: 'user-123',
+  })
+  @IsString()
+  @IsOptional()
+  provider_id?: string;
+
+  @ApiPropertyOptional({
+    description: 'Project ID this API belongs to',
+    example: 1,
+  })
+  @IsNumber()
+  @IsOptional()
+  project_id?: number;
+
+  @ApiPropertyOptional({
+    description: 'API ID for reference',
+    example: '95714b01-c8c7-4fb1-9779-8de3ed66d9bf',
+  })
+  @IsString()
+  @IsOptional()
+  api_id?: string;
 }
 
 export class ApiRegistrationResponseDto {
