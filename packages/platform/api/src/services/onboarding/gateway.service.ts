@@ -120,7 +120,8 @@ export class GatewayService {
 
   async updateApiRoute(
     apiId: string,
-    request: Partial<ApiRegistrationRequestDto>,
+    request: CaddyOnboardingRequestDto,
+    currentPath?: string,
   ) {
     try {
       // Use currentPath if provided, otherwise fall back to apiId
@@ -199,19 +200,16 @@ export class GatewayService {
 
       // PATCH to Veil's /veil/api/routes endpoint
       const response = await firstValueFrom(
-        this.httpService.patch(`${this.gatewayUrl}/veil/api/routes/${apiId}`, {
-          path: request.path.startsWith('/') ? request.path : `/${request.path}`,
-          upstream: request.target_url,
-          methods: [request.method],
-          required_headers: request.required_headers?.map((h) => ({
-            name: h.name,
-            value: h.value,
-            is_static: !h.is_variable,
-          })),
+        this.httpService.patch(updateUrl, veilRequest, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000, // 10 second timeout
         }),
       );
 
-      this.logger.log(`API route updated successfully: ${apiId}`);
+      this.logger.log(`[updateApiRoute] API route updated successfully: ${apiId}`);
+      this.logger.log(`[updateApiRoute] Caddy response: ${JSON.stringify(response.data)}`);
       return response.data;
     } catch (error) {
       // If API doesn't exist (404), try to create it instead
@@ -253,6 +251,15 @@ export class GatewayService {
         `Failed to update API route: ${error.message}`,
         error.stack,
       );
+
+      // Log more details about the error
+      if (error.response) {
+        this.logger.error(`Response status: ${error.response.status}`);
+        this.logger.error(
+          `Response data: ${JSON.stringify(error.response.data)}`,
+        );
+      }
+
       throw error;
     }
   }

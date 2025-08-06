@@ -315,10 +315,12 @@ func (s *APIStore) UpdateAPI(config *models.APIConfig) error {
 		tx.Rollback()
 		return err
 	}
-	if err := tx.Where("api_config_id = ?", config.ID).Delete(&models.APIKey{}).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
+	if err := tx.Unscoped().
+	Where("api_config_id = ?", config.ID).
+	Delete(&models.APIKey{}).Error; err != nil {
+    tx.Rollback()
+    return err
+    }
 
 	// Update API config
 	if err := tx.Save(config).Error; err != nil {
@@ -339,13 +341,31 @@ func (s *APIStore) UpdateAPI(config *models.APIConfig) error {
 		}
 	}
 
-	// Create new API keys
+	// Create or update API keys (upsert)
 	for i := range config.APIKeys {
 		config.APIKeys[i].ID = 0
 		config.APIKeys[i].APIConfigID = config.ID
-		if err := tx.Create(&config.APIKeys[i]).Error; err != nil {
-			tx.Rollback()
-			return err
+		
+		// Use FirstOrCreate to handle existing keys
+		var existingKey models.APIKey
+		result := tx.Where("key = ?", config.APIKeys[i].Key).First(&existingKey)
+		
+		if result.Error == nil {
+			// Key exists, update it
+			existingKey.APIConfigID = config.ID
+			existingKey.Name = config.APIKeys[i].Name
+			existingKey.IsActive = config.APIKeys[i].IsActive
+			existingKey.ExpiresAt = config.APIKeys[i].ExpiresAt
+			if err := tx.Save(&existingKey).Error; err != nil {
+				tx.Rollback()
+				return err
+			}
+		} else {
+			// Key doesn't exist, create it
+			if err := tx.Create(&config.APIKeys[i]).Error; err != nil {
+				tx.Rollback()
+				return err
+			}
 		}
 	}
 
