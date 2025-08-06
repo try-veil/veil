@@ -457,7 +457,6 @@ export class OnboardingService {
     const caddyGatewayBase = 'http://localhost:2021';
     const apiId = request.api_id || request.name.replace(/\s+/g, '_').toLowerCase();
     const url = caddyGatewayBase + '/' + apiId + request.path;
-
     this.logger.log('Making test API call to: ' + url + ' with headers:', headers);
 
     try {
