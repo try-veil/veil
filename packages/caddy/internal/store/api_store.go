@@ -125,7 +125,16 @@ func (s *APIStore) GetAPIByPath(path string) (*models.APIConfig, error) {
 	if bestMatch != nil {
 		s.logger.Debug("found matching API configuration",
 			zap.String("path", bestMatch.Path),
-			zap.Int("api_keys", len(bestMatch.APIKeys)))
+			zap.Int("api_keys", len(bestMatch.APIKeys)),
+			zap.Bool("has_body", bestMatch.Body != nil))
+
+		if bestMatch.Body != nil {
+			s.logger.Debug("API body configuration",
+				zap.String("body_type", bestMatch.Body.Type),
+				zap.String("body_content", bestMatch.Body.Content),
+				zap.Int("form_data_count", len(bestMatch.Body.FormData)),
+				zap.Int("multipart_data_count", len(bestMatch.Body.MultipartData)))
+		}
 
 		for _, key := range bestMatch.APIKeys {
 			s.logger.Debug("matched configuration API key",

@@ -3904,6 +3904,124 @@
           "is_active"
         ]
       },
+      "QueryParameterDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Query parameter name",
+            "example": "page"
+          },
+          "type": {
+            "type": "string",
+            "description": "Query parameter type",
+            "example": "string"
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether the query parameter is required",
+            "example": false
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "required"
+        ]
+      },
+      "MultipartFieldDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Field name",
+            "example": "username"
+          },
+          "value": {
+            "type": "string",
+            "description": "Field value or example",
+            "example": "john_doe"
+          },
+          "type": {
+            "type": "string",
+            "description": "Field type",
+            "enum": [
+              "text",
+              "file"
+            ],
+            "example": "text"
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether the field is required",
+            "example": true
+          },
+          "description": {
+            "type": "string",
+            "description": "Human readable description of the field",
+            "example": "User's username for login"
+          },
+          "content_type": {
+            "type": "string",
+            "description": "Content type for file fields",
+            "example": "image/jpeg"
+          }
+        },
+        "required": [
+          "name",
+          "value",
+          "type",
+          "required"
+        ]
+      },
+      "BodyDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Body type",
+            "enum": [
+              "text",
+              "json",
+              "form-urlencoded",
+              "multipart",
+              "graphql"
+            ],
+            "example": "json"
+          },
+          "content": {
+            "type": "string",
+            "description": "Raw content for text/graphql"
+          },
+          "json_data": {
+            "type": "object",
+            "description": "JSON data object"
+          },
+          "form_data": {
+            "description": "Form data array for form-urlencoded (key-value pairs)",
+            "example": [
+              {
+                "key": "username",
+                "value": "john_doe"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "multipart_data": {
+            "description": "Multipart form fields",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MultipartFieldDto"
+            }
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
       "ApiRegistrationRequestDto": {
         "type": "object",
         "properties": {
@@ -3981,6 +4099,21 @@
             "items": {
               "$ref": "#/components/schemas/ApiKeyDto"
             }
+          },
+          "query_params": {
+            "description": "Query parameters",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QueryParameterDto"
+            }
+          },
+          "body": {
+            "description": "Request body configuration",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BodyDto"
+              }
+            ]
           }
         },
         "required": [
@@ -4112,6 +4245,21 @@
             "items": {
               "$ref": "#/components/schemas/ParameterDto"
             }
+          },
+          "query_params": {
+            "description": "Query parameters",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QueryParameterDto"
+            }
+          },
+          "body": {
+            "description": "Request body configuration",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BodyDto"
+              }
+            ]
           }
         },
         "required": [

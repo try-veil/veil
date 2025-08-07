@@ -597,6 +597,88 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 		}
 	}
 
+	// Validate query parameters if specified
+	if len(api.QueryParams) > 0 {
+		for _, param := range api.QueryParams {
+			if param.Required && r.URL.Query().Get(param.Name) == "" {
+				h.logger.Debug("missing required query parameter",
+					zap.String("param", param.Name),
+					zap.String("path", r.URL.Path))
+				http.Error(w, fmt.Sprintf("Missing required query parameter: %s", param.Name), http.StatusBadRequest)
+				return nil
+			}
+		}
+	}
+
+	// Validate body type if specified
+	if api.Body != nil && r.Method != "GET" {
+		contentType := r.Header.Get("Content-Type")
+		switch api.Body.Type {
+		case "json":
+			if !strings.Contains(contentType, "application/json") {
+				h.logger.Debug("invalid content type for JSON body",
+					zap.String("expected", "application/json"),
+					zap.String("actual", contentType))
+				http.Error(w, "Expected JSON content type", http.StatusBadRequest)
+				return nil
+			}
+		case "form-urlencoded":
+			if !strings.Contains(contentType, "application/x-www-form-urlencoded") {
+				http.Error(w, "Expected form-urlencoded content type", http.StatusBadRequest)
+				return nil
+			}
+			// Validate form fields if specified
+			if len(api.Body.FormData) > 0 {
+				if err := r.ParseForm(); err != nil {
+					http.Error(w, "Failed to parse form data", http.StatusBadRequest)
+					return nil
+				}
+				for _, field := range api.Body.FormData {
+					if r.FormValue(field.Key) == "" {
+						http.Error(w, fmt.Sprintf("Missing required form field: %s", field.Key), http.StatusBadRequest)
+						return nil
+					}
+				}
+			}
+		case "multipart":
+			if !strings.Contains(contentType, "multipart/form-data") {
+				http.Error(w, "Expected multipart/form-data content type", http.StatusBadRequest)
+				return nil
+			}
+			// Validate multipart fields if specified
+			if len(api.Body.MultipartData) > 0 {
+				if err := r.ParseMultipartForm(32 << 20); err != nil { // 32MB max
+					http.Error(w, "Failed to parse multipart form", http.StatusBadRequest)
+					return nil
+				}
+				for _, field := range api.Body.MultipartData {
+					switch field.Type {
+					case "text":
+						if r.FormValue(field.Name) == "" {
+							http.Error(w, fmt.Sprintf("Missing required text field: %s", field.Name), http.StatusBadRequest)
+							return nil
+						}
+					case "file":
+						if _, _, err := r.FormFile(field.Name); err != nil {
+							http.Error(w, fmt.Sprintf("Missing required file field: %s", field.Name), http.StatusBadRequest)
+							return nil
+						}
+					}
+				}
+			}
+		case "text":
+			if !strings.Contains(contentType, "text/plain") {
+				http.Error(w, "Expected text/plain content type", http.StatusBadRequest)
+				return nil
+			}
+		case "graphql":
+			if !strings.Contains(contentType, "application/graphql") && !strings.Contains(contentType, "application/json") {
+				http.Error(w, "Expected application/graphql or application/json content type", http.StatusBadRequest)
+				return nil
+			}
+		}
+	}
+
 	// Log the API request with provider_id for Loki/Grafana
 	h.logger.Info("API request",
 		zap.String("provider_id", api.ProviderID),
@@ -725,7 +807,16 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		zap.Any("methods", req.Methods),
 		zap.Any("required_headers", req.RequiredHeaders),
 		zap.Any("parameters", req.Parameters),
-		zap.Int("api_keys_count", len(req.APIKeys)))
+		zap.Int("api_keys_count", len(req.APIKeys)),
+		zap.Bool("has_body", req.Body != nil))
+
+	if req.Body != nil {
+		h.logger.Debug("request body configuration",
+			zap.String("body_type", req.Body.Type),
+			zap.String("body_content", req.Body.Content),
+			zap.Int("form_data_count", len(req.Body.FormData)),
+			zap.Int("multipart_data_count", len(req.Body.MultipartData)))
+	}
 
 	// Validate required fields
 	if req.Path == "" || req.Upstream == "" {
@@ -736,6 +827,46 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		return nil
 	}
 
+	// Convert DTO query params to model query params
+	var queryParams []models.QueryParameter
+	for _, param := range req.QueryParams {
+		queryParams = append(queryParams, models.QueryParameter{
+			Name:     param.Name,
+			Type:     param.Type,
+			Required: param.Required,
+		})
+	}
+
+	// Convert DTO body to model body
+	var body *models.Body
+	if req.Body != nil {
+		var formData []models.FormData
+		for _, fd := range req.Body.FormData {
+			formData = append(formData, models.FormData{
+				Key:   fd.Key,
+				Value: fd.Value,
+			})
+		}
+
+		var multipartData []models.MultipartField
+		for _, md := range req.Body.MultipartData {
+			multipartData = append(multipartData, models.MultipartField{
+				Name:        md.Name,
+				Value:       md.Value,
+				Type:        md.Type,
+				ContentType: md.ContentType,
+			})
+		}
+
+		body = &models.Body{
+			Type:          req.Body.Type,
+			Content:       req.Body.Content,
+			JsonData:      req.Body.JsonData,
+			FormData:      formData,
+			MultipartData: multipartData,
+		}
+	}
+
 	// Create API config
 	config := &models.APIConfig{
 		Path:                 req.Path,
@@ -743,6 +874,8 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		RequiredSubscription: req.RequiredSubscription,
 		RequiredHeaders:      req.RequiredHeaders,
 		ProviderID:           req.ProviderID,
+		QueryParams:          queryParams,
+		Body:                 body,
 	}
 
 	// Create API methods
@@ -788,7 +921,7 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		return h.handleUpdateAPI(w, r, apiID, config)
 	}
 
-	// Store in database
+	// Store in database - use upsert behavior for POST requests
 	h.logger.Info("storing API config in database")
 	if err := h.store.CreateAPI(config); err != nil {
 		h.logger.Error("failed to store API config",
@@ -797,14 +930,37 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 			zap.String("api_path", config.Path),
 			zap.String("error_details", err.Error()))
 
-		// Check for specific errors
+		// Check for UNIQUE constraint error - if API already exists, update it instead
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-			http.Error(w, "API path already exists", http.StatusConflict)
+			h.logger.Info("API already exists, attempting to update instead",
+				zap.String("api_path", config.Path))
+			
+			// Get existing API to get its ID
+			existing, getErr := h.store.GetAPIByPath(config.Path)
+			if getErr != nil || existing == nil {
+				h.logger.Error("failed to get existing API for update",
+					zap.Error(getErr),
+					zap.String("api_path", config.Path))
+				http.Error(w, "API path already exists but cannot be updated", http.StatusConflict)
+				return nil
+			}
+
+			// Set the ID from existing API and update
+			config.ID = existing.ID
+			if updateErr := h.store.UpdateAPI(config); updateErr != nil {
+				h.logger.Error("failed to update existing API",
+					zap.Error(updateErr),
+					zap.String("api_path", config.Path))
+				http.Error(w, "Failed to update existing API configuration: "+updateErr.Error(), http.StatusInternalServerError)
+				return nil
+			}
+
+			h.logger.Info("successfully updated existing API",
+				zap.String("api_path", config.Path))
+		} else {
+			http.Error(w, "Failed to store API configuration: "+err.Error(), http.StatusInternalServerError)
 			return nil
 		}
-
-		http.Error(w, "Failed to store API configuration: "+err.Error(), http.StatusInternalServerError)
-		return nil
 	}
 
 	// Update Caddy configuration
