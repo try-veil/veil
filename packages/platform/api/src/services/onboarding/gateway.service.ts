@@ -21,6 +21,32 @@ export class GatewayService {
     this.gatewayUrl = this.configService.get<string>('DEFAULT_GATEWAY_URL');
   }
 
+  private transformBodyData(body: any): any {
+    if (!body) return null;
+
+    // If body type is multipart and has form_data, convert it to multipart_data
+    if (body.type === 'multipart' && body.form_data && Array.isArray(body.form_data)) {
+      // Create a content string representation of the multipart data
+      const contentString = body.form_data
+        .map((item: { key: string; value: string }) => `${item.key}=${item.value}`)
+        .join('&');
+
+      return {
+        ...body,
+        content: contentString, // Add content representation
+        multipart_data: body.form_data.map((item: { key: string; value: string }) => ({
+          name: item.key,
+          value: item.value,
+          type: 'text', // Default to text type, could be enhanced to detect file types
+        })),
+        // Keep form_data for backward compatibility but also add multipart_data
+        form_data: body.form_data,
+      };
+    }
+
+    return body;
+  }
+
   async onboardApi(
     request: CaddyOnboardingRequestDto,
   ): Promise<{ status: string; message: string; api: any }> {
@@ -47,6 +73,8 @@ export class GatewayService {
             name: k.name,
             is_active: k.is_active,
           })) || [],
+        query_params: request.query_params || [],
+        body: this.transformBodyData(request.body) || null,
       };
 
       console.log(
@@ -153,6 +181,15 @@ export class GatewayService {
         veilRequest.project_id = request.project_id;
       }
 
+      // Add query_params and body if provided
+      if (request.query_params && request.query_params.length > 0) {
+        veilRequest.query_params = request.query_params;
+      }
+
+      if (request.body) {
+        veilRequest.body = this.transformBodyData(request.body);
+      }
+
       // Add API ID for reference (use from request or fallback to parameter)
       veilRequest.api_id = request.api_id || apiId;
 
@@ -175,6 +212,41 @@ export class GatewayService {
       this.logger.log(`[updateApiRoute] Caddy response: ${JSON.stringify(response.data)}`);
       return response.data;
     } catch (error) {
+      // If API doesn't exist (404), try to create it instead
+      if (error.response && error.response.status === 404) {
+        this.logger.warn(`[updateApiRoute] API not found in Caddy, attempting to create it: ${apiId}`);
+
+        try {
+          // Use currentPath if provided, otherwise fall back to apiId
+          const routeIdentifier = currentPath || apiId;
+          const normalizedPath = routeIdentifier.startsWith('/') ? routeIdentifier : `/${routeIdentifier}`;
+
+          // Convert the update request to a create request with proper DTO structure
+          const createRequest: CaddyOnboardingRequestDto = {
+            path: request.path || normalizedPath,
+            target_url: request.target_url,
+            method: request.method || 'GET',
+            required_subscription: request.required_subscription || 'free',
+            required_headers: request.required_headers || [],
+            parameters: request.parameters || [],
+            api_keys: request.api_keys || [],
+            query_params: request.query_params || [],
+            body: this.transformBodyData(request.body) || null,
+            provider_id: request.provider_id,
+            project_id: request.project_id,
+            api_id: request.api_id || apiId,
+          };
+
+          // Call the onboardApi method to create it
+          const createResponse = await this.onboardApi(createRequest);
+          this.logger.log(`[updateApiRoute] Successfully created missing API: ${apiId}`);
+          return createResponse;
+        } catch (createError) {
+          this.logger.error(`[updateApiRoute] Failed to create missing API: ${createError.message}`);
+          throw createError;
+        }
+      }
+
       this.logger.error(
         `Failed to update API route: ${error.message}`,
         error.stack,

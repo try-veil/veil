@@ -106,6 +106,8 @@ export class OnboardingService {
             }),
             {},
           ) || {},
+        queryParams: request.query_params as any || [],
+        bodyConfig: request.body as any || null,
       },
       update: {
         name: request.name,
@@ -132,6 +134,9 @@ export class OnboardingService {
             }),
             {},
           ) || {},
+        queryParams: request.query_params as any || []
+        ,
+        bodyConfig: request.body as any || null,
       },
       include: {
         projectAllowedAPIs: {
@@ -294,6 +299,10 @@ export class OnboardingService {
       data.requiredHeaders = headersObj;
     }
 
+    // Update query params and body config
+    if (request.query_params !== undefined) data.queryParams = request.query_params as any;
+    if (request.body !== undefined) data.bodyConfig = request.body as any;
+
     // 3) Ensure test key always present
     const keys: any[] = Array.isArray(request.api_keys) ? [...request.api_keys] : [];
     const testKey = `test-key-${request.api_id}`;
@@ -310,8 +319,11 @@ export class OnboardingService {
     if (spec.parameters) gatewayBody.parameters = spec.parameters;
     if (keys.length) gatewayBody.api_keys = keys;
     if (request.required_headers !== undefined) gatewayBody.required_headers = request.required_headers;
+    if (request.body !== undefined) gatewayBody.body = request.body;
 
     this.logger.log(`Gateway patch: ${JSON.stringify(gatewayBody)}`);
+    this.logger.log(`Request body data: ${JSON.stringify(request.body)}`);
+    this.logger.log(`Existing body config: ${JSON.stringify(existing.bodyConfig)}`);
 
     // 5) Two-phase commit: patch gateway then update DB
     try {
@@ -350,6 +362,8 @@ export class OnboardingService {
       documentation_url: updated.documentationUrl,
       required_headers: headerList,
       parameters: (updated.specification as any)?.parameters || [],
+      query_params: updated.queryParams as any || [],
+      body: updated.bodyConfig as any || null,
       status: updated.status,
       created_at: updated.createdAt,
       updated_at: updated.updatedAt,
@@ -410,6 +424,8 @@ export class OnboardingService {
       documentation_url: api.documentationUrl,
       required_headers: headers,
       parameters: parameters,
+      query_params: api.queryParams as any || [],
+      body: api.bodyConfig as any || null,
       status: api.status,
       created_at: api.createdAt,
       updated_at: api.updatedAt,
@@ -459,8 +475,64 @@ export class OnboardingService {
     const url = caddyGatewayBase + '/' + apiId + request.path;
 
     this.logger.log('Making test API call to: ' + url + ' with headers:', headers);
+    this.logger.log('Request body configuration:', JSON.stringify(request.body, null, 2));
+
+    // If body is undefined, try to get it from the database
+    if (!request.body && request.api_id) {
+      this.logger.log('Body is undefined, fetching from database...');
+      try {
+        const apiDetails = await this.getApiDetails(request.api_id);
+        if (apiDetails.body) {
+          request.body = apiDetails.body;
+          this.logger.log('Retrieved body from database:', JSON.stringify(request.body, null, 2));
+        }
+      } catch (error) {
+        this.logger.error('Failed to retrieve API details:', error);
+      }
+    }
 
     try {
+      // Prepare request body based on body configuration
+      let requestData = null;
+      if (request.body && request.method.toUpperCase() !== 'GET') {
+        switch (request.body.type) {
+          case 'json':
+            requestData = request.body.json_data || {};
+            headers['Content-Type'] = 'application/json';
+            break;
+          case 'form-url-encoded':
+            if (request.body.form_data) {
+              const formData = new URLSearchParams();
+              request.body.form_data.forEach(item => {
+                formData.append(item.key, item.value);
+              });
+              requestData = formData.toString();
+              headers['Content-Type'] = 'application/x-www-form-urlencoded';
+            }
+            break;
+          case 'text':
+            requestData = request.body.content;
+            headers['Content-Type'] = 'text/plain';
+            break;
+          case 'multipart':
+            // For multipart, we'll send form_data as JSON for testing
+            if (request.body.form_data) {
+              const multipartData = {};
+              request.body.form_data.forEach(item => {
+                multipartData[item.key] = item.value;
+              });
+              requestData = multipartData;
+              headers['Content-Type'] = 'application/json'; // Send as JSON for testing
+            }
+            break;
+          default:
+            requestData = request.body.content || null;
+        }
+      }
+
+      this.logger.log('Prepared request data:', JSON.stringify(requestData, null, 2));
+      this.logger.log('Final headers:', JSON.stringify(headers, null, 2));
+
       // Make request to Caddy gateway (not direct to upstream)
       const response = await firstValueFrom(
         this.httpService
@@ -468,7 +540,7 @@ export class OnboardingService {
             method: request.method as any,
             url,
             headers,
-            data: request, // Send the full request body if needed (for POST/PUT)
+            data: requestData,
           })
           .pipe(
             timeout(30000), // 30 second timeout
@@ -477,6 +549,8 @@ export class OnboardingService {
                 error: error.message,
                 caddyUrl: url,
                 method: request.method,
+                status: error.response?.status,
+                responseData: error.response?.data,
               });
               throw new InternalServerErrorException(
                 `Failed to call Caddy gateway: ${error.message}`,
