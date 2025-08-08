@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import FormUrlEncoded from "./form-url-encoded";
 import Multipart from "./multipart";
 import JsonEditor from "./json-editor";
+import { GraphQLEditor } from "./graphql-editor";
 
 interface BodyProps {
   onBodyChange?: (data: {
@@ -116,14 +117,13 @@ export default function Body({ onBodyChange, initialBodyData }: BodyProps) {
           />
         </TabsContent>
         <TabsContent value="graphql" className="space-y-4">
-          <Input
-            placeholder=""
-            className="min-h-24 w-full"
+          <GraphQLEditor
             value={graphqlContent}
-            onChange={(e) => {
-              setGraphqlContent(e.target.value);
+            onChange={(value) => {
+              setGraphqlContent(value || "");
               initializedRef.current = true; // Mark as initialized by user interaction
             }}
+            className="min-h-24 w-full"
           />
         </TabsContent>
       </Tabs>
