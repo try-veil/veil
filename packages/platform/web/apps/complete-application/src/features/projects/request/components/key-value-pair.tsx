@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ interface KeyValuePairProps {
   valuePlaceholder: string;
   addButtonText: string;
   onChange?: (pairs: KeyValuePair[]) => void;
+  initialPairs?: { key: string; value: string }[];
 }
 
 function SortableKeyValueItem({ 
@@ -129,10 +130,18 @@ export function KeyValuePair({
   valuePlaceholder,
   addButtonText,
   onChange,
+  initialPairs,
 }: KeyValuePairProps) {
-  const [pairs, setPairs] = useState<KeyValuePair[]>([
-    { id: "1", key: "", value: "" }
-  ]);
+  const [pairs, setPairs] = useState<KeyValuePair[]>(() => {
+    if (initialPairs && initialPairs.length > 0) {
+      return initialPairs.map((pair, index) => ({
+        id: (index + 1).toString(),
+        key: pair.key,
+        value: pair.value
+      }));
+    }
+    return [{ id: "1", key: "", value: "" }];
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -140,6 +149,18 @@ export function KeyValuePair({
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  // Update pairs when initialPairs prop changes
+  useEffect(() => {
+    if (initialPairs && initialPairs.length > 0) {
+      const updatedPairs = initialPairs.map((pair, index) => ({
+        id: (index + 1).toString(),
+        key: pair.key,
+        value: pair.value
+      }));
+      setPairs(updatedPairs);
+    }
+  }, [initialPairs]);
 
   const addNewPair = () => {
     const newPairs = [...pairs, { id: Date.now().toString(), key: "", value: "" }];

@@ -13,6 +13,7 @@ type Endpoint = {
   name: string;
   apiId: string;
   version: string;
+  path: string;
 };
 
 export default function PlaygroundPage() {
@@ -137,7 +138,10 @@ export default function PlaygroundPage() {
 
       {/* Right Column - Selected Endpoint Display */}
       <div className="w-full lg:w-3/4 p-4">
-        <EndpointViewer endpoint={selectedEndpoint} apiDetails={apiDetails} />
+        <EndpointViewer 
+          endpoint={selectedEndpoint} 
+          apiDetails={apiDetails} 
+        />
       </div>
     </div>
   );

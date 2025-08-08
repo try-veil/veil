@@ -505,15 +505,24 @@ export default function Request({
               </TabsContent>
 
               <TabsContent value="headers" className="mt-0 h-full">
-                <Headers onHeadersChange={handleHeadersChange} />
+                <Headers 
+                  onHeadersChange={handleHeadersChange} 
+                  initialHeaders={headers}
+                />
               </TabsContent>
 
               <TabsContent value="query" className="mt-0 h-full">
-                <Query onQueryChange={handleQueryChange} />
+                <Query 
+                  onQueryChange={handleQueryChange} 
+                  initialQueries={queryParams}
+                />
               </TabsContent>
 
               <TabsContent value="body" className="mt-0 h-full">
-                <Body onBodyChange={handleBodyChange} />
+                <Body 
+                  onBodyChange={handleBodyChange} 
+                  initialBodyData={bodyData}
+                />
               </TabsContent>
             </div>
           </div>
