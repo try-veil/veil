@@ -5,7 +5,7 @@ import EndpointViewer from "@/features/consumer/endpoint-viewer";
 import { OnboardAPI, getOnboardAPIById } from "@/app/api/onboard-api/route";
 import { getAllProjectAPIs } from "@/app/api/consumer/route";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePathname } from "next/navigation";
+import { useProject } from "@/context/project-context";
 import { getMethodColor } from "@/utils/getMethodColor";
 
 type Endpoint = {
@@ -18,23 +18,25 @@ type Endpoint = {
 
 export default function PlaygroundPage() {
   const [error, setError] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
   const [selectedEndpoint, setSelectedEndpoint] = useState<Endpoint | null>(null);
   const [apiDetails, setApiDetails] = useState<OnboardAPI | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const { accessToken } = useAuth();
-
-  const pathname = usePathname();
-  const projectId = pathname.split("/")[2];
+  const { selectedProject, isLoading: projectLoading } = useProject();
 
   const fetchAPIs = async () => {
     try {
+      setIsLoading(true);
+      setError("");
+      
       const token = accessToken;
       if (!token) throw new Error("No authentication token found");
+      if (!selectedProject?.id) throw new Error("No project selected");
   
-      const projectsData = await getAllProjectAPIs(token, projectId);
+      const projectsData = await getAllProjectAPIs(token, selectedProject.id.toString());
   
       const enrichedEndpoints: Endpoint[] = await Promise.all(
         projectsData.map(async (item: any) => {
@@ -73,8 +75,18 @@ export default function PlaygroundPage() {
   
 
   useEffect(() => {
-    if (accessToken) fetchAPIs();
-  }, [accessToken]);
+    console.log("Playground useEffect triggered:", {
+      hasAccessToken: !!accessToken,
+      projectId: selectedProject?.id,
+      projectLoading,
+      endpointsCount: endpoints.length
+    });
+    
+    if (accessToken && selectedProject?.id && !projectLoading) {
+      console.log("Fetching APIs for project:", selectedProject.id);
+      fetchAPIs();
+    }
+  }, [accessToken, selectedProject?.id, projectLoading]);
 
   useEffect(() => {
     const fetchApiDetails = async () => {
@@ -106,6 +118,30 @@ export default function PlaygroundPage() {
       endpoint.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       endpoint.method?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Show loading state while project is loading or APIs are being fetched
+  if (projectLoading || isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading endpoints...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-destructive mb-2">Error loading endpoints</p>
+          <p className="text-muted-foreground text-sm">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col lg:flex-row">

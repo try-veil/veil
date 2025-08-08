@@ -18,6 +18,33 @@ export interface ProjectAPI {
   required_headers: RequiredHeader[];
 }
 
+export interface HubListing {
+  id?: string;
+  logo?: string;
+  category: string;
+  shortDescription?: string;
+  longDescription?: string;
+  website?: string;
+  termsOfUse?: string;
+  visibleToPublic: boolean;
+  healthCheckUrl?: string;
+  apiDocumentation?: string;
+  projectId: number;
+}
+
+export interface ProjectWithHubListing {
+  id: number;
+  name: string;
+  description?: string;
+  logo?: string;
+  category?: string;
+  website?: string;
+  thumbnail?: string;
+  target_url?: string;
+  apis: ProjectAPI[];
+  hubListing?: HubListing;
+}
+
 export async function getAllProjectAPIs(
   token: string,
   project_id: string
@@ -43,6 +70,36 @@ export async function getAllProjectAPIs(
     return data.apis;
   } catch (error) {
     console.error("Error:", error);
+    throw error;
+  }
+}
+
+export async function getProjectWithHubListing(
+  token: string,
+  project_id: string
+): Promise<ProjectWithHubListing> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/projects/marketplace/${project_id}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to fetch project with hub listing");
+    }
+
+    console.log('[getProjectWithHubListing] Success:', data);
+    return data;
+  } catch (error) {
+    console.error("Error fetching project with hub listing:", error);
     throw error;
   }
 }
