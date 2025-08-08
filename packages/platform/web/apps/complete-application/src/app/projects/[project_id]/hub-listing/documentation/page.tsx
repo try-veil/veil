@@ -1,9 +1,13 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect} from "react";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useProject } from "@/context/project-context";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
+import { updateProject } from "@/lib/api";
 
 const MDEditor = dynamic(
   () =>
@@ -34,20 +38,106 @@ const MDEditor = dynamic(
 );
 
 export default function Documentation() {
+    const { selectedProject, refreshProject } = useProject();
+    const { accessToken } = useAuth();
   const [markdownContent, setMarkdownContent] = useState(
-    "# API Documentation\n\n&quot;Write your API documentation here...&quot;"
+    "# API Documentation\n\nWrite your API documentation here..."
   );
+  const [isDirty, setIsDirty] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleDiscard = () => {
+  // Initialize content when selectedProject is available
+  useEffect(() => {
+    console.log("selectedProject changed:", selectedProject);
+    if ((selectedProject as any)?.hubListing?.apiDocumentation) {
+      console.log("Setting markdown content from project:", (selectedProject as any).hubListing.apiDocumentation);
+      setMarkdownContent((selectedProject as any).hubListing.apiDocumentation);
+    } else {
+      console.log("No apiDocumentation found in project, using default");
+    }
+  }, [selectedProject]);
+
+  const handleContentChange = useCallback((val: string | undefined) => {
+    const newContent = val || "";
+    setMarkdownContent(newContent);
+    setIsDirty(true);
+  }, []);
+
+  const handleDiscard = useCallback(() => {
+    const initialContent = (selectedProject as any)?.hubListing?.apiDocumentation || "# API Documentation\n\nWrite your API documentation here...";
     setMarkdownContent(initialContent);
-  };
+    setIsDirty(false);
+  }, [selectedProject]);
 
-  const handleSave = () => {
-    // TODO: Implement save functionality
-    console.log("Saving markdown content:", markdownContent);
-  };
+  const handleSave = useCallback(async () => {
+    console.log("Save function called");
+    console.log("selectedProject:", selectedProject);
+    console.log("accessToken:", !!accessToken);
+    console.log("markdownContent:", markdownContent);
+    
+    if (!selectedProject || !accessToken) {
+      console.log("Early return: missing selectedProject or accessToken");
+      toast({
+        title: "Error",
+        description: "Missing project or authentication data",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      if (!selectedProject?.id) {
+        throw new Error("Project ID not found");
+      }
 
-  const [initialContent] = useState(markdownContent);
+      toast({
+        title: "Updating Project...",
+        description: "Please wait while we process your request",
+        variant: "default",
+      });
+
+      const updateData = {
+        ...selectedProject,
+        apiDocumentation: markdownContent,
+      };
+
+      console.log("About to call updateProject with:", {
+        accessToken: !!accessToken,
+        projectId: selectedProject.id,
+        data: updateData
+      });
+
+      const updatedProject = await updateProject(accessToken, selectedProject.id, updateData as any);
+      
+      console.log("API Response:", updatedProject);
+      
+      setIsDirty(false);
+
+      toast({
+        title: "Success",
+        description: "Project updated successfully",
+      });
+
+      // Force refresh the project context after a longer delay
+      setTimeout(async () => {
+        console.log("Refreshing project...");
+        await refreshProject();
+        console.log("Project refreshed, selectedProject:", selectedProject);
+      }, 1000);
+    } catch (error) {
+      console.error("Failed to save:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update project",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedProject, accessToken, markdownContent, refreshProject]);
+
   return (
     <div>
        <div className="flex-none">
@@ -61,7 +151,7 @@ export default function Documentation() {
         <div className="flex-1">
           <MDEditor
             value={markdownContent}
-            onChange={(val: string) => setMarkdownContent(val || "")}
+            onChange={handleContentChange}
             preview="live"
             height="100%"
             visibleDragbar={false}
@@ -69,11 +159,18 @@ export default function Documentation() {
           />
         </div>
         <div className="flex space-x-4">
-          <Button variant="outline" type="button" onClick={handleDiscard}>
+          <Button variant="outline" type="button" onClick={handleDiscard} disabled={isLoading}>
             Discard Changes
           </Button>
-          <Button type="button" onClick={handleSave}>
-            Save Changes
+          <Button 
+            type="button" 
+            onClick={() => {
+              console.log("Save button clicked!");
+              handleSave();
+            }}
+            disabled={isLoading || !isDirty}
+          >
+            {isLoading ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </div>
