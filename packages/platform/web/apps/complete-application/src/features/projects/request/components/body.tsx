@@ -13,12 +13,14 @@ interface BodyProps {
     type: string;
     content: string;
     form_data?: { key: string; value: string }[];
+    multipart_data?: { key: string; value: string }[];
     json_data?: any;
   }) => void;
   initialBodyData?: {
     type: string;
     content: string;
     form_data?: { key: string; value: string }[];
+    multipart_data?: { key: string; value: string }[];
     json_data?: any;
   };
 }
@@ -33,6 +35,9 @@ export default function Body({ onBodyChange, initialBodyData }: BodyProps) {
   const [formData, setFormData] = useState<{ key: string; value: string }[]>(
     initialBodyData?.form_data || []
   );
+  const [multipartData, setMultipartData] = useState<{ key: string; value: string }[]>(
+    initialBodyData?.multipart_data || []
+  );
   const [jsonData, setJsonData] = useState<any>(initialBodyData?.json_data || null);
 
   const notifyBodyChange = () => {
@@ -41,6 +46,7 @@ export default function Body({ onBodyChange, initialBodyData }: BodyProps) {
         type: bodyType,
         content: bodyType === "text" ? textContent : bodyType === "graphql" ? graphqlContent : "",
         form_data: bodyType === "form-url-encoded" ? formData : undefined,
+        multipart_data: bodyType === "multipart" ? multipartData : undefined,
         json_data: bodyType === "json" ? jsonData : undefined,
       });
     }
@@ -48,7 +54,7 @@ export default function Body({ onBodyChange, initialBodyData }: BodyProps) {
 
   useEffect(() => {
     notifyBodyChange();
-  }, [bodyType, textContent, graphqlContent, formData, jsonData]);
+  }, [bodyType, textContent, graphqlContent, formData, multipartData, jsonData]);
 
   // Update state when initialBodyData prop changes (only if not already initialized by user interactions)
   useEffect(() => {
@@ -59,6 +65,7 @@ export default function Body({ onBodyChange, initialBodyData }: BodyProps) {
         initialBodyData.type === "graphql" ? initialBodyData.content : ""
       );
       setFormData(initialBodyData.form_data || []);
+      setMultipartData(initialBodyData.multipart_data || []);
       setJsonData(initialBodyData.json_data || null);
       initializedRef.current = true;
     }
@@ -66,6 +73,11 @@ export default function Body({ onBodyChange, initialBodyData }: BodyProps) {
 
   const handleFormDataChange = (data: { key: string; value: string }[]) => {
     setFormData(data);
+    initializedRef.current = true; // Mark as initialized by user interaction
+  };
+
+  const handleMultipartDataChange = (data: { key: string; value: string }[]) => {
+    setMultipartData(data);
     initializedRef.current = true; // Mark as initialized by user interaction
   };
 
@@ -112,8 +124,8 @@ export default function Body({ onBodyChange, initialBodyData }: BodyProps) {
         </TabsContent>
         <TabsContent value="multipart" className="space-y-4 max-h-[270px] overflow-y-auto pb-8">
           <Multipart 
-            onFormDataChange={handleFormDataChange} 
-            initialFormData={formData}
+            onFormDataChange={handleMultipartDataChange} 
+            initialFormData={multipartData}
           />
         </TabsContent>
         <TabsContent value="graphql" className="space-y-4">
