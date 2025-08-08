@@ -53,6 +53,11 @@ export const getConsumerSidebarData = (): ConsumerSidebarData => {
         title: "General",
         items: [
           {
+            title: "API Overview",
+            url: `/consumer/${selectedProject.id}/overview`,
+            icon: IconPackages,
+          },
+          {
             title: "Playground",
             url: `/consumer/${selectedProject.id}/playground`,
             icon: IconPackages,
@@ -61,11 +66,6 @@ export const getConsumerSidebarData = (): ConsumerSidebarData => {
             title: "Analytics",
             url: `/consumer/${selectedProject.id}/analytics`,
             icon: IconChartBar,
-          },
-          {
-            title: "API Overview",
-            url: `/consumer/${selectedProject.id}/overview`,
-            icon: IconPackages,
           },
         ],
       }

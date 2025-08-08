@@ -75,13 +75,6 @@ export default function PlaygroundPage() {
   
 
   useEffect(() => {
-    console.log("Playground useEffect triggered:", {
-      hasAccessToken: !!accessToken,
-      projectId: selectedProject?.id,
-      projectLoading,
-      endpointsCount: endpoints.length
-    });
-    
     if (accessToken && selectedProject?.id && !projectLoading) {
       console.log("Fetching APIs for project:", selectedProject.id);
       fetchAPIs();
