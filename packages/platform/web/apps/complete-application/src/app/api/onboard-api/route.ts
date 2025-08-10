@@ -85,7 +85,9 @@ export async function onboardAPI(data: OnboardAPI, token: string): Promise<Onboa
 
 export async function getOnboardAPIById(api_id: string, token: string): Promise<OnboardAPI> {
   try {
-    const response = await fetch(`${API_BASE_URL}/onboard/api/${api_id}`, {
+    const response = await fetch(
+      `${API_BASE_URL}/marketplace/apis/${api_id}`
+      , {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
