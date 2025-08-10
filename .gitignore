@@ -22,5 +22,7 @@ node_modules
 
 packages/platform/api/src/research
 packages/caddy/configs
+packages/caddy/*.timestamp
+packages/caddy/*.exe
 
 .DS_Store
