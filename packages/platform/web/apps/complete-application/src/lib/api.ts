@@ -19,18 +19,31 @@ export interface UserData {
  * Fetch user data from the API
  */
 export async function fetchUserData(token: string): Promise<UserData> {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/me`, {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/me`;
+  console.log('Fetching user data from:', apiUrl);
+
+  const response = await fetch(apiUrl, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     }
   });
 
+  console.log('User data response status:', response.status);
+
   if (!response.ok) {
-    throw new Error('Failed to fetch user data');
+    const errorText = await response.text();
+    console.error('User data fetch failed:', {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorText
+    });
+    throw new Error(`Failed to fetch user data: ${response.status} ${response.statusText}`);
   }
 
-  return await response.json();
+  const userData = await response.json();
+  console.log('User data received:', userData);
+  return userData;
 }
 
 /**

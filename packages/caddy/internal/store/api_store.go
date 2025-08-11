@@ -296,13 +296,13 @@ func (s *APIStore) AutoMigrate() error {
 	return nil
 }
 
-// UpdateAPI updates an existing API configuration
+// UpdateAPI updates an existing API configuration (NON-DESTRUCTIVE)
 func (s *APIStore) UpdateAPI(config *models.APIConfig) error {
-	s.logger.Info("updating API configuration",
+	s.logger.Info("updating API configuration (non-destructive)",
 		zap.String("path", config.Path),
 		zap.String("upstream", config.Upstream),
 		zap.String("subscription", config.RequiredSubscription),
-		zap.Int("api_keys", len(config.APIKeys)))
+		zap.Int("provided_api_keys", len(config.APIKeys)))
 
 	// Begin transaction
 	tx := s.db.Begin()
@@ -310,20 +310,8 @@ func (s *APIStore) UpdateAPI(config *models.APIConfig) error {
 		return tx.Error
 	}
 
-	// Delete existing methods and API keys
-	if err := tx.Where("api_config_id = ?", config.ID).Delete(&models.APIMethod{}).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-	if err := tx.Unscoped().
-	Where("api_config_id = ?", config.ID).
-	Delete(&models.APIKey{}).Error; err != nil {
-    tx.Rollback()
-    return err
-    }
-
-	// Update API config
-	if err := tx.Save(config).Error; err != nil {
+// Update API config first (never cascade into associations)
+	if err := tx.Omit("APIKeys", "Methods", "Parameters").Save(config).Error; err != nil {
 		tx.Rollback()
 		s.logger.Error("failed to update API configuration",
 			zap.Error(err),
@@ -331,42 +319,36 @@ func (s *APIStore) UpdateAPI(config *models.APIConfig) error {
 		return err
 	}
 
-	// Create new methods
-	for i := range config.Methods {
-		config.Methods[i].ID = 0
-		config.Methods[i].APIConfigID = config.ID
-		if err := tx.Create(&config.Methods[i]).Error; err != nil {
+	// Handle methods - ONLY replace if methods are provided (non-destructive)
+	if len(config.Methods) > 0 {
+		// Delete existing methods only if new ones are provided
+		if err := tx.Where("api_config_id = ?", config.ID).Delete(&models.APIMethod{}).Error; err != nil {
 			tx.Rollback()
 			return err
 		}
-	}
-
-	// Create or update API keys (upsert)
-	for i := range config.APIKeys {
-		config.APIKeys[i].ID = 0
-		config.APIKeys[i].APIConfigID = config.ID
 		
-		// Use FirstOrCreate to handle existing keys
-		var existingKey models.APIKey
-		result := tx.Where("key = ?", config.APIKeys[i].Key).First(&existingKey)
-		
-		if result.Error == nil {
-			// Key exists, update it
-			existingKey.APIConfigID = config.ID
-			existingKey.Name = config.APIKeys[i].Name
-			existingKey.IsActive = config.APIKeys[i].IsActive
-			existingKey.ExpiresAt = config.APIKeys[i].ExpiresAt
-			if err := tx.Save(&existingKey).Error; err != nil {
-				tx.Rollback()
-				return err
-			}
-		} else {
-			// Key doesn't exist, create it
-			if err := tx.Create(&config.APIKeys[i]).Error; err != nil {
+		// Create new methods
+		for i := range config.Methods {
+			config.Methods[i].ID = 0
+			config.Methods[i].APIConfigID = config.ID
+			if err := tx.Create(&config.Methods[i]).Error; err != nil {
 				tx.Rollback()
 				return err
 			}
 		}
+		s.logger.Info("replaced methods", zap.Int("count", len(config.Methods)))
+	} else {
+		s.logger.Info("no methods provided, preserving existing methods")
+	}
+
+	// CRITICAL FIX: NEVER touch API keys during updates
+	// API keys are managed separately and should not be modified during API updates
+	if len(config.APIKeys) > 0 {
+		s.logger.Info("SKIPPING API key updates to prevent constraint violations", 
+			zap.Int("provided_keys", len(config.APIKeys)),
+			zap.String("reason", "API keys are preserved during updates"))
+	} else {
+		s.logger.Info("no API keys provided, existing keys will be preserved")
 	}
 
 	// Commit transaction
@@ -377,7 +359,7 @@ func (s *APIStore) UpdateAPI(config *models.APIConfig) error {
 		return err
 	}
 
-	s.logger.Info("API configuration updated successfully",
+	s.logger.Info("API configuration updated successfully (non-destructive)",
 		zap.String("path", config.Path),
 		zap.Uint("id", config.ID))
 
@@ -548,12 +530,48 @@ func (s *APIStore) GetAPIWithKeys(path string) (*models.APIConfig, error) {
 	return &apiConfig, nil
 }
 
-// GetAPIByID gets an API config by ID
+// GetAPIByID gets an API config by ID with proper error handling
 func (s *APIStore) GetAPIByID(id uint) (*models.APIConfig, error) {
+	if id == 0 {
+		return nil, fmt.Errorf("invalid API ID: %d", id)
+	}
+
 	var api models.APIConfig
 	result := s.db.Preload("Methods").Preload("APIKeys").First(&api, id)
 	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			s.logger.Debug("API not found", zap.Uint("id", id))
+			return nil, gorm.ErrRecordNotFound
+		}
+		s.logger.Error("failed to get API by ID", zap.Error(result.Error), zap.Uint("id", id))
 		return nil, result.Error
 	}
+	
+	s.logger.Debug("found API by ID", zap.Uint("id", id), zap.String("path", api.Path))
+	return &api, nil
+}
+
+// GetAPIByUUID gets an API config by UUID string (extracted from path)
+func (s *APIStore) GetAPIByUUID(uuid string) (*models.APIConfig, error) {
+	if uuid == "" {
+		return nil, fmt.Errorf("empty UUID provided")
+	}
+
+	var api models.APIConfig
+	// Search for API where path contains the UUID (more efficient than loading all)
+	result := s.db.Preload("Methods").Preload("APIKeys").
+		Where("path LIKE ?", "%"+uuid+"%").
+		First(&api)
+	
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			s.logger.Debug("API not found by UUID", zap.String("uuid", uuid))
+			return nil, gorm.ErrRecordNotFound
+		}
+		s.logger.Error("failed to get API by UUID", zap.Error(result.Error), zap.String("uuid", uuid))
+		return nil, result.Error
+	}
+	
+	s.logger.Debug("found API by UUID", zap.String("uuid", uuid), zap.String("path", api.Path))
 	return &api, nil
 }

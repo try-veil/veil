@@ -124,8 +124,8 @@ export class GatewayService {
     currentPath?: string,
   ) {
     try {
-      // Use currentPath if provided, otherwise fall back to apiId
-      const routeIdentifier = currentPath || apiId;
+      // Use the prefixed path format for route identification
+      const routeIdentifier = currentPath || `/${apiId}`;
       const normalizedIdentifier = routeIdentifier.startsWith('/') ? routeIdentifier : `/${routeIdentifier}`;
       const updateUrl = `${this.gatewayUrl}/veil/api/routes${normalizedIdentifier}`;
 
@@ -161,15 +161,23 @@ export class GatewayService {
         }));
       }
 
+      // CRITICAL FIX: Always send API keys to prevent them from being deleted
+      // if (request.api_keys && request.api_keys.length > 0) {
+      //   veilRequest.api_keys = request.api_keys.map((k) => ({
+      //     key: k.key,
+      //     name: k.name,
+      //     is_active: k.is_active,
+      //   }));
+      //   this.logger.log(`[updateApiRoute] Sending ${request.api_keys.length} API keys to Caddy`);
+      // } else {
+      //   this.logger.warn(`[updateApiRoute] No API keys provided - this may cause authentication failures`);
+      //   // Don't send empty array - let Caddy preserve existing keys
+      // }
+
       if (request.api_keys && request.api_keys.length > 0) {
-        veilRequest.api_keys = request.api_keys.map((k) => ({
-          key: k.key,
-          name: k.name,
-          is_active: k.is_active,
-        }));
-        this.logger.log(`[updateApiRoute] Sending ${request.api_keys.length} API keys to Caddy: ${JSON.stringify(veilRequest.api_keys)}`);
-      } else {
-        this.logger.log(`[updateApiRoute] No API keys provided in request - Caddy will preserve existing keys`);
+        this.logger.warn(
+          `[updateApiRoute] Ignoring ${request.api_keys.length} API keys on PATCH; use /veil/api/keys instead`,
+        );
       }
 
       // Add additional fields from request if provided
