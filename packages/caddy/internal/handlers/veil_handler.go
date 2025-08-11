@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/caddyserver/caddy/v2"
@@ -31,6 +32,7 @@ type VeilHandler struct {
 	store           *store.APIStore
 	logger          *zap.Logger
 	ctx             caddy.Context
+	updateMutex     sync.RWMutex       // ADDED: Prevent concurrent updates
 }
 
 // CaddyModule returns the Caddy module information.
@@ -581,7 +583,8 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 	if !methodAllowed {
 		h.logger.Debug("method not allowed",
 			zap.String("path", r.URL.Path),
-			zap.String("method", r.Method))
+			zap.String("method", r.Method),
+			zap.Int("defined_methods", len(api.Methods)))
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return nil
 	}
@@ -894,17 +897,19 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		})
 	}
 
-	// Create API keys
-	for _, key := range req.APIKeys {
-		isActive := true
-		if key.IsActive != nil {
-			isActive = *key.IsActive
+	// Create API keys only on POST (creation)
+	if r.Method == http.MethodPost {
+		for _, key := range req.APIKeys {
+			isActive := true
+			if key.IsActive != nil {
+				isActive = *key.IsActive
+			}
+			config.APIKeys = append(config.APIKeys, models.APIKey{
+				Key:      key.Key,
+				Name:     key.Name,
+				IsActive: &isActive,
+			})
 		}
-		config.APIKeys = append(config.APIKeys, models.APIKey{
-			Key:      key.Key,
-			Name:     key.Name,
-			IsActive: &isActive,
-		})
 	}
 
 	h.logger.Debug("created API config object",
@@ -988,41 +993,87 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 	})
 }
 
-// handleUpdateAPI handles updating an existing API
+// handleUpdateAPI handles updating an existing API using API ID (FIXED)
 func (h *VeilHandler) handleUpdateAPI(w http.ResponseWriter, r *http.Request, apiID string, newConfig *models.APIConfig) error {
-	// Get existing API to verify it exists
-	existing, err := h.store.GetAPIByPath(newConfig.Path)
-	if err != nil || existing == nil {
-		if err == gorm.ErrRecordNotFound {
-			http.Error(w, "API not found", http.StatusNotFound)
-			return nil
-		}
-		h.logger.Error("failed to get API",
-			zap.Error(err))
-		// http.Error(w, "Failed to get API", http.StatusInternalServerError)
-		http.Error(w, "API not found", http.StatusNotFound)
+	// FIXED: Serialize updates to prevent race conditions
+	h.updateMutex.Lock()
+	defer h.updateMutex.Unlock()
+	
+	h.logger.Info("updating API", zap.String("api_id", apiID), zap.String("new_path", newConfig.Path))
+
+	// FIXED: Extract and validate UUID from apiID path
+	cleanAPIID := strings.TrimPrefix(apiID, "/")
+	if idx := strings.Index(cleanAPIID, "/"); idx > 0 {
+		cleanAPIID = cleanAPIID[:idx]
+	}
+	
+	// Validate UUID format (basic validation)
+	if len(cleanAPIID) < 32 || len(cleanAPIID) > 40 {
+		h.logger.Warn("invalid API ID format", zap.String("api_id", cleanAPIID))
+		http.Error(w, "Invalid API ID format", http.StatusBadRequest)
 		return nil
 	}
 
-	newConfig.ID = existing.ID
+	// FIXED: Use efficient UUID-based lookup instead of loading all APIs
+	existing, err := h.store.GetAPIByUUID(cleanAPIID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			h.logger.Warn("API not found for update", zap.String("api_id", cleanAPIID))
+			http.Error(w, "API not found", http.StatusNotFound)
+			return nil
+		}
+		h.logger.Error("failed to get API by UUID", zap.Error(err), zap.String("api_id", cleanAPIID))
+		http.Error(w, "Failed to find API", http.StatusInternalServerError)
+		return nil
+	}
 
-	// Update API in database
+	// Set the ID and fix path prefixing (avoid double prefixing)
+	newConfig.ID = existing.ID
+	newConfig.APIKeys = nil
+	
+	// FIXED: Only add prefix if not already present
+	if !strings.HasPrefix(newConfig.Path, "/"+cleanAPIID) {
+		newConfig.Path = "/" + cleanAPIID + newConfig.Path
+	}
+	
+	// Normalize path (remove double slashes)
+	newConfig.Path = strings.ReplaceAll(newConfig.Path, "//", "/")
+
+	h.logger.Info("found existing API", 
+		zap.Uint("id", existing.ID), 
+		zap.String("existing_path", existing.Path),
+		zap.String("new_path", newConfig.Path))
+
+	// FIXED: Distributed transaction pattern with proper rollback
+	// Phase 1: Update database (atomic)
 	if err := h.store.UpdateAPI(newConfig); err != nil {
-		h.logger.Error("failed to update API",
-			zap.Error(err))
+		h.logger.Error("failed to update API in database", zap.Error(err))
 		http.Error(w, "Failed to update API", http.StatusInternalServerError)
 		return nil
 	}
 
-	// Update Caddy configuration
+	// Phase 2: Update Caddy configuration (with rollback on failure)
 	if err := h.updateCaddyfile(*newConfig); err != nil {
-		h.logger.Error("failed to update Caddy config",
-			zap.Error(err))
+		h.logger.Error("failed to update Caddy config, rolling back database", zap.Error(err))
+		
+		// Rollback database changes
+		if rollbackErr := h.store.UpdateAPI(existing); rollbackErr != nil {
+			h.logger.Error("CRITICAL: failed to rollback database", 
+				zap.Error(rollbackErr),
+				zap.String("api_id", cleanAPIID))
+			// System is now inconsistent - alert monitoring
+			http.Error(w, "System inconsistency detected - contact support", http.StatusInternalServerError)
+			return nil
+		}
+		
+		h.logger.Info("successfully rolled back database changes", zap.String("api_id", cleanAPIID))
 		http.Error(w, "Failed to update Caddy configuration", http.StatusInternalServerError)
 		return nil
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	h.logger.Info("API updated successfully", zap.String("api_id", cleanAPIID))
+
+	w.WriteHeader(http.StatusOK)
 	return json.NewEncoder(w).Encode(dto.APIResponseDTO{
 		Status:  "success",
 		Message: "API updated successfully",
