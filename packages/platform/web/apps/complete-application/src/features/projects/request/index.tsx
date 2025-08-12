@@ -11,6 +11,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Headers } from "./components/headers";
 import { Query } from "./components/query";
 import Body from "./components/body";
@@ -23,7 +31,7 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 import crypto from "crypto";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
 const requestFormSchema = z.object({
   name: z.string().min(1, { message: "Endpoint name is required" }),
@@ -33,15 +41,17 @@ const requestFormSchema = z.object({
   //   .startsWith("/", { message: "Path must start with /" }),
   documentation_url: z.union([
     z.string().url({ message: "Please enter a valid URL" }),
-    z.string().length(0)
+    z.string().length(0),
   ]),
   method: z.string(),
-  headers: z.array(
-    z.object({
-      name: z.string(),
-      value: z.string()
-    })
-  ).optional()
+  headers: z
+    .array(
+      z.object({
+        name: z.string(),
+        value: z.string(),
+      })
+    )
+    .optional(),
 });
 
 type RequestFormData = z.infer<typeof requestFormSchema>;
@@ -132,8 +142,12 @@ export default function Request({
   const [path, setPath] = useState("");
   const [storedUuid, setStoredUuid] = useState("");
   const [method, setMethod] = useState<string>(initialData?.method || "GET");
-  const [description, setDescription] = useState(initialData?.description || "");
-  const [documentationUrl, setDocumentationUrl] = useState(initialData?.documentation_url || "");
+  const [description, setDescription] = useState(
+    initialData?.description || ""
+  );
+  const [documentationUrl, setDocumentationUrl] = useState(
+    initialData?.documentation_url || ""
+  );
   const [version, setVersion] = useState(initialData?.version || "1.0.0");
   const [headers, setHeaders] = useState<{ name: string; value: string }[]>(
     initialData?.required_headers?.map((h) => ({
@@ -141,7 +155,9 @@ export default function Request({
       value: h.value,
     })) || []
   );
-  const [queryParams, setQueryParams] = useState<{ key: string; value: string }[]>([]);
+  const [queryParams, setQueryParams] = useState<
+    { key: string; value: string }[]
+  >([]);
   const [bodyData, setBodyData] = useState<{
     type: string;
     content: string;
@@ -155,6 +171,8 @@ export default function Request({
   });
   const [isTestLoading, setIsTestLoading] = useState(false);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
+  const [showMethodChangeDialog, setShowMethodChangeDialog] = useState(false);
+  const [pendingMethod, setPendingMethod] = useState<string>("");
   const { selectedProject } = useProject();
 
   useEffect(() => {
@@ -172,31 +190,74 @@ export default function Request({
         })) || []
       );
       setQueryParams(initialData.query_params || []);
-      setBodyData(initialData.body || {
-        type: "json",
-        content: "",
-        form_data: [],
-        json_data: null,
-      });
+      setBodyData(
+        initialData.body || {
+          type: "json",
+          content: "",
+          form_data: [],
+          json_data: null,
+        }
+      );
     }
   }, [initialData]);
 
   useEffect(() => {
     if (initialData?.path) {
-      const pathParts = initialData.path.split('/');
+      const pathParts = initialData.path.split("/");
       if (pathParts.length > 1) {
         setStoredUuid(pathParts[0]);
-        setPath('/' + pathParts.slice(1).join('/'));
+        setPath("/" + pathParts.slice(1).join("/"));
       } else {
         setPath(initialData.path);
       }
     }
   }, [initialData?.path]);
 
+  const handleMethodChange = (newMethod: string) => {
+    const currentMethodHasBody = ["post", "put", "patch"].includes(method.toLowerCase());
+    const newMethodIsGet = newMethod.toLowerCase() === "get";
+    
+    // Check if we're changing from a method that supports body to GET
+    if (currentMethodHasBody && newMethodIsGet) {
+      // Check if there's actual body content
+      const hasBodyContent = 
+        bodyData.content.trim() !== "" ||
+        (bodyData.form_data && bodyData.form_data.length > 0) ||
+        bodyData.json_data !== null;
+      
+      if (hasBodyContent) {
+        setPendingMethod(newMethod);
+        setShowMethodChangeDialog(true);
+        return;
+      }
+    }
+    
+    // If no confirmation needed, just change the method
+    setMethod(newMethod);
+  };
+
+  const handleConfirmMethodChange = () => {
+    setMethod(pendingMethod);
+    // Clear body data when changing to GET
+    setBodyData({
+      type: "text",
+      content: "",
+      form_data: [],
+      json_data: null,
+    });
+    setShowMethodChangeDialog(false);
+    setPendingMethod("");
+  };
+
+  const handleCancelMethodChange = () => {
+    setShowMethodChangeDialog(false);
+    setPendingMethod("");
+  };
+
   const handlePathChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let newPath = e.target.value;
-    if (!newPath.startsWith('/')) {
-      newPath = '/' + newPath;
+    if (!newPath.startsWith("/")) {
+      newPath = "/" + newPath;
     }
     setPath(newPath);
   };
@@ -216,9 +277,7 @@ export default function Request({
     newQueries: { id: string; key: string; value: string }[]
   ) => {
     const processedQueries = newQueries
-      .filter(
-        (query) => query.key.trim() !== "" && query.value.trim() !== ""
-      )
+      .filter((query) => query.key.trim() !== "" && query.value.trim() !== "")
       .map(({ key, value }) => ({ key, value }));
     setQueryParams(processedQueries);
   };
@@ -236,9 +295,9 @@ export default function Request({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const finalPath = initialData?.path ? `${storedUuid}${path}` : path;
-    
+
     const formData = {
       name,
       description,
@@ -252,7 +311,10 @@ export default function Request({
     };
 
     console.log("🚀 Submitting API request with data:", formData);
-    console.log("📝 Request type:", initialData?.path !== "" ? "UPDATE" : "CREATE");
+    console.log(
+      "📝 Request type:",
+      initialData?.path !== "" ? "UPDATE" : "CREATE"
+    );
 
     const result = requestFormSchema.safeParse(formData);
     if (!result.success) {
@@ -265,7 +327,7 @@ export default function Request({
       return;
     }
     setErrors({});
-    
+
     console.log("✅ Form validation passed, calling onSave handler");
     if (onSave) {
       onSave(formData as RequestData);
@@ -285,16 +347,25 @@ export default function Request({
 
     setIsTestLoading(true);
 
+    const queryString = queryParams
+  .map(({ key, value }) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+  .join('&');
+
+  const queryPath = path+ `?${queryString}`;
+
     try {
       const payload = {
-        api_id: initialData?.api_id && initialData.api_id !== "" ? initialData.api_id : crypto.randomUUID(),
+        api_id:
+          initialData?.api_id && initialData.api_id !== ""
+            ? initialData.api_id
+            : crypto.randomUUID(),
         project_id: project_id,
         name,
-        path,
+        path: queryPath,
         target_url: targetUrl,
         method,
         version,
-        required_headers: headers.map(h => ({
+        required_headers: headers.map((h) => ({
           name: h.name,
           value: h.value,
           is_variable: false,
@@ -307,8 +378,8 @@ export default function Request({
       console.log("🌐 Making request to:", `${API_BASE_URL}/onboard/test`);
 
       if (onTest) {
-      await onTest(payload as TestRequestData);
-    }
+        await onTest(payload as TestRequestData);
+      }
       console.log("✅ Test API successful");
     } catch (error) {
       console.log("❌ Test API error:", error);
@@ -324,7 +395,7 @@ export default function Request({
         console.log("❌ Delete API failed - missing required data:", {
           projectId: selectedProject?.id,
           apiId: initialData?.api_id,
-          hasAccessToken: !!accessToken
+          hasAccessToken: !!accessToken,
         });
         toast({
           title: "Error",
@@ -333,24 +404,24 @@ export default function Request({
         });
         return;
       }
-      
+
       console.log("🗑️ Deleting API:", {
         projectId: selectedProject.id,
-        apiId: initialData.api_id
+        apiId: initialData.api_id,
       });
-      
+
       toast({
         title: "Deleting API...",
         description: "Please wait while we process your request",
         variant: "default",
       });
-      
+
       await deleteAPI(
         selectedProject.id.toString(),
         initialData.api_id.toString(),
         accessToken
       );
-      
+
       console.log("✅ API deleted successfully");
       await refreshProject();
       toast({
@@ -374,19 +445,16 @@ export default function Request({
     <div className="flex flex-col h-full">
       <div className="flex-none p-4 border-b">
         <div className="flex flex-col sm:flex-row gap-4 items-center">
-          <Select value={method} onValueChange={setMethod}>
+          <Select value={method} onValueChange={handleMethodChange}>
             <SelectTrigger className="w-full sm:w-[120px]">
               <SelectValue>{options.get(method)}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="get">GET</SelectItem>
-              <SelectItem value="head">HEAD</SelectItem>
               <SelectItem value="post">POST</SelectItem>
               <SelectItem value="put">PUT</SelectItem>
               <SelectItem value="delete">DELETE</SelectItem>
               <SelectItem value="patch">PATCH</SelectItem>
-              <SelectItem value="options">OPTIONS</SelectItem>
-              <SelectItem value="trace">TRACE</SelectItem>
             </SelectContent>
           </Select>
           <Input
@@ -395,10 +463,10 @@ export default function Request({
             value={path}
             onChange={handlePathChange}
           />
-           <div className="flex gap-2">
+          <div className="flex gap-2">
             <Button
               onClick={handleTest}
-              disabled={isTestLoading || initialData?.path == "" }
+              disabled={isTestLoading || initialData?.path == ""}
               variant="secondary"
               size="sm"
               className="min-w-[80px]"
@@ -455,9 +523,10 @@ export default function Request({
               <></>
             )}
           </div>
-          
         </div>
-        {errors?.path && <p className="text-sm text-red-500 mt-1 ml-1">{errors.path}</p>}
+        {errors?.path && (
+          <p className="text-sm text-red-500 mt-1 ml-1">{errors.path}</p>
+        )}
       </div>
 
       <div className="flex-1 flex flex-col min-h-0">
@@ -466,12 +535,8 @@ export default function Request({
             <TabsList className="w-full justify-start">
               <TabsTrigger value="overview">Description</TabsTrigger>
               <TabsTrigger value="headers">Headers</TabsTrigger>
-              <TabsTrigger value="query">
-                Query
-              </TabsTrigger>
-              <TabsTrigger value="body">
-                Body
-              </TabsTrigger>
+              <TabsTrigger value="query">Query</TabsTrigger>
+              <TabsTrigger value="body">Body</TabsTrigger>
             </TabsList>
           </div>
 
@@ -486,7 +551,9 @@ export default function Request({
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                     />
-                    {errors?.name && <p className="text-sm text-red-500">{errors.name}</p>}
+                    {errors?.name && (
+                      <p className="text-sm text-red-500">{errors.name}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Description</Label>
@@ -512,36 +579,68 @@ export default function Request({
                       onChange={(e) => setDocumentationUrl(e.target.value)}
                     />
                     {errors?.documentation_url && (
-    <p className="text-sm text-red-500">{errors.documentation_url}</p>
-  )}
+                      <p className="text-sm text-red-500">
+                        {errors.documentation_url}
+                      </p>
+                    )}
                   </div>
                 </div>
               </TabsContent>
 
               <TabsContent value="headers" className="mt-0 h-full">
-                <Headers 
-                  onHeadersChange={handleHeadersChange} 
+                <Headers
+                  onHeadersChange={handleHeadersChange}
                   initialHeaders={headers}
                 />
               </TabsContent>
 
               <TabsContent value="query" className="mt-0 h-full">
-                <Query 
-                  onQueryChange={handleQueryChange} 
+                <Query
+                  onQueryChange={handleQueryChange}
                   initialQueries={queryParams}
                 />
               </TabsContent>
 
               <TabsContent value="body" className="mt-0 h-full">
-                <Body 
-                  onBodyChange={handleBodyChange} 
-                  initialBodyData={bodyData}
-                />
+                {method === "get" ? (
+                  <div className="text-muted-foreground py-4 p-1 text-center">
+                    Body is not applicable for GET requests.
+                  </div>
+                ) : (
+                  <Body
+                    onBodyChange={handleBodyChange}
+                    initialBodyData={bodyData}
+                  />
+                )}
               </TabsContent>
             </div>
           </div>
         </Tabs>
       </div>
+
+      <Dialog
+        open={showMethodChangeDialog}
+        onOpenChange={setShowMethodChangeDialog}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Method Change</DialogTitle>
+          </DialogHeader>
+          <DialogDescription>
+            Changing the request method to GET will remove any existing body
+            content. Do you want to continue?
+          </DialogDescription>
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={handleCancelMethodChange}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmMethodChange}>Continue</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -13,6 +13,7 @@ import React, { useState, useEffect } from "react";
 import { JsonViewer } from "@/features/projects/request/components/json-tree-viewer";
 import { OnboardAPI } from "@/app/api/onboard-api/route";
 import ResponseViewer from "@/features/projects/request/components/response-viewer";
+import Body from "@/features/projects/request/components/body";
 import { Button } from "@/components/ui/button";
 import { Send, Play, Loader2, Copy, Check } from "lucide-react";
 
@@ -37,6 +38,13 @@ interface TestRequestData {
   method: string;
   target_url: string;
   headers: { name: string; value: string }[];
+  body?: {
+    type: string;
+    content: string;
+    form_data?: { key: string; value: string }[];
+    multipart_data?: { key: string; value: string }[];
+    json_data?: any;
+  };
 }
 
 export default function EndpointViewer({
@@ -51,6 +59,14 @@ export default function EndpointViewer({
   const [headerValues, setHeaderValues] = useState<Record<string, HeaderValue>>(
     {}
   );
+  const [queryParams, setQueryParams] = useState<Record<string, string>>({});
+  const [bodyData, setBodyData] = useState<{
+    type: string;
+    content: string;
+    form_data?: { key: string; value: string }[];
+    multipart_data?: { key: string; value: string }[];
+    json_data?: any;
+  } | null>(null);
   const [selectedApp, setSelectedApp] = useState<string>("");
   const [selectedKey, setSelectedKey] = useState<string>("");
   const [selectedUrl, setSelectedUrl] = useState<string>(process.env.NEXT_PUBLIC_VEIL_URL || "https://veil.com");
@@ -59,6 +75,7 @@ export default function EndpointViewer({
   const [response, setResponse] = useState<any>(null);
   const [isTestLoading, setIsTestLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState("app");
 
   const authTypes = {
     api_key: "API Key",
@@ -66,8 +83,11 @@ export default function EndpointViewer({
     bearer: "Bearer Token",
   };
 
-  // Initialize header values when apiDetails changes
+  // Initialize header values and query parameters when apiDetails changes
   useEffect(() => {
+    // Reset to App tab when apiDetails change
+    setActiveTab("app");
+
     if (apiDetails?.required_headers) {
       const initialHeaders: Record<string, HeaderValue> = {};
       apiDetails.required_headers.forEach((header) => {
@@ -78,12 +98,35 @@ export default function EndpointViewer({
       });
       setHeaderValues(initialHeaders);
     }
+
+    if (apiDetails?.query_params) {
+      const initialQueryParams: Record<string, string> = {};
+      apiDetails.query_params.forEach((param) => {
+        initialQueryParams[param.key] = param.value || "";
+      });
+      setQueryParams(initialQueryParams);
+    }
+
+    // Always reset body data when apiDetails change
+    if (apiDetails?.body) {
+      setBodyData(apiDetails.body);
+    }
+    
   }, [apiDetails]);
 
   const generateCurlCode = () => {
     if (!apiDetails) return "No API details available";
 
-    let curl = `curl -X ${apiDetails.method} '${process.env.NEXT_PUBLIC_VEIL_URL}${apiDetails.path}'`;
+    let url = `${process.env.NEXT_PUBLIC_VEIL_URL}${apiDetails.path}`;
+    
+    // Add query parameters if they exist and have values
+    const validQueryParams = Object.entries(queryParams).filter(([key, value]) => value.trim() !== "");
+    if (validQueryParams.length > 0) {
+      const queryString = validQueryParams.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&');
+      url += `?${queryString}`;
+    }
+
+    let curl = `curl -X ${apiDetails.method} '${url}'`;
 
     // Add headers with current values
     if (apiDetails.required_headers && apiDetails.required_headers.length > 0) {
@@ -109,6 +152,31 @@ export default function EndpointViewer({
     curl += `\n  -H 'X-Subscription-Key: test-key-${apiDetails.api_id}'`;
   }
 
+  // Add body data if available
+  if (bodyData && bodyData.type && (apiDetails.method === 'POST' || apiDetails.method === 'PUT' || apiDetails.method === 'PATCH')) {
+    if (bodyData.type === 'json' && bodyData.json_data) {
+      curl += `\n  -d '${JSON.stringify(bodyData.json_data)}'`;
+    } else if (bodyData.type === 'text' && bodyData.content) {
+      curl += `\n  -d '${bodyData.content}'`;
+    } else if (bodyData.type === 'form-url-encoded' && bodyData.form_data) {
+      const formString = bodyData.form_data
+        .filter(item => item.key && item.value)
+        .map(item => `${encodeURIComponent(item.key)}=${encodeURIComponent(item.value)}`)
+        .join('&');
+      if (formString) {
+        curl += `\n  -d '${formString}'`;
+        // Update content-type for form data
+        curl = curl.replace('Content-Type: application/json', 'Content-Type: application/x-www-form-urlencoded');
+      }
+    } else if (bodyData.type === 'multipart' && bodyData.multipart_data) {
+      bodyData.multipart_data
+        .filter(item => item.key && item.value)
+        .forEach(item => {
+          curl += `\n  -F '${item.key}=${item.value}'`;
+        });
+    }
+  }
+
     return curl;
   };
 
@@ -123,12 +191,72 @@ export default function EndpointViewer({
       });
     }
 
+    // Add body data if available
+    if (data.body && (data.method === 'POST' || data.method === 'PUT' || data.method === 'PATCH')) {
+      if (data.body.type === 'json' && data.body.json_data) {
+        curl += `\n  -d '${JSON.stringify(data.body.json_data)}'`;
+      } else if (data.body.type === 'text' && data.body.content) {
+        curl += `\n  -d '${data.body.content}'`;
+      } else if (data.body.type === 'form-url-encoded' && data.body.form_data) {
+        const formString = data.body.form_data
+          .filter(item => item.key && item.value)
+          .map(item => `${encodeURIComponent(item.key)}=${encodeURIComponent(item.value)}`)
+          .join('&');
+        if (formString) {
+          curl += `\n  -d '${formString}'`;
+        }
+      } else if (data.body.type === 'multipart' && data.body.multipart_data) {
+        data.body.multipart_data
+          .filter(item => item.key && item.value)
+          .forEach(item => {
+            curl += `\n  -F '${item.key}=${item.value}'`;
+          });
+      }
+    }
+
     return curl;
   };
 
   const getFullUrl = () => {
     if (!apiDetails?.path) return selectedUrl;
-    return `${selectedUrl}${apiDetails.path}`;
+    
+    let url = `${selectedUrl}${apiDetails.path}`;
+    
+    // Add query parameters if they exist and have values
+    const validQueryParams = Object.entries(queryParams).filter(([key, value]) => value.trim() !== "");
+    if (validQueryParams.length > 0) {
+      const queryString = validQueryParams.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&');
+      url += `?${queryString}`;
+    }
+    
+    return url;
+  };
+
+  const handleQueryParamChange = (key: string, value: string) => {
+    setQueryParams(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const handleHeaderValueChange = (headerName: string, value: string) => {
+    setHeaderValues(prev => ({
+      ...prev,
+      [headerName]: {
+        ...prev[headerName],
+        value: value
+      }
+    }));
+  };
+
+  const handleBodyChange = (data: {
+    type: string;
+    content: string;
+    form_data?: { key: string; value: string }[];
+    multipart_data?: { key: string; value: string }[];
+    json_data?: any;
+  }) => {
+    setBodyData(data);
   };
 
   const handleCopyUrl = async () => {
@@ -158,10 +286,41 @@ export default function EndpointViewer({
       });
 
       console.log("Target URL:", testData.target_url)
-      const response = await fetch(testData.target_url, {
+      
+      // Prepare fetch options
+      const fetchOptions: RequestInit = {
         method: testData.method,
         headers: requestHeaders
-      });
+      };
+
+      // Add body data if available and method supports it
+      if (testData.body && (testData.method === 'POST' || testData.method === 'PUT' || testData.method === 'PATCH')) {
+        if (testData.body.type === 'json' && testData.body.json_data) {
+          fetchOptions.body = JSON.stringify(testData.body.json_data);
+        } else if (testData.body.type === 'text' && testData.body.content) {
+          fetchOptions.body = testData.body.content;
+        } else if (testData.body.type === 'form-url-encoded' && testData.body.form_data) {
+          const formData = new URLSearchParams();
+          testData.body.form_data
+            .filter(item => item.key && item.value)
+            .forEach(item => formData.append(item.key, item.value));
+          fetchOptions.body = formData.toString();
+          requestHeaders['Content-Type'] = 'application/x-www-form-urlencoded';
+        } else if (testData.body.type === 'multipart' && testData.body.multipart_data) {
+          const formData = new FormData();
+          testData.body.multipart_data
+            .filter(item => item.key && item.value)
+            .forEach(item => formData.append(item.key, item.value));
+          fetchOptions.body = formData;
+          // Remove Content-Type header for FormData to let browser set it with boundary
+          delete requestHeaders['Content-Type'];
+        }
+        
+        // Update headers in fetchOptions
+        fetchOptions.headers = requestHeaders;
+      }
+
+      const response = await fetch(testData.target_url, fetchOptions);
 
       const responseData = await response.json();
 
@@ -221,7 +380,7 @@ export default function EndpointViewer({
 
   return (
     <div>
-      <Tabs defaultValue="app" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="px-4">
           <TabsList className="flex flex-wrap h-auto min-h-10 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground gap-2">
             <TabsTrigger
@@ -243,7 +402,7 @@ export default function EndpointViewer({
               Headers
             </TabsTrigger>
             <TabsTrigger
-              disabled
+            disabled={apiDetails?.method === "GET"}
               value="body"
               className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
@@ -349,9 +508,27 @@ export default function EndpointViewer({
             <Card>
               <CardContent className="p-4">
                 <div className="space-y-4">
-                  <p className="text-muted-foreground">
-                    No parameters available
-                  </p>
+                  <p className="font-medium">Query Params</p>
+                  {apiDetails?.query_params && apiDetails.query_params.length > 0 ? (
+                    <div className="space-y-3">
+                      {apiDetails.query_params.map((param) => (
+                        <div key={param.key} className="space-y-2">
+                          <Label htmlFor={param.key}>{param.key}</Label>
+                          <Input
+                            id={param.key}
+                            placeholder={`Enter value for ${param.key}`}
+                            value={queryParams[param.key] || ""}
+                            onChange={(e) => handleQueryParamChange(param.key, e.target.value)}
+                          />
+                          <p className="text-muted-foreground text-xs">Default: {param.value || "N/A"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">
+                      No parameters available
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -376,20 +553,36 @@ export default function EndpointViewer({
                     value={`test-key-${apiDetails?.api_id}`}
                   />
                 </div>
+                
+                {/* Dynamic Required Headers */}
+                {apiDetails?.required_headers && apiDetails.required_headers.length > 0 && (
+                  <div className="space-y-4 mt-6">
+                    <div className="border-t pt-4">
+                      <p className="font-medium mb-4">Required Headers</p>
+                      {apiDetails.required_headers.map((header) => (
+                        <div key={header.name} className="space-y-2 mb-4">
+                          <Label htmlFor={header.name}>{header.name}</Label>
+                          <Input
+                            id={header.name}
+                            placeholder={header.is_variable ? `Enter value for ${header.name}` : header.value}
+                            value={headerValues[header.name]?.value || ""}
+                            onChange={(e) => handleHeaderValueChange(header.name, e.target.value)}
+                            disabled={!header.is_variable}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="body" className="space-y-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="overflow-x-auto">
-                  <p className="text-muted-foreground">
-                    No body schema available
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <Body 
+              onBodyChange={handleBodyChange}
+              initialBodyData={bodyData || undefined}
+            />
           </TabsContent>
 
           <TabsContent value="auth" className="space-y-4">
@@ -514,10 +707,19 @@ export default function EndpointViewer({
                         }))
                       ];
 
+                      // Construct URL with query parameters
+                      let targetUrl = selectedUrl + apiDetails?.path;
+                      const validQueryParams = Object.entries(queryParams).filter(([key, value]) => value.trim() !== "");
+                      if (validQueryParams.length > 0) {
+                        const queryString = validQueryParams.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&');
+                        targetUrl += `?${queryString}`;
+                      }
+
                       const testData: TestRequestData = {
                         method: endpoint?.method || "GET",
-                        target_url: selectedUrl + apiDetails?.path,
+                        target_url: targetUrl,
                         headers: requestHeaders,
+                        body: bodyData || undefined,
                       };
                       handleTest(testData);
                       // setIsTestLoading(true); // Trigger loading state

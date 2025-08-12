@@ -17,13 +17,13 @@ import { Button } from "@/components/ui/button";
 export default function SignupPage() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [role, setRole] = useState<string>("");
+  const consumerRoleId = process.env.NEXT_PUBLIC_ROLE_CONSUMER_ID;
+  const providerRoleId = process.env.NEXT_PUBLIC_ROLE_PROVIDER_ID;
+  const [role, setRole] = useState<string>(providerRoleId ?? "provider");
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
   const { login, isAuthenticated } = useAuth();
-  const consumerRoleId = process.env.NEXT_PUBLIC_ROLE_CONSUMER_ID;
-  const providerRoleId = process.env.NEXT_PUBLIC_ROLE_PROVIDER_ID;
   const githubIdentityProviderId =
     process.env.NEXT_PUBLIC_GITHUB_IDENTITY_PROVIDER_ID;
   const googleIdentityProviderId =
@@ -162,7 +162,7 @@ export default function SignupPage() {
                   className="w-full px-3 py-2 border rounded-md"
                 />
               </div>
-              <div>
+              {/* <div>
                 <Select
                   value={role}
                   onValueChange={(value) => {
@@ -182,7 +182,7 @@ export default function SignupPage() {
                     </SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </div> */}
               {error && <p className="text-sm text-red-500">{error}</p>}
               <button
                 type="submit"
