@@ -372,7 +372,7 @@ export default function RequestPage() {
           responseBodySize: "N/A",
         },
         request: {
-          method: "POST",
+          method: testData.method.toUpperCase(),
           url: `${API_BASE_URL}/onboard/test`,
           path: testData.path,
           headers: {
