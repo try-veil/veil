@@ -158,10 +158,12 @@ export class ProjectService {
     // Generate unique test key per API following the same pattern as onboarding service
     const uniqueTestKey = `test-key-${project.id || project.name.replace(/\s+/g, '_').toLowerCase()}`;
 
+    const { target_url, ...projectWithoutTargetUrl } = project;
+
     return {
-      ...project,
+     ...projectWithoutTargetUrl,
       // Replace target_url with gateway URL so frontend calls go through Veil gateway
-      target_url: gatewayUrl,
+      // target_url: gatewayUrl,
       gateway_api_key: uniqueTestKey,
       description: null,
       apis: project.projectAllowedAPIs.map((api) => ({

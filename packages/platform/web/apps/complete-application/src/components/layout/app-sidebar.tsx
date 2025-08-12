@@ -15,7 +15,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible='icon' variant='floating' {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={sidebarData.teams} />
+        <TeamSwitcher 
+          teams={sidebarData.teams.map((team, index) => ({
+            name: team.name,
+            id: team.name.toLowerCase().replace(/\s+/g, '-'),
+            logo: team.logo,
+            updatedAt: new Date().toISOString()
+          }))}
+          selectedProject={null}
+        />
       </SidebarHeader>
       <SidebarContent>
         {sidebarData.navGroups.map((props) => (

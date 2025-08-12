@@ -19,7 +19,15 @@ export function ProviderAppSidebar({ ...props }: React.ComponentProps<typeof Sid
   return (
     <Sidebar collapsible='icon' variant='floating' {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={sidebarData.projects} selectedProject={selectedProject} />
+        <TeamSwitcher 
+          teams={sidebarData.projects} 
+          selectedProject={selectedProject ? {
+            name: selectedProject.name,
+            id: selectedProject.id?.toString() ?? '',
+            logo: selectedProject.thumbnail || '',
+            updatedAt: selectedProject.updatedAt ?? new Date().toISOString()
+          } : null} 
+        />
       </SidebarHeader>
       <SidebarContent>
         {sidebarData.navGroups.map((props) => (
@@ -27,7 +35,11 @@ export function ProviderAppSidebar({ ...props }: React.ComponentProps<typeof Sid
         ))}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={sidebarData.user} />
+        <NavUser user={{
+          name: sidebarData.user.name || 'Unknown User',
+          email: sidebarData.user.email || 'unknown@example.com',
+          avatar: sidebarData.user.avatar
+        }} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

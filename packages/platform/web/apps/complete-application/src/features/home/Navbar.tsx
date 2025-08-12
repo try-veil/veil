@@ -173,7 +173,7 @@ export default function Navbar({ session, user }: NavbarProps) {
               My Projects
             </Link>
             <div className="pt-4 pb-2">
-              <LoginButton session={session} user={user} />
+              <LoginButton  />
             </div>
           </div>
         </div>
