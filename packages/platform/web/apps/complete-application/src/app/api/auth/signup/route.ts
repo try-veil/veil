@@ -55,11 +55,18 @@ export async function POST(req: Request) {
 
     if (!registerResponse.ok) {
       const fieldError = registerData?.fieldErrors;
-      const firstErrorMessage =
+      let firstErrorMessage =
+        fieldError?.["user.password"]?.[0]?.message ||
         fieldError?.["user.email"]?.[0]?.message ||
         fieldError?.["userId"]?.[0]?.message ||
         registerData?.error ||
         "Registration failed";
+      
+      // Clean up field names in error messages
+      firstErrorMessage = firstErrorMessage.replace(/\[user\.password\]/g, 'password');
+      firstErrorMessage = firstErrorMessage.replace(/\[user\.email\]/g, 'email');
+      firstErrorMessage = firstErrorMessage.replace(/\s+property/g, '');
+      
       console.error("Registration error:", firstErrorMessage);
       return NextResponse.json({ error: firstErrorMessage, error_description: firstErrorMessage }, { status: registerResponse.status });
     }
