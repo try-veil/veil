@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ interface HeaderPair {
 
 interface HeadersProps {
   onHeadersChange?: (headers: HeaderPair[]) => void;
+  initialHeaders?: { name: string; value: string }[];
 }
 
 function SortableHeaderItem({ header, index, updateHeader, removeHeader }: {
@@ -102,10 +103,19 @@ function SortableHeaderItem({ header, index, updateHeader, removeHeader }: {
   );
 }
 
-export function Headers({ onHeadersChange }: HeadersProps) {
-  const [headers, setHeaders] = useState<HeaderPair[]>([
-    { id: "1", name: "", value: "" }
-  ]);
+export function Headers({ onHeadersChange, initialHeaders }: HeadersProps) {
+  const initializedRef = useRef(false);
+  const [headers, setHeaders] = useState<HeaderPair[]>(() => {
+    if (initialHeaders && initialHeaders.length > 0) {
+      initializedRef.current = true;
+      return initialHeaders.map((header, index) => ({
+        id: (index + 1).toString(),
+        name: header.name,
+        value: header.value
+      }));
+    }
+    return [{ id: "1", name: "", value: "" }];
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -113,6 +123,23 @@ export function Headers({ onHeadersChange }: HeadersProps) {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  // Update headers when initialHeaders prop changes (only if not already initialized by user interactions)
+  useEffect(() => {
+    if (!initializedRef.current && initialHeaders && initialHeaders.length > 0) {
+      const updatedHeaders = initialHeaders.map((header, index) => ({
+        id: (index + 1).toString(),
+        name: header.name,
+        value: header.value
+      }));
+      setHeaders(updatedHeaders);
+      initializedRef.current = true;
+    } else if (!initializedRef.current && initialHeaders && initialHeaders.length === 0) {
+      // If initialHeaders is empty array, still keep at least one empty header
+      setHeaders([{ id: "1", name: "", value: "" }]);
+      initializedRef.current = true;
+    }
+  }, [initialHeaders]);
 
   const notifyHeaderChange = (headersList: HeaderPair[]) => {
     if (onHeadersChange) {
@@ -127,6 +154,7 @@ export function Headers({ onHeadersChange }: HeadersProps) {
     const newHeaders = [...headers, { id: Date.now().toString(), name: "", value: "" }];
     setHeaders(newHeaders);
     notifyHeaderChange(newHeaders);
+    initializedRef.current = true; // Mark as initialized by user interaction
   };
 
   const updateHeader = (id: string, field: "name" | "value", value: string) => {
@@ -135,6 +163,7 @@ export function Headers({ onHeadersChange }: HeadersProps) {
     );
     setHeaders(newHeaders);
     notifyHeaderChange(newHeaders);
+    initializedRef.current = true; // Mark as initialized by user interaction
   };
 
   const removeHeader = (id: string) => {

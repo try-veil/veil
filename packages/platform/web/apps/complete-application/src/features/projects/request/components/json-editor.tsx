@@ -3,7 +3,7 @@
 import { JsonViewer } from "./json-tree-viewer"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 
 const sampleData = {
   string: "Hello, world!",
@@ -25,22 +25,41 @@ const sampleData = {
 
 interface JsonEditorProps {
   onJsonChange?: (data: any) => void;
+  initialJsonData?: any;
 }
 
-export default function JsonEditor({ onJsonChange }: JsonEditorProps) {
-  const [jsonInput, setJsonInput] = useState("")
-  const [parsedData, setParsedData] = useState<any>(null)
-  const [error, setError] = useState<string | null>(null)
+export default function JsonEditor({ onJsonChange, initialJsonData }: JsonEditorProps) {
+  const initializedRef = useRef(false);
+  const [jsonInput, setJsonInput] = useState(() => {
+    if (initialJsonData) {
+      return JSON.stringify(initialJsonData, null, 2);
+    }
+    return "";
+  });
+  const [parsedData, setParsedData] = useState<any>(initialJsonData || null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (onJsonChange && !error) {
+    if (onJsonChange) {
       onJsonChange(parsedData);
     }
-  }, [parsedData, error, onJsonChange]);
+  }, [parsedData, onJsonChange]);
+
+  // Update state when initialJsonData prop changes (only if not already initialized by user interactions)
+  useEffect(() => {
+    if (!initializedRef.current && initialJsonData !== undefined) {
+      const jsonString = initialJsonData ? JSON.stringify(initialJsonData, null, 2) : "";
+      setJsonInput(jsonString);
+      setParsedData(initialJsonData);
+      setError(null);
+      initializedRef.current = true;
+    }
+  }, [initialJsonData]);
 
   const handleJsonInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value
     setJsonInput(value)
+    initializedRef.current = true; // Mark as initialized by user interaction
     
     try {
       const parsed = JSON.parse(value)

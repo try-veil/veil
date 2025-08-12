@@ -60,8 +60,11 @@ export class OnboardingService {
       `User ${providerId} verified for project ${request.project_id}. Proceeding with API onboarding.`,
     );
 
+    // Create API record using upsert
+    const apiId = request.api_id || uuidv4();
+
     // Ensure the platform test key is always present in api_keys
-    const uniqueTestKey = `test-key-${request.api_id || request.name.replace(/\s+/g, '_').toLowerCase()}`;
+    const uniqueTestKey = `test-key-${apiId}`;
     if (!request.api_keys) {
       request.api_keys = [];
     }
@@ -72,17 +75,14 @@ export class OnboardingService {
         is_active: true,
       });
     }
-
-    // Create API record using upsert
-    const apiId = request.api_id || uuidv4();
     this.logger.log(`[registerApi] Starting upsert for API ID: ${apiId}, path: ${request.path}`);
 
     const api = await this.prisma.api.upsert({
-      where: { path: request.path },
+      where: { id: apiId },
       create: {
         id: apiId,
         name: request.name,
-        path: request.path,
+        path: `/${apiId}${request.path.startsWith('/') ? request.path : '/' + request.path}`.replace(/\/+/g, '/'),
         method: request.method,
         version: request.version,
         description: request.description,
@@ -93,6 +93,7 @@ export class OnboardingService {
           target_url: request.target_url,
           required_subscription: request.required_subscription,
           parameters: request.parameters || [],
+          original_path: request.path, // Store the original path for reference
         },
         status: 'ACTIVE',
         requiredHeaders:
@@ -106,9 +107,12 @@ export class OnboardingService {
             }),
             {},
           ) || {},
+        queryParams: request.query_params as any || [],
+        bodyConfig: request.body as any || null,
       },
       update: {
         name: request.name,
+        path: `/${apiId}${request.path.startsWith('/') ? request.path : '/' + request.path}`.replace(/\/+/g, '/'),
         method: request.method,
         version: request.version,
         description: request.description,
@@ -119,6 +123,7 @@ export class OnboardingService {
           target_url: request.target_url,
           required_subscription: request.required_subscription,
           parameters: request.parameters || [],
+          original_path: request.path, // Store the original path for reference
         },
         status: 'ACTIVE',
         requiredHeaders:
@@ -132,6 +137,8 @@ export class OnboardingService {
             }),
             {},
           ) || {},
+        queryParams: request.query_params as any || [],
+        bodyConfig: request.body as any || null,
       },
       include: {
         projectAllowedAPIs: {
@@ -188,10 +195,10 @@ export class OnboardingService {
       },
     ];
 
-    // Register API route in gateway - Pass only relevant fields
+    // Register API route in gateway - Pass prefixed path to ensure uniqueness in Caddy
     // Construct the object matching CaddyOnboardingRequestDto
     const gatewayRequest: CaddyOnboardingRequestDto = {
-      path: request.path,
+      path: `/${api.id}${request.path.startsWith('/') ? request.path : '/' + request.path}`.replace(/\/+/g, '/'),
       target_url: request.target_url,
       method: request.method,
       required_subscription: request.required_subscription,
@@ -270,7 +277,9 @@ export class OnboardingService {
     // 2) Build DB payload inline
     const data: any = {};
     if (request.name !== undefined) data.name = request.name;
-    if (request.path !== undefined) data.path = request.path;
+    if (request.path !== undefined) {
+      data.path = `/${request.api_id}${request.path.startsWith('/') ? request.path : '/' + request.path}`.replace(/\/+/g, '/');
+    }
     if (request.method !== undefined) data.method = request.method;
     if (request.version !== undefined) data.version = request.version;
     if (request.description !== undefined) data.description = request.description;
@@ -283,6 +292,7 @@ export class OnboardingService {
     if (request.required_subscription !== undefined)
       spec.required_subscription = request.required_subscription;
     if (request.parameters !== undefined) spec.parameters = request.parameters;
+    if (request.path !== undefined) spec.original_path = request.path; // Store original path
     if (Object.keys(spec).length) data.specification = spec;
 
     // Update headers
@@ -294,6 +304,10 @@ export class OnboardingService {
       data.requiredHeaders = headersObj;
     }
 
+    // Update query params and body config
+    if (request.query_params !== undefined) data.queryParams = request.query_params as any;
+    if (request.body !== undefined) data.bodyConfig = request.body as any;
+
     // 3) Ensure test key always present
     const keys: any[] = Array.isArray(request.api_keys) ? [...request.api_keys] : [];
     const testKey = `test-key-${request.api_id}`;
@@ -303,28 +317,49 @@ export class OnboardingService {
 
     // 4) Build gateway patch DTO
     const gatewayBody: Partial<CaddyOnboardingRequestDto> = {};
-    if (data.path || request.path !== undefined) gatewayBody.path = data.path || existing.path;
+    if (request.path !== undefined) {
+      // Send the prefixed path to gateway to ensure uniqueness
+      gatewayBody.path = `/${request.api_id}${request.path.startsWith('/') ? request.path : '/' + request.path}`.replace(/\/+/g, '/');
+    }
     if (spec.target_url) gatewayBody.target_url = spec.target_url;
     if (request.method !== undefined) gatewayBody.method = request.method;
+    // FIXED: Preserve existing method if no new method provided
+    if (!gatewayBody.method && existing.method) {
+      gatewayBody.method = existing.method;
+    }
     if (spec.required_subscription) gatewayBody.required_subscription = spec.required_subscription;
     if (spec.parameters) gatewayBody.parameters = spec.parameters;
-    if (keys.length) gatewayBody.api_keys = keys;
+    // if (keys.length) gatewayBody.api_keys = keys;
     if (request.required_headers !== undefined) gatewayBody.required_headers = request.required_headers;
+    if (request.body !== undefined) gatewayBody.body = request.body;
 
     this.logger.log(`Gateway patch: ${JSON.stringify(gatewayBody)}`);
+    this.logger.log(`Request body data: ${JSON.stringify(request.body)}`);
+    this.logger.log(`Existing body config: ${JSON.stringify(existing.bodyConfig)}`);
 
-    // 5) Two-phase commit: patch gateway then update DB
+    // 5) FIXED: Two-phase commit with proper transaction boundaries
     try {
+      // Phase 1: Update gateway first (can fail without DB changes)
+      await this.gatewayService.updateApiRoute(
+        request.api_id,
+        gatewayBody as CaddyOnboardingRequestDto,
+        existing.path, // Pass the current prefixed path stored in database
+      );
+      
+      // Phase 2: Update database (atomic, fast)
       await this.prisma.$transaction(async tx => {
-        await this.gatewayService.updateApiRoute(
-          request.api_id,
-          gatewayBody as CaddyOnboardingRequestDto,
-          // existing.path,
-        );
         await tx.api.update({ where: { id: request.api_id }, data });
+      }, {
+        timeout: 5000, // 5 second timeout for DB operations only
       });
     } catch (e) {
-      this.logger.error('Update transaction failed', e.stack);
+      this.logger.error('Update failed', e.stack);
+      
+      // If database update failed after gateway success, we have inconsistency
+      if (e.message?.includes('gateway') === false) {
+        this.logger.error('CRITICAL: Database update failed after gateway success - system inconsistent');
+      }
+      
       throw new InternalServerErrorException('Failed to update API');
     }
 
@@ -337,11 +372,16 @@ export class OnboardingService {
     const headerList = Object.entries(updated.requiredHeaders || {}).map(
       ([name, d]: any) => ({ name, value: d.value, is_variable: d.isVariable }),
     );
+
+    // Use original_path from specification if available, otherwise extract from prefixed path
+    const originalPath = (updated.specification as any)?.original_path ||
+      (updated.path.startsWith(`/${updated.id}`) ? updated.path.substring(`/${updated.id}`.length) : updated.path);
+
     return {
       api_id: updated.id,
       project_id: projectId,
       name: updated.name,
-      path: updated.path,
+      path: originalPath,
       target_url: (updated.specification as any)?.target_url || '',
       method: updated.method,
       version: updated.version,
@@ -350,6 +390,8 @@ export class OnboardingService {
       documentation_url: updated.documentationUrl,
       required_headers: headerList,
       parameters: (updated.specification as any)?.parameters || [],
+      query_params: updated.queryParams as any || [],
+      body: updated.bodyConfig as any || null,
       status: updated.status,
       created_at: updated.createdAt,
       updated_at: updated.updatedAt,
@@ -396,11 +438,15 @@ export class OnboardingService {
     // Extract parameters from specification if available
     const parameters = api.specification?.parameters || [];
 
+    // Use original_path from specification if available, otherwise extract from prefixed path
+    const originalPath = api.specification?.original_path ||
+      (api.path.startsWith(`/${api.id}`) ? api.path.substring(`/${api.id}`.length) : api.path);
+
     return {
       api_id: api.id,
       project_id: projectId,
       name: api.name,
-      path: api.path,
+      path: originalPath,
       target_url: api.specification?.target_url || '', // Extract from specification
       method: api.method,
       version: api.version,
@@ -410,6 +456,8 @@ export class OnboardingService {
       documentation_url: api.documentationUrl,
       required_headers: headers,
       parameters: parameters,
+      query_params: api.queryParams as any || [],
+      body: api.bodyConfig as any || null,
       status: api.status,
       created_at: api.createdAt,
       updated_at: api.updatedAt,
@@ -453,22 +501,85 @@ export class OnboardingService {
       }
     }
 
-    // Build the Caddy gateway URL with API ID prefix
+    // Build the Caddy gateway URL - use prefixed path to match what was registered
     const caddyGatewayBase = 'http://localhost:2021';
     const apiId = request.api_id || request.name.replace(/\s+/g, '_').toLowerCase();
     const url = caddyGatewayBase + '/' + apiId + request.path;
     this.logger.log('Making test API call to: ' + url + ' with headers:', headers);
+    this.logger.log('Request body configuration:', JSON.stringify(request.body, null, 2));
+
+    // If body is undefined, try to get it from the database
+    if (!request.body && request.api_id) {
+      this.logger.log('Body is undefined, fetching from database...');
+      try {
+        const apiDetails = await this.getApiDetails(request.api_id);
+        if (apiDetails.body) {
+          request.body = apiDetails.body;
+          this.logger.log('Retrieved body from database:', JSON.stringify(request.body, null, 2));
+        }
+      } catch (error) {
+        this.logger.error('Failed to retrieve API details:', error);
+      }
+    }
 
     try {
+      // Prepare request body based on body configuration
+      let requestData = null;
+      if (request.body && request.method.toUpperCase() !== 'GET') {
+        switch (request.body.type) {
+          case 'json':
+            requestData = request.body.json_data || {};
+            headers['Content-Type'] = 'application/json';
+            break;
+          case 'form-url-encoded':
+            if (request.body.form_data) {
+              const formData = new URLSearchParams();
+              request.body.form_data.forEach(item => {
+                formData.append(item.key, item.value);
+              });
+              requestData = formData.toString();
+              headers['Content-Type'] = 'application/x-www-form-urlencoded';
+            }
+            break;
+          case 'text':
+            requestData = request.body.content;
+            headers['Content-Type'] = 'text/plain';
+            break;
+          case 'multipart':
+            // For multipart, we'll send form_data as JSON for testing
+            if (request.body.form_data) {
+              const multipartData = {};
+              request.body.form_data.forEach(item => {
+                multipartData[item.key] = item.value;
+              });
+              requestData = multipartData;
+              headers['Content-Type'] = 'application/json'; // Send as JSON for testing
+            }
+            break;
+          default:
+            requestData = request.body.content || null;
+        }
+      }
+
+      this.logger.log('Prepared request data:', JSON.stringify(requestData, null, 2));
+      this.logger.log('Final headers:', JSON.stringify(headers, null, 2));
+
       // Make request to Caddy gateway (not direct to upstream)
+      // Prepare request config
+      const requestConfig: any = {
+        method: request.method as any,
+        url,
+        headers,
+      };
+
+      // Only add data for non-GET requests and when requestData is not null
+      if (request.method.toUpperCase() !== 'GET' && requestData !== null) {
+        requestConfig.data = requestData;
+      }
+
       const response = await firstValueFrom(
         this.httpService
-          .request({
-            method: request.method as any,
-            url,
-            headers,
-            data: request, // Send the full request body if needed (for POST/PUT)
-          })
+          .request(requestConfig)
           .pipe(
             timeout(30000), // 30 second timeout
             catchError((error) => {
@@ -476,6 +587,8 @@ export class OnboardingService {
                 error: error.message,
                 caddyUrl: url,
                 method: request.method,
+                status: error.response?.status,
+                responseData: error.response?.data,
               });
               throw new InternalServerErrorException(
                 `Failed to call Caddy gateway: ${error.message}`,

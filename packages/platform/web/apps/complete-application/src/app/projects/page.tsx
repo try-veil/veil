@@ -16,8 +16,10 @@ export default function Projects() {
   const [isLoading, setIsLoading] = useState(true);
   const { isAuthenticated, accessToken } = useAuth();
   const { projectList, setProjectList } = useProject();
-  const { user } = useUser();
-  console.log("user", user);
+  const { user, isLoading: isUserLoading, error: userError } = useUser();
+  
+  console.log("Auth state:", { isAuthenticated, hasToken: !!accessToken });
+  console.log("User state:", { user, isUserLoading, userError });
   const fetchProjects = async () => {
     try {
       const token = accessToken;

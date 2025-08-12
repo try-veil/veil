@@ -59,6 +59,13 @@ interface RequestProps {
     method: string;
     version?: string;
     required_headers?: { name: string; value: string; is_variable: boolean }[];
+    query_params?: { key: string; value: string }[];
+    body?: {
+      type: string;
+      content: string;
+      form_data?: { key: string; value: string }[];
+      json_data?: any;
+    };
   };
 }
 
@@ -164,6 +171,13 @@ export default function Request({
           value: h.value,
         })) || []
       );
+      setQueryParams(initialData.query_params || []);
+      setBodyData(initialData.body || {
+        type: "json",
+        content: "",
+        form_data: [],
+        json_data: null,
+      });
     }
   }, [initialData]);
 
@@ -505,15 +519,24 @@ export default function Request({
               </TabsContent>
 
               <TabsContent value="headers" className="mt-0 h-full">
-                <Headers onHeadersChange={handleHeadersChange} />
+                <Headers 
+                  onHeadersChange={handleHeadersChange} 
+                  initialHeaders={headers}
+                />
               </TabsContent>
 
               <TabsContent value="query" className="mt-0 h-full">
-                <Query onQueryChange={handleQueryChange} />
+                <Query 
+                  onQueryChange={handleQueryChange} 
+                  initialQueries={queryParams}
+                />
               </TabsContent>
 
               <TabsContent value="body" className="mt-0 h-full">
-                <Body onBodyChange={handleBodyChange} />
+                <Body 
+                  onBodyChange={handleBodyChange} 
+                  initialBodyData={bodyData}
+                />
               </TabsContent>
             </div>
           </div>

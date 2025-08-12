@@ -1,6 +1,7 @@
 import Cookies from "js-cookie";
 import { cn } from "@/lib/utils";
 import { SearchProvider } from "@/context/search-context";
+import { ProjectProvider } from "@/context/project-context";
 import { SidebarProvider } from "@/components/ui/sidebar";
 // import { RequestsProvider } from "@/context/requests-context";
 import SkipToMain from "@/components/skip-to-main";
@@ -18,9 +19,10 @@ export default function ConsumerLayout({
 }) {
   const defaultOpen = Cookies.get("sidebar:state") !== "false";
   return (
-    <SearchProvider>
-      {/* <RequestsProvider> */}
-        <SidebarProvider defaultOpen={defaultOpen}>
+    <ProjectProvider>
+      <SearchProvider>
+        {/* <RequestsProvider> */}
+          <SidebarProvider defaultOpen={defaultOpen}>
           <SkipToMain />
           <ConsumerAppSidebar />
           <div
@@ -49,7 +51,8 @@ export default function ConsumerLayout({
           </div>
         </SidebarProvider>
       {/* </RequestsProvider> */}
-    </SearchProvider>
+      </SearchProvider>
+    </ProjectProvider>
   );
 }
 

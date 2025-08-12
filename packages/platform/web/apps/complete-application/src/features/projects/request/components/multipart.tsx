@@ -4,9 +4,10 @@ import { KeyValuePair } from "./key-value-pair";
 
 interface MultipartProps {
   onFormDataChange?: (data: { key: string; value: string }[]) => void;
+  initialFormData?: { key: string; value: string }[];
 }
 
-export default function Multipart({ onFormDataChange }: MultipartProps) {
+export default function Multipart({ onFormDataChange, initialFormData }: MultipartProps) {
   return (
     <KeyValuePair
       title="Multipart Form Data"
@@ -15,6 +16,7 @@ export default function Multipart({ onFormDataChange }: MultipartProps) {
       keyPlaceholder="name"
       valuePlaceholder="value"
       addButtonText="Add Form Field"
+      initialPairs={initialFormData}
       onChange={(pairs) => {
         // Handle multipart form data changes
         console.log("Multipart form data:", pairs);

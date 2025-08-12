@@ -21,7 +21,6 @@ interface Endpoint {
   name: string;
   apiId: string;
   version: string;
-  path: string;
 }
 
 interface EndpointViewerProps {
@@ -84,7 +83,7 @@ export default function EndpointViewer({
   const generateCurlCode = () => {
     if (!apiDetails) return "No API details available";
 
-    let curl = `curl -X ${apiDetails.method} '${process.env.NEXT_PUBLIC_VEIL_URL}/${apiDetails.path}'`;
+    let curl = `curl -X ${apiDetails.method} '${process.env.NEXT_PUBLIC_VEIL_URL}${apiDetails.path}'`;
 
     // Add headers with current values
     if (apiDetails.required_headers && apiDetails.required_headers.length > 0) {
@@ -129,7 +128,7 @@ export default function EndpointViewer({
 
   const getFullUrl = () => {
     if (!apiDetails?.path) return selectedUrl;
-    return `${selectedUrl}/${apiDetails.path}`;
+    return `${selectedUrl}${apiDetails.path}`;
   };
 
   const handleCopyUrl = async () => {
@@ -501,7 +500,6 @@ export default function EndpointViewer({
                   <Button
                     onClick={() => {
                       console.log("endpoint----------->", endpoint);
-                      console.log("path--->", endpoint.path)
 
                       // Generate the test key 
                       const uniqueTestKey = `test-key-${apiDetails?.api_id}`;
@@ -518,7 +516,7 @@ export default function EndpointViewer({
 
                       const testData: TestRequestData = {
                         method: endpoint?.method || "GET",
-                        target_url: selectedUrl + "/" + apiDetails?.path,
+                        target_url: selectedUrl + apiDetails?.path,
                         headers: requestHeaders,
                       };
                       handleTest(testData);

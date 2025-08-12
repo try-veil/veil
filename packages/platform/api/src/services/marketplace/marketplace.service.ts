@@ -300,7 +300,6 @@ export class MarketplaceService {
 
     return {
       ...baseApi,
-      target_url: (api.specification as any)?.target_url || '',
       required_subscription:
         (api.specification as any)?.required_subscription || 'basic',
       required_headers: headers,
