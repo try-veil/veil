@@ -347,6 +347,12 @@ export default function Request({
 
     setIsTestLoading(true);
 
+    const queryString = queryParams
+  .map(({ key, value }) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+  .join('&');
+
+  const queryPath = path+ `?${queryString}`;
+
     try {
       const payload = {
         api_id:
@@ -355,7 +361,7 @@ export default function Request({
             : crypto.randomUUID(),
         project_id: project_id,
         name,
-        path,
+        path: queryPath,
         target_url: targetUrl,
         method,
         version,
