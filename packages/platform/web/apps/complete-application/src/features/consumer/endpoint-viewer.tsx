@@ -166,6 +166,16 @@ export default function EndpointViewer({
     }));
   };
 
+  const handleHeaderValueChange = (headerName: string, value: string) => {
+    setHeaderValues(prev => ({
+      ...prev,
+      [headerName]: {
+        ...prev[headerName],
+        value: value
+      }
+    }));
+  };
+
   const handleCopyUrl = async () => {
     const url = getFullUrl();
     await navigator.clipboard.writeText(url);
@@ -429,6 +439,27 @@ export default function EndpointViewer({
                     value={`test-key-${apiDetails?.api_id}`}
                   />
                 </div>
+                
+                {/* Dynamic Required Headers */}
+                {apiDetails?.required_headers && apiDetails.required_headers.length > 0 && (
+                  <div className="space-y-4 mt-6">
+                    <div className="border-t pt-4">
+                      <p className="font-medium mb-4">Required Headers</p>
+                      {apiDetails.required_headers.map((header) => (
+                        <div key={header.name} className="space-y-2 mb-4">
+                          <Label htmlFor={header.name}>{header.name}</Label>
+                          <Input
+                            id={header.name}
+                            placeholder={header.is_variable ? `Enter value for ${header.name}` : header.value}
+                            value={headerValues[header.name]?.value || ""}
+                            onChange={(e) => handleHeaderValueChange(header.name, e.target.value)}
+                            disabled={!header.is_variable}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
