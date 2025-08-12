@@ -237,6 +237,32 @@ export class MarketplaceApiDetailsDto extends MarketplaceApiDto {
     type: string;
     required: boolean;
   }>;
+
+  @ApiProperty({
+    description: 'Query parameters',
+    type: 'object',
+    example: {
+      city: 'London',
+      units: 'metric',
+      appid: 'your_api_key'
+    },
+  })
+  query_params?: Record<string, any>;
+
+  @ApiProperty({
+    description: 'Request body configuration',
+    type: 'object',
+    example: {
+      type: 'json',
+      schema: {
+        properties: {
+          temperature: { type: 'number' },
+          humidity: { type: 'number' }
+        }
+      }
+    },
+  })
+  body?: Record<string, any>;
 }
 
 export class MarketplaceCategoryDto {

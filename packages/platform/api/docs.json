@@ -5095,6 +5095,32 @@
                 }
               }
             }
+          },
+          "query_params": {
+            "type": "object",
+            "description": "Query parameters",
+            "example": {
+              "city": "London",
+              "units": "metric",
+              "appid": "your_api_key"
+            }
+          },
+          "body": {
+            "type": "object",
+            "description": "Request body configuration",
+            "example": {
+              "type": "json",
+              "schema": {
+                "properties": {
+                  "temperature": {
+                    "type": "number"
+                  },
+                  "humidity": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
           }
         },
         "required": [
@@ -5111,7 +5137,9 @@
           "updated_at",
           "required_subscription",
           "required_headers",
-          "parameters"
+          "parameters",
+          "query_params",
+          "body"
         ]
       },
       "MarketplaceCategoryDto": {
