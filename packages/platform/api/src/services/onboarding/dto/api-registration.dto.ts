@@ -59,6 +59,89 @@ export class ApiKeyDto {
   is_active: boolean;
 }
 
+export class QueryParameterDto {
+  @ApiProperty({ description: 'Query parameter name', example: 'page' })
+  @IsString()
+  name: string;
+
+  @ApiProperty({ description: 'Query parameter type', example: 'string' })
+  @IsString()
+  type: string;
+
+  @ApiProperty({ description: 'Whether the query parameter is required', example: false })
+  @IsBoolean()
+  required: boolean;
+}
+
+export class MultipartFieldDto {
+  @ApiProperty({ description: 'Field name', example: 'username' })
+  @IsString()
+  name: string;
+
+  @ApiProperty({ description: 'Field value or example', example: 'john_doe' })
+  @IsString()
+  value: string;
+
+  @ApiProperty({
+    description: 'Field type',
+    enum: ['text', 'file'],
+    example: 'text'
+  })
+  @IsString()
+  type: 'text' | 'file';
+
+  @ApiProperty({ description: 'Whether the field is required', example: true })
+  @IsBoolean()
+  required: boolean;
+
+  @ApiPropertyOptional({ description: 'Human readable description of the field', example: 'User\'s username for login' })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiPropertyOptional({ description: 'Content type for file fields', example: 'image/jpeg' })
+  @IsOptional()
+  @IsString()
+  content_type?: string;
+}
+
+export class BodyDto {
+  @ApiProperty({
+    description: 'Body type',
+    enum: ['text', 'json', 'form-urlencoded', 'multipart', 'graphql'],
+    example: 'json'
+  })
+  @IsString()
+  type: string;
+
+  @ApiPropertyOptional({ description: 'Raw content for text/graphql' })
+  @IsOptional()
+  @IsString()
+  content?: string;
+
+  @ApiPropertyOptional({ description: 'JSON data object' })
+  @IsOptional()
+  json_data?: any;
+
+  @ApiPropertyOptional({
+    description: 'Form data array for form-urlencoded (key-value pairs)',
+    example: [{ key: 'username', value: 'john_doe' }]
+  })
+  @IsOptional()
+  @IsArray()
+  form_data?: { key: string; value: string }[];
+
+  @ApiPropertyOptional({
+    description: 'Multipart form fields',
+    type: [MultipartFieldDto]
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => MultipartFieldDto)
+  multipart_data?: MultipartFieldDto[];
+}
+
 export class ApiRegistrationRequestDto {
   @ApiProperty({
     description: 'Unique identifier for the API',
@@ -162,6 +245,25 @@ export class ApiRegistrationRequestDto {
   @Type(() => ApiKeyDto)
   @IsOptional()
   api_keys?: ApiKeyDto[];
+
+  @ApiPropertyOptional({
+    description: 'Query parameters',
+    type: [QueryParameterDto],
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => QueryParameterDto)
+  @IsOptional()
+  query_params?: QueryParameterDto[];
+
+  @ApiPropertyOptional({
+    description: 'Request body configuration',
+    type: BodyDto,
+  })
+  @ValidateNested()
+  @Type(() => BodyDto)
+  @IsOptional()
+  body?: BodyDto;
 }
 
 // Added DTO for specific fields needed by GatewayService.onboardApi
@@ -245,6 +347,25 @@ export class CaddyOnboardingRequestDto {
   @IsString()
   @IsOptional()
   api_id?: string;
+
+  @ApiPropertyOptional({
+    description: 'Query parameters',
+    type: [QueryParameterDto],
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => QueryParameterDto)
+  @IsOptional()
+  query_params?: QueryParameterDto[];
+
+  @ApiPropertyOptional({
+    description: 'Request body configuration',
+    type: BodyDto,
+  })
+  @ValidateNested()
+  @Type(() => BodyDto)
+  @IsOptional()
+  body?: BodyDto;
 }
 
 export class ApiRegistrationResponseDto {
@@ -361,4 +482,16 @@ export class ApiDetailsResponseDto {
     type: [ParameterDto],
   })
   parameters?: ParameterDto[];
+
+  @ApiPropertyOptional({
+    description: 'Query parameters',
+    type: [QueryParameterDto],
+  })
+  query_params?: QueryParameterDto[];
+
+  @ApiPropertyOptional({
+    description: 'Request body configuration',
+    type: BodyDto,
+  })
+  body?: BodyDto;
 }

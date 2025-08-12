@@ -14,14 +14,16 @@ type APIKeyDTO struct {
 
 // APIOnboardRequestDTO represents the request body for API onboarding
 type APIOnboardRequestDTO struct {
-	Path                 string         `json:"path" binding:"required"`
-	Upstream             string         `json:"upstream" binding:"required"`
-	RequiredSubscription string         `json:"required_subscription"`
-	Methods              []string       `json:"methods" binding:"required"`
-	RequiredHeaders      []string       `json:"required_headers"`
-	Parameters           []ParameterDTO `json:"parameters"`
-	APIKeys              []APIKeyDTO    `json:"api_keys"`
-	ProviderID           string         `json:"provider_id" binding:"required"`
+	Path                 string              `json:"path" binding:"required"`
+	Upstream             string              `json:"upstream" binding:"required"`
+	RequiredSubscription string              `json:"required_subscription"`
+	Methods              []string            `json:"methods" binding:"required"`
+	RequiredHeaders      []string            `json:"required_headers"`
+	Parameters           []ParameterDTO      `json:"parameters"`
+	APIKeys              []APIKeyDTO         `json:"api_keys"`
+	ProviderID           string              `json:"provider_id" binding:"required"`
+	QueryParams          []QueryParameterDTO `json:"query_params,omitempty"`
+	Body                 *BodyDTO            `json:"body,omitempty"`
 }
 
 // APIKeysRequestDTO represents the request body for adding API keys
@@ -49,6 +51,38 @@ type ParameterDTO struct {
 	Name     string `json:"name"`
 	Type     string `json:"type"` // query, path, header, body
 	Required bool   `json:"required"`
+}
+
+// QueryParameterDTO represents a query parameter
+type QueryParameterDTO struct {
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	Required bool   `json:"required"`
+}
+
+// MultipartFieldDTO represents a multipart form field
+type MultipartFieldDTO struct {
+	Name        string `json:"name"`
+	Value       string `json:"value"`
+	Type        string `json:"type"` // "text" or "file"
+	Required    bool   `json:"required"`
+	Description string `json:"description,omitempty"`
+	ContentType string `json:"content_type,omitempty"`
+}
+
+// FormDataDTO represents form data key-value pairs
+type FormDataDTO struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+// BodyDTO represents request body configuration
+type BodyDTO struct {
+	Type          string              `json:"type"`
+	Content       string              `json:"content,omitempty"`
+	JsonData      map[string]interface{} `json:"json_data,omitempty"`
+	FormData      []FormDataDTO       `json:"form_data,omitempty"`
+	MultipartData []MultipartFieldDTO `json:"multipart_data,omitempty"`
 }
 
 // APIKeyDeleteRequestDTO represents the request body for deleting an API key
