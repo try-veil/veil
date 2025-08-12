@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/caddyserver/caddy/v2"
@@ -31,6 +32,7 @@ type VeilHandler struct {
 	store           *store.APIStore
 	logger          *zap.Logger
 	ctx             caddy.Context
+	updateMutex     sync.RWMutex       // ADDED: Prevent concurrent updates
 }
 
 // CaddyModule returns the Caddy module information.
@@ -581,7 +583,8 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 	if !methodAllowed {
 		h.logger.Debug("method not allowed",
 			zap.String("path", r.URL.Path),
-			zap.String("method", r.Method))
+			zap.String("method", r.Method),
+			zap.Int("defined_methods", len(api.Methods)))
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return nil
 	}
@@ -594,6 +597,88 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 				zap.String("header", header))
 			http.Error(w, fmt.Sprintf("Missing required header: %s", header), http.StatusBadRequest)
 			return nil
+		}
+	}
+
+	// Validate query parameters if specified
+	if len(api.QueryParams) > 0 {
+		for _, param := range api.QueryParams {
+			if param.Required && r.URL.Query().Get(param.Name) == "" {
+				h.logger.Debug("missing required query parameter",
+					zap.String("param", param.Name),
+					zap.String("path", r.URL.Path))
+				http.Error(w, fmt.Sprintf("Missing required query parameter: %s", param.Name), http.StatusBadRequest)
+				return nil
+			}
+		}
+	}
+
+	// Validate body type if specified
+	if api.Body != nil && r.Method != "GET" {
+		contentType := r.Header.Get("Content-Type")
+		switch api.Body.Type {
+		case "json":
+			if !strings.Contains(contentType, "application/json") {
+				h.logger.Debug("invalid content type for JSON body",
+					zap.String("expected", "application/json"),
+					zap.String("actual", contentType))
+				http.Error(w, "Expected JSON content type", http.StatusBadRequest)
+				return nil
+			}
+		case "form-urlencoded":
+			if !strings.Contains(contentType, "application/x-www-form-urlencoded") {
+				http.Error(w, "Expected form-urlencoded content type", http.StatusBadRequest)
+				return nil
+			}
+			// Validate form fields if specified
+			if len(api.Body.FormData) > 0 {
+				if err := r.ParseForm(); err != nil {
+					http.Error(w, "Failed to parse form data", http.StatusBadRequest)
+					return nil
+				}
+				for _, field := range api.Body.FormData {
+					if r.FormValue(field.Key) == "" {
+						http.Error(w, fmt.Sprintf("Missing required form field: %s", field.Key), http.StatusBadRequest)
+						return nil
+					}
+				}
+			}
+		case "multipart":
+			if !strings.Contains(contentType, "multipart/form-data") {
+				http.Error(w, "Expected multipart/form-data content type", http.StatusBadRequest)
+				return nil
+			}
+			// Validate multipart fields if specified
+			if len(api.Body.MultipartData) > 0 {
+				if err := r.ParseMultipartForm(32 << 20); err != nil { // 32MB max
+					http.Error(w, "Failed to parse multipart form", http.StatusBadRequest)
+					return nil
+				}
+				for _, field := range api.Body.MultipartData {
+					switch field.Type {
+					case "text":
+						if r.FormValue(field.Name) == "" {
+							http.Error(w, fmt.Sprintf("Missing required text field: %s", field.Name), http.StatusBadRequest)
+							return nil
+						}
+					case "file":
+						if _, _, err := r.FormFile(field.Name); err != nil {
+							http.Error(w, fmt.Sprintf("Missing required file field: %s", field.Name), http.StatusBadRequest)
+							return nil
+						}
+					}
+				}
+			}
+		case "text":
+			if !strings.Contains(contentType, "text/plain") {
+				http.Error(w, "Expected text/plain content type", http.StatusBadRequest)
+				return nil
+			}
+		case "graphql":
+			if !strings.Contains(contentType, "application/graphql") && !strings.Contains(contentType, "application/json") {
+				http.Error(w, "Expected application/graphql or application/json content type", http.StatusBadRequest)
+				return nil
+			}
 		}
 	}
 
@@ -725,7 +810,16 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		zap.Any("methods", req.Methods),
 		zap.Any("required_headers", req.RequiredHeaders),
 		zap.Any("parameters", req.Parameters),
-		zap.Int("api_keys_count", len(req.APIKeys)))
+		zap.Int("api_keys_count", len(req.APIKeys)),
+		zap.Bool("has_body", req.Body != nil))
+
+	if req.Body != nil {
+		h.logger.Debug("request body configuration",
+			zap.String("body_type", req.Body.Type),
+			zap.String("body_content", req.Body.Content),
+			zap.Int("form_data_count", len(req.Body.FormData)),
+			zap.Int("multipart_data_count", len(req.Body.MultipartData)))
+	}
 
 	// Validate required fields
 	if req.Path == "" || req.Upstream == "" {
@@ -736,6 +830,46 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		return nil
 	}
 
+	// Convert DTO query params to model query params
+	var queryParams []models.QueryParameter
+	for _, param := range req.QueryParams {
+		queryParams = append(queryParams, models.QueryParameter{
+			Name:     param.Name,
+			Type:     param.Type,
+			Required: param.Required,
+		})
+	}
+
+	// Convert DTO body to model body
+	var body *models.Body
+	if req.Body != nil {
+		var formData []models.FormData
+		for _, fd := range req.Body.FormData {
+			formData = append(formData, models.FormData{
+				Key:   fd.Key,
+				Value: fd.Value,
+			})
+		}
+
+		var multipartData []models.MultipartField
+		for _, md := range req.Body.MultipartData {
+			multipartData = append(multipartData, models.MultipartField{
+				Name:        md.Name,
+				Value:       md.Value,
+				Type:        md.Type,
+				ContentType: md.ContentType,
+			})
+		}
+
+		body = &models.Body{
+			Type:          req.Body.Type,
+			Content:       req.Body.Content,
+			JsonData:      req.Body.JsonData,
+			FormData:      formData,
+			MultipartData: multipartData,
+		}
+	}
+
 	// Create API config
 	config := &models.APIConfig{
 		Path:                 req.Path,
@@ -743,6 +877,8 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		RequiredSubscription: req.RequiredSubscription,
 		RequiredHeaders:      req.RequiredHeaders,
 		ProviderID:           req.ProviderID,
+		QueryParams:          queryParams,
+		Body:                 body,
 	}
 
 	// Create API methods
@@ -761,17 +897,19 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		})
 	}
 
-	// Create API keys
-	for _, key := range req.APIKeys {
-		isActive := true
-		if key.IsActive != nil {
-			isActive = *key.IsActive
+	// Create API keys only on POST (creation)
+	if r.Method == http.MethodPost {
+		for _, key := range req.APIKeys {
+			isActive := true
+			if key.IsActive != nil {
+				isActive = *key.IsActive
+			}
+			config.APIKeys = append(config.APIKeys, models.APIKey{
+				Key:      key.Key,
+				Name:     key.Name,
+				IsActive: &isActive,
+			})
 		}
-		config.APIKeys = append(config.APIKeys, models.APIKey{
-			Key:      key.Key,
-			Name:     key.Name,
-			IsActive: &isActive,
-		})
 	}
 
 	h.logger.Debug("created API config object",
@@ -788,7 +926,7 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		return h.handleUpdateAPI(w, r, apiID, config)
 	}
 
-	// Store in database
+	// Store in database - use upsert behavior for POST requests
 	h.logger.Info("storing API config in database")
 	if err := h.store.CreateAPI(config); err != nil {
 		h.logger.Error("failed to store API config",
@@ -797,14 +935,37 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 			zap.String("api_path", config.Path),
 			zap.String("error_details", err.Error()))
 
-		// Check for specific errors
+		// Check for UNIQUE constraint error - if API already exists, update it instead
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-			http.Error(w, "API path already exists", http.StatusConflict)
+			h.logger.Info("API already exists, attempting to update instead",
+				zap.String("api_path", config.Path))
+			
+			// Get existing API to get its ID
+			existing, getErr := h.store.GetAPIByPath(config.Path)
+			if getErr != nil || existing == nil {
+				h.logger.Error("failed to get existing API for update",
+					zap.Error(getErr),
+					zap.String("api_path", config.Path))
+				http.Error(w, "API path already exists but cannot be updated", http.StatusConflict)
+				return nil
+			}
+
+			// Set the ID from existing API and update
+			config.ID = existing.ID
+			if updateErr := h.store.UpdateAPI(config); updateErr != nil {
+				h.logger.Error("failed to update existing API",
+					zap.Error(updateErr),
+					zap.String("api_path", config.Path))
+				http.Error(w, "Failed to update existing API configuration: "+updateErr.Error(), http.StatusInternalServerError)
+				return nil
+			}
+
+			h.logger.Info("successfully updated existing API",
+				zap.String("api_path", config.Path))
+		} else {
+			http.Error(w, "Failed to store API configuration: "+err.Error(), http.StatusInternalServerError)
 			return nil
 		}
-
-		http.Error(w, "Failed to store API configuration: "+err.Error(), http.StatusInternalServerError)
-		return nil
 	}
 
 	// Update Caddy configuration
@@ -832,41 +993,87 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 	})
 }
 
-// handleUpdateAPI handles updating an existing API
+// handleUpdateAPI handles updating an existing API using API ID (FIXED)
 func (h *VeilHandler) handleUpdateAPI(w http.ResponseWriter, r *http.Request, apiID string, newConfig *models.APIConfig) error {
-	// Get existing API to verify it exists
-	existing, err := h.store.GetAPIByPath(newConfig.Path)
-	if err != nil || existing == nil {
-		if err == gorm.ErrRecordNotFound {
-			http.Error(w, "API not found", http.StatusNotFound)
-			return nil
-		}
-		h.logger.Error("failed to get API",
-			zap.Error(err))
-		// http.Error(w, "Failed to get API", http.StatusInternalServerError)
-		http.Error(w, "API not found", http.StatusNotFound)
+	// FIXED: Serialize updates to prevent race conditions
+	h.updateMutex.Lock()
+	defer h.updateMutex.Unlock()
+	
+	h.logger.Info("updating API", zap.String("api_id", apiID), zap.String("new_path", newConfig.Path))
+
+	// FIXED: Extract and validate UUID from apiID path
+	cleanAPIID := strings.TrimPrefix(apiID, "/")
+	if idx := strings.Index(cleanAPIID, "/"); idx > 0 {
+		cleanAPIID = cleanAPIID[:idx]
+	}
+	
+	// Validate UUID format (basic validation)
+	if len(cleanAPIID) < 32 || len(cleanAPIID) > 40 {
+		h.logger.Warn("invalid API ID format", zap.String("api_id", cleanAPIID))
+		http.Error(w, "Invalid API ID format", http.StatusBadRequest)
 		return nil
 	}
 
-	newConfig.ID = existing.ID
+	// FIXED: Use efficient UUID-based lookup instead of loading all APIs
+	existing, err := h.store.GetAPIByUUID(cleanAPIID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			h.logger.Warn("API not found for update", zap.String("api_id", cleanAPIID))
+			http.Error(w, "API not found", http.StatusNotFound)
+			return nil
+		}
+		h.logger.Error("failed to get API by UUID", zap.Error(err), zap.String("api_id", cleanAPIID))
+		http.Error(w, "Failed to find API", http.StatusInternalServerError)
+		return nil
+	}
 
-	// Update API in database
+	// Set the ID and fix path prefixing (avoid double prefixing)
+	newConfig.ID = existing.ID
+	newConfig.APIKeys = nil
+	
+	// FIXED: Only add prefix if not already present
+	if !strings.HasPrefix(newConfig.Path, "/"+cleanAPIID) {
+		newConfig.Path = "/" + cleanAPIID + newConfig.Path
+	}
+	
+	// Normalize path (remove double slashes)
+	newConfig.Path = strings.ReplaceAll(newConfig.Path, "//", "/")
+
+	h.logger.Info("found existing API", 
+		zap.Uint("id", existing.ID), 
+		zap.String("existing_path", existing.Path),
+		zap.String("new_path", newConfig.Path))
+
+	// FIXED: Distributed transaction pattern with proper rollback
+	// Phase 1: Update database (atomic)
 	if err := h.store.UpdateAPI(newConfig); err != nil {
-		h.logger.Error("failed to update API",
-			zap.Error(err))
+		h.logger.Error("failed to update API in database", zap.Error(err))
 		http.Error(w, "Failed to update API", http.StatusInternalServerError)
 		return nil
 	}
 
-	// Update Caddy configuration
+	// Phase 2: Update Caddy configuration (with rollback on failure)
 	if err := h.updateCaddyfile(*newConfig); err != nil {
-		h.logger.Error("failed to update Caddy config",
-			zap.Error(err))
+		h.logger.Error("failed to update Caddy config, rolling back database", zap.Error(err))
+		
+		// Rollback database changes
+		if rollbackErr := h.store.UpdateAPI(existing); rollbackErr != nil {
+			h.logger.Error("CRITICAL: failed to rollback database", 
+				zap.Error(rollbackErr),
+				zap.String("api_id", cleanAPIID))
+			// System is now inconsistent - alert monitoring
+			http.Error(w, "System inconsistency detected - contact support", http.StatusInternalServerError)
+			return nil
+		}
+		
+		h.logger.Info("successfully rolled back database changes", zap.String("api_id", cleanAPIID))
 		http.Error(w, "Failed to update Caddy configuration", http.StatusInternalServerError)
 		return nil
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	h.logger.Info("API updated successfully", zap.String("api_id", cleanAPIID))
+
+	w.WriteHeader(http.StatusOK)
 	return json.NewEncoder(w).Encode(dto.APIResponseDTO{
 		Status:  "success",
 		Message: "API updated successfully",

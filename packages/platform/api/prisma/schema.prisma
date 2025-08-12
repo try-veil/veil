@@ -474,6 +474,8 @@ model Api {
     specification      Json
     documentationUrl   String? // Added documentationUrl
     requiredHeaders    Json? // Added requiredHeaders
+    queryParams        Json? // Store query parameters as JSON
+    bodyConfig         Json? // Store body configuration as JSON
     status             ApiStatus           @default(ACTIVE)
     subscriptions      Subscription[]
     projectAllowedAPIs ProjectAllowedAPI[] @relation("projectAllowedAPIs")

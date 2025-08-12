@@ -431,16 +431,13 @@ export default function RequestPage() {
       } else {
         // Create new API
         const generatedApiId = crypto.randomUUID();
-        const targetUrlSegments = requestData.target_url.split("/");
-        const targetUrlPart = targetUrlSegments[2] || "";
-        const constructedPath = `${generatedApiId}${requestData.path}`;
 
         const newApiData = {
           ...formData,
           api_id: generatedApiId,
           name: requestData.name,
           description: requestData.description,
-          path: constructedPath,
+          path: requestData.path, // Use clean path without API ID prefix
           target_url: requestData.target_url,
           method: requestData.method.toUpperCase(),
           documentation_url: requestData.documentation_url,

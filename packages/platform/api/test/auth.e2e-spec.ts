@@ -2,14 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AuthModule } from '../src/services/auth/auth.module';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PrismaModule } from '../src/services/prisma/prisma.module';
 
 describe('Authentication (e2e)', () => {
   let app: INestApplication;
-
-  const consumerToken = process.env.E2E_CONSUMER_JWT_TOKEN;
-  const providerToken = process.env.E2E_PROVIDER_JWT_TOKEN;
+  let configService: ConfigService;
+  let consumerToken: string;
+  let providerToken: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -24,7 +24,20 @@ describe('Authentication (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    configService = moduleFixture.get<ConfigService>(ConfigService);
     await app.init();
+
+    // Get tokens via ConfigService
+    consumerToken = configService.get<string>('E2E_CONSUMER_JWT_TOKEN');
+    providerToken = configService.get<string>('E2E_PROVIDER_JWT_TOKEN');
+
+    console.log('Consumer token loaded:', consumerToken ? 'Yes' : 'No');
+    console.log('Provider token loaded:', providerToken ? 'Yes' : 'No');
+
+    if (!consumerToken || !providerToken) {
+      console.warn('JWT tokens not found in environment variables');
+      console.log('Available env vars:', Object.keys(process.env).filter(key => key.includes('JWT')));
+    }
   });
 
   describe('Consumer Authentication', () => {

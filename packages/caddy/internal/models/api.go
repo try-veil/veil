@@ -33,6 +33,38 @@ type APIMethod struct {
 	Method      string `json:"method" gorm:"not null"`
 }
 
+// QueryParameter represents a query parameter
+type QueryParameter struct {
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	Required bool   `json:"required"`
+}
+
+// MultipartField represents a multipart form field
+type MultipartField struct {
+	Name        string `json:"name"`
+	Value       string `json:"value"`
+	Type        string `json:"type"` // "text" or "file"
+	Required    bool   `json:"required"`
+	Description string `json:"description,omitempty"`
+	ContentType string `json:"content_type,omitempty"`
+}
+
+// FormData represents form data key-value pairs
+type FormData struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+// Body represents request body configuration
+type Body struct {
+	Type          string                 `json:"type"`
+	Content       string                 `json:"content,omitempty"`
+	JsonData      map[string]interface{} `json:"json_data,omitempty"`
+	FormData      []FormData             `json:"form_data,omitempty"`
+	MultipartData []MultipartField       `json:"multipart_data,omitempty"`
+}
+
 // APIConfig holds the configuration for a single API route
 type APIConfig struct {
 	gorm.Model
@@ -46,6 +78,8 @@ type APIConfig struct {
 	RequiredHeaders      []string       `json:"required_headers" gorm:"serializer:json"`
 	APIKeys              []APIKey       `json:"api_keys" gorm:"foreignKey:APIConfigID"`
 	ProviderID           string         `json:"provider_id" gorm:"not null"`
+	QueryParams          []QueryParameter `json:"query_params" gorm:"serializer:json"`
+	Body                 *Body          `json:"body" gorm:"serializer:json"`
 }
 
 // APIOnboardRequest represents a request to onboard a new API
