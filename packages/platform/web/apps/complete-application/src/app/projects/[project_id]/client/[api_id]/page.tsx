@@ -307,6 +307,28 @@ export default function RequestPage() {
     return curl;
   };
 
+  const getStatusText = (statusCode: number): string => {
+    const statusTexts: { [key: number]: string } = {
+      200: "OK",
+      201: "Created", 
+      202: "Accepted",
+      204: "No Content",
+      400: "Bad Request",
+      401: "Unauthorized",
+      403: "Forbidden",
+      404: "Not Found",
+      405: "Method Not Allowed",
+      409: "Conflict",
+      422: "Unprocessable Entity",
+      429: "Too Many Requests",
+      500: "Internal Server Error",
+      502: "Bad Gateway",
+      503: "Service Unavailable",
+      504: "Gateway Timeout"
+    };
+    return statusTexts[statusCode] || "Unknown";
+  };
+
   const handleTest = async (testData: TestRequestData) => {
     try {
       const curlCommand = generateCurlCommand(testData);
@@ -328,22 +350,22 @@ export default function RequestPage() {
       const responseData = await response.json();
       console.log("📊 Test API response:", responseData);
 
-      if (!response.ok) {
-        console.log("❌ Test API failed with status:", response.status);
-        throw new Error(responseData.message || "Test API call failed");
-      }
-
-      console.log("✅ Test API successful");
-
+      // Handle both successful and error responses from the API
+      // For error responses, use statusCode field, for success use status field, fallback to HTTP status
+      const actualStatus = responseData.statusCode || responseData.status || response.status;
+      const actualStatusText = getStatusText(actualStatus);
+      
+      console.log("Actual status:", actualStatus, "Status text:", actualStatusText);
+      
       setResponse({
-        status: response.status,
-        statusText: response.statusText,
+        status: actualStatus,
+        statusText: actualStatusText,
         headers: Object.fromEntries(response.headers.entries()),
         data: responseData,
         info: {
           date: new Date().toISOString(),
           url: `${API_BASE_URL}/onboard/test`,
-          status: `${response.status} ${response.statusText}`,
+          status: `${actualStatus} ${actualStatusText}`,
           library: "Fetch API",
           headersResponseTime: "N/A",
           totalResponseTime: "N/A",
@@ -360,6 +382,12 @@ export default function RequestPage() {
           curl: curlCommand,
         },
       });
+
+      if (!response.ok) {
+        console.log("❌ Test API failed with status:", response.status);
+      } else {
+        console.log("✅ Test API successful");
+      }
 
     } catch (error) {
       console.error("Error making test request:", error);
