@@ -4,15 +4,17 @@ import { ROLES_KEY } from './roles.decorator';
 import { AuthGuard } from './auth.guard';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { HttpService } from '@nestjs/axios';
 
 @Injectable()
 export class RoleGuard extends AuthGuard {
   constructor(
     configService: ConfigService,
     prisma: PrismaService,
+    http: HttpService,
     reflector: Reflector,
   ) {
-    super(configService, prisma, reflector);
+    super(configService, prisma, http, reflector);
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
