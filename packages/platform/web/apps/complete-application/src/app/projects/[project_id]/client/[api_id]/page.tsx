@@ -197,6 +197,13 @@ interface OnboardRequestData {
   description: string;
   documentation_url: string;
   required_headers: RequiredHeader[];
+  query_params?: { key: string; value: string }[];
+  body?: {
+    type: string;
+    content: string;
+    form_data?: { key: string; value: string }[];
+    json_data?: any;
+  };
 }
 
 interface TestRequestData {
@@ -238,6 +245,13 @@ export default function RequestPage() {
     description: "",
     documentation_url: "",
     required_headers: [],
+    query_params: [],
+    body: {
+      type: "json",
+      content: "",
+      form_data: [],
+      json_data: null,
+    },
   });
   const router = useRouter();
 
@@ -260,7 +274,23 @@ export default function RequestPage() {
             description: data.description,
             documentation_url: data.documentation_url,
             required_headers: data.required_headers || [],
+            query_params: data.query_params || [],
+            body: data.body ? {
+              type: data.body.type || "json",
+              content: data.body.content || "",
+              form_data: data.body.form_data || [],
+              json_data: data.body.json_data || null,
+            } : {
+              type: "json",
+              content: "",
+              form_data: [],
+              json_data: null,
+            },
           });
+
+          console.log("Fetched API details:", data);
+          console.log("Mapped query_params:", data.query_params);
+          console.log("Mapped body:", data.body);
         } catch (error) {
           console.error("Error fetching API details:", error);
           toast({

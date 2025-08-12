@@ -59,6 +59,13 @@ interface RequestProps {
     method: string;
     version?: string;
     required_headers?: { name: string; value: string; is_variable: boolean }[];
+    query_params?: { key: string; value: string }[];
+    body?: {
+      type: string;
+      content: string;
+      form_data?: { key: string; value: string }[];
+      json_data?: any;
+    };
   };
 }
 
@@ -164,6 +171,13 @@ export default function Request({
           value: h.value,
         })) || []
       );
+      setQueryParams(initialData.query_params || []);
+      setBodyData(initialData.body || {
+        type: "json",
+        content: "",
+        form_data: [],
+        json_data: null,
+      });
     }
   }, [initialData]);
 
