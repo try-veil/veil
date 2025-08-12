@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ interface QueryPair {
 
 interface QueryProps {
   onQueryChange?: (queries: QueryPair[]) => void;
+  initialQueries?: { key: string; value: string }[];
 }
 
 function SortableQueryItem({ query, index, updateQuery, removeQuery }: {
@@ -102,10 +103,19 @@ function SortableQueryItem({ query, index, updateQuery, removeQuery }: {
   );
 }
 
-export function Query({ onQueryChange }: QueryProps) {
-  const [queries, setQueries] = useState<QueryPair[]>([
-    { id: "1", key: "", value: "" }
-  ]);
+export function Query({ onQueryChange, initialQueries }: QueryProps) {
+  const initializedRef = useRef(false);
+  const [queries, setQueries] = useState<QueryPair[]>(() => {
+    if (initialQueries && initialQueries.length > 0) {
+      initializedRef.current = true;
+      return initialQueries.map((query, index) => ({
+        id: (index + 1).toString(),
+        key: query.key,
+        value: query.value
+      }));
+    }
+    return [{ id: "1", key: "", value: "" }];
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -113,6 +123,22 @@ export function Query({ onQueryChange }: QueryProps) {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  // Update queries when initialQueries prop changes (only if not already initialized by user interactions)
+  useEffect(() => {
+    if (!initializedRef.current && initialQueries && initialQueries.length > 0) {
+      const updatedQueries = initialQueries.map((query, index) => ({
+        id: (index + 1).toString(),
+        key: query.key,
+        value: query.value
+      }));
+      setQueries(updatedQueries);
+      initializedRef.current = true;
+    } else if (!initializedRef.current && initialQueries && initialQueries.length === 0) {
+      setQueries([{ id: "1", key: "", value: "" }]);
+      initializedRef.current = true;
+    }
+  }, [initialQueries]);
 
   const notifyQueryChange = (queriesList: QueryPair[]) => {
     if (onQueryChange) {
@@ -127,6 +153,7 @@ export function Query({ onQueryChange }: QueryProps) {
     const newQueries = [...queries, { id: Date.now().toString(), key: "", value: "" }];
     setQueries(newQueries);
     notifyQueryChange(newQueries);
+    initializedRef.current = true; // Mark as initialized by user interaction
   };
 
   const updateQuery = (id: string, field: "key" | "value", value: string) => {
@@ -135,6 +162,7 @@ export function Query({ onQueryChange }: QueryProps) {
     );
     setQueries(newQueries);
     notifyQueryChange(newQueries);
+    initializedRef.current = true; // Mark as initialized by user interaction
   };
 
   const removeQuery = (id: string) => {
