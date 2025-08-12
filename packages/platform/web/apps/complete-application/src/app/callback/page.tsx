@@ -10,7 +10,7 @@ export default function CallbackPage() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState("Processing your login...");
   const { login } = useAuth();
-  const { user } = useUser();
+  const { user, setUser } = useUser();
 
   useEffect(() => {
     if (!searchParams) {
@@ -81,8 +81,9 @@ export default function CallbackPage() {
             // Add any other user properties here that you have
           };
           
-          // Use our auth context to store user data and tokens
-          login(userData, data.accessToken, data.refreshToken || "");
+          // Use our auth context to store tokens and user context to store user data
+          login(data.accessToken, data.refreshToken || "");
+          setUser(userData);
           
           console.log("Login successful, redirecting to:", redirectPath);
           setStatus("Login successful! Redirecting...");

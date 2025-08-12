@@ -3,9 +3,11 @@
 import Navbar from "@/features/home/Navbar";
 import MarketplaceContent from "@/features/marketplace";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@/contexts/UserContext";
 
 export default function Marketplace() {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const { user } = useUser();
 
   return (
     <main>

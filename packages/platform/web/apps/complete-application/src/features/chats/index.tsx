@@ -1,6 +1,5 @@
 "use client"
-import { useState } from 'react'
-import { Fragment } from 'react/jsx-runtime'
+import { useState, Fragment } from 'react'
 import { format } from 'date-fns'
 import {
   IconArrowLeft,

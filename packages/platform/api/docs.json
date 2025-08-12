@@ -5055,11 +5055,6 @@
             "description": "Last update date",
             "example": "2023-01-01T00:00:00Z"
           },
-          "target_url": {
-            "type": "string",
-            "description": "Target URL",
-            "example": "https://api.weather.com/v1"
-          },
           "required_subscription": {
             "type": "string",
             "description": "Required subscription level",
@@ -5114,7 +5109,6 @@
           "status",
           "created_at",
           "updated_at",
-          "target_url",
           "required_subscription",
           "required_headers",
           "parameters"

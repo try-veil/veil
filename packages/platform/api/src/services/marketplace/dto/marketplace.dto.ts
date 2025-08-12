@@ -197,12 +197,6 @@ export class MarketplaceApiDto {
 
 export class MarketplaceApiDetailsDto extends MarketplaceApiDto {
   @ApiProperty({
-    description: 'Target URL',
-    example: 'https://api.weather.com/v1',
-  })
-  target_url: string;
-
-  @ApiProperty({
     description: 'Required subscription level',
     example: 'basic',
   })

@@ -2,10 +2,12 @@
 
 import { useSession } from 'next-auth/react';
 import { useUser } from '@/contexts/UserContext';
+import { useAuth } from "@/contexts/AuthContext";
 
 export function SessionDebug() {
   const { data: session, status } = useSession();
-  const { user, isLoading, isAuthenticated } = useUser();
+  const { user, isLoading } = useUser();
+  const { isAuthenticated } = useAuth();
 
   if (process.env.NODE_ENV === 'production') {
     return null;

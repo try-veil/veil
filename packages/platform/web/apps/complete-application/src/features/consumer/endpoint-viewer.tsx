@@ -21,7 +21,6 @@ interface Endpoint {
   name: string;
   apiId: string;
   version: string;
-  path: string;
 }
 
 interface EndpointViewerProps {
@@ -501,7 +500,6 @@ export default function EndpointViewer({
                   <Button
                     onClick={() => {
                       console.log("endpoint----------->", endpoint);
-                      console.log("path--->", endpoint.path)
 
                       // Generate the test key 
                       const uniqueTestKey = `test-key-${apiDetails?.api_id}`;

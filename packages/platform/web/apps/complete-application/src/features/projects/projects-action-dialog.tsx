@@ -30,7 +30,6 @@ import { createProject } from "@/app/api/project/route";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/contexts/UserContext";
-import { storeUpstreamUrl } from "@/utils/url-utils";
 import {
   SelectItem,
   SelectTrigger,

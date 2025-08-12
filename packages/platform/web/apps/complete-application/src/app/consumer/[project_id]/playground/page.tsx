@@ -2,11 +2,12 @@
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import EndpointViewer from "@/features/consumer/endpoint-viewer";
-import { OnboardAPI, getOnboardAPIById } from "@/app/api/onboard-api/route";
+import { OnboardAPI } from "@/app/api/onboard-api/route";
 import { getAllProjectAPIs } from "@/app/api/consumer/route";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePathname } from "next/navigation";
 import { getMethodColor } from "@/utils/getMethodColor";
+import { getMarketplaceAPIById } from "@/app/api/marketplace/route";
 
 type Endpoint = {
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
@@ -38,7 +39,7 @@ export default function PlaygroundPage() {
       const enrichedEndpoints: Endpoint[] = await Promise.all(
         projectsData.map(async (item: any) => {
           try {
-            const details = await getOnboardAPIById(item.apiId, token);
+            const details = await getMarketplaceAPIById(item.apiId, token);
             return {
               apiId: item.apiId,
               name: details.name ?? item.apiId, // fallback if name missing
@@ -81,7 +82,7 @@ export default function PlaygroundPage() {
         try {
           const token = accessToken;
           if (!token) throw new Error("No authentication token found");
-          const details = await getOnboardAPIById(selectedEndpoint.apiId, token);
+          const details = await getMarketplaceAPIById(selectedEndpoint.apiId, token);
 
           console.log(details);
 
