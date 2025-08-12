@@ -51,6 +51,7 @@ export default function EndpointViewer({
   const [headerValues, setHeaderValues] = useState<Record<string, HeaderValue>>(
     {}
   );
+  const [queryParams, setQueryParams] = useState<Record<string, string>>({});
   const [selectedApp, setSelectedApp] = useState<string>("");
   const [selectedKey, setSelectedKey] = useState<string>("");
   const [selectedUrl, setSelectedUrl] = useState<string>(process.env.NEXT_PUBLIC_VEIL_URL || "https://veil.com");
@@ -66,7 +67,7 @@ export default function EndpointViewer({
     bearer: "Bearer Token",
   };
 
-  // Initialize header values when apiDetails changes
+  // Initialize header values and query parameters when apiDetails changes
   useEffect(() => {
     if (apiDetails?.required_headers) {
       const initialHeaders: Record<string, HeaderValue> = {};
@@ -78,12 +79,29 @@ export default function EndpointViewer({
       });
       setHeaderValues(initialHeaders);
     }
+
+    if (apiDetails?.query_params) {
+      const initialQueryParams: Record<string, string> = {};
+      apiDetails.query_params.forEach((param) => {
+        initialQueryParams[param.key] = param.value || "";
+      });
+      setQueryParams(initialQueryParams);
+    }
   }, [apiDetails]);
 
   const generateCurlCode = () => {
     if (!apiDetails) return "No API details available";
 
-    let curl = `curl -X ${apiDetails.method} '${process.env.NEXT_PUBLIC_VEIL_URL}${apiDetails.path}'`;
+    let url = `${process.env.NEXT_PUBLIC_VEIL_URL}${apiDetails.path}`;
+    
+    // Add query parameters if they exist and have values
+    const validQueryParams = Object.entries(queryParams).filter(([key, value]) => value.trim() !== "");
+    if (validQueryParams.length > 0) {
+      const queryString = validQueryParams.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&');
+      url += `?${queryString}`;
+    }
+
+    let curl = `curl -X ${apiDetails.method} '${url}'`;
 
     // Add headers with current values
     if (apiDetails.required_headers && apiDetails.required_headers.length > 0) {
@@ -128,7 +146,24 @@ export default function EndpointViewer({
 
   const getFullUrl = () => {
     if (!apiDetails?.path) return selectedUrl;
-    return `${selectedUrl}${apiDetails.path}`;
+    
+    let url = `${selectedUrl}${apiDetails.path}`;
+    
+    // Add query parameters if they exist and have values
+    const validQueryParams = Object.entries(queryParams).filter(([key, value]) => value.trim() !== "");
+    if (validQueryParams.length > 0) {
+      const queryString = validQueryParams.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&');
+      url += `?${queryString}`;
+    }
+    
+    return url;
+  };
+
+  const handleQueryParamChange = (key: string, value: string) => {
+    setQueryParams(prev => ({
+      ...prev,
+      [key]: value
+    }));
   };
 
   const handleCopyUrl = async () => {
@@ -349,9 +384,27 @@ export default function EndpointViewer({
             <Card>
               <CardContent className="p-4">
                 <div className="space-y-4">
-                  <p className="text-muted-foreground">
-                    No parameters available
-                  </p>
+                  <p className="font-medium">Query Params</p>
+                  {apiDetails?.query_params && apiDetails.query_params.length > 0 ? (
+                    <div className="space-y-3">
+                      {apiDetails.query_params.map((param) => (
+                        <div key={param.key} className="space-y-2">
+                          <Label htmlFor={param.key}>{param.key}</Label>
+                          <Input
+                            id={param.key}
+                            placeholder={`Enter value for ${param.key}`}
+                            value={queryParams[param.key] || ""}
+                            onChange={(e) => handleQueryParamChange(param.key, e.target.value)}
+                          />
+                          <p className="text-muted-foreground text-xs">Default: {param.value || "N/A"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">
+                      No parameters available
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -514,9 +567,17 @@ export default function EndpointViewer({
                         }))
                       ];
 
+                      // Construct URL with query parameters
+                      let targetUrl = selectedUrl + apiDetails?.path;
+                      const validQueryParams = Object.entries(queryParams).filter(([key, value]) => value.trim() !== "");
+                      if (validQueryParams.length > 0) {
+                        const queryString = validQueryParams.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&');
+                        targetUrl += `?${queryString}`;
+                      }
+
                       const testData: TestRequestData = {
                         method: endpoint?.method || "GET",
-                        target_url: selectedUrl + apiDetails?.path,
+                        target_url: targetUrl,
                         headers: requestHeaders,
                       };
                       handleTest(testData);
