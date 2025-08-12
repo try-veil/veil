@@ -1,4 +1,3 @@
-import { AxiosError } from 'axios'
 import { toast } from '@/hooks/use-toast'
 
 export function handleServerError(error: unknown) {
@@ -16,8 +15,24 @@ export function handleServerError(error: unknown) {
     errMsg = 'Content not found.'
   }
 
-  if (error instanceof AxiosError) {
-    errMsg = error.response?.data.title
+  // Handle standard Error objects
+  if (error instanceof Error) {
+    errMsg = error.message || errMsg
+  }
+
+  // Handle fetch response errors
+  if (
+    error &&
+    typeof error === 'object' &&
+    'response' in error &&
+    error.response &&
+    typeof error.response === 'object' &&
+    'data' in error.response &&
+    error.response.data &&
+    typeof error.response.data === 'object' &&
+    'title' in error.response.data
+  ) {
+    errMsg = error.response.data.title as string
   }
 
   toast({ variant: 'destructive', title: errMsg })

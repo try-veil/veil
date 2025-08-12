@@ -75,7 +75,7 @@ export function useProviderSidebarData() {
           ...(selectedProject?.apis?.map((api) => ({
             title: `${api.name}`,
             url: `/projects/${selectedProject?.id}/client/${api.apiId}`,
-            isRequest:true,
+            isRequest: true as const,
             icon: `${api.method}`,
           })) ?? []),
         ],

@@ -13,7 +13,7 @@ import { TopNav } from '@/components/layout/top-nav'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { Overview } from './components/overview'
+import { DashboardOverview } from './components/overview'
 import { RecentSales } from './components/recent-sales'
 
 export default function Dashboard() {
@@ -166,7 +166,7 @@ export default function Dashboard() {
                   <CardTitle>Overview</CardTitle>
                 </CardHeader>
                 <CardContent className='pl-2'>
-                  <Overview />
+                  <DashboardOverview />
                 </CardContent>
               </Card>
               <Card className='col-span-1 lg:col-span-3'>

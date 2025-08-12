@@ -1,4 +1,3 @@
-import { Outlet } from '@tanstack/react-router'
 import {
   IconBrowserCheck,
   IconNotification,
@@ -14,7 +13,11 @@ import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import SidebarNav from './components/sidebar-nav'
 
-export default function Settings() {
+interface SettingsProps {
+  children?: React.ReactNode
+}
+
+export default function Settings({ children }: SettingsProps) {
   return (
     <>
       {/* ===== Top Heading ===== */}
@@ -41,7 +44,7 @@ export default function Settings() {
             <SidebarNav items={sidebarNavItems} />
           </aside>
           <div className='flex w-full overflow-y-hidden p-1 pr-4'>
-            <Outlet />
+            {children}
           </div>
         </div>
       </Main>
