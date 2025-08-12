@@ -37,7 +37,12 @@ export async function POST(request: Request) {
       }),
     });
 
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonError) {
+      data = {};
+    }
 
     if (response.ok) {
       const accessToken = data.token || data.jwt;
@@ -55,10 +60,24 @@ export async function POST(request: Request) {
         refreshToken
       });
     } else {
+      let errorMessage = "Login failed";
+      
+      if (response.status === 404) {
+        errorMessage = "Invalid email or password";
+      } else if (response.status === 401) {
+        errorMessage = "Invalid email or password";
+      } else if (response.status === 400) {
+        errorMessage = "Please check your email and password";
+      } else if (data.error_description) {
+        errorMessage = data.error_description;
+      } else if (data.error) {
+        errorMessage = data.error;
+      }
+      
       return NextResponse.json(
         {
-          error: data.error,
-          error_description: data.error_description,
+          error: errorMessage,
+          error_description: errorMessage,
         },
         { status: response.status }
       );
