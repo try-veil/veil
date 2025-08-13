@@ -160,14 +160,11 @@ export default function Request({
   >([]);
   const [bodyData, setBodyData] = useState<{
     type: string;
-    content: string;
+    content?: string;
     form_data?: { key: string; value: string }[];
     json_data?: any;
   }>({
-    type: "text",
-    content: "",
-    form_data: [],
-    json_data: null,
+    type: "json", // Only initialize type
   });
   const [isTestLoading, setIsTestLoading] = useState(false);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
@@ -193,9 +190,6 @@ export default function Request({
       setBodyData(
         initialData.body || {
           type: "json",
-          content: "",
-          form_data: [],
-          json_data: null,
         }
       );
     }
@@ -240,10 +234,7 @@ export default function Request({
     setMethod(pendingMethod);
     // Clear body data when changing to GET
     setBodyData({
-      type: "text",
-      content: "",
-      form_data: [],
-      json_data: null,
+      type: "json",
     });
     setShowMethodChangeDialog(false);
     setPendingMethod("");

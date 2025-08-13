@@ -11,14 +11,14 @@ import { GraphQLEditor } from "./graphql-editor";
 interface BodyProps {
   onBodyChange?: (data: {
     type: string;
-    content: string;
+    content?: string;
     form_data?: { key: string; value: string }[];
     multipart_data?: { key: string; value: string }[];
     json_data?: any;
   }) => void;
   initialBodyData?: {
     type: string;
-    content: string;
+    content?: string;
     form_data?: { key: string; value: string }[];
     multipart_data?: { key: string; value: string }[];
     json_data?: any;
@@ -42,13 +42,37 @@ export default function Body({ onBodyChange, initialBodyData }: BodyProps) {
 
   const notifyBodyChange = () => {
     if (onBodyChange) {
-      onBodyChange({
-        type: bodyType,
-        content: bodyType === "text" ? textContent : bodyType === "graphql" ? graphqlContent : "",
-        form_data: bodyType === "form-url-encoded" ? formData : undefined,
-        multipart_data: bodyType === "multipart" ? multipartData : undefined,
-        json_data: bodyType === "json" ? jsonData : undefined,
-      });
+      const bodyData: any = { type: bodyType };
+      
+      switch (bodyType) {
+        case 'json':
+          if (jsonData !== null && jsonData !== undefined) {
+            bodyData.json_data = jsonData;
+          }
+          break;
+        case 'text':
+          if (textContent.trim() !== '') {
+            bodyData.content = textContent;
+          }
+          break;
+        case 'graphql':
+          if (graphqlContent.trim() !== '') {
+            bodyData.content = graphqlContent;
+          }
+          break;
+        case 'form-url-encoded':
+          if (formData.length > 0) {
+            bodyData.form_data = formData;
+          }
+          break;
+        case 'multipart':
+          if (multipartData.length > 0) {
+            bodyData.multipart_data = multipartData;
+          }
+          break;
+      }
+      
+      onBodyChange(bodyData);
     }
   };
 
