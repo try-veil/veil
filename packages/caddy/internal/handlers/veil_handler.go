@@ -138,54 +138,25 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 		return fmt.Errorf("failed to get current config: %v", err)
 	}
 
-	// Parse upstream URL to get scheme
-	upstreamURL, err := url.Parse(api.Upstream)
-	if err != nil {
-		h.logger.Error("failed to parse upstream URL",
-			zap.Error(err))
-		return fmt.Errorf("failed to parse upstream URL: %v", err)
+	// Create a rewrite configuration to strip ONLY the UUID prefix
+	// Remove any wildcard and trailing slash
+	clean := strings.TrimSuffix(strings.TrimSuffix(api.Path, "*"), "/")
+	
+	// Compute the UUID prefix (first path segment only)
+	parts := strings.Split(strings.TrimPrefix(clean, "/"), "/")
+	uuidPrefix := "/" + parts[0] // e.g. "/85cf88c3-16a6-4fff-b1f1-692922d00193"
+	
+	// Build rewrite handler to strip ONLY the UUID prefix
+	rewriteConfig := fmt.Sprintf(`{
+		"handler": "rewrite",
+		"strip_path_prefix": "%s"
+	}`, uuidPrefix)
+	
+	// Build transportConfig as a field inside reverse_proxy
+	transportConfig := `"transport": { "protocol": "http" },`
+	if strings.HasPrefix(api.Upstream, "https://") {
+		transportConfig = `"transport": { "protocol": "http", "tls": { "insecure_skip_verify": true } },`
 	}
-
-	// Create transport config based on scheme
-	var transportConfig string
-	if upstreamURL.Scheme == "https" {
-		transportConfig = `"transport": {
-			"protocol": "http",
-			"tls": {
-				"insecure_skip_verify": true
-			}
-		},`
-	} else {
-		transportConfig = `"transport": {
-			"protocol": "http"
-		},`
-	}
-
-	// Create a rewrite configuration to strip the API path prefix
-	// Remove any wildcards from the path for the rewrite pattern
-	apiPathForRewrite := strings.TrimSuffix(strings.TrimSuffix(api.Path, "*"), "/")
-
-	// Simply extract the last path segment
-	pathParts := strings.Split(apiPathForRewrite, "/")
-	var lastSegment string
-	if len(pathParts) > 0 {
-		lastSegment = pathParts[len(pathParts)-1]
-	}
-
-	h.logger.Debug("generating rewrite pattern",
-		zap.String("original_path", api.Path),
-		zap.String("rewrite_path", apiPathForRewrite),
-		zap.String("last_segment", lastSegment))
-
-	// Create a rewrite rule with a direct replacement without capture groups
-	rewriteConfig := fmt.Sprintf(`"rewrite": {
-		"path_regexp": [
-			{
-				"find": "^%s",
-				"replace": "/%s"
-			}
-		]
-	},`, apiPathForRewrite, lastSegment)
 
 	// Get the list of methods from the API config
 	methodsList := []string{}
@@ -213,57 +184,79 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 	h.logger.Debug("configuring path patterns",
 		zap.String("original_path", api.Path),
 		zap.String("matching_path", apiPathForMatching),
-		zap.String("rewrite_path", apiPathForRewrite))
+		zap.String("rewrite_path", uuidPrefix))
 
-	// Create the new route JSON with CORS headers
-	newRouteJSON := fmt.Sprintf(`{
-		"match": [
-			{
-				"method": [%s],
-				"path": ["%s"]
-			}
-		],
-		"handle": [
-			{
+		newRouteJSON := fmt.Sprintf(`{
+			"match": [ { "path": ["%s"] } ],
+			"handle": [
+			  {
 				"handler": "subroute",
 				"routes": [
-					{
-						"handle": [
-							{
-								"handler": "headers",
-								"response": {
-									"set": {
-										"Access-Control-Allow-Origin": ["*"],
-										"Access-Control-Allow-Credentials": ["true"]
-									}
-								}
-							},
-							{
-								"handler": "veil_handler",
-								"db_path": "./veil.db",
-								"subscription_key": "X-Subscription-Key"
-							},
-							{
-								"handler": "reverse_proxy",
-								%s
-								%s
-								"upstreams": [{"dial": "%s"}],
-								"headers": {
-									"request": {
-										"set": {
-											"Host": ["%s"]
-										}
-									}
-								}
-							}
-						]
-					}
+				  {
+					"match": [ { "method": ["OPTIONS"], "path": ["%s"] } ],
+					"handle": [
+					  {
+						"handler": "headers",
+						"response": {
+						  "delete": ["Access-Control-Allow-Origin","Access-Control-Allow-Credentials","Vary"],
+						  "set": {
+							"Access-Control-Allow-Origin": ["{http.request.header.Origin}"],
+							"Access-Control-Allow-Credentials": ["true"],
+							"Access-Control-Allow-Methods": ["GET","POST","PUT","DELETE","PATCH","OPTIONS"],
+							"Access-Control-Allow-Headers": ["{http.request.header.Access-Control-Request-Headers}"],
+							"Access-Control-Max-Age": ["86400"],
+							"Vary": ["Origin"]
+						  }
+						}
+					  },
+					  { "handler": "static_response", "status_code": 204 }
+					],
+					"terminal": true
+				  },
+				  {
+					"match": [ { "method": [%s], "path": ["%s"] } ],
+					"handle": [
+					  {
+						"handler": "headers",
+						"response": {
+						  "delete": ["Access-Control-Allow-Origin","Access-Control-Allow-Credentials","Vary"],
+						  "set": {
+							"Access-Control-Allow-Origin": ["{http.request.header.Origin}"],
+							"Access-Control-Allow-Credentials": ["true"],
+							"Vary": ["Origin"]
+						  }
+						}
+					  },
+					  {
+						"handler": "veil_handler",
+						"db_path": "./veil.db",
+						"subscription_key": "X-Subscription-Key"
+					  },
+					  %s,
+					  {
+						"handler": "reverse_proxy",
+						%s
+						"upstreams": [ { "dial": "%s" } ],
+						"headers": { "request": { "set": { "Host": ["%s"] } } }
+					  }
+					],
+					"terminal": true
+				  }
 				]
-			}
-		],
-		"terminal": true
-	}`, methodsJSON, apiPathForMatching, transportConfig, rewriteConfig, h.getUpstreamDialAddress(api.Upstream), h.getUpstreamHost(api.Upstream))
-
+			  }
+			],
+			"terminal": true
+		  }`,
+			apiPathForMatching,                     // 1: outer path
+			apiPathForMatching,                     // 2: OPTIONS path
+			methodsJSON,                            // 3: method list
+			apiPathForMatching,                     // 4: main path
+			rewriteConfig,                          // 5: rewrite handler JSON (+ comma)
+			transportConfig,                        // 6: transport JSON (+ comma)
+			h.getUpstreamDialAddress(api.Upstream), // 7: upstream dial
+			h.getUpstreamHost(api.Upstream),        // 8: upstream Host
+		  )
+		  
 	var newRoute map[string]interface{}
 	if err := json.Unmarshal([]byte(newRouteJSON), &newRoute); err != nil {
 		h.logger.Error("failed to unmarshal new route",
@@ -307,15 +300,50 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 		return fmt.Errorf("servers section not found in config")
 	}
 
-	// Get srv1 (onboarded APIs server)
-	srv1, ok := servers["srv1"].(map[string]interface{})
-	if !ok {
-		h.logger.Error("srv1 not found in config")
-		return fmt.Errorf("srv1 not found in config")
+	// Find the server that listens on :2021 (don't assume name "srv1")
+	var targetServerName string
+	var targetServer map[string]interface{}
+	
+	for serverName, serverInterface := range servers {
+		server, ok := serverInterface.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		
+		listenArray, ok := server["listen"].([]interface{})
+		if !ok {
+			continue
+		}
+		
+		// Check if this server listens on :2021
+		for _, listenInterface := range listenArray {
+			if listenStr, ok := listenInterface.(string); ok {
+				if strings.HasSuffix(listenStr, ":2021") {
+					targetServerName = serverName
+					targetServer = server
+					break
+				}
+			}
+		}
+		
+		if targetServer != nil {
+			break
+		}
+	}
+	
+	// If no server found listening on :2021, create one
+	if targetServer == nil {
+		h.logger.Info("no server found listening on :2021, creating new one")
+		targetServer = map[string]interface{}{
+			"listen": []interface{}{":2021"},
+			"routes": make([]interface{}, 0),
+		}
+		targetServerName = "gateway2021"
+		servers[targetServerName] = targetServer
 	}
 
 	// Get the routes array
-	routes, ok := srv1["routes"].([]interface{})
+	routes, ok := targetServer["routes"].([]interface{})
 	if !ok {
 		routes = make([]interface{}, 0)
 	}
@@ -364,8 +392,8 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 	}
 
 	// Update the routes in the config
-	srv1["routes"] = routes
-	servers["srv1"] = srv1
+	targetServer["routes"] = routes
+	servers[targetServerName] = targetServer
 	httpApp["servers"] = servers
 	apps["http"] = httpApp
 	currentConfigMap["apps"] = apps

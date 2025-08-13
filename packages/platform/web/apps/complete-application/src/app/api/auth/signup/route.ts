@@ -40,7 +40,7 @@ export async function POST(req: Request) {
           password,
           username: email, 
           firstName: email.split("@")[0] || "User", 
-          lastName: "User", 
+          lastName: "", 
         },
         registration: {
           applicationId: clientId,

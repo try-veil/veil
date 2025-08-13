@@ -10,26 +10,35 @@ import * as jwt from 'jsonwebtoken';
 import * as jwksClient from 'jwks-rsa';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 
 interface JWTPayload {
   aud: string;
   exp: number;
   iat: number;
   iss: string;
-  sub: string;
+  sub: string; // FusionAuth user id
   jti: string;
   authenticationType: string;
   applicationId: string;
   roles: string[];
   auth_time: number;
   tid: string;
-  // Optional fields that might be present in the JWT
+  // Optional, may or may not be present in JWT
   name?: string;
   email?: string;
 }
 
-export const Role = (role: 'consumer' | 'provider') =>
-  SetMetadata('role', role);
+type FusionAuthUser = {
+  id: string;
+  email?: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+};
+
+export const Role = (role: 'consumer' | 'provider') => SetMetadata('role', role);
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -38,6 +47,7 @@ export class AuthGuard implements CanActivate {
   constructor(
     private configService: ConfigService,
     private prisma: PrismaService,
+    private http: HttpService,
     protected reflector?: Reflector,
   ) {
     this.jwksClient = jwksClient({
@@ -47,133 +57,186 @@ export class AuthGuard implements CanActivate {
     });
   }
 
+  // ---------- JWT verification via JWKS ----------
+
   private async getKey(kid: string): Promise<string> {
     try {
       const key = await this.jwksClient.getSigningKey(kid);
       return key.getPublicKey();
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Unable to get signing key');
     }
   }
 
   private async validateToken(token: string): Promise<JWTPayload> {
     try {
-      // Decode the token header to get the key ID (kid)
-      const decodedHeader = jwt.decode(token, { complete: true });
-      if (!decodedHeader || !decodedHeader.header.kid) {
+      const decodedHeader = jwt.decode(token, { complete: true }) as
+        | { header: { kid?: string } }
+        | null;
+
+      if (!decodedHeader?.header?.kid) {
         throw new UnauthorizedException('Invalid token format');
       }
 
-      // Get the public key
       const publicKey = await this.getKey(decodedHeader.header.kid);
-
-      // Verify the token
       const decoded = jwt.verify(token, publicKey) as JWTPayload;
 
-      // Check if token is expired
       if (decoded.exp < Date.now() / 1000) {
         throw new UnauthorizedException('Token expired');
       }
 
       return decoded;
     } catch (error) {
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      }
+      if (error instanceof UnauthorizedException) throw error;
       throw new UnauthorizedException('Invalid token');
     }
   }
 
+  // ---------- FusionAuth Admin API helpers ----------
+
+  private fusionAuthHeaders() {
+    const apiKey = this.configService.get<string>('FUSIONAUTH_API_KEY');
+    const tenantId = this.configService.get<string>('FUSIONAUTH_TENANT_ID');
+    if (!apiKey) {
+      // We still allow fallback to JWT claims if API key is not set.
+      return null;
+    }
+    return {
+      Authorization: apiKey,
+      'X-FusionAuth-TenantId': tenantId ?? '',
+      'Content-Type': 'application/json',
+    };
+  }
+
+  private async fetchFusionAuthUser(
+    fusionAuthUserId: string,
+  ): Promise<FusionAuthUser | null> {
+    const baseUrl = this.configService.get<string>('FUSIONAUTH_URL');
+    const headers = this.fusionAuthHeaders();
+
+    if (!baseUrl || !headers) return null;
+
+    try {
+      const url = `${baseUrl.replace(/\/+$/, '')}/api/user/${fusionAuthUserId}`;
+      const { data } = await firstValueFrom(this.http.get(url, { headers }));
+      // FusionAuth returns { user: {...} }
+      const faUser = (data?.user ?? {}) as FusionAuthUser;
+      if (!faUser?.id) return null;
+      return faUser;
+    } catch {
+      // 404 or any other error → just fall back to JWT claims
+      return null;
+    }
+  }
+
+  private slugify(input: string) {
+    return input.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
+  // ---------- Local user upsert based on FA (or JWT fallback) ----------
+
   private async createOrValidateUser(payload: JWTPayload) {
     try {
-      // Check if user exists by fusionAuthId
-      let user = await this.prisma.user.findUnique({
+      const fa = await this.fetchFusionAuthUser(payload.sub);
+
+      // Build canonical fields (prefer FusionAuth Admin API data)
+      const email =
+        fa?.email ??
+        payload.email ??
+        `user_${payload.sub.slice(0, 8)}@example.com`;
+
+      const fullName =
+        (fa?.firstName || '') || (fa?.lastName || '')
+          ? `${fa?.firstName ?? ''} ${fa?.lastName ?? ''}`.trim()
+          : payload.name ?? 'Unknown User';
+
+
+
+      const username =
+        fa?.username ?? `user_${(fa?.id || payload.sub).slice(0, 8)}`;
+
+      const slugifiedName = this.slugify(
+        (fullName && fullName.length > 0 ? fullName : username) ||
+        `user-${payload.sub.slice(0, 8)}`,
+      );
+
+
+
+      // Upsert keeps local DB authoritative while syncing latest FA data
+      const user = await this.prisma.user.upsert({
         where: { fusionAuthId: payload.sub },
+        update: {
+          // update only fields we control from identity provider
+          name: fullName,
+          email,
+          username,
+          slugifiedName,
+        },
+        create: {
+          fusionAuthId: payload.sub,
+          name: fullName,
+          email,
+          username,
+          slugifiedName,
+          type: 'USER',
+        },
       });
 
-      if (!user) {
-        // Create new user with data from JWT
-        user = await this.prisma.user.create({
-          data: {
-            fusionAuthId: payload.sub,
-            name: payload.name || 'Unknown User',
-            username: `user_${payload.sub.slice(0, 8)}`,
-            email:
-              payload.email || `user_${payload.sub.slice(0, 8)}@example.com`,
-            slugifiedName: `user-${payload.sub.slice(0, 8)}`,
-            type: 'USER',
-          },
-        });
-      }
+
 
       return user;
     } catch (error) {
+      // Last-resort fallback if DB operation fails
+      // (rare, but we keep the error message meaningful)
+      // eslint-disable-next-line no-console
       console.error('Error in createOrValidateUser:', error);
       throw new UnauthorizedException('Failed to validate user');
     }
   }
 
+  // ---------- Role validation ----------
+
   private validateRole(
     payload: JWTPayload,
     requiredRole: 'consumer' | 'provider',
   ): boolean {
-    console.log('Validating role:', {
-      requiredRole,
-      userRoles: payload.roles,
-    });
-
-    // Case-insensitive role check
     const normalizedRequiredRole = requiredRole.toLowerCase();
-    const normalizedUserRoles = payload.roles.map((role) => role.toLowerCase());
+    const normalizedUserRoles = (payload.roles ?? []).map((r) =>
+      r.toLowerCase(),
+    );
 
-    // Check for exact match or equivalent roles
-    const isValid = normalizedUserRoles.some(
+    return normalizedUserRoles.some(
       (role) =>
         role === normalizedRequiredRole ||
         (normalizedRequiredRole === 'provider' && role === 'api_provider') ||
         (normalizedRequiredRole === 'consumer' && role === 'api_consumer'),
     );
-
-    console.log('Role validation result:', isValid);
-    return isValid;
   }
+
+  // ---------- Guard entry ----------
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
+    if (!token) throw new UnauthorizedException('No token provided');
 
-    if (!token) {
-      throw new UnauthorizedException('No token provided');
-    }
+    const payload = await this.validateToken(token);
+    const user = await this.createOrValidateUser(payload);
 
-    try {
-      // Validate the token and get the payload
-      const payload = await this.validateToken(token);
+    // Attach both the DB user and the raw JWT payload
+    request['user'] = { ...user, jwt: payload };
 
-      // Create or validate user and get the user object
-      const user = await this.createOrValidateUser(payload);
-
-      // Attach both the JWT payload and the user object to the request
-      request['user'] = {
-        ...user,
-        jwt: payload,
-      };
-
-      if (this.reflector) {
-        const requiredRole = this.reflector.get<'consumer' | 'provider'>(
-          'role',
-          context.getHandler(),
-        );
-        if (requiredRole && !this.validateRole(payload, requiredRole)) {
-          console.log('Role validation failed: 1');
-          return false;
-        }
+    if (this.reflector) {
+      const requiredRole = this.reflector.get<'consumer' | 'provider'>(
+        'role',
+        context.getHandler(),
+      );
+      if (requiredRole && !this.validateRole(payload, requiredRole)) {
+        return false;
       }
-
-      return true;
-    } catch (error) {
-      throw new UnauthorizedException('Invalid token');
     }
+
+    return true;
   }
 
   private extractTokenFromHeader(request: any): string | undefined {

@@ -24,18 +24,17 @@
         format console
         level DEBUG
     }
-    
+
     # Handle CORS preflight requests
     @options method OPTIONS
     handle @options {
-        header Access-Control-Allow-Origin "*"
-        header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-        header Access-Control-Allow-Headers "Content-Type, Authorization, X-Subscription-Key, X-Requested-With"
+        header Access-Control-Allow-Origin "{http.request.header.Origin}"
         header Access-Control-Allow-Credentials "true"
-        respond "" 200
+        header Vary "Origin"
+        header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+        header Access-Control-Allow-Headers "{http.request.header.Access-Control-Request-Headers}"
+        respond "" 204
     }
-    
-    # Add CORS headers to all responses
-    header Access-Control-Allow-Origin "*"
-    header Access-Control-Allow-Credentials "true"
+
+    # No global ACAO/credentials headers here — let your dynamic routes set them.
 }
