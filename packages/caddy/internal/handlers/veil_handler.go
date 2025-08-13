@@ -827,7 +827,6 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		zap.String("upstream", req.Upstream),
 		zap.Any("methods", req.Methods),
 		zap.Any("required_headers", req.RequiredHeaders),
-		zap.Any("parameters", req.Parameters),
 		zap.Int("api_keys_count", len(req.APIKeys)),
 		zap.Bool("has_body", req.Body != nil))
 
@@ -905,15 +904,6 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		})
 	}
 
-	// Create API parameters
-	for _, param := range req.Parameters {
-		config.Parameters = append(config.Parameters, models.APIParameter{
-			Name:     param.Name,
-			Type:     param.Type,
-			Required: param.Required,
-		})
-	}
-
 	// Create API keys only on POST (creation)
 	if r.Method == http.MethodPost {
 		for _, key := range req.APIKeys {
@@ -933,7 +923,6 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		zap.String("path", config.Path),
 		zap.String("upstream", config.Upstream),
 		zap.Int("methods_count", len(config.Methods)),
-		zap.Int("parameters_count", len(config.Parameters)),
 		zap.Int("api_keys_count", len(config.APIKeys)))
 
 	// For PATCH/PUT requests with an API ID, update existing API

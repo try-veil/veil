@@ -16,15 +16,7 @@ type APIKey struct {
 	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
 }
 
-// APIParameter represents a parameter configuration for an API
-type APIParameter struct {
-	gorm.Model
-	APIConfigID uint   `json:"api_config_id" gorm:"index"`
-	Name        string `json:"name" gorm:"not null"`
-	Type        string `json:"type" gorm:"not null"` // query, path, header, body
-	Required    bool   `json:"required" gorm:"default:false"`
-	Validation  string `json:"validation"` // regex pattern for validation
-}
+
 
 // APIMethod represents allowed HTTP methods for an API
 type APIMethod struct {
@@ -73,7 +65,7 @@ type APIConfig struct {
 	LastAccessed         time.Time      `json:"last_accessed"`
 	RequestCount         int64          `json:"request_count" gorm:"default:0"`
 	Methods              []APIMethod    `json:"methods" gorm:"foreignKey:APIConfigID"`
-	Parameters           []APIParameter `json:"parameters" gorm:"foreignKey:APIConfigID"`
+
 	RequiredHeaders      []string       `json:"required_headers" gorm:"serializer:json"`
 	APIKeys              []APIKey       `json:"api_keys" gorm:"foreignKey:APIConfigID"`
 	ProviderID           string         `json:"provider_id" gorm:"not null"`
@@ -87,7 +79,7 @@ type APIOnboardRequest struct {
 	Upstream             string         `json:"upstream"`
 	RequiredSubscription string         `json:"required_subscription"`
 	Methods              []string       `json:"methods"`
-	Parameters           []APIParameter `json:"parameters"`
+
 	RequiredHeaders      []string       `json:"required_headers"`
 	APIKeys              []APIKey       `json:"api_keys"`
 }

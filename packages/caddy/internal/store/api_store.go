@@ -75,7 +75,6 @@ func (s *APIStore) GetAPIByPath(path string) (*models.APIConfig, error) {
 
 	var configs []models.APIConfig
 	err := s.db.Preload("Methods").
-		Preload("Parameters").
 		Preload("APIKeys").
 		Find(&configs).Error
 	if err != nil {
@@ -230,7 +229,6 @@ func (s *APIStore) UpdateAPIStats(path string) error {
 func (s *APIStore) ListAPIs() ([]models.APIConfig, error) {
 	var configs []models.APIConfig
 	err := s.db.Preload("Methods").
-		Preload("Parameters").
 		Preload("APIKeys").
 		Find(&configs).Error
 
@@ -282,7 +280,7 @@ func (s *APIStore) AutoMigrate() error {
 	err := s.db.AutoMigrate(
 		&models.APIConfig{},
 		&models.APIMethod{},
-		&models.APIParameter{},
+		
 		&models.APIKey{},
 	)
 
@@ -311,7 +309,7 @@ func (s *APIStore) UpdateAPI(config *models.APIConfig) error {
 	}
 
 // Update API config first (never cascade into associations)
-	if err := tx.Omit("APIKeys", "Methods", "Parameters").Save(config).Error; err != nil {
+	if err := tx.Omit("APIKeys", "Methods").Save(config).Error; err != nil {
 		tx.Rollback()
 		s.logger.Error("failed to update API configuration",
 			zap.Error(err),

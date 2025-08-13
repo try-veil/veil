@@ -2,7 +2,6 @@ import {
   IsString,
   IsArray,
   IsOptional,
-  IsUrl,
   ValidateNested,
   IsBoolean,
   IsNumber,
@@ -26,23 +25,6 @@ export class HeaderParameterDto {
   })
   @IsBoolean()
   is_variable: boolean;
-}
-
-export class ParameterDto {
-  @ApiProperty({ description: 'Name of the parameter', example: 'location' })
-  @IsString()
-  name: string;
-
-  @ApiProperty({ description: 'Type of the parameter', example: 'string' })
-  @IsString()
-  type: string;
-
-  @ApiProperty({
-    description: 'Whether the parameter is required',
-    example: false,
-  })
-  @IsBoolean()
-  required: boolean;
 }
 
 export class ApiKeyDto {
@@ -223,16 +205,6 @@ export class ApiRegistrationRequestDto {
   required_subscription?: string;
 
   @ApiPropertyOptional({
-    description: 'Parameters for the API',
-    type: [ParameterDto],
-  })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => ParameterDto)
-  @IsOptional()
-  parameters?: ParameterDto[];
-
-  @ApiPropertyOptional({
     description: 'API keys that can access this API',
     type: [ApiKeyDto],
   })
@@ -299,16 +271,6 @@ export class CaddyOnboardingRequestDto {
   @Type(() => HeaderParameterDto)
   @IsOptional()
   required_headers?: HeaderParameterDto[];
-
-  @ApiPropertyOptional({
-    description: 'Parameters for the API',
-    type: [ParameterDto],
-  })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => ParameterDto)
-  @IsOptional()
-  parameters?: ParameterDto[];
 
   @ApiPropertyOptional({
     description: 'API keys that can access this API',
@@ -472,12 +434,6 @@ export class ApiDetailsResponseDto {
     example: '2023-01-01T00:00:00Z',
   })
   updated_at: Date;
-
-  @ApiPropertyOptional({
-    description: 'Parameters for the API',
-    type: [ParameterDto],
-  })
-  parameters?: ParameterDto[];
 
   @ApiPropertyOptional({
     description: 'Query parameters',

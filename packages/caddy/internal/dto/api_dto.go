@@ -19,7 +19,7 @@ type APIOnboardRequestDTO struct {
 	RequiredSubscription string              `json:"required_subscription"`
 	Methods              []string            `json:"methods" binding:"required"`
 	RequiredHeaders      []string            `json:"required_headers"`
-	Parameters           []ParameterDTO      `json:"parameters"`
+
 	APIKeys              []APIKeyDTO         `json:"api_keys"`
 	ProviderID           string              `json:"provider_id" binding:"required"`
 	QueryParams          []QueryParameterDTO `json:"query_params,omitempty"`
@@ -46,12 +46,7 @@ type APIResponseDTO struct {
 	API     interface{} `json:"api,omitempty"`
 }
 
-// ParameterDTO represents an API parameter in requests and responses
-type ParameterDTO struct {
-	Name     string `json:"name"`
-	Type     string `json:"type"` // query, path, header, body
-	Required bool   `json:"required"`
-}
+
 
 // QueryParameterDTO represents a query parameter
 type QueryParameterDTO struct {

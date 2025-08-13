@@ -92,7 +92,6 @@ export class OnboardingService {
           ...(request.specification || {}),
           target_url: request.target_url,
           required_subscription: request.required_subscription,
-          parameters: request.parameters || [],
           original_path: request.path, // Store the original path for reference
         },
         status: 'ACTIVE',
@@ -122,7 +121,6 @@ export class OnboardingService {
           ...(request.specification || {}),
           target_url: request.target_url,
           required_subscription: request.required_subscription,
-          parameters: request.parameters || [],
           original_path: request.path, // Store the original path for reference
         },
         status: 'ACTIVE',
@@ -203,7 +201,7 @@ export class OnboardingService {
       method: request.method,
       required_subscription: request.required_subscription,
       required_headers: request.required_headers,
-      parameters: request.parameters,
+
       api_keys: apiKeys,
       // Include additional context fields
       provider_id: providerId,
@@ -291,7 +289,6 @@ export class OnboardingService {
     if (request.target_url !== undefined) spec.target_url = request.target_url;
     if (request.required_subscription !== undefined)
       spec.required_subscription = request.required_subscription;
-    if (request.parameters !== undefined) spec.parameters = request.parameters;
     if (request.path !== undefined) spec.original_path = request.path; // Store original path
     if (Object.keys(spec).length) data.specification = spec;
 
@@ -328,7 +325,6 @@ export class OnboardingService {
       gatewayBody.method = existing.method;
     }
     if (spec.required_subscription) gatewayBody.required_subscription = spec.required_subscription;
-    if (spec.parameters) gatewayBody.parameters = spec.parameters;
     // if (keys.length) gatewayBody.api_keys = keys;
     if (request.required_headers !== undefined) gatewayBody.required_headers = request.required_headers;
     if (request.body !== undefined) gatewayBody.body = request.body;
@@ -389,7 +385,6 @@ export class OnboardingService {
       required_subscription: (updated.specification as any)?.required_subscription,
       documentation_url: updated.documentationUrl,
       required_headers: headerList,
-      parameters: (updated.specification as any)?.parameters || [],
       query_params: updated.queryParams as any || [],
       body: updated.bodyConfig as any || null,
       status: updated.status,
@@ -455,7 +450,6 @@ export class OnboardingService {
         api.specification?.required_subscription || 'basic', // Extract from specification
       documentation_url: api.documentationUrl,
       required_headers: headers,
-      parameters: parameters,
       query_params: api.queryParams as any || [],
       body: api.bodyConfig as any || null,
       status: api.status,
