@@ -298,12 +298,18 @@ export class MarketplaceService {
     // Extract parameters from specification if available
     const parameters = (api.specification as any)?.parameters || [];
 
+    // Extract query_params and body from the API data
+    const queryParams = api.queryParams ? (api.queryParams as any) : undefined;
+    const bodyConfig = api.bodyConfig ? (api.bodyConfig as any) : undefined;
+
     return {
       ...baseApi,
       required_subscription:
         (api.specification as any)?.required_subscription || 'basic',
       required_headers: headers,
       parameters: parameters,
+      query_params: queryParams,
+      body: bodyConfig,
     };
   }
 
