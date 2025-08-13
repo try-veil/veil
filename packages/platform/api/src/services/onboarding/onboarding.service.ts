@@ -484,7 +484,8 @@ export class OnboardingService {
     }
 
     // Increment usage
-    await this.cacheManager.set(cacheKey, currentUsage + 1, 18000); // 5 hours TTL
+    const FIVE_HOURS_MS = 5 * 60 * 60 * 1000;
+    await this.cacheManager.set(cacheKey, currentUsage + 1, FIVE_HOURS_MS); // 5 hours TTL
 
     // Prepare headers for the Caddy gateway
     const headers: Record<string, string> = {

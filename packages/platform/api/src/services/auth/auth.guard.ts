@@ -137,22 +137,7 @@ export class AuthGuard implements CanActivate {
 
   private async createOrValidateUser(payload: JWTPayload) {
     try {
-      console.log('🔍 [AuthGuard] JWT Payload data:', {
-        sub: payload.sub,
-        name: payload.name,
-        email: payload.email,
-        roles: payload.roles,
-      });
-
       const fa = await this.fetchFusionAuthUser(payload.sub);
-
-      console.log('🔍 [AuthGuard] FusionAuth API response:', {
-        id: fa?.id,
-        firstName: fa?.firstName,
-        lastName: fa?.lastName,
-        username: fa?.username,
-        email: fa?.email,
-      });
 
       // Build canonical fields (prefer FusionAuth Admin API data)
       const email =
@@ -165,14 +150,7 @@ export class AuthGuard implements CanActivate {
           ? `${fa?.firstName ?? ''} ${fa?.lastName ?? ''}`.trim()
           : payload.name ?? 'Unknown User';
 
-      console.log('🔍 [AuthGuard] Name construction logic:', {
-        'fa?.firstName': fa?.firstName,
-        'fa?.lastName': fa?.lastName,
-        'condition (fa?.firstName || \'\') || (fa?.lastName || \'\')': (fa?.firstName || '') || (fa?.lastName || ''),
-        'firstName + lastName': `${fa?.firstName ?? ''} ${fa?.lastName ?? ''}`.trim(),
-        'payload.name fallback': payload.name,
-        'final fullName': fullName,
-      });
+
 
       const username =
         fa?.username ?? `user_${(fa?.id || payload.sub).slice(0, 8)}`;
@@ -182,12 +160,7 @@ export class AuthGuard implements CanActivate {
         `user-${payload.sub.slice(0, 8)}`,
       );
 
-      console.log('🔍 [AuthGuard] Final user data being saved:', {
-        email,
-        fullName,
-        username,
-        slugifiedName,
-      });
+
 
       // Upsert keeps local DB authoritative while syncing latest FA data
       const user = await this.prisma.user.upsert({
@@ -209,12 +182,7 @@ export class AuthGuard implements CanActivate {
         },
       });
 
-      console.log('🔍 [AuthGuard] User upserted successfully:', {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        username: user.username,
-      });
+
 
       return user;
     } catch (error) {
