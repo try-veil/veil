@@ -55,9 +55,8 @@ type ParameterDTO struct {
 
 // QueryParameterDTO represents a query parameter
 type QueryParameterDTO struct {
-	Name     string `json:"name"`
-	Type     string `json:"type"`
-	Required bool   `json:"required"`
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 // MultipartFieldDTO represents a multipart form field

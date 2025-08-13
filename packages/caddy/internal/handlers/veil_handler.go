@@ -628,18 +628,8 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 		}
 	}
 
-	// Validate query parameters if specified
-	if len(api.QueryParams) > 0 {
-		for _, param := range api.QueryParams {
-			if param.Required && r.URL.Query().Get(param.Name) == "" {
-				h.logger.Debug("missing required query parameter",
-					zap.String("param", param.Name),
-					zap.String("path", r.URL.Path))
-				http.Error(w, fmt.Sprintf("Missing required query parameter: %s", param.Name), http.StatusBadRequest)
-				return nil
-			}
-		}
-	}
+	// Query parameters are now key-value pairs for documentation/testing purposes only
+	// No validation is performed as they are used for API exploration
 
 	// Validate body type if specified
 	if api.Body != nil && r.Method != "GET" {
@@ -862,9 +852,8 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 	var queryParams []models.QueryParameter
 	for _, param := range req.QueryParams {
 		queryParams = append(queryParams, models.QueryParameter{
-			Name:     param.Name,
-			Type:     param.Type,
-			Required: param.Required,
+			Key:   param.Key,
+			Value: param.Value,
 		})
 	}
 

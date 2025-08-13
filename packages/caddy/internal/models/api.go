@@ -35,9 +35,8 @@ type APIMethod struct {
 
 // QueryParameter represents a query parameter
 type QueryParameter struct {
-	Name     string `json:"name"`
-	Type     string `json:"type"`
-	Required bool   `json:"required"`
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 // MultipartField represents a multipart form field

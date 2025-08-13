@@ -60,17 +60,13 @@ export class ApiKeyDto {
 }
 
 export class QueryParameterDto {
-  @ApiProperty({ description: 'Query parameter name', example: 'page' })
+  @ApiProperty({ description: 'Query parameter key', example: 'page' })
   @IsString()
-  name: string;
+  key: string;
 
-  @ApiProperty({ description: 'Query parameter type', example: 'string' })
+  @ApiProperty({ description: 'Query parameter value', example: '1' })
   @IsString()
-  type: string;
-
-  @ApiProperty({ description: 'Whether the query parameter is required', example: false })
-  @IsBoolean()
-  required: boolean;
+  value: string;
 }
 
 export class MultipartFieldDto {
