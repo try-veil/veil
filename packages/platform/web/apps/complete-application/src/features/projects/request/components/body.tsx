@@ -43,7 +43,7 @@ export default function Body({ onBodyChange, initialBodyData }: BodyProps) {
   const notifyBodyChange = () => {
     if (onBodyChange) {
       const bodyData: any = { type: bodyType };
-      
+
       switch (bodyType) {
         case 'json':
           if (jsonData !== null && jsonData !== undefined) {
@@ -71,7 +71,7 @@ export default function Body({ onBodyChange, initialBodyData }: BodyProps) {
           }
           break;
       }
-      
+
       onBodyChange(bodyData);
     }
   };
@@ -135,20 +135,20 @@ export default function Body({ onBodyChange, initialBodyData }: BodyProps) {
           />
         </TabsContent>
         <TabsContent value="json" className="space-y-4">
-          <JsonEditor 
-            onJsonChange={handleJsonChange} 
-            initialJsonData={jsonData} 
+          <JsonEditor
+            onJsonChange={handleJsonChange}
+            initialJsonData={jsonData}
           />
         </TabsContent>
         <TabsContent value="form-url-encoded" className="space-y-4 max-h-[270px] overflow-y-auto">
-          <FormUrlEncoded 
-            onFormDataChange={handleFormDataChange} 
+          <FormUrlEncoded
+            onFormDataChange={handleFormDataChange}
             initialFormData={formData}
           />
         </TabsContent>
         <TabsContent value="multipart" className="space-y-4 max-h-[270px] overflow-y-auto pb-8">
-          <Multipart 
-            onFormDataChange={handleMultipartDataChange} 
+          <Multipart
+            onFormDataChange={handleMultipartDataChange}
             initialFormData={multipartData}
           />
         </TabsContent>

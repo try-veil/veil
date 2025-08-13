@@ -108,6 +108,12 @@ interface TestRequestData {
   required_headers: { name: string; value: string; is_variable: boolean }[];
   description: string;
   documentation_url: string;
+  body?: {
+    type: string;
+    content?: string;
+    form_data?: { key: string; value: string }[];
+    json_data?: any;
+  };
 }
 
 const options = new Map([
@@ -363,6 +369,7 @@ export default function Request({
         })),
         description,
         documentation_url: documentationUrl,
+        body: bodyData,
       };
 
       console.log("🧪 Testing API with payload:", payload);
