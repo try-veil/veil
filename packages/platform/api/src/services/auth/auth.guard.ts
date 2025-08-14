@@ -137,15 +137,12 @@ export class AuthGuard implements CanActivate {
     baseSlugifiedName: string,
     fusionAuthId: string,
   ): Promise<string> {
-    // First, check if the current user already has this slugifiedName
+    // First, check if the current user already has a slugifiedName
     const existingUser = await this.prisma.user.findUnique({
       where: { fusionAuthId },
     });
 
-    if (existingUser?.slugifiedName === baseSlugifiedName) {
-      // Current user already has this slugified name, keep it
-      return baseSlugifiedName;
-    }
+    if (existingUser?.slugifiedName) return existingUser.slugifiedName;
 
     // Check if the base name is available
     const conflictingUser = await this.prisma.user.findUnique({
