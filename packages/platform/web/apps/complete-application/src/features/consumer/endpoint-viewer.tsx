@@ -322,9 +322,39 @@ export default function EndpointViewer({
 
       const response = await fetch(testData.target_url, fetchOptions);
 
-      const responseData = await response.json();
+      let responseData;
+      let parseError = null;
+      
+      // Try to parse JSON, but handle cases where response isn't JSON
+      try {
+        const responseText = await response.text();
+        if (responseText) {
+          responseData = JSON.parse(responseText);
+        } else {
+          responseData = null;
+        }
+      } catch (jsonError) {
+        console.warn('Response is not valid JSON:', jsonError);
+        // If JSON parsing fails, try to get the text content
+        try {
+          const responseText = await response.text();
+          responseData = { 
+            message: 'Response is not valid JSON', 
+            content: responseText,
+            parseError: jsonError.message 
+          };
+          parseError = jsonError.message;
+        } catch (textError) {
+          responseData = { 
+            error: 'Failed to parse response', 
+            jsonError: jsonError.message,
+            textError: textError.message 
+          };
+          parseError = `JSON: ${jsonError.message}, Text: ${textError.message}`;
+        }
+      }
 
-      console.log("^^^^^^^", responseData)
+      console.log("Response data:", responseData)
 
       setResponse({
         status: response.status,
@@ -339,28 +369,40 @@ export default function EndpointViewer({
           headersResponseTime: 'N/A',
           totalResponseTime: 'N/A',
           responseBodySize: 'N/A',
+          parseError: parseError || undefined,
         },
         request: {
           method: testData.method,
           url: testData.target_url,
-          path: apiDetails?.path,
+          path: apiDetails?.path || '/',
           headers: requestHeaders,
           curl: curlCommand
         }
       });
 
-      console.log("@@@@@@", response)
+      console.log("Final response object:", response)
 
     } catch (error) {
-      console.error('Error making test request:', error);
+      console.error('Network or fetch error:', error);
+      
+      // Create a more detailed error response
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      const errorType = error.name || 'NetworkError';
+      
       setResponse({
-        status: 500,
-        statusText: 'Error',
-        data: { error: 'Failed to make test request' },
+        status: 0, // Use 0 to indicate network error, not HTTP error
+        statusText: `Network Error: ${errorType}`,
+        headers: {},
+        data: { 
+          error: 'Network request failed',
+          message: errorMessage,
+          type: errorType,
+          details: 'This is a client-side error, not an HTTP response error'
+        },
         info: {
           date: new Date().toISOString(),
           url: testData.target_url,
-          status: 500,
+          status: `Network Error: ${errorMessage}`,
           library: 'Fetch API',
           headersResponseTime: 'N/A',
           totalResponseTime: 'N/A',
@@ -369,12 +411,11 @@ export default function EndpointViewer({
         request: {
           method: testData.method,
           url: testData.target_url,
-          path: '/',
-          headers: testData.headers,
-          curl: generateCurlCommand(testData)
+          path: apiDetails?.path || '/',
+          headers: testData.headers.reduce((acc, h) => ({ ...acc, [h.name]: h.value }), {}),
+          curl: curlCommand
         }
       });
-      console.log("Res after error:", response)
     }
   };
 

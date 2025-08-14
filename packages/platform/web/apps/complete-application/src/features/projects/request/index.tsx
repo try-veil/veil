@@ -221,7 +221,7 @@ export default function Request({
     if (currentMethodHasBody && newMethodIsGet) {
       // Check if there's actual body content
       const hasBodyContent = 
-        bodyData.content.trim() !== "" ||
+        bodyData?.content?.trim() !== "" ||
         (bodyData.form_data && bodyData.form_data.length > 0) ||
         bodyData.json_data !== null;
       
