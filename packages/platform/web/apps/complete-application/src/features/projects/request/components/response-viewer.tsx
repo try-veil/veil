@@ -44,12 +44,14 @@ export default function ResponseViewer({ isLoading, response }: ResponseViewerPr
   // const [isCodePreviewExpanded, setIsCodePreviewExpanded] = useState(false)
   // const [codeType, setCodeType] = useState("curl")
 
-  const statusColor = response && response.status
-    ? response.status >= 200 && response.status < 300 
-      ? 'bg-green-500' 
-      : response.status >= 400 
-        ? 'bg-red-500' 
-        : 'bg-yellow-500'
+  const statusColor = response && response.status !== undefined
+    ? response.status === 0
+      ? 'bg-orange-500' // Network error
+      : response.status >= 200 && response.status < 300 
+        ? 'bg-green-500' 
+        : response.status >= 400 
+          ? 'bg-red-500' 
+          : 'bg-yellow-500'
     : 'bg-gray-500'
 
   // const generateCodePreview = () => {
@@ -137,8 +139,20 @@ export default function ResponseViewer({ isLoading, response }: ResponseViewerPr
       <div className="flex-none p-4 border-b flex items-center gap-2">
         <div className={`w-3 h-3 rounded-full ${statusColor}`} />
         <div className="font-mono">
-          {response ? `${response.status} ${response.statusText}` : 'No Response'}
+          {response 
+            ? response.status === 0 
+              ? `Network Error: ${response.statusText}` 
+              : `${response.status} ${response.statusText}`
+            : 'No Response'
+          }
         </div>
+        {response?.request?.method && (
+          <div className="ml-auto">
+            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
+              {response.request.method}
+            </span>
+          </div>
+        )}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
@@ -203,11 +217,35 @@ export default function ResponseViewer({ isLoading, response }: ResponseViewerPr
               <div className="space-y-2">
                 <div className="font-medium">Body</div>
                 <div className="space-y-4">
-                  {/* Show only data, usage, and limit */}
+                  {/* Show error information if it's a network error */}
+                  {response?.status === 0 && response?.data?.error && (
+                    <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg">
+                      <div className="text-sm text-orange-600 font-medium mb-2">Network Error Details</div>
+                      <JsonViewer data={response.data} rootName="error" />
+                    </div>
+                  )}
+                  
+                  {/* Show parse error if JSON parsing failed */}
+                  {response?.info?.parseError && (
+                    <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                      <div className="text-sm text-yellow-600 font-medium mb-2">Parse Warning</div>
+                      <div className="text-sm text-yellow-700">{response.info.parseError}</div>
+                    </div>
+                  )}
+
+                  {/* Show only data, usage, and limit for successful responses */}
                   {response?.data?.data && (
                     <div className="space-y-2">
                       <div className="font-medium text-sm">Data</div>
                       <JsonViewer data={response.data.data} rootName="data" />
+                    </div>
+                  )}
+                  
+                  {/* Show full response body if no specific data field */}
+                  {response?.data && !response.data.data && response.status !== 0 && (
+                    <div className="space-y-2">
+                      <div className="font-medium text-sm">Response Body</div>
+                      <JsonViewer data={response.data} rootName="body" />
                     </div>
                   )}
                   
