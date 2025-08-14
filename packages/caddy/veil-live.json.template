@@ -1,0 +1,74 @@
+{
+  "admin": {
+    "listen": "0.0.0.0:2019"
+  },
+  "apps": {
+    "http": {
+      "servers": {
+        "srv0": {
+          "listen": [":2020"],
+          "routes": [
+            {
+              "handle": [
+                {
+                  "db_path": "./veil.db",
+                  "handler": "veil_handler",
+                  "subscription_key": "X-Subscription-Key"
+                }
+              ],
+              "match": [
+                {
+                  "path": ["/veil/api/*"]
+                }
+              ]
+            }
+          ]
+        },
+        "srv1": {
+          "listen": [":2021"],
+          "routes": [
+            {
+              "handle": [
+                {
+                  "handler": "headers",
+                  "response": {
+                    "set": {
+                      "Access-Control-Allow-Credentials": ["true"],
+                      "Access-Control-Allow-Headers": ["{http.request.header.Access-Control-Request-Headers}"],
+                      "Access-Control-Allow-Methods": ["GET, POST, PUT, DELETE, PATCH, OPTIONS"],
+                      "Access-Control-Allow-Origin": ["{http.request.header.Origin}"],
+                      "Vary": ["Origin"]
+                    }
+                  }
+                },
+                {
+                  "handler": "static_response",
+                  "status_code": 204
+                }
+              ],
+              "match": [
+                {
+                  "method": ["OPTIONS"]
+                }
+              ]
+            },
+            {
+              "handle": [
+                {
+                  "db_path": "./veil.db",
+                  "handler": "veil_handler",
+                  "subscription_key": "X-Subscription-Key"
+                }
+              ],
+              "match": [
+                {
+                  "path": ["/*"]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}
