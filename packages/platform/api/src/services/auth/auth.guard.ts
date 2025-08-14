@@ -133,6 +133,51 @@ export class AuthGuard implements CanActivate {
     return input.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-+|-+$/g, '');
   }
 
+  private async generateUniqueSlugifiedName(
+    baseSlugifiedName: string,
+    fusionAuthId: string,
+  ): Promise<string> {
+    // First, check if the current user already has a slugifiedName
+    const existingUser = await this.prisma.user.findUnique({
+      where: { fusionAuthId },
+    });
+
+    if (existingUser?.slugifiedName) return existingUser.slugifiedName;
+
+    // Check if the base name is available
+    const conflictingUser = await this.prisma.user.findUnique({
+      where: { slugifiedName: baseSlugifiedName },
+    });
+
+    if (!conflictingUser) {
+      // Base name is available
+      return baseSlugifiedName;
+    }
+
+    // Generate a unique name by appending numbers
+    let counter = 1;
+    let uniqueName = `${baseSlugifiedName}-${counter}`;
+    
+    while (true) {
+      const existingWithCounter = await this.prisma.user.findUnique({
+        where: { slugifiedName: uniqueName },
+      });
+
+      if (!existingWithCounter) {
+        return uniqueName;
+      }
+
+      counter++;
+      uniqueName = `${baseSlugifiedName}-${counter}`;
+      
+      // Safety check to prevent infinite loops
+      if (counter > 100) {
+        // Use a timestamp-based fallback
+        return `${baseSlugifiedName}-${Date.now()}`;
+      }
+    }
+  }
+
   // ---------- Local user upsert based on FA (or JWT fallback) ----------
 
   private async createOrValidateUser(payload: JWTPayload) {
@@ -155,12 +200,16 @@ export class AuthGuard implements CanActivate {
       const username =
         fa?.username ?? `user_${(fa?.id || payload.sub).slice(0, 8)}`;
 
-      const slugifiedName = this.slugify(
+      const baseSlugifiedName = this.slugify(
         (fullName && fullName.length > 0 ? fullName : username) ||
         `user-${payload.sub.slice(0, 8)}`,
       );
 
-
+      // Generate unique slugified name
+      const slugifiedName = await this.generateUniqueSlugifiedName(
+        baseSlugifiedName,
+        payload.sub,
+      );
 
       // Upsert keeps local DB authoritative while syncing latest FA data
       const user = await this.prisma.user.upsert({
