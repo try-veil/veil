@@ -60,13 +60,19 @@ export async function onboardAPI(data: OnboardAPI, token: string): Promise<Onboa
     console.log('[onboardAPI] Query params:', data.query_params);
     console.log('[onboardAPI] Body data:', data.body);
 
+    // Remove body from data if method is GET
+    const requestData = { ...data };
+    if (data.method.toUpperCase() === 'GET') {
+      delete requestData.body;
+    }
+
     const response = await fetch(`${API_BASE_URL}/onboard`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify(requestData),
     });
 
     const resData = await response.json();
@@ -137,13 +143,19 @@ export async function updateOnboardAPI(apiId: string, data: OnboardUpdateAPI, to
     console.log('[updateOnboardAPI] Query params:', data.query_params);
     console.log('[updateOnboardAPI] Body data:', data.body);
 
+    // Remove body from data if method is GET
+    const requestData = { ...data };
+    if (data.method.toUpperCase() === 'GET') {
+      delete requestData.body;
+    }
+
     const response = await fetch(`${API_BASE_URL}/onboard/api/${apiId}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify(requestData),
     });
 
     const resData = await response.json();
