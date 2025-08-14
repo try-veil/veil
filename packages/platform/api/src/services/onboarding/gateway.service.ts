@@ -61,12 +61,6 @@ export class GatewayService {
         required_subscription: request.required_subscription || 'free',
         methods: [request.method],
         required_headers: request.required_headers?.map((h) => h.name) || [],
-        parameters:
-          request.parameters?.map((p) => ({
-            name: p.name,
-            type: p.type,
-            required: p.required,
-          })) || [],
         api_keys:
           request.api_keys?.map((k) => ({
             key: k.key,
@@ -153,13 +147,13 @@ export class GatewayService {
         veilRequest.required_headers = request.required_headers.map((h) => h.name);
       }
 
-      if (request.parameters && request.parameters.length > 0) {
-        veilRequest.parameters = request.parameters.map((p) => ({
-          name: p.name,
-          type: p.type,
-          required: p.required,
-        }));
-      }
+      // if (request.parameters && request.parameters.length > 0) {
+      //   veilRequest.parameters = request.parameters.map((p) => ({
+      //     name: p.name,
+      //     type: p.type,
+      //     required: p.required,
+      //   }));
+      // }
 
       // CRITICAL FIX: Always send API keys to prevent them from being deleted
       // if (request.api_keys && request.api_keys.length > 0) {
@@ -236,7 +230,6 @@ export class GatewayService {
             method: request.method || 'GET',
             required_subscription: request.required_subscription || 'free',
             required_headers: request.required_headers || [],
-            parameters: request.parameters || [],
             api_keys: request.api_keys || [],
             query_params: request.query_params || [],
             body: this.transformBodyData(request.body) || null,

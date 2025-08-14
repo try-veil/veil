@@ -202,7 +202,31 @@ export default function ResponseViewer({ isLoading, response }: ResponseViewerPr
               
               <div className="space-y-2">
                 <div className="font-medium">Body</div>
-                <JsonViewer data={response?.data || {}} rootName="data" />
+                <div className="space-y-4">
+                  {/* Show only data, usage, and limit */}
+                  {response?.data?.data && (
+                    <div className="space-y-2">
+                      <div className="font-medium text-sm">Data</div>
+                      <JsonViewer data={response.data.data} rootName="data" />
+                    </div>
+                  )}
+                  
+                  <div className="flex gap-4">
+                    {response?.data?.usage !== undefined && (
+                      <div className="bg-blue-50 p-3 rounded-lg">
+                        <div className="text-sm text-blue-600 font-medium">Usage</div>
+                        <div className="text-lg font-semibold">{response.data.usage}</div>
+                      </div>
+                    )}
+                    
+                    {response?.data?.limit !== undefined && (
+                      <div className="bg-green-50 p-3 rounded-lg">
+                        <div className="text-sm text-green-600 font-medium">Limit</div>
+                        <div className="text-lg font-semibold">{response.data.limit}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </TabsContent>

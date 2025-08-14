@@ -108,6 +108,12 @@ interface TestRequestData {
   required_headers: { name: string; value: string; is_variable: boolean }[];
   description: string;
   documentation_url: string;
+  body?: {
+    type: string;
+    content?: string;
+    form_data?: { key: string; value: string }[];
+    json_data?: any;
+  };
 }
 
 const options = new Map([
@@ -160,14 +166,11 @@ export default function Request({
   >([]);
   const [bodyData, setBodyData] = useState<{
     type: string;
-    content: string;
+    content?: string;
     form_data?: { key: string; value: string }[];
     json_data?: any;
   }>({
-    type: "text",
-    content: "",
-    form_data: [],
-    json_data: null,
+    type: "json", // Only initialize type
   });
   const [isTestLoading, setIsTestLoading] = useState(false);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
@@ -193,9 +196,6 @@ export default function Request({
       setBodyData(
         initialData.body || {
           type: "json",
-          content: "",
-          form_data: [],
-          json_data: null,
         }
       );
     }
@@ -240,10 +240,7 @@ export default function Request({
     setMethod(pendingMethod);
     // Clear body data when changing to GET
     setBodyData({
-      type: "text",
-      content: "",
-      form_data: [],
-      json_data: null,
+      type: "json",
     });
     setShowMethodChangeDialog(false);
     setPendingMethod("");
@@ -372,6 +369,7 @@ export default function Request({
         })),
         description,
         documentation_url: documentationUrl,
+        body: bodyData,
       };
 
       console.log("🧪 Testing API with payload:", payload);

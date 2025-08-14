@@ -59,7 +59,6 @@ func (c *VeilConfig) Provision(ctx caddy.Context) error {
 		&models.APIConfig{},
 		&models.APIKey{},
 		&models.APIMethod{},
-		&models.APIParameter{},
 	); err != nil {
 		c.logger.Error("failed to run database migrations",
 			zap.Error(err))

@@ -628,18 +628,8 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 		}
 	}
 
-	// Validate query parameters if specified
-	if len(api.QueryParams) > 0 {
-		for _, param := range api.QueryParams {
-			if param.Required && r.URL.Query().Get(param.Name) == "" {
-				h.logger.Debug("missing required query parameter",
-					zap.String("param", param.Name),
-					zap.String("path", r.URL.Path))
-				http.Error(w, fmt.Sprintf("Missing required query parameter: %s", param.Name), http.StatusBadRequest)
-				return nil
-			}
-		}
-	}
+	// Query parameters are now key-value pairs for documentation/testing purposes only
+	// No validation is performed as they are used for API exploration
 
 	// Validate body type if specified
 	if api.Body != nil && r.Method != "GET" {
@@ -837,7 +827,6 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		zap.String("upstream", req.Upstream),
 		zap.Any("methods", req.Methods),
 		zap.Any("required_headers", req.RequiredHeaders),
-		zap.Any("parameters", req.Parameters),
 		zap.Int("api_keys_count", len(req.APIKeys)),
 		zap.Bool("has_body", req.Body != nil))
 
@@ -862,9 +851,8 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 	var queryParams []models.QueryParameter
 	for _, param := range req.QueryParams {
 		queryParams = append(queryParams, models.QueryParameter{
-			Name:     param.Name,
-			Type:     param.Type,
-			Required: param.Required,
+			Key:   param.Key,
+			Value: param.Value,
 		})
 	}
 
@@ -916,15 +904,6 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		})
 	}
 
-	// Create API parameters
-	for _, param := range req.Parameters {
-		config.Parameters = append(config.Parameters, models.APIParameter{
-			Name:     param.Name,
-			Type:     param.Type,
-			Required: param.Required,
-		})
-	}
-
 	// Create API keys only on POST (creation)
 	if r.Method == http.MethodPost {
 		for _, key := range req.APIKeys {
@@ -944,7 +923,6 @@ func (h *VeilHandler) handleOnboard(w http.ResponseWriter, r *http.Request) erro
 		zap.String("path", config.Path),
 		zap.String("upstream", config.Upstream),
 		zap.Int("methods_count", len(config.Methods)),
-		zap.Int("parameters_count", len(config.Parameters)),
 		zap.Int("api_keys_count", len(config.APIKeys)))
 
 	// For PATCH/PUT requests with an API ID, update existing API
