@@ -69,6 +69,7 @@ export class GatewayService {
           })) || [],
         query_params: request.query_params || [],
         body: this.transformBodyData(request.body) || null,
+        provider_id: request.provider_id,
       };
 
       console.log(
