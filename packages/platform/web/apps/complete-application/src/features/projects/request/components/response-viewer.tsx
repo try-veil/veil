@@ -234,20 +234,20 @@ export default function ResponseViewer({ isLoading, response }: ResponseViewerPr
                   )}
 
                   {/* Show only data, usage, and limit for successful responses */}
-                  {response?.data?.data && (
+                  {response?.data && (
                     <div className="space-y-2">
                       <div className="font-medium text-sm">Data</div>
-                      <JsonViewer data={response.data.data} rootName="data" />
+                      <JsonViewer data={response.data} rootName="data" />
                     </div>
                   )}
                   
-                  {/* Show full response body if no specific data field */}
-                  {response?.data && !response.data.data && response.status !== 0 && (
+                  Show full response body if no specific data field
+                  {/* {response?.data && !response.data.data && response.status !== 0 && (
                     <div className="space-y-2">
                       <div className="font-medium text-sm">Response Body</div>
                       <JsonViewer data={response.data} rootName="body" />
                     </div>
-                  )}
+                  )} */}
                   
                   <div className="flex gap-4">
                     {response?.data?.usage !== undefined && (
