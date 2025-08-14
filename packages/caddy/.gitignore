@@ -1,0 +1,16 @@
+# Runtime configuration files
+veil-live.json
+veil-live.json.tmp
+
+# Database files
+*.db
+
+# Generated config snapshots
+configs/
+
+# Build artifacts
+veil
+veil.exe
+
+# Logs
+*.log

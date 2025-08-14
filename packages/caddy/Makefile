@@ -29,6 +29,12 @@ clean:
 clean-db:
 	rm -f ./*.db
 
+clean-config:
+	@echo "Cleaning autosaved Caddy config..."
+	@if [ -f "$(HOME)/.config/caddy/autosave.json" ]; then rm -f "$(HOME)/.config/caddy/autosave.json"; fi
+	@if [ -f "$(APPDATA)/Caddy/autosave.json" ]; then rm -f "$(APPDATA)/Caddy/autosave.json"; fi
+	@echo "Autosaved config cleaned"
+
 # Run tests with coverage
 test:
 	go test -v -race -coverprofile=coverage.out ./... && go tool cover -func=coverage.out
@@ -50,7 +56,17 @@ test-e2e:
 	./run_e2e_test.sh
 
 run:
-	./veil run --config Caddyfile
+	@if [ ! -f "veil-live.json" ]; then \
+		echo "Creating veil-live.json from template..."; \
+		cp veil-live.json.template veil-live.json; \
+	fi
+	@echo "Validating configuration..."
+	./veil validate --config veil-live.json
+	@echo "Starting Caddy with file-based configuration..."
+	CADDY_CONFIG=veil-live.json ./veil run --config veil-live.json
+
+fresh-start: clean-config run
+	@echo "Starting Caddy with fresh configuration..."
 
 release-dry-run:
 	@docker run \
@@ -86,7 +102,7 @@ watch:
 			if [ ! -f "$$file.timestamp" ] || [ "$$(cat "$$file.timestamp")" != "$$modified_time" ]; then \
 				echo "$$modified_time" > "$$file.timestamp"; \
 				echo "\nChange detected in: $$file"; \
-				make clean-db && make build && make run; \
+				make clean-db && make build && ./veil run --config veil-live.json; \
 			fi; \
 		done; \
 		sleep 1; \
@@ -101,6 +117,10 @@ help:
 	@echo "  build         - Build Caddy with Veil module (Unix/Linux)"
 	@echo "  build-windows - Build Caddy with Veil module (Windows)"
 	@echo "  clean         - Remove build artifacts"
+	@echo "  clean-db      - Remove database files"
+	@echo "  clean-config  - Remove autosaved Caddy config"
+	@echo "  run           - Run Caddy with veil-live.json config"
+	@echo "  fresh-start   - Clean config and start fresh"
 	@echo "  test          - Run tests"
 	@echo "  release       - Create a new release using goreleaser"
 	@echo "  release-dry-run - Test release process without publishing"

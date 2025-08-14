@@ -96,6 +96,45 @@ func (h *VeilHandler) Stop() error {
 	return nil
 }
 
+func (h *VeilHandler) readConfigFromFile() (map[string]interface{}, error) {
+	data, err := os.ReadFile("veil-live.json")
+	if err != nil {
+		h.logger.Error("failed to read config file", zap.Error(err))
+		return nil, fmt.Errorf("failed to read config file: %v", err)
+	}
+	
+	var config map[string]interface{}
+	err = json.Unmarshal(data, &config)
+	if err != nil {
+		h.logger.Error("failed to parse config file", zap.Error(err))
+		return nil, fmt.Errorf("failed to parse config file: %v", err)
+	}
+	
+	h.logger.Debug("successfully read config from file")
+	return config, nil
+}
+
+func (h *VeilHandler) writeConfigFile(data []byte) error {
+	// Write to temp file first for atomic operation
+	tmpFile := "veil-live.json.tmp"
+	err := os.WriteFile(tmpFile, data, 0644)
+	if err != nil {
+		h.logger.Error("failed to write temp config file", zap.Error(err))
+		return fmt.Errorf("failed to write temp config file: %v", err)
+	}
+	
+	// Atomic rename
+	err = os.Rename(tmpFile, "veil-live.json")
+	if err != nil {
+		h.logger.Error("failed to rename config file", zap.Error(err))
+		os.Remove(tmpFile) // cleanup
+		return fmt.Errorf("failed to rename config file: %v", err)
+	}
+	
+	h.logger.Debug("successfully wrote config to file")
+	return nil
+}
+
 // validateAPIKey checks if the provided API key is valid for the given path
 func (h *VeilHandler) validateAPIKey(path string, apiKey string) (*models.APIConfig, error) {
 	if apiKey == "" {
@@ -130,12 +169,10 @@ func (h *VeilHandler) validateAPIKey(path string, apiKey string) (*models.APICon
 
 // updateCaddyfile updates the Caddy configuration with new API routes
 func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
-	// Get current configuration
-	currentConfig, err := h.getCurrentConfig()
+	// Read current configuration from file
+	currentConfigMap, err := h.readConfigFromFile()
 	if err != nil {
-		h.logger.Error("failed to get current config",
-			zap.Error(err))
-		return fmt.Errorf("failed to get current config: %v", err)
+		return fmt.Errorf("failed to read config from file: %v", err)
 	}
 
 	// Create a rewrite configuration to strip ONLY the UUID prefix
@@ -264,20 +301,7 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 		return fmt.Errorf("failed to unmarshal new route: %v", err)
 	}
 
-	// Get the current config as a map
-	var currentConfigMap map[string]interface{}
-	configBytes, err := json.Marshal(currentConfig)
-	if err != nil {
-		h.logger.Error("failed to marshal current config",
-			zap.Error(err))
-		return fmt.Errorf("failed to marshal current config: %v", err)
-	}
-
-	if err := json.Unmarshal(configBytes, &currentConfigMap); err != nil {
-		h.logger.Error("failed to unmarshal current config",
-			zap.Error(err))
-		return fmt.Errorf("failed to unmarshal current config: %v", err)
-	}
+	// currentConfigMap is already available from readConfigFromFile()
 
 	// Get the apps section
 	apps, ok := currentConfigMap["apps"].(map[string]interface{})
@@ -348,8 +372,10 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 		routes = make([]interface{}, 0)
 	}
 
-	// Find if a route with the same path already exists
-	routeExists := false
+	// Find catch-all route index and existing route index
+	catchAllIndex := -1
+	existingRouteIndex := -1
+	
 	for i, route := range routes {
 		routeMap, ok := route.(map[string]interface{})
 		if !ok {
@@ -371,24 +397,38 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 			continue
 		}
 
-		// Check if path with or without wildcard exists
 		if path, ok := paths[0].(string); ok {
-			// Strip wildcard for comparison
+			// Check for catch-all route
+			if path == "/*" {
+				catchAllIndex = i
+				// Remove terminal flag from catch-all to allow fallthrough
+				delete(routeMap, "terminal")
+				continue
+			}
+			
+			// Check if this is our existing route
 			pathWithoutWildcard := strings.TrimSuffix(path, "*")
 			apiPathWithoutWildcard := strings.TrimSuffix(api.Path, "*")
 
 			if pathWithoutWildcard == apiPathWithoutWildcard {
-				// Replace the existing route
-				routes[i] = newRoute
-				routeExists = true
-				break
+				existingRouteIndex = i
 			}
 		}
 	}
 
-	// If route doesn't exist, append it
-	if !routeExists {
-		routes = append(routes, newRoute)
+	// Insert or replace the route
+	if existingRouteIndex >= 0 {
+		// Replace existing route
+		routes[existingRouteIndex] = newRoute
+	} else {
+		// Insert new route before catch-all if it exists, otherwise append
+		if catchAllIndex >= 0 {
+			// Insert before catch-all
+			routes = append(routes[:catchAllIndex], append([]interface{}{newRoute}, routes[catchAllIndex:]...)...)
+		} else {
+			// No catch-all found, just append
+			routes = append(routes, newRoute)
+		}
 	}
 
 	// Update the routes in the config
@@ -397,14 +437,6 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 	httpApp["servers"] = servers
 	apps["http"] = httpApp
 	currentConfigMap["apps"] = apps
-
-	// Convert the updated config back to JSON
-	updatedConfig, err := json.Marshal(currentConfigMap)
-	if err != nil {
-		h.logger.Error("failed to marshal updated config",
-			zap.Error(err))
-		return fmt.Errorf("failed to marshal updated config: %v", err)
-	}
 
 	// Pretty print the current config for debugging
 	formattedConfig, err := json.MarshalIndent(currentConfigMap, "", "  ")
@@ -416,25 +448,30 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 			zap.ByteString("config", formattedConfig))
 	}
 
-	// Load the updated config
-	if err := caddy.Load(updatedConfig, false); err != nil {
-		h.logger.Error("failed to load config",
-			zap.Error(err))
-		return fmt.Errorf("failed to load config: %v", err)
+	// Write updated config to file first
+	updatedJSON, err := json.Marshal(currentConfigMap)
+	if err != nil {
+		return fmt.Errorf("failed to marshal updated config: %v", err)
+	}
+	
+	// Atomic write to file
+	err = h.writeConfigFile(updatedJSON)
+	if err != nil {
+		return fmt.Errorf("failed to write config file: %v", err)
+	}
+	
+	// Apply the configuration to running instance
+	err = caddy.Load(updatedJSON, false)
+	if err != nil {
+		h.logger.Error("failed to hot-load config, but file was updated", zap.Error(err))
+		return fmt.Errorf("failed to load configuration: %v", err)
 	}
 
-	h.logger.Info("successfully updated Caddy configuration",
-		zap.String("path", api.Path),
-		zap.String("upstream", api.Upstream))
-
-	// Save the updated config to a file
-	if err := h.saveCaddyfile(currentConfigMap); err != nil {
-		h.logger.Error("failed to save updated config",
-			zap.Error(err))
-		return fmt.Errorf("failed to save updated config: %v", err)
-	}
-
-	return nil
+	h.logger.Info("successfully updated config file and hot-loaded",
+		zap.String("api_path", api.Path))
+	
+	// Optional: still save snapshot for backup
+	return h.saveCaddyfile(currentConfigMap)
 }
 
 // getCurrentConfig retrieves the current Caddy config
@@ -634,6 +671,10 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 	// Validate body type if specified
 	if api.Body != nil && r.Method != "GET" {
 		contentType := r.Header.Get("Content-Type")
+		h.logger.Debug("validating body type",
+			zap.String("path", r.URL.Path),
+			zap.String("expected_body_type", api.Body.Type),
+			zap.String("content_type", contentType))
 		switch api.Body.Type {
 		case "json":
 			if !strings.Contains(contentType, "application/json") {
@@ -688,7 +729,10 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 				}
 			}
 		case "text":
-			if !strings.Contains(contentType, "text/plain") {
+			if !strings.Contains(contentType, "text/plain") && !strings.Contains(contentType, "text/") {
+				h.logger.Debug("text body type validation failed",
+					zap.String("expected", "text/plain or text/*"),
+					zap.String("actual", contentType))
 				http.Error(w, "Expected text/plain content type", http.StatusBadRequest)
 				return nil
 			}

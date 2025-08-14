@@ -59,7 +59,7 @@ export class GatewayService {
         upstream: request.target_url,
         project_id: request.project_id,
         required_subscription: request.required_subscription || 'free',
-        methods: [request.method],
+        methods: [request.method.toUpperCase()],
         required_headers: request.required_headers?.map((h) => h.name) || [],
         api_keys:
           request.api_keys?.map((k) => ({
@@ -140,7 +140,7 @@ export class GatewayService {
       }
 
       if (request.method) {
-        veilRequest.methods = [request.method];
+        veilRequest.methods = [request.method.toUpperCase()];
       }
 
       if (request.required_headers && request.required_headers.length > 0) {
@@ -227,7 +227,7 @@ export class GatewayService {
           const createRequest: CaddyOnboardingRequestDto = {
             path: request.path || normalizedPath,
             target_url: request.target_url,
-            method: request.method || 'GET',
+            method: request.method ? request.method.toUpperCase() : 'GET',
             required_subscription: request.required_subscription || 'free',
             required_headers: request.required_headers || [],
             api_keys: request.api_keys || [],

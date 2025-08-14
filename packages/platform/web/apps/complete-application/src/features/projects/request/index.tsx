@@ -348,7 +348,7 @@ export default function Request({
   .map(({ key, value }) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
   .join('&');
 
-  const queryPath = path+ `?${queryString}`;
+  const queryPath = queryString.length > 0 ? `${path}?${queryString}` : path;
 
     try {
       const payload = {
