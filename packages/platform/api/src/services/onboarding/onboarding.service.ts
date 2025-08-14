@@ -578,13 +578,35 @@ export class OnboardingService {
           .pipe(
             timeout(30000), // 30 second timeout
             catchError((error) => {
-              this.logger.error('Error calling Caddy gateway', {
-                error: error.message,
-                caddyUrl: url,
-                method: request.method,
-                status: error.response?.status,
-                responseData: error.response?.data,
-              });
+              const status = error.response?.status;
+              const isClientError = status >= 400 && status < 500;
+              
+              if (isClientError) {
+                // 4xx errors are upstream API compatibility issues, not our fault
+                this.logger.warn('Upstream API compatibility issue', {
+                  upstreamUrl: url,
+                  method: request.method,
+                  path: request.path,
+                  status: status,
+                  statusText: error.response?.statusText,
+                  upstreamResponse: error.response?.data,
+                  apiId: request.api_id,
+                  userId: userId,
+                  message: `Upstream API returned ${status} for ${request.method} ${request.path}`
+                });
+              } else {
+                // Network errors or 5xx errors
+                this.logger.error('Error calling Caddy gateway', {
+                  error: error.message,
+                  caddyUrl: url,
+                  method: request.method,
+                  status: error.response?.status,
+                  responseData: error.response?.data,
+                  apiId: request.api_id,
+                  userId: userId,
+                });
+              }
+              
               throw new InternalServerErrorException(
                 `Failed to call Caddy gateway: ${error.message}`,
               );

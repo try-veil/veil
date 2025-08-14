@@ -48,10 +48,12 @@ export default function ResponseViewer({ isLoading, response }: ResponseViewerPr
     ? response.status === 0
       ? 'bg-orange-500' // Network error
       : response.status >= 200 && response.status < 300 
-        ? 'bg-green-500' 
-        : response.status >= 400 
-          ? 'bg-red-500' 
-          : 'bg-yellow-500'
+        ? 'bg-green-500'  // Success
+        : response.status >= 400 && response.status < 500
+          ? 'bg-yellow-500' // Client error (upstream API issue)
+          : response.status >= 500
+            ? 'bg-red-500'   // Server error
+            : 'bg-gray-500'  // Other
     : 'bg-gray-500'
 
   // const generateCodePreview = () => {
@@ -142,7 +144,9 @@ export default function ResponseViewer({ isLoading, response }: ResponseViewerPr
           {response 
             ? response.status === 0 
               ? `Network Error: ${response.statusText}` 
-              : `${response.status} ${response.statusText}`
+              : response.status >= 400 && response.status < 500
+                ? `${response.status} ${response.statusText} (Upstream API Issue)`
+                : `${response.status} ${response.statusText}`
             : 'No Response'
           }
         </div>
@@ -217,6 +221,32 @@ export default function ResponseViewer({ isLoading, response }: ResponseViewerPr
               <div className="space-y-2">
                 <div className="font-medium">Body</div>
                 <div className="space-y-4">
+                  {/* Context messages for different error types */}
+                  {response?.status >= 400 && response?.status < 500 && (
+                    <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <div className="text-sm text-yellow-800">
+                        <strong>Note:</strong> This is a {response.status} error from the upstream API, not your gateway. 
+                        The request was successfully forwarded but the upstream API rejected it.
+                      </div>
+                    </div>
+                  )}
+
+                  {response?.status >= 500 && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="text-sm text-red-800">
+                        <strong>Server Error:</strong> The upstream API is experiencing server issues.
+                      </div>
+                    </div>
+                  )}
+
+                  {response?.status === 0 && (
+                    <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                      <div className="text-sm text-orange-800">
+                        <strong>Network Error:</strong> Unable to connect to the API. Check your network connection.
+                      </div>
+                    </div>
+                  )}
+
                   {/* Show error information if it's a network error */}
                   {response?.status === 0 && response?.data?.error && (
                     <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg">
