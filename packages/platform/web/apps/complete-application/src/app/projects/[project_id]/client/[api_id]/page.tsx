@@ -460,7 +460,7 @@ export default function RequestPage() {
           documentation_url: requestData.documentation_url,
           required_headers,
           query_params: requestData.query_params,
-          body: requestData.body,
+          ...(requestData.method.toUpperCase() !== 'GET' && { body: requestData.body }),
         };
 
         if (accessToken) {
@@ -501,7 +501,7 @@ export default function RequestPage() {
           documentation_url: requestData.documentation_url,
           required_headers,
           query_params: requestData.query_params,
-          body: requestData.body,
+          ...(requestData.method.toUpperCase() !== 'GET' && { body: requestData.body }),
           project_id: Number(params.project_id),
         };
 
