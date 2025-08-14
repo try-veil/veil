@@ -241,7 +241,7 @@ export default function ResponseViewer({ isLoading, response }: ResponseViewerPr
                     </div>
                   )}
                   
-                  Show full response body if no specific data field
+                  {/* Show full response body if no specific data field */}
                   {/* {response?.data && !response.data.data && response.status !== 0 && (
                     <div className="space-y-2">
                       <div className="font-medium text-sm">Response Body</div>
