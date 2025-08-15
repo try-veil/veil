@@ -3854,31 +3854,6 @@
           "is_variable"
         ]
       },
-      "ParameterDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the parameter",
-            "example": "location"
-          },
-          "type": {
-            "type": "string",
-            "description": "Type of the parameter",
-            "example": "string"
-          },
-          "required": {
-            "type": "boolean",
-            "description": "Whether the parameter is required",
-            "example": false
-          }
-        },
-        "required": [
-          "name",
-          "type",
-          "required"
-        ]
-      },
       "ApiKeyDto": {
         "type": "object",
         "properties": {
@@ -3907,26 +3882,20 @@
       "QueryParameterDto": {
         "type": "object",
         "properties": {
-          "name": {
+          "key": {
             "type": "string",
-            "description": "Query parameter name",
+            "description": "Query parameter key",
             "example": "page"
           },
-          "type": {
+          "value": {
             "type": "string",
-            "description": "Query parameter type",
-            "example": "string"
-          },
-          "required": {
-            "type": "boolean",
-            "description": "Whether the query parameter is required",
-            "example": false
+            "description": "Query parameter value",
+            "example": "1"
           }
         },
         "required": [
-          "name",
-          "type",
-          "required"
+          "key",
+          "value"
         ]
       },
       "MultipartFieldDto": {
@@ -4032,7 +4001,7 @@
           },
           "project_id": {
             "type": "number",
-            "description": "Project ID that this API belongs to",
+            "description": "Project ID that this API belongs to (optional for marketplace testing)",
             "example": 1
           },
           "name": {
@@ -4086,13 +4055,6 @@
             "description": "Required subscription level",
             "example": "free"
           },
-          "parameters": {
-            "description": "Parameters for the API",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ParameterDto"
-            }
-          },
           "api_keys": {
             "description": "API keys that can access this API",
             "type": "array",
@@ -4118,7 +4080,6 @@
         },
         "required": [
           "api_id",
-          "project_id",
           "name",
           "path",
           "target_url",
@@ -4238,13 +4199,6 @@
             "type": "string",
             "description": "When the API was last updated",
             "example": "2023-01-01T00:00:00Z"
-          },
-          "parameters": {
-            "description": "Parameters for the API",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ParameterDto"
-            }
           },
           "query_params": {
             "description": "Query parameters",
@@ -4501,6 +4455,38 @@
           "updatedAt",
           "tenantId",
           "apis"
+        ]
+      },
+      "ParameterDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the parameter",
+            "example": "location"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of the parameter",
+            "example": "string",
+            "enum": [
+              "string",
+              "number",
+              "boolean",
+              "array",
+              "object"
+            ]
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether the parameter is required",
+            "example": true
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "required"
         ]
       },
       "ProjectApiDetailsDto": {
