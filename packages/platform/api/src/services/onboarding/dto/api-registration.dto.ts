@@ -128,12 +128,13 @@ export class ApiRegistrationRequestDto {
   @IsString()
   api_id: string;
 
-  @ApiProperty({
-    description: 'Project ID that this API belongs to',
+  @ApiPropertyOptional({
+    description: 'Project ID that this API belongs to (optional for marketplace testing)',
     example: 1,
   })
+  @IsOptional()
   @IsNumber()
-  project_id: number;
+  project_id?: number;
 
   @ApiProperty({
     description: 'Display name of the API',

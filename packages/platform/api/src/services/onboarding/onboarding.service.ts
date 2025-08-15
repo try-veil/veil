@@ -341,7 +341,7 @@ export class OnboardingService {
         gatewayBody as CaddyOnboardingRequestDto,
         existing.path, // Pass the current prefixed path stored in database
       );
-      
+
       // Phase 2: Update database (atomic, fast)
       await this.prisma.$transaction(async tx => {
         await tx.api.update({ where: { id: request.api_id }, data });
@@ -350,12 +350,12 @@ export class OnboardingService {
       });
     } catch (e) {
       this.logger.error('Update failed', e.stack);
-      
+
       // If database update failed after gateway success, we have inconsistency
       if (e.message?.includes('gateway') === false) {
         this.logger.error('CRITICAL: Database update failed after gateway success - system inconsistent');
       }
-      
+
       throw new InternalServerErrorException('Failed to update API');
     }
 
@@ -462,24 +462,34 @@ export class OnboardingService {
     request: ApiRegistrationRequestDto,
     userId: string,
   ): Promise<any> {
-    // Per-test-key rate limiting
-    const uniqueTestKey = 'test-key-' + (request.api_id || request.name.replace(/\s+/g, '_').toLowerCase());
-    this.logger.log(`[testApi] Generated test key: ${uniqueTestKey} for API ID: ${request.api_id}, name: ${request.name}`);
-    const cacheKey = 'test-key-limit:' + uniqueTestKey;
+    // Per-user per-API rate limiting 
+    const apiId = request.api_id || request.name?.replace(/\s+/g, '_').toLowerCase() || 'unknown-api';
+    const cacheKey = `user-api-limit:${userId}:${apiId}`;
+
     const currentUsage = (await this.cacheManager.get<number>(cacheKey)) || 0;
     const testLimit = parseInt(
-      this.configService.get<string>('TEST_API_LIMIT') || '5',
+      this.configService.get<string>('USER_API_TEST_LIMIT') || '5', 
     );
 
+    this.logger.log(`[testApi] Rate limit check - User: ${userId}, API: ${apiId}, Usage: ${currentUsage}/${testLimit}`);
+
     if (currentUsage >= testLimit) {
-      throw new ForbiddenException(
-        'Test API rate limit exceeded for test key. Limit: ' + testLimit + ' requests per 5 hours',
-      );
+      this.logger.warn(`[testApi] Rate limit exceeded for user ${userId}, API ${apiId}. Usage: ${currentUsage}/${testLimit}`);
+      throw new ForbiddenException({
+        message: `API test limit exceeded. You can make ${testLimit} requests per 5 hours per API. Current usage: ${currentUsage}`,
+        error: 'Forbidden',
+        statusCode: 403
+      });
     }
 
-    // Increment usage
-    const FIVE_HOURS_MS = 5 * 60 * 60 * 1000;
-    await this.cacheManager.set(cacheKey, currentUsage + 1, FIVE_HOURS_MS); // 5 hours TTL
+    
+    const FIVE_HOURS_MS = 5 * 60 * 60 * 1000; // 5 hours 
+    const newUsage = currentUsage + 1;
+
+    await this.cacheManager.set(cacheKey, newUsage, FIVE_HOURS_MS);
+
+    // test key for Caddy gateway
+    const uniqueTestKey = 'test-key-' + apiId;
 
     // Prepare headers for the Caddy gateway
     const headers: Record<string, string> = {
@@ -487,7 +497,7 @@ export class OnboardingService {
       'X-Subscription-Key': uniqueTestKey,
     };
 
-    this.logger.log(`[testApi] Using test key for API call: ${uniqueTestKey}`);
+    this.logger.log(`[testApi] Using test key: ${uniqueTestKey}, User: ${userId}, API: ${apiId}`);
 
     // Add required headers from the request
     if (request.required_headers) {
@@ -496,11 +506,20 @@ export class OnboardingService {
       }
     }
 
-    // Build the Caddy gateway URL - use prefixed path to match what was registered
+    // Build the Caddy gateway URL with path cleaning
     const caddyGatewayBase = 'http://localhost:2021';
-    const apiId = request.api_id || request.name.replace(/\s+/g, '_').toLowerCase();
-    const url = caddyGatewayBase + '/' + apiId + request.path;
-    this.logger.log('Making test API call to: ' + url + ' with headers:', headers);
+
+    // Clean the path to avoid double API ID
+    let cleanPath = request.path;
+    if (cleanPath.includes(apiId)) {
+      cleanPath = cleanPath.replace(`/${apiId}`, '').replace(`${apiId}/`, '').replace(apiId, '');
+      if (!cleanPath.startsWith('/')) {
+        cleanPath = '/' + cleanPath;
+      }
+    }
+
+    const url = caddyGatewayBase + '/' + apiId + cleanPath;
+    this.logger.log(`[testApi] Original path: ${request.path}, Cleaned path: ${cleanPath}, Final URL: ${url}`);
     this.logger.log('Request body configuration:', JSON.stringify(request.body, null, 2));
 
     // If body is undefined, try to get it from the database
@@ -580,7 +599,7 @@ export class OnboardingService {
             catchError((error) => {
               const status = error.response?.status;
               const isClientError = status >= 400 && status < 500;
-              
+
               if (isClientError) {
                 // 4xx errors are upstream API compatibility issues, not our fault
                 this.logger.warn('Upstream API compatibility issue', {
@@ -606,7 +625,7 @@ export class OnboardingService {
                   userId: userId,
                 });
               }
-              
+
               throw new InternalServerErrorException(
                 `Failed to call Caddy gateway: ${error.message}`,
               );
@@ -619,8 +638,12 @@ export class OnboardingService {
         data: response.data,
         status: response.status,
         headers: response.headers,
+        url: url, // Caddy gateway URL for frontend display
         usage: currentUsage + 1,
         limit: testLimit,
+        remaining: testLimit - (currentUsage + 1),
+        apiId: apiId,
+        userId: userId,
       };
     } catch (error) {
       if (
@@ -639,4 +662,6 @@ export class OnboardingService {
       throw new InternalServerErrorException('Failed to test API via Caddy');
     }
   }
+
+
 }

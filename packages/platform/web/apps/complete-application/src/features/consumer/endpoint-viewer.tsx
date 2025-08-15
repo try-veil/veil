@@ -16,6 +16,8 @@ import ResponseViewer from "@/features/projects/request/components/response-view
 import Body from "@/features/projects/request/components/body";
 import { Button } from "@/components/ui/button";
 import { Send, Play, Loader2, Copy, Check } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useProject } from "@/context/project-context";
 
 interface Endpoint {
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
@@ -77,6 +79,9 @@ export default function EndpointViewer({
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState("app");
 
+  const { accessToken } = useAuth();
+  const { selectedProject } = useProject();
+
   const authTypes = {
     api_key: "API Key",
     oauth2: "OAuth 2.0",
@@ -111,14 +116,14 @@ export default function EndpointViewer({
     if (apiDetails?.body) {
       setBodyData(apiDetails.body);
     }
-    
+
   }, [apiDetails]);
 
   const generateCurlCode = () => {
     if (!apiDetails) return "No API details available";
 
     let url = `${process.env.NEXT_PUBLIC_VEIL_URL}${apiDetails.path}`;
-    
+
     // Add query parameters if they exist and have values
     const validQueryParams = Object.entries(queryParams).filter(([key, value]) => value.trim() !== "");
     if (validQueryParams.length > 0) {
@@ -136,46 +141,46 @@ export default function EndpointViewer({
       });
     }
 
-      // Check if "X-Subscription-Key" is missing
-  const hasContentTypeKey = apiDetails.required_headers.some(
-    (header) => header.name.toLowerCase() === "Content-type".toLowerCase()
-  );
-  if (!hasContentTypeKey) {
-    curl += `\n  -H 'Content-Type: application/json'`;
-  }
+    // Check if "X-Subscription-Key" is missing
+    const hasContentTypeKey = apiDetails.required_headers.some(
+      (header) => header.name.toLowerCase() === "Content-type".toLowerCase()
+    );
+    if (!hasContentTypeKey) {
+      curl += `\n  -H 'Content-Type: application/json'`;
+    }
 
     // Check if "X-Subscription-Key" is missing
-  const hasSubscriptionKey = apiDetails.required_headers.some(
-    (header) => header.name.toLowerCase() === "X-subscription-key".toLowerCase()
-  );
-  if (!hasSubscriptionKey) {
-    curl += `\n  -H 'X-Subscription-Key: test-key-${apiDetails.api_id}'`;
-  }
-
-  // Add body data if available
-  if (bodyData && bodyData.type && (apiDetails.method === 'POST' || apiDetails.method === 'PUT' || apiDetails.method === 'PATCH')) {
-    if (bodyData.type === 'json' && bodyData.json_data) {
-      curl += `\n  -d '${JSON.stringify(bodyData.json_data)}'`;
-    } else if (bodyData.type === 'text' && bodyData.content) {
-      curl += `\n  -d '${bodyData.content}'`;
-    } else if (bodyData.type === 'form-url-encoded' && bodyData.form_data) {
-      const formString = bodyData.form_data
-        .filter(item => item.key && item.value)
-        .map(item => `${encodeURIComponent(item.key)}=${encodeURIComponent(item.value)}`)
-        .join('&');
-      if (formString) {
-        curl += `\n  -d '${formString}'`;
-        // Update content-type for form data
-        curl = curl.replace('Content-Type: application/json', 'Content-Type: application/x-www-form-urlencoded');
-      }
-    } else if (bodyData.type === 'multipart' && bodyData.multipart_data) {
-      bodyData.multipart_data
-        .filter(item => item.key && item.value)
-        .forEach(item => {
-          curl += `\n  -F '${item.key}=${item.value}'`;
-        });
+    const hasSubscriptionKey = apiDetails.required_headers.some(
+      (header) => header.name.toLowerCase() === "X-subscription-key".toLowerCase()
+    );
+    if (!hasSubscriptionKey) {
+      curl += `\n  -H 'X-Subscription-Key: test-key-${apiDetails.api_id}'`;
     }
-  }
+
+    // Add body data if available
+    if (bodyData && bodyData.type && (apiDetails.method === 'POST' || apiDetails.method === 'PUT' || apiDetails.method === 'PATCH')) {
+      if (bodyData.type === 'json' && bodyData.json_data) {
+        curl += `\n  -d '${JSON.stringify(bodyData.json_data)}'`;
+      } else if (bodyData.type === 'text' && bodyData.content) {
+        curl += `\n  -d '${bodyData.content}'`;
+      } else if (bodyData.type === 'form-url-encoded' && bodyData.form_data) {
+        const formString = bodyData.form_data
+          .filter(item => item.key && item.value)
+          .map(item => `${encodeURIComponent(item.key)}=${encodeURIComponent(item.value)}`)
+          .join('&');
+        if (formString) {
+          curl += `\n  -d '${formString}'`;
+          // Update content-type for form data
+          curl = curl.replace('Content-Type: application/json', 'Content-Type: application/x-www-form-urlencoded');
+        }
+      } else if (bodyData.type === 'multipart' && bodyData.multipart_data) {
+        bodyData.multipart_data
+          .filter(item => item.key && item.value)
+          .forEach(item => {
+            curl += `\n  -F '${item.key}=${item.value}'`;
+          });
+      }
+    }
 
     return curl;
   };
@@ -219,16 +224,16 @@ export default function EndpointViewer({
 
   const getFullUrl = () => {
     if (!apiDetails?.path) return selectedUrl;
-    
+
     let url = `${selectedUrl}${apiDetails.path}`;
-    
+
     // Add query parameters if they exist and have values
     const validQueryParams = Object.entries(queryParams).filter(([key, value]) => value.trim() !== "");
     if (validQueryParams.length > 0) {
       const queryString = validQueryParams.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&');
       url += `?${queryString}`;
     }
-    
+
     return url;
   };
 
@@ -276,8 +281,9 @@ export default function EndpointViewer({
   }
 
   const handleTest = async (testData: TestRequestData) => {
+    const curlCommand = generateCurlCommand(testData);
+
     try {
-      const curlCommand = generateCurlCommand(testData);
 
       // Make the actual HTTP request
       const requestHeaders: Record<string, string> = {};
@@ -286,7 +292,7 @@ export default function EndpointViewer({
       });
 
       console.log("Target URL:", testData.target_url)
-      
+
       // Prepare fetch options
       const fetchOptions: RequestInit = {
         method: testData.method,
@@ -315,16 +321,40 @@ export default function EndpointViewer({
           // Remove Content-Type header for FormData to let browser set it with boundary
           delete requestHeaders['Content-Type'];
         }
-        
+
         // Update headers in fetchOptions
         fetchOptions.headers = requestHeaders;
       }
 
-      const response = await fetch(testData.target_url, fetchOptions);
+      // Use backend API for enhanced testing with rate limiting and Caddy URL
+      const backendPayload = {
+        api_id: apiDetails?.api_id,
+        project_id: selectedProject?.id || null, // Optional for marketplace testing
+        name: apiDetails?.name || 'test-api',
+        method: testData.method,
+        target_url: testData.target_url,
+        path: apiDetails?.path || '/',
+        version: apiDetails?.version || '1.0',
+        required_headers: (testData.headers || []).map(header => ({
+          name: header.name,
+          value: header.value,
+          is_variable: false
+        })),
+        body: testData.body
+      };
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/onboard/test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(backendPayload),
+      });
 
       let responseData;
       let parseError = null;
-      
+
       // Try to parse JSON, but handle cases where response isn't JSON
       try {
         const responseText = await response.text();
@@ -338,62 +368,94 @@ export default function EndpointViewer({
         // If JSON parsing fails, try to get the text content
         try {
           const responseText = await response.text();
-          responseData = { 
-            message: 'Response is not valid JSON', 
+          responseData = {
+            message: 'Response is not valid JSON',
             content: responseText,
-            parseError: jsonError.message 
+            parseError: jsonError.message
           };
           parseError = jsonError.message;
         } catch (textError) {
-          responseData = { 
-            error: 'Failed to parse response', 
+          responseData = {
+            error: 'Failed to parse response',
             jsonError: jsonError.message,
-            textError: textError.message 
+            textError: textError.message
           };
           parseError = `JSON: ${jsonError.message}, Text: ${textError.message}`;
         }
       }
 
-      console.log("Response data:", responseData)
+      console.log("Backend API response:", responseData)
 
-      setResponse({
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries()),
-        data: responseData,
-        info: {
-          date: new Date().toISOString(),
-          url: testData.target_url,
-          status: `${response.status} ${response.statusText}`,
-          library: 'Fetch API',
-          headersResponseTime: 'N/A',
-          totalResponseTime: 'N/A',
-          responseBodySize: 'N/A',
-          parseError: parseError || undefined,
-        },
-        request: {
-          method: testData.method,
-          url: testData.target_url,
-          path: apiDetails?.path || '/',
-          headers: requestHeaders,
-          curl: curlCommand
-        }
-      });
+      // Handle enhanced backend API response
+      if (responseData?.success && responseData?.data) {
+        setResponse({
+          status: responseData.status || 200,
+          statusText: response.statusText,
+          headers: responseData.headers || {},
+          data: responseData.data,
+          info: {
+            date: new Date().toISOString(),
+            url: responseData.url || testData.target_url, // Use Caddy gateway URL from backend
+            status: `${responseData.status || 200} ${response.statusText}`,
+            library: 'Backend API (User Rate Limited)',
+            headersResponseTime: 'N/A',
+            totalResponseTime: 'N/A',
+            responseBodySize: 'N/A',
+            apiId: responseData.apiId,
+            userId: responseData.userId,
+            usage: responseData.usage,
+            limit: responseData.limit,
+            remaining: responseData.remaining,
+          },
+          request: {
+            method: testData.method,
+            url: responseData.url || testData.target_url, // Use Caddy gateway URL from backend
+            path: apiDetails?.path || '/',
+            headers: requestHeaders,
+            curl: curlCommand
+          }
+        });
+      } else {
+        // Handle other backend responses (errors, etc.)
+        setResponse({
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          data: responseData,
+          info: {
+            date: new Date().toISOString(),
+            url: responseData?.url || testData.target_url, // Use Caddy URL if available
+            status: `${response.status} ${response.statusText}`,
+            library: 'Backend API',
+            headersResponseTime: 'N/A',
+            totalResponseTime: 'N/A',
+            responseBodySize: 'N/A',
+            parseError: parseError || undefined,
+          },
+          request: {
+            method: testData.method,
+            url: responseData?.url || testData.target_url, // Use Caddy URL if available
+            path: apiDetails?.path || '/',
+            headers: requestHeaders,
+            curl: curlCommand
+          }
+        });
+      }
 
       console.log("Final response object:", response)
 
     } catch (error) {
       console.error('Network or fetch error:', error);
-      
+
       // Create a more detailed error response
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       const errorType = error.name || 'NetworkError';
-      
+
       setResponse({
         status: 0, // Use 0 to indicate network error, not HTTP error
         statusText: `Network Error: ${errorType}`,
         headers: {},
-        data: { 
+        data: {
           error: 'Network request failed',
           message: errorMessage,
           type: errorType,
@@ -403,7 +465,7 @@ export default function EndpointViewer({
           date: new Date().toISOString(),
           url: testData.target_url,
           status: `Network Error: ${errorMessage}`,
-          library: 'Fetch API',
+          library: 'Backend API',
           headersResponseTime: 'N/A',
           totalResponseTime: 'N/A',
           responseBodySize: 'N/A',
@@ -443,7 +505,7 @@ export default function EndpointViewer({
               Headers
             </TabsTrigger>
             <TabsTrigger
-            disabled={apiDetails?.method === "GET"}
+              disabled={apiDetails?.method === "GET"}
               value="body"
               className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
@@ -585,7 +647,7 @@ export default function EndpointViewer({
                     placeholder=""
                     value="application/json"
                   />
-                  </div>
+                </div>
                 <div className="space-y-4 mt-4">
                   <Label>X-Subscription-Key</Label>
                   <Input
@@ -594,7 +656,7 @@ export default function EndpointViewer({
                     value={`test-key-${apiDetails?.api_id}`}
                   />
                 </div>
-                
+
                 {/* Dynamic Required Headers */}
                 {apiDetails?.required_headers && apiDetails.required_headers.length > 0 && (
                   <div className="space-y-4 mt-6">
@@ -620,7 +682,7 @@ export default function EndpointViewer({
           </TabsContent>
 
           <TabsContent value="body" className="space-y-4">
-            <Body 
+            <Body
               onBodyChange={handleBodyChange}
               initialBodyData={bodyData || undefined}
             />

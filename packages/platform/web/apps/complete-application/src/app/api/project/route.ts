@@ -95,7 +95,7 @@ export async function getProjectById(
   token: string
 ): Promise<Project> {
   try {
-    const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/projects/marketplace/${id}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

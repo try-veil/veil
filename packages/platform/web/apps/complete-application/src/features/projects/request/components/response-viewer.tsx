@@ -144,9 +144,11 @@ export default function ResponseViewer({ isLoading, response }: ResponseViewerPr
           {response 
             ? response.status === 0 
               ? `Network Error: ${response.statusText}` 
-              : response.status >= 400 && response.status < 500
-                ? `${response.status} ${response.statusText} (Upstream API Issue)`
-                : `${response.status} ${response.statusText}`
+              : response.status === 403 && response.data?.message?.includes('API test limit exceeded')
+                ? `${response.status} ${response.statusText} (API Rate Limit Exceeded)`
+                : response.status >= 400 && response.status < 500
+                  ? `${response.status} ${response.statusText} (Upstream API Issue)`
+                  : `${response.status} ${response.statusText}`
             : 'No Response'
           }
         </div>
@@ -222,14 +224,21 @@ export default function ResponseViewer({ isLoading, response }: ResponseViewerPr
                 <div className="font-medium">Body</div>
                 <div className="space-y-4">
                   {/* Context messages for different error types */}
-                  {response?.status >= 400 && response?.status < 500 && (
+                  {response?.status === 403 && response.data?.message?.includes('API test limit exceeded') ? (
+                    <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                      <div className="text-sm text-orange-800">
+                        <strong>Rate Limit Exceeded:</strong> You have reached the API testing limit. 
+                        The limit will reset automatically after 5 hours.
+                      </div>
+                    </div>
+                  ) : response?.status >= 400 && response?.status < 500 ? (
                     <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                       <div className="text-sm text-yellow-800">
                         <strong>Note:</strong> This is a {response.status} error from the upstream API, not your gateway. 
                         The request was successfully forwarded but the upstream API rejected it.
                       </div>
                     </div>
-                  )}
+                  ) : null}
 
                   {response?.status >= 500 && (
                     <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
