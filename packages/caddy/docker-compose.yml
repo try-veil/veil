@@ -42,6 +42,8 @@ services:
       GF_SERVER_ROOT_URL: http://localhost:4000  # Update to match the new port
     volumes:
       - ./grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana-dashboards:/var/lib/grafana/dashboards
+      - ./grafana-provisioning:/etc/grafana/provisioning
     depends_on:
       - loki
       - minio
