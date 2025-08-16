@@ -1,0 +1,557 @@
+openapi: 3.0.3
+info:
+  title: Veil SaaS Platform BFF API
+  description: Backend for Frontend API for the Veil SaaS platform providing user authentication, API marketplace, and key management.
+  version: 1.0.0
+tags:
+  - name: Auth
+    description: Authentication endpoints
+  - name: Marketplace
+    description: API marketplace endpoints
+  - name: Seller
+    description: Seller dashboard endpoints
+  - name: API Keys
+    description: API key management endpoints
+  - name: Profile
+    description: User profile endpoints
+  - name: Admin
+    description: Admin panel endpoints
+servers:
+  - url: http://localhost:3000
+    description: Development server
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      responses:
+        "200": {}
+  /:
+    get:
+      operationId: getIndex
+      responses:
+        "200": {}
+  /api/v1/auth/register:
+    post:
+      operationId: postApiV1AuthRegister
+      tags:
+        - Auth
+      summary: Register a new user
+      description: Create a new user account with email, password, and role
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                role:
+                  anyOf:
+                    - const: buyer
+                      type: string
+                    - const: seller
+                      type: string
+                    - const: admin
+                      type: string
+              required:
+                - email
+                - password
+                - firstName
+                - lastName
+      responses:
+        "200": {}
+  /api/v1/auth/login:
+    post:
+      operationId: postApiV1AuthLogin
+      tags:
+        - Auth
+      summary: Login user
+      description: Authenticate user with email and password, returns JWT token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+              required:
+                - email
+                - password
+      responses:
+        "200": {}
+  /api/v1/auth/verify-token:
+    post:
+      operationId: postApiV1AuthVerify-token
+      tags:
+        - Auth
+      summary: Verify JWT token
+      description: Verify the validity of a JWT token and return user information
+      responses:
+        "200": {}
+  /api/v1/marketplace/apis:
+    get:
+      operationId: getApiV1MarketplaceApis
+      tags:
+        - Marketplace
+      summary: Get all marketplace APIs
+      responses:
+        "200": {}
+  /api/v1/marketplace/apis/{uid}:
+    get:
+      operationId: getApiV1MarketplaceApisByUid
+      tags:
+        - Marketplace
+      summary: Get API details by UID
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: uid
+          required: true
+      responses:
+        "200": {}
+  /api/v1/marketplace/apis/{uid}/subscribe:
+    post:
+      operationId: postApiV1MarketplaceApisByUidSubscribe
+      tags:
+        - Marketplace
+      summary: Subscribe to an API
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: uid
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                requestsLimit:
+                  type: number
+      responses:
+        "200": {}
+  /api/v1/marketplace/apis/{uid}/rate:
+    post:
+      operationId: postApiV1MarketplaceApisByUidRate
+      tags:
+        - Marketplace
+      summary: Rate an API
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: uid
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rating:
+                  minimum: 1
+                  maximum: 5
+                  type: number
+                review:
+                  type: string
+              required:
+                - rating
+      responses:
+        "200": {}
+  /api/v1/marketplace/categories:
+    get:
+      operationId: getApiV1MarketplaceCategories
+      tags:
+        - Marketplace
+      summary: Get all API categories
+      responses:
+        "200": {}
+  /api/v1/seller/dashboard:
+    get:
+      operationId: getApiV1SellerDashboard
+      tags:
+        - Seller
+      summary: Get seller dashboard data
+      responses:
+        "200": {}
+  /api/v1/seller/apis:
+    get:
+      operationId: getApiV1SellerApis
+      tags:
+        - Seller
+      summary: Get seller's APIs
+      responses:
+        "200": {}
+    post:
+      operationId: postApiV1SellerApis
+      tags:
+        - Seller
+      summary: Create a new API
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                version:
+                  type: string
+                endpoint:
+                  type: string
+                baseUrl:
+                  type: string
+                categoryId:
+                  type: number
+                documentation:
+                  type: string
+                price:
+                  type: string
+                pricingModel:
+                  anyOf:
+                    - const: per_request
+                      type: string
+                    - const: monthly
+                      type: string
+                    - const: yearly
+                      type: string
+                requestLimit:
+                  type: number
+                isPublic:
+                  type: boolean
+              required:
+                - name
+                - description
+                - endpoint
+                - baseUrl
+      responses:
+        "200": {}
+  /api/v1/seller/apis/{uid}:
+    get:
+      operationId: getApiV1SellerApisByUid
+      tags:
+        - Seller
+      summary: Get API details by UID
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: uid
+          required: true
+      responses:
+        "200": {}
+    put:
+      operationId: putApiV1SellerApisByUid
+      tags:
+        - Seller
+      summary: Update API by UID
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: uid
+          required: true
+      responses:
+        "200": {}
+    delete:
+      operationId: deleteApiV1SellerApisByUid
+      tags:
+        - Seller
+      summary: Delete API by UID
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: uid
+          required: true
+      responses:
+        "200": {}
+  /api/v1/seller/apis/{uid}/analytics:
+    get:
+      operationId: getApiV1SellerApisByUidAnalytics
+      tags:
+        - Seller
+      summary: Get API analytics
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: uid
+          required: true
+      responses:
+        "200": {}
+  /api/v1/api-keys/:
+    get:
+      operationId: getApiV1Api-keys
+      tags:
+        - API Keys
+      summary: Get user's API keys
+      responses:
+        "200": {}
+  /api/v1/api-keys/subscription/{subscriptionUid}:
+    post:
+      operationId: postApiV1Api-keysSubscriptionBySubscriptionUid
+      tags:
+        - API Keys
+      summary: Create API key for subscription
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: subscriptionUid
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                expiresAt:
+                  type: string
+              required:
+                - name
+              additionalProperties: false
+      responses:
+        "200": {}
+  /api/v1/api-keys/{uid}:
+    get:
+      operationId: getApiV1Api-keysByUid
+      tags:
+        - API Keys
+      summary: Get API key details
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: uid
+          required: true
+      responses:
+        "200": {}
+    put:
+      operationId: putApiV1Api-keysByUid
+      tags:
+        - API Keys
+      summary: Update API key
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: uid
+          required: true
+      responses:
+        "200": {}
+    delete:
+      operationId: deleteApiV1Api-keysByUid
+      tags:
+        - API Keys
+      summary: Delete API key
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: uid
+          required: true
+      responses:
+        "200": {}
+  /api/v1/api-keys/{uid}/regenerate:
+    post:
+      operationId: postApiV1Api-keysByUidRegenerate
+      tags:
+        - API Keys
+      summary: Regenerate API key
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: uid
+          required: true
+      responses:
+        "200": {}
+  /api/v1/profile/:
+    get:
+      operationId: getApiV1Profile
+      tags:
+        - Profile
+      summary: Get user profile
+      responses:
+        "200": {}
+    put:
+      operationId: putApiV1Profile
+      tags:
+        - Profile
+      summary: Update user profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+      responses:
+        "200": {}
+  /api/v1/profile/change-password:
+    post:
+      operationId: postApiV1ProfileChange-password
+      tags:
+        - Profile
+      summary: Change user password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+              required:
+                - currentPassword
+                - newPassword
+      responses:
+        "200": {}
+  /api/v1/profile/dashboard:
+    get:
+      operationId: getApiV1ProfileDashboard
+      tags:
+        - Profile
+      summary: Get user dashboard
+      responses:
+        "200": {}
+  /api/v1/profile/subscriptions:
+    get:
+      operationId: getApiV1ProfileSubscriptions
+      tags:
+        - Profile
+      summary: Get user subscriptions
+      responses:
+        "200": {}
+  /api/v1/profile/subscriptions/{uid}:
+    delete:
+      operationId: deleteApiV1ProfileSubscriptionsByUid
+      tags:
+        - Profile
+      summary: Cancel subscription
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: uid
+          required: true
+      responses:
+        "200": {}
+  /api/v1/admin/stats:
+    get:
+      operationId: getApiV1AdminStats
+      tags:
+        - Admin
+      summary: Get admin statistics
+      responses:
+        "200": {}
+  /api/v1/admin/apis/pending:
+    get:
+      operationId: getApiV1AdminApisPending
+      tags:
+        - Admin
+      summary: Get pending APIs for approval
+      responses:
+        "200": {}
+  /api/v1/admin/apis/{uid}/approve:
+    post:
+      operationId: postApiV1AdminApisByUidApprove
+      tags:
+        - Admin
+      summary: Approve an API
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: uid
+          required: true
+      responses:
+        "200": {}
+  /api/v1/admin/apis/{uid}/reject:
+    post:
+      operationId: postApiV1AdminApisByUidReject
+      tags:
+        - Admin
+      summary: Reject an API
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: uid
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        "200": {}
+  /api/v1/admin/categories:
+    get:
+      operationId: getApiV1AdminCategories
+      tags:
+        - Admin
+      summary: Get all categories
+      responses:
+        "200": {}
+    post:
+      operationId: postApiV1AdminCategories
+      tags:
+        - Admin
+      summary: Create a new category
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+              required:
+                - name
+      responses:
+        "200": {}
+  /api/v1/admin/categories/{id}:
+    delete:
+      operationId: deleteApiV1AdminCategoriesById
+      tags:
+        - Admin
+      summary: Delete category
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: id
+          required: true
+      responses:
+        "200": {}
+components:
+  schemas: {}
