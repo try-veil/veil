@@ -1,0 +1,163 @@
+name: Node.js SDK Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'packages/sdks/nodejs/**'
+      - '.github/workflows/nodejs-sdk.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'packages/sdks/nodejs/**'
+      - '.github/workflows/nodejs-sdk.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: packages/sdks/nodejs/package-lock.json
+
+    - name: Install dependencies
+      working-directory: packages/sdks/nodejs
+      run: npm ci
+
+    - name: Run linting
+      working-directory: packages/sdks/nodejs
+      run: npm run lint
+
+    - name: Run type checking
+      working-directory: packages/sdks/nodejs
+      run: npm run typecheck
+
+    - name: Run tests
+      working-directory: packages/sdks/nodejs
+      run: npm run test:coverage
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: packages/sdks/nodejs/coverage/lcov.info
+        flags: nodejs-sdk
+        name: nodejs-sdk-${{ matrix.node-version }}
+        fail_ci_if_error: true
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        cache-dependency-path: packages/sdks/nodejs/package-lock.json
+
+    - name: Install dependencies
+      working-directory: packages/sdks/nodejs
+      run: npm ci
+
+    - name: Build SDK
+      working-directory: packages/sdks/nodejs
+      run: npm run build
+
+    - name: Check build artifacts
+      working-directory: packages/sdks/nodejs
+      run: |
+        if [ ! -f "dist/index.js" ]; then
+          echo "Build failed: dist/index.js not found"
+          exit 1
+        fi
+        if [ ! -f "dist/index.d.ts" ]; then
+          echo "Build failed: dist/index.d.ts not found"
+          exit 1
+        fi
+        echo "Build artifacts verified successfully"
+
+  security:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        cache-dependency-path: packages/sdks/nodejs/package-lock.json
+
+    - name: Install dependencies
+      working-directory: packages/sdks/nodejs
+      run: npm ci
+
+    - name: Run security audit
+      working-directory: packages/sdks/nodejs
+      run: npm audit --audit-level=moderate
+
+    - name: Check for outdated dependencies
+      working-directory: packages/sdks/nodejs
+      run: npm outdated || true
+
+  publish-check:
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        cache-dependency-path: packages/sdks/nodejs/package-lock.json
+
+    - name: Install dependencies
+      working-directory: packages/sdks/nodejs
+      run: npm ci
+
+    - name: Build SDK
+      working-directory: packages/sdks/nodejs
+      run: npm run build
+
+    - name: Dry run publish
+      working-directory: packages/sdks/nodejs
+      run: npm publish --dry-run
+
+    - name: Check package size
+      working-directory: packages/sdks/nodejs
+      run: |
+        PACKAGE_SIZE=$(npm pack --dry-run 2>&1 | grep -o '[0-9.]*[kB|MB]' | tail -1)
+        echo "Package size: $PACKAGE_SIZE"
+        
+        # Convert to bytes for comparison (approximate)
+        if [[ $PACKAGE_SIZE == *"MB"* ]]; then
+          SIZE_NUM=$(echo $PACKAGE_SIZE | sed 's/MB//')
+          if (( $(echo "$SIZE_NUM > 1" | bc -l) )); then
+            echo "Warning: Package size is larger than 1MB"
+          fi
+        fi

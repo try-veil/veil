@@ -1,0 +1,3 @@
+[submodule "packages/web"]
+	path = packages/web
+	url = https://github.com/techsavvyash/veil-web-frontend
