@@ -1,0 +1,12 @@
+# provisioning/dashboards/common-folder.yml
+apiVersion: 1
+
+providers:
+  - name: "common-dashboards"
+    orgId: 1
+    folder: "Common" # This will create a folder named "Common"
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/common-dashboards

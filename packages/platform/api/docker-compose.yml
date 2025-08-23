@@ -18,6 +18,8 @@ services:
     restart: unless-stopped
     volumes:
       - db_data:/var/lib/postgresql/data
+    networks:
+      - fusionauth
 
   # This is the main FusionAuth application.
   fusionauth:
@@ -51,6 +53,9 @@ services:
       - fusionauth_config:/usr/local/fusionauth/config
       - ${FUSIONAUTH_LOCAL_KICKSTART_DIRECTORY}:/usr/local/fusionauth/kickstart
       - ${FUSIONAUTH_LOCAL_PLUGIN_DIRECTORY}:/usr/local/fusionauth/plugins
+    networks:
+      - fusionauth
+      - grafana
 
   # Open Search isn't technically required, but the `fusionauth` service currently depends on it, so we start it here.
   # You can change the search engine backend to `database` in the `.env` file if you would prefer to use that.
@@ -81,6 +86,8 @@ services:
       - 9600:9600 # Performance Analyzer
     volumes:
       - search_data:/usr/share/opensearch/data
+    networks:
+      - fusionauth
 
   #
   # Optional services
@@ -115,6 +122,8 @@ services:
       interval: 10s
       retries: 80
       test: wget -q -O /dev/null http://mailcatcher:1080/
+    networks:
+      - fusionauth
 
   # Zookeeper is needed for Kafka
   zookeeper:
@@ -126,6 +135,8 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - 2181:2181
+    networks:
+      - fusionauth
 
   # Kafka can be used for Webhooks rather than HTTP. You'll need to configure FusionAuth to use Kafka (or use a
   # Kickstart file that enables Kafka).
@@ -144,6 +155,8 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - fusionauth
 
   # Cleanspeak provides filtering of usernames and profile data to prevent profanity and other unwanted content. You'll
   # need a Cleanspeak license to enable this service.
@@ -170,6 +183,8 @@ services:
       - 8001:8001
     volumes:
       - cs_config:/usr/local/cleanspeak/config
+    networks:
+      - fusionauth
 
   # OpenTelemetry can be used to collect metrics from FusionAuth and push them to Prometheus or other systems. You might need
   # to configure OpenTelemetry by editing the opentelementy-collector-config.yml file.
@@ -185,6 +200,8 @@ services:
     volumes:
       - ${OPENTELEMETRY_COLLECTOR_CONFIG_FILE}:/etc/opentelemetry/collector-config.yml
     command: ["--config=/etc/opentelemetry/collector-config.yml"]
+    networks:
+      - fusionauth
 
   # Prometheus can be used to monitor FusionAuth and can be used with OpenTelemetry or directly. Depending on the way you want to
   # use Prometheus, you might need to change the PROMETHEUS_CONFIG_FILE variable to point to a different configuration file or
@@ -213,6 +230,19 @@ services:
       - 9093:9093
     volumes:
       - ${ALERTMANAGER_CONFIG_FILE}:/etc/alertmanager/alertmanager-config.yml
+
+  webhook-service:
+    build:
+      context: ./webhook-service
+      dockerfile: Dockerfile
+    environment:
+      - GRAFANA_API_URL=http://grafana:3000
+      - WEBHOOK_PORT=3001
+    ports:
+      - "4001:3001"
+    networks:
+      - grafana
+    restart: unless-stopped
   
   my_postgres:
       image: postgres:16
@@ -236,3 +266,11 @@ volumes:
   prometheus_data:
   search_data:
   my_postgres_data:
+
+networks:
+  fusionauth:
+    external: true
+    name: veil_fusionauth
+  grafana:
+    external: true
+    name: veil_grafana
