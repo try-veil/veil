@@ -20,6 +20,7 @@ export async function POST(req: Request) {
 
 
   const clientId = process.env.NEXT_PUBLIC_FUSIONAUTH_CLIENT_ID!;
+  const grafanaApplicationId = process.env.FUSIONAUTH_GRAFANA_APPLICATION_ID!;
   const clientSecret = process.env.FUSIONAUTH_CLIENT_SECRET!;
   const fusionAuthUrl = process.env.NEXT_PUBLIC_FUSIONAUTH_URL!;
   const apiKey = process.env.FUSIONAUTH_API_KEY!;
@@ -54,6 +55,7 @@ export async function POST(req: Request) {
     const registerData = await registerResponse.json().catch(() => ({})); 
 
     if (!registerResponse.ok) {
+      console.error("Registration failed:", registerResponse.status, registerData);
       const fieldError = registerData?.fieldErrors;
       let firstErrorMessage =
         fieldError?.["user.password"]?.[0]?.message ||
@@ -69,6 +71,31 @@ export async function POST(req: Request) {
       
       console.error("Registration error:", firstErrorMessage);
       return NextResponse.json({ error: firstErrorMessage, error_description: firstErrorMessage }, { status: registerResponse.status });
+    }
+
+    const grafanaRegisterResponse = await fetch(`${fusionAuthUrl}/api/user/registration/${registerData.user.id}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${apiKey}`, 
+        "X-FusionAuth-TenantId": tenantId, 
+      },
+      body: JSON.stringify({
+        registration: {
+          applicationId: grafanaApplicationId,
+          roles: ["grafana-viewer"],
+          username: email,
+        }
+      }),
+    });
+
+    const grafanaRegisterData = await grafanaRegisterResponse.json().catch(() => ({})); 
+
+    if (!grafanaRegisterResponse.ok) {
+      console.error("Grafana registration failed:", grafanaRegisterResponse.status, grafanaRegisterData);
+      console.error("User ID from first registration:", registerData.user.id);
+      console.error("Grafana Application ID:", grafanaApplicationId);
+      // Continue even if Grafana registration fails
     }
 
 
