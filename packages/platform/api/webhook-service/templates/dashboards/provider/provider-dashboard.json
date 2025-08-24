@@ -1,6 +1,6 @@
 {
   "id": null,
-  "title": "Veil API Logs - Provider View",
+  "title": "USER_NAME_PLACEHOLDER - API Logs",
   "tags": ["veil", "api", "provider"],
   "timezone": "browser",
   "refresh": "30s",
@@ -14,26 +14,28 @@
       "list": [
         {
           "current": {
-            "selected": false,
-            "text": "All",
-            "value": "$__all"
+            "selected": true,
+            "text": "USER_PROVIDER_ID_PLACEHOLDER",
+            "value": "USER_PROVIDER_ID_PLACEHOLDER"
           },
-          "hide": 0,
-          "includeAll": true,
+          "hide": 2,
+          "includeAll": false,
           "label": "Provider ID",
           "multi": false,
           "name": "provider_id",
-          "options": [],
-          "query": "label_values({job=\"api\"}, provider_id)",
-          "refresh": 1,
+          "options": [
+            {
+              "selected": true,
+              "text": "USER_PROVIDER_ID_PLACEHOLDER",
+              "value": "USER_PROVIDER_ID_PLACEHOLDER"
+            }
+          ],
+          "query": "USER_PROVIDER_ID_PLACEHOLDER",
+          "refresh": 0,
           "regex": "",
           "skipUrlSync": false,
           "sort": 0,
-          "type": "query",
-          "datasource": {
-            "type": "loki",
-            "uid": "loki"
-          }
+          "type": "custom"
         }
       ]
     },

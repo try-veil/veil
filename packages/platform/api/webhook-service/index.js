@@ -8,7 +8,7 @@ const PORT = process.env.WEBHOOK_PORT || 3001;
 const GRAFANA_API_URL = process.env.GRAFANA_API_URL || 'http://grafana:3000';
 const TOKEN_FILE = '/shared/grafana-token.txt';
 
-console.log('This is new updated code...............');
+console.log('This is new updated code............xxxxxxjjjjjx...');
 // Using admin credentials instead of token
 console.log('Using admin credentials for Grafana API access');
 
@@ -345,8 +345,8 @@ async function provisionDefaultDashboards(grafanaUser, folder) {
   console.log(`\n📊 STEP 4: Provisioning personalized dashboards for ${grafanaUser.email}...`);
   
   try {
-    // Extract user info
-    const providerId = grafanaUser.id;
+    // Extract user info - use email as provider ID to match logs
+    const providerId = grafanaUser.email; // Use email instead of ID to match log entries
     const userRole = grafanaUser.login === 'admin' ? 'admin' : 'provider';
     
     console.log(`   → Extracted provider ID: ${providerId} for user: ${grafanaUser.email}`);
@@ -354,14 +354,18 @@ async function provisionDefaultDashboards(grafanaUser, folder) {
     console.log(`   → Provider ID: ${providerId}`);
     
     // Load the appropriate dashboard template
+    console.log(`   → Loading dashboard template for role: ${userRole}`);
     const dashboardTemplate = loadDashboardTemplate(userRole);
+    console.log(`   → Dashboard template loaded successfully`);
     
     // Personalize the dashboard
+    console.log(`   → Personalizing dashboard with user info`);
     const personalizedDashboard = personalizeDashboard(dashboardTemplate, {
       email: grafanaUser.email,
       id: grafanaUser.id,
       providerId: providerId
     });
+    console.log(`   → Dashboard personalized with title: "${personalizedDashboard.title}"`);
     
     // Create dashboard payload for Grafana API
     const dashboardPayload = {
@@ -374,7 +378,28 @@ async function provisionDefaultDashboards(grafanaUser, folder) {
       overwrite: true
     };
     
-    console.log(`   → Creating dashboard: "${personalizedDashboard.title}"`);
+    console.log(`   → Creating dashboard: "${personalizedDashboard.title}" in folder ID: ${folder.id}`);
+    console.log(`   → Dashboard payload prepared, making API call to Grafana...`);
+    
+    // Check if dashboard already exists in the folder
+    console.log(`   → Checking for existing dashboards in folder...`);
+    try {
+      const existingDashboards = await axios.get(`${GRAFANA_API_URL}/api/search?type=dash-db&folderId=${folder.id}`, {
+        auth: {
+          username: 'admin',
+          password: 'admin123'
+        }
+      });
+      
+      const existingDashboard = existingDashboards.data.find(dash => dash.title === personalizedDashboard.title);
+      if (existingDashboard) {
+        console.log(`   → ✅ Dashboard already exists: ${personalizedDashboard.title} (ID: ${existingDashboard.id})`);
+        console.log(`   → Skipping dashboard creation as it already exists`);
+        return { url: existingDashboard.url, id: existingDashboard.id, status: 'already_exists' };
+      }
+    } catch (searchError) {
+      console.log(`   → Warning: Could not check for existing dashboards, proceeding with creation`);
+    }
     
     // Create the dashboard in Grafana
     const response = await axios.post(`${GRAFANA_API_URL}/api/dashboards/db`, dashboardPayload, {
@@ -385,12 +410,16 @@ async function provisionDefaultDashboards(grafanaUser, folder) {
     });
     
     console.log(`   → ✅ Dashboard created successfully: ${personalizedDashboard.title}`);
+    console.log(`   → Dashboard URL: ${response.data.url || 'URL not provided'}`);
     return response.data;
     
   } catch (error) {
     console.log(`   → ❌ Failed to provision dashboard:`, error.message);
     if (error.response) {
-      console.log(`   → Grafana API Error (${error.response.status}):`, error.response.data);
+      console.log(`   → Grafana API Error (${error.response.status}):`, JSON.stringify(error.response.data, null, 2));
+    }
+    if (error.code) {
+      console.log(`   → Error code:`, error.code);
     }
     throw error;
   }
