@@ -107,7 +107,6 @@ services:
       - ./provisioning:/etc/grafana/provisioning
       # Mount separate dashboard directories
       - ./dashboards/admin:/var/lib/grafana/admin-dashboards
-      - ./dashboards/provider:/var/lib/grafana/provider-dashboards
     networks:
       - grafana
       - fusionauth

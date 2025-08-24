@@ -11,13 +11,3 @@ providers:
     options:
       path: /var/lib/grafana/admin-dashboards
     folderUid: "admin-folder"
-    
-  - name: "provider-dashboards"
-    orgId: 1
-    folder: "Provider"
-    type: file
-    disableDeletion: false
-    editable: true
-    options:
-      path: /var/lib/grafana/provider-dashboards
-    folderUid: "provider-folder"
