@@ -9,7 +9,7 @@ providers:
     disableDeletion: false
     editable: true
     options:
-      path: /var/lib/grafana/common-dashboards
+      path: /var/lib/grafana/admin-dashboards
     folderUid: "admin-folder"
     
   - name: "provider-dashboards"
@@ -19,5 +19,5 @@ providers:
     disableDeletion: false
     editable: true
     options:
-      path: /var/lib/grafana/common-dashboards
+      path: /var/lib/grafana/provider-dashboards
     folderUid: "provider-folder"
