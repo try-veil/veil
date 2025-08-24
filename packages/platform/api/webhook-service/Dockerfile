@@ -1,30 +1,26 @@
 FROM node:18-alpine
 
+# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install --only=production
+RUN npm install
 
 # Copy application code
-COPY index.js ./
+COPY . .
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S webhook -u 1001
-
-# Change ownership of the app directory
-RUN chown -R webhook:nodejs /app
-USER webhook
+# Create templates directory if it doesn't exist
+RUN mkdir -p templates/dashboards
 
 # Expose port
 EXPOSE 3001
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:4001/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+  CMD curl -f http://localhost:3001/health || exit 1
 
 # Start the application
-CMD ["npm", "start"]
+CMD ["node", "index.js"]

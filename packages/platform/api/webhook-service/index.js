@@ -1,173 +1,46 @@
 const express = require('express');
 const axios = require('axios');
 const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.WEBHOOK_PORT || 3001;
 const GRAFANA_API_URL = process.env.GRAFANA_API_URL || 'http://grafana:3000';
 const TOKEN_FILE = '/shared/grafana-token.txt';
 
+console.log('This is new updated code...............');
 // Using admin credentials instead of token
 console.log('Using admin credentials for Grafana API access');
 
+// Dashboard templates path
+const TEMPLATES_PATH = path.join(__dirname, 'templates', 'dashboards');
+console.log('Dashboard templates path:', TEMPLATES_PATH);
+
 app.use(express.json());
 
-// Dashboard templates for different roles
-const ADMIN_DASHBOARD_TEMPLATE = {
-  "title": "Veil API Logs - Admin View",
-  "tags": ["veil", "api", "admin"],
-  "timezone": "browser",
-  "refresh": "30s",
-  "schemaVersion": 30,
-  "version": 1,
-  "time": {
-    "from": "now-1h",
-    "to": "now"
-  },
-  "panels": [
-    {
-      "id": 1,
-      "title": "All API Requests",
-      "type": "logs",
-      "targets": [
-        {
-          "expr": "{job=\"api\"} |= \"API request\"",
-          "refId": "A"
-        }
-      ],
-      "gridPos": {
-        "h": 12,
-        "w": 24,
-        "x": 0,
-        "y": 0
-      },
-      "options": {
-        "showTime": true,
-        "showLabels": true,
-        "enableLogDetails": true,
-        "sortOrder": "Descending"
-      }
-    },
-    {
-      "id": 2,
-      "title": "API Requests by Provider",
-      "type": "stat",
-      "targets": [
-        {
-          "expr": "count by (provider_id) (count_over_time({job=\"api\"} |= \"API request\" [$__interval]))",
-          "refId": "A"
-        }
-      ],
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 12
-      }
-    },
-    {
-      "id": 3,
-      "title": "Error Logs",
-      "type": "logs",
-      "targets": [
-        {
-          "expr": "{job=\"api\"} |= \"error\" or {job=\"api\"} |= \"ERROR\"",
-          "refId": "A"
-        }
-      ],
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 20
-      }
-    }
-  ]
-};
+// Function to load dashboard template from file
+function loadDashboardTemplate(templateType) {
+  try {
+    const templatePath = path.join(TEMPLATES_PATH, templateType, `${templateType}-dashboard.json`);
+    console.log(`   → Loading template from: ${templatePath}`);
+    const templateContent = fs.readFileSync(templatePath, 'utf8');
+    return JSON.parse(templateContent);
+  } catch (error) {
+    console.log(`   → ❌ Failed to load template for ${templateType}:`, error.message);
+    throw new Error(`Failed to load dashboard template for ${templateType}: ${error.message}`);
+  }
+}
 
-const PROVIDER_DASHBOARD_TEMPLATE = {
-  "title": "Veil API Logs - My Requests",
-  "tags": ["veil", "api", "provider"],
-  "timezone": "browser",
-  "refresh": "30s",
-  "schemaVersion": 30,
-  "version": 1,
-  "time": {
-    "from": "now-1h",
-    "to": "now"
-  },
-  "templating": {
-    "list": [
-      {
-        "name": "provider_id",
-        "type": "constant",
-        "hide": 2,
-        "current": {
-          "value": "USER_PROVIDER_ID_PLACEHOLDER"
-        }
-      }
-    ]
-  },
-  "panels": [
-    {
-      "id": 1,
-      "title": "My API Requests",
-      "type": "logs",
-      "targets": [
-        {
-          "expr": "{job=\"api\", provider_id=\"$provider_id\"} |= \"API request\"",
-          "refId": "A"
-        }
-      ],
-      "gridPos": {
-        "h": 12,
-        "w": 24,
-        "x": 0,
-        "y": 0
-      },
-      "options": {
-        "showTime": true,
-        "showLabels": true,
-        "enableLogDetails": true,
-        "sortOrder": "Descending"
-      }
-    },
-    {
-      "id": 2,
-      "title": "My Request Count",
-      "type": "stat",
-      "targets": [
-        {
-          "expr": "count_over_time({job=\"api\", provider_id=\"$provider_id\"} |= \"API request\" [$__interval])",
-          "refId": "A"
-        }
-      ],
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 12
-      }
-    },
-    {
-      "id": 3,
-      "title": "My Error Logs",
-      "type": "logs",
-      "targets": [
-        {
-          "expr": "{job=\"api\", provider_id=\"$provider_id\"} |= \"error\" or {job=\"api\", provider_id=\"$provider_id\"} |= \"ERROR\"",
-          "refId": "A"
-        }
-      ],
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 20
-      }
-    }
-  ]
-};
+// Function to personalize dashboard with user info
+function personalizeDashboard(template, userInfo) {
+  let dashboardJson = JSON.stringify(template);
+  
+  // Replace placeholders with actual user info
+  dashboardJson = dashboardJson.replace(/USER_NAME_PLACEHOLDER/g, userInfo.email);
+  dashboardJson = dashboardJson.replace(/USER_PROVIDER_ID_PLACEHOLDER/g, userInfo.providerId || userInfo.id);
+  
+  return JSON.parse(dashboardJson);
+}
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -403,7 +276,7 @@ function getUserRole(user) {
   return 'provider';
 }
 
-// Extract provider ID from user data
+// Extract provider ID from user datatea
 function getUserProviderId(user) {
   // Try to get provider_id from user data or registrations
   const providerId = user.data?.provider_id || 
@@ -469,21 +342,39 @@ async function createLogDashboard(folderId, userRole, userEmail, providerId) {
 
 // Provision default dashboards for the user
 async function provisionDefaultDashboards(grafanaUser, folder) {
+  console.log(`\n📊 STEP 4: Provisioning personalized dashboards for ${grafanaUser.email}...`);
+  
   try {
-    // Select dashboard template based on user role
-    const isAdmin = grafanaUser.login === 'admin';
-    const dashboardTemplate = isAdmin ? ADMIN_DASHBOARD_TEMPLATE : PROVIDER_DASHBOARD_TEMPLATE;
+    // Extract user info
+    const providerId = grafanaUser.id;
+    const userRole = grafanaUser.login === 'admin' ? 'admin' : 'provider';
     
-    console.log(`   → Using ${isAdmin ? 'admin' : 'provider'} dashboard template`);
+    console.log(`   → Extracted provider ID: ${providerId} for user: ${grafanaUser.email}`);
+    console.log(`   → User role: ${userRole}`);
+    console.log(`   → Provider ID: ${providerId}`);
     
-    // Customize dashboard title and folder ID
+    // Load the appropriate dashboard template
+    const dashboardTemplate = loadDashboardTemplate(userRole);
+    
+    // Personalize the dashboard
+    const personalizedDashboard = personalizeDashboard(dashboardTemplate, {
+      email: grafanaUser.email,
+      id: grafanaUser.id,
+      providerId: providerId
+    });
+    
+    // Create dashboard payload for Grafana API
     const dashboardPayload = {
-      ...dashboardTemplate,
-      title: dashboardTemplate.title.replace('USER_EMAIL_PLACEHOLDER', grafanaUser.email),
-      folderId: folder.id
+      dashboard: {
+        ...personalizedDashboard,
+        id: null, // Let Grafana assign ID
+        folderId: folder.id
+      },
+      folderId: folder.id,
+      overwrite: true
     };
     
-    console.log(`   → Dashboard payload:`, JSON.stringify(dashboardPayload, null, 2));
+    console.log(`   → Creating dashboard: "${personalizedDashboard.title}"`);
     
     // Create the dashboard in Grafana
     const response = await axios.post(`${GRAFANA_API_URL}/api/dashboards/db`, dashboardPayload, {
@@ -493,9 +384,14 @@ async function provisionDefaultDashboards(grafanaUser, folder) {
       }
     });
     
-    console.log(`   → ✅ Grafana API Response (${response.status}): Dashboard provisioned successfully`);
+    console.log(`   → ✅ Dashboard created successfully: ${personalizedDashboard.title}`);
+    return response.data;
+    
   } catch (error) {
-    console.log(`   → ❌ Grafana API Error (${error.response?.status}):`, error.response?.data || error.message);
+    console.log(`   → ❌ Failed to provision dashboard:`, error.message);
+    if (error.response) {
+      console.log(`   → Grafana API Error (${error.response.status}):`, error.response.data);
+    }
     throw error;
   }
 }
