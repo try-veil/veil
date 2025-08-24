@@ -14,11 +14,17 @@ scrape_configs:
       - json:
           expressions:
             provider_id: provider_id
+            level: level
+            msg: msg
+            path: path
+            method: method
       - labels:
-          provider_id: ""
+          provider_id:
+          level:
+          job: api
     static_configs:
       - targets:
           - localhost
         labels:
           job: api
-          __path__: /packages/caddy/logs/logs-*.log
+          __path__: /packages/caddy/logs/*.log

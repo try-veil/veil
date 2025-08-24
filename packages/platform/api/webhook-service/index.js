@@ -12,6 +12,163 @@ console.log('Using admin credentials for Grafana API access');
 
 app.use(express.json());
 
+// Dashboard templates for different roles
+const ADMIN_DASHBOARD_TEMPLATE = {
+  "title": "Veil API Logs - Admin View",
+  "tags": ["veil", "api", "admin"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "schemaVersion": 30,
+  "version": 1,
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "All API Requests",
+      "type": "logs",
+      "targets": [
+        {
+          "expr": "{job=\"api\"} |= \"API request\"",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 2,
+      "title": "API Requests by Provider",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "count by (provider_id) (count_over_time({job=\"api\"} |= \"API request\" [$__interval]))",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      }
+    },
+    {
+      "id": 3,
+      "title": "Error Logs",
+      "type": "logs",
+      "targets": [
+        {
+          "expr": "{job=\"api\"} |= \"error\" or {job=\"api\"} |= \"ERROR\"",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      }
+    }
+  ]
+};
+
+const PROVIDER_DASHBOARD_TEMPLATE = {
+  "title": "Veil API Logs - My Requests",
+  "tags": ["veil", "api", "provider"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "schemaVersion": 30,
+  "version": 1,
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "provider_id",
+        "type": "constant",
+        "hide": 2,
+        "current": {
+          "value": "USER_PROVIDER_ID_PLACEHOLDER"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "My API Requests",
+      "type": "logs",
+      "targets": [
+        {
+          "expr": "{job=\"api\", provider_id=\"$provider_id\"} |= \"API request\"",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 2,
+      "title": "My Request Count",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "count_over_time({job=\"api\", provider_id=\"$provider_id\"} |= \"API request\" [$__interval])",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      }
+    },
+    {
+      "id": 3,
+      "title": "My Error Logs",
+      "type": "logs",
+      "targets": [
+        {
+          "expr": "{job=\"api\", provider_id=\"$provider_id\"} |= \"error\" or {job=\"api\", provider_id=\"$provider_id\"} |= \"ERROR\"",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      }
+    }
+  ]
+};
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'grafana-folder-webhook' });
@@ -86,6 +243,10 @@ app.post('/webhook/user-registered', async (req, res) => {
       console.log(`✅ PERMISSIONS SET: User ${userEmail} has admin access to folder "${folderName}"`);
     }
     
+    // Step 4: Provision default dashboards for the user
+    console.log(`\n📊 STEP 4: Provisioning default dashboards...`);
+    await provisionDefaultDashboards(grafanaUser, folder);
+
     const processingTime = Date.now() - startTime;
     console.log(`\n=== 🎉 SUCCESS SUMMARY ===`);
     console.log(`✅ User: ${userEmail} (Grafana ID: ${grafanaUser.id})`);
@@ -95,7 +256,7 @@ app.post('/webhook/user-registered', async (req, res) => {
     console.log(`=== END WEBHOOK PROCESSING ===\n`);
     
     res.json({ 
-      message: 'Private folder created successfully',
+      message: 'Private folder created and dashboards provisioned successfully',
       folder: {
         name: folderName,
         id: folder.id,
@@ -223,6 +384,116 @@ async function setFolderPermissions(folderUid, userId) {
     });
     
     console.log(`   → ✅ Grafana API Response (${response.status}):`, response.data || 'No response body');
+  } catch (error) {
+    console.log(`   → ❌ Grafana API Error (${error.response?.status}):`, error.response?.data || error.message);
+    throw error;
+  }
+}
+
+// Determine user role based on FusionAuth roles
+function getUserRole(user) {
+  const roles = user.registrations?.[0]?.roles || [];
+  
+  // Check if user has admin role
+  if (roles.includes('grafana-admin') || roles.includes('admin')) {
+    return 'admin';
+  }
+  
+  // Default to provider/viewer role
+  return 'provider';
+}
+
+// Extract provider ID from user data
+function getUserProviderId(user) {
+  // Try to get provider_id from user data or registrations
+  const providerId = user.data?.provider_id || 
+                    user.registrations?.[0]?.data?.provider_id ||
+                    user.id; // Fallback to user ID
+  
+  return providerId;
+}
+
+// Create log dashboard based on user role
+async function createLogDashboard(folderId, userRole, userEmail, providerId) {
+  console.log(`\n📊 STEP 4: Creating log dashboard for ${userRole} user...`);
+  
+  let dashboardTemplate;
+  let dashboardTitle;
+  
+  if (userRole === 'admin') {
+    dashboardTemplate = { ...ADMIN_DASHBOARD_TEMPLATE };
+    dashboardTitle = `${userEmail} - Admin Log Dashboard`;
+  } else {
+    dashboardTemplate = { ...PROVIDER_DASHBOARD_TEMPLATE };
+    dashboardTitle = `${userEmail} - My API Logs`;
+    
+    // Replace provider ID placeholder in the template
+    const dashboardJson = JSON.stringify(dashboardTemplate).replace(
+      /USER_PROVIDER_ID_PLACEHOLDER/g, 
+      providerId
+    );
+    dashboardTemplate = JSON.parse(dashboardJson);
+  }
+  
+  // Set the dashboard title and folder
+  dashboardTemplate.title = dashboardTitle;
+  dashboardTemplate.folderId = folderId;
+  
+  const payload = {
+    dashboard: dashboardTemplate,
+    folderId: folderId,
+    overwrite: true
+  };
+  
+  console.log(`   → Creating ${userRole} dashboard: "${dashboardTitle}"`);
+  console.log(`   → Dashboard will be created in folder ID: ${folderId}`);
+  console.log(`   → Provider ID filter: ${providerId}`);
+  
+  try {
+    const response = await axios.post(`${GRAFANA_API_URL}/api/dashboards/db`, payload, {
+      auth: {
+        username: 'admin',
+        password: 'admin123'
+      }
+    });
+    
+    console.log(`   → ✅ Dashboard created successfully (${response.status})`);
+    console.log(`   → Dashboard URL: ${response.data.url}`);
+    
+    return response.data;
+  } catch (error) {
+    console.log(`   → ❌ Dashboard creation failed (${error.response?.status}):`, error.response?.data || error.message);
+    throw error;
+  }
+}
+
+// Provision default dashboards for the user
+async function provisionDefaultDashboards(grafanaUser, folder) {
+  try {
+    // Select dashboard template based on user role
+    const isAdmin = grafanaUser.login === 'admin';
+    const dashboardTemplate = isAdmin ? ADMIN_DASHBOARD_TEMPLATE : PROVIDER_DASHBOARD_TEMPLATE;
+    
+    console.log(`   → Using ${isAdmin ? 'admin' : 'provider'} dashboard template`);
+    
+    // Customize dashboard title and folder ID
+    const dashboardPayload = {
+      ...dashboardTemplate,
+      title: dashboardTemplate.title.replace('USER_EMAIL_PLACEHOLDER', grafanaUser.email),
+      folderId: folder.id
+    };
+    
+    console.log(`   → Dashboard payload:`, JSON.stringify(dashboardPayload, null, 2));
+    
+    // Create the dashboard in Grafana
+    const response = await axios.post(`${GRAFANA_API_URL}/api/dashboards/db`, dashboardPayload, {
+      auth: {
+        username: 'admin',
+        password: 'admin123'
+      }
+    });
+    
+    console.log(`   → ✅ Grafana API Response (${response.status}): Dashboard provisioned successfully`);
   } catch (error) {
     console.log(`   → ❌ Grafana API Error (${error.response?.status}):`, error.response?.data || error.message);
     throw error;

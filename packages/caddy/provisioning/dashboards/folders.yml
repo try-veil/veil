@@ -1,0 +1,23 @@
+# provisioning/dashboards/admin-folder.yml
+apiVersion: 1
+
+providers:
+  - name: "admin-dashboards"
+    orgId: 1
+    folder: "Admin"
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/common-dashboards
+    folderUid: "admin-folder"
+    
+  - name: "provider-dashboards"
+    orgId: 1
+    folder: "Provider"
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/common-dashboards
+    folderUid: "provider-folder"
