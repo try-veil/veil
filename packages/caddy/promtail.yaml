@@ -18,9 +18,14 @@ scrape_configs:
             msg: msg
             path: path
             method: method
+            status: status
+            response_time: response_time
       - labels:
           provider_id:
           level:
+          path:
+          method:
+          status:
           job: api
     static_configs:
       - targets:
