@@ -1,234 +1,584 @@
 {
   "id": null,
-  "title": "USER_NAME_PLACEHOLDER - API Logs",
+  "title": "USER_NAME_PLACEHOLDER - API Analytics Dashboard",
   "tags": ["veil", "api", "provider"],
   "timezone": "browser",
   "refresh": "30s",
   "schemaVersion": 30,
   "version": 1,
-    "time": {
-      "from": "now-1h",
-      "to": "now"
-    },
-    "templating": {
-      "list": [
-        {
-          "current": {
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "USER_PROVIDER_ID_PLACEHOLDER",
+          "value": "USER_PROVIDER_ID_PLACEHOLDER"
+        },
+        "hide": 2,
+        "includeAll": false,
+        "label": "Provider ID",
+        "multi": false,
+        "name": "provider_id",
+        "options": [
+          {
             "selected": true,
             "text": "USER_PROVIDER_ID_PLACEHOLDER",
             "value": "USER_PROVIDER_ID_PLACEHOLDER"
-          },
-          "hide": 2,
-          "includeAll": false,
-          "label": "Provider ID",
-          "multi": false,
-          "name": "provider_id",
-          "options": [
-            {
-              "selected": true,
-              "text": "USER_PROVIDER_ID_PLACEHOLDER",
-              "value": "USER_PROVIDER_ID_PLACEHOLDER"
-            }
-          ],
-          "query": "USER_PROVIDER_ID_PLACEHOLDER",
-          "refresh": 0,
-          "regex": "",
-          "skipUrlSync": false,
-          "sort": 0,
-          "type": "custom"
-        }
-      ]
-    },
-    "panels": [
-      {
-        "id": 1,
-        "title": "My API Requests",
-        "type": "logs",
-        "targets": [
-          {
-            "expr": "{job=\"api\", provider_id=\"$provider_id\"} |= \"API request\"",
-            "refId": "A"
           }
         ],
-        "gridPos": {
-          "h": 12,
-          "w": 24,
-          "x": 0,
-          "y": 0
-        },
-        "options": {
-          "showTime": true,
-          "showLabels": true,
-          "showCommonLabels": false,
-          "wrapLogMessage": false,
-          "prettifyLogMessage": false,
-          "enableLogDetails": true,
-          "dedupStrategy": "none",
-          "sortOrder": "Descending"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "custom": {}
-          }
-        }
-      },
-      {
-        "id": 2,
-        "title": "My Request Count",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "count_over_time({job=\"api\", provider_id=\"$provider_id\"} |= \"API request\" [$__interval])",
-            "refId": "A"
-          }
-        ],
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 0,
-          "y": 12
-        },
-        "options": {
-          "reduceOptions": {
-            "values": false,
-            "calcs": ["lastNotNull"],
-            "fields": ""
-          },
-          "orientation": "auto",
-          "textMode": "auto",
-          "colorMode": "value",
-          "graphMode": "area",
-          "justifyMode": "auto"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "mappings": [],
-            "thresholds": {
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          }
-        }
-      },
-      {
-        "id": 3,
-        "title": "My Requests Over Time",
-        "type": "timeseries",
-        "targets": [
-          {
-            "expr": "sum(rate({job=\"api\", provider_id=\"$provider_id\"} |= \"API request\" [$__rate_interval]))",
-            "refId": "A",
-            "legendFormat": "My Requests/sec"
-          }
-        ],
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 12,
-          "y": 12
-        },
-        "fieldConfig": {
-          "defaults": {
-            "custom": {
-              "drawStyle": "line",
-              "lineInterpolation": "linear",
-              "barAlignment": 0,
-              "lineWidth": 1,
-              "fillOpacity": 0.1,
-              "gradientMode": "none",
-              "spanNulls": false,
-              "insertNulls": false,
-              "showPoints": "auto",
-              "pointSize": 5,
-              "stacking": {
-                "mode": "none",
-                "group": "A"
-              },
-              "axisPlacement": "auto",
-              "axisLabel": "",
-              "axisColorMode": "text",
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "axisCenteredZero": false,
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "vis": false
-              },
-              "thresholdsStyle": {
-                "mode": "off"
-              }
-            },
-            "color": {
-              "mode": "palette-classic"
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          }
-        },
-        "options": {
-          "tooltip": {
-            "mode": "single",
-            "sort": "none"
-          },
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom"
-          }
-        }
-      },
-      {
-        "id": 4,
-        "title": "My Error Logs",
-        "type": "logs",
-        "targets": [
-          {
-            "expr": "{job=\"api\", provider_id=\"$provider_id\"} |= \"error\" or {job=\"api\", provider_id=\"$provider_id\"} |= \"ERROR\"",
-            "refId": "A"
-          }
-        ],
-        "gridPos": {
-          "h": 8,
-          "w": 24,
-          "x": 0,
-          "y": 20
-        },
-        "options": {
-          "showTime": true,
-          "showLabels": true,
-          "showCommonLabels": false,
-          "wrapLogMessage": false,
-          "prettifyLogMessage": false,
-          "enableLogDetails": true,
-          "dedupStrategy": "none",
-          "sortOrder": "Descending"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "custom": {}
-          }
-        }
+        "query": "USER_PROVIDER_ID_PLACEHOLDER",
+        "refresh": 0,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "custom"
       }
     ]
-  }
+  },
+  "panels": [
+    {
+      "id": 6,
+      "title": "📊 Total API Requests",
+      "type": "stat",
+      "description": "Total number of API requests in the selected time range",
+      "targets": [
+        {
+          "expr": "count_over_time({job=\"api\"} |= \"API request\" [24h])",
+          "refId": "A",
+          "queryType": "instant"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 100
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
+            ]
+          },
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "✅ Success Rate",
+      "type": "stat",
+      "description": "Percentage of successful requests (status 2xx)",
+      "targets": [
+        {
+          "expr": "(count_over_time({job=\"api\", status=~\"2.*\"} |= \"API request\" [24h]) / count_over_time({job=\"api\"} |= \"API request\" [24h])) * 100",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 90
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "❌ Error Rate",
+      "type": "stat",
+      "description": "Percentage of failed requests (status 4xx, 5xx)",
+      "targets": [
+        {
+          "expr": "(count_over_time({job=\"api\", status=~\"[45].*\"} |= \"API request\" [24h]) / count_over_time({job=\"api\"} |= \"API request\" [24h])) * 100",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "⚡ Average Response Time",
+      "type": "stat",
+      "description": "Average response time for API requests",
+      "targets": [
+        {
+          "expr": "avg_over_time({job=\"api\"} |= \"API request\" | json | unwrap response_time [24h])",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 500
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
+            ]
+          },
+          "unit": "ms"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "📈 Requests Over Time",
+      "type": "timeseries",
+      "description": "API request rate over time",
+      "targets": [
+        {
+          "expr": "sum(rate({job=\"api\"} |= \"API request\" [24h]))",
+          "refId": "A",
+          "legendFormat": "Requests/sec"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "barAlignment": 0,
+            "lineWidth": 2,
+            "fillOpacity": 0.1,
+            "gradientMode": "none",
+            "spanNulls": false,
+            "insertNulls": false,
+            "showPoints": "auto",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "axisCenteredZero": false,
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "reqps"
+        }
+      },
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "🔧 Requests by HTTP Method",
+      "type": "table",
+      "description": "Distribution of requests by HTTP method",
+      "targets": [
+        {
+          "expr": "sum by (method) (count_over_time({job=\"api\"} |= \"API request\" [24h]))",
+          "refId": "A",
+          "legendFormat": "{{method}}",
+          "instant": true
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "pieType": "pie",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "visible",
+          "placement": "right",
+          "values": ["value", "percent"]
+        },
+        "displayLabels": ["name", "percent"]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 1,
+      "title": "My API Requests",
+      "type": "logs",
+      "targets": [
+        {
+          "expr": "{job=\"api\"} |= \"API request\"",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": false,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "My Requests Over Time",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate({job=\"api\"} |= \"API request\" [24h]))",
+          "refId": "A",
+          "legendFormat": "My Requests/sec"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 12,
+        "y": 28
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "barAlignment": 0,
+            "lineWidth": 1,
+            "fillOpacity": 0.1,
+            "gradientMode": "none",
+            "spanNulls": false,
+            "insertNulls": false,
+            "showPoints": "auto",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "axisCenteredZero": false,
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "🎯 Requests by Endpoint",
+      "type": "table",
+      "description": "Distribution of requests across different API endpoints",
+      "targets": [
+        {
+          "expr": "sum by (clean_path) (label_replace(count_over_time({job=\"api\"} |= \"API request\" | json | path!=\"\" [24h]), \"clean_path\", \"$1\", \"path\", \"^/[^/]+(/.*)$\"))",
+          "legendFormat": "{{clean_path}}",
+          "queryType": "instant"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 36
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Value"
+          }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          },
+          "mappings": [],
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "My Error Logs",
+      "type": "logs",
+      "targets": [
+        {
+          "expr": "{job=\"api\", provider_id=~\"$provider_id|empty\"} |~ \"(?i)error\"",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 44
+      },
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": false,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
+    }
+  ]
+}
