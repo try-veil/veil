@@ -1,5 +1,7 @@
 {
-  "admin": { "listen": "0.0.0.0:2019" },
+  "admin": {
+    "listen": "0.0.0.0:2019"
+  },
   "apps": {
     "http": {
       "servers": {
@@ -14,7 +16,11 @@
                   "subscription_key": "X-Subscription-Key"
                 }
               ],
-              "match": [{ "path": ["/veil/api/*"] }]
+              "match": [
+                {
+                  "path": ["/veil/api/*"]
+                }
+              ]
             }
           ]
         },
@@ -28,470 +34,23 @@
                   "response": {
                     "set": {
                       "Access-Control-Allow-Credentials": ["true"],
-                      "Access-Control-Allow-Headers": [
-                        "{http.request.header.Access-Control-Request-Headers}"
-                      ],
-                      "Access-Control-Allow-Methods": [
-                        "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-                      ],
-                      "Access-Control-Allow-Origin": [
-                        "{http.request.header.Origin}"
-                      ],
+                      "Access-Control-Allow-Headers": ["{http.request.header.Access-Control-Request-Headers}"],
+                      "Access-Control-Allow-Methods": ["GET, POST, PUT, DELETE, PATCH, OPTIONS"],
+                      "Access-Control-Allow-Origin": ["{http.request.header.Origin}"],
                       "Vary": ["Origin"]
                     }
                   }
                 },
-                { "handler": "static_response", "status_code": 204 }
-              ],
-              "match": [{ "method": ["OPTIONS"] }]
-            },
-            {
-              "handle": [
                 {
-                  "handler": "subroute",
-                  "routes": [
-                    {
-                      "handle": [
-                        {
-                          "handler": "headers",
-                          "response": {
-                            "delete": [
-                              "Access-Control-Allow-Origin",
-                              "Access-Control-Allow-Credentials",
-                              "Vary"
-                            ],
-                            "set": {
-                              "Access-Control-Allow-Credentials": ["true"],
-                              "Access-Control-Allow-Headers": [
-                                "{http.request.header.Access-Control-Request-Headers}"
-                              ],
-                              "Access-Control-Allow-Methods": [
-                                "GET",
-                                "POST",
-                                "PUT",
-                                "DELETE",
-                                "PATCH",
-                                "OPTIONS"
-                              ],
-                              "Access-Control-Allow-Origin": [
-                                "{http.request.header.Origin}"
-                              ],
-                              "Access-Control-Max-Age": ["86400"],
-                              "Vary": ["Origin"]
-                            }
-                          }
-                        },
-                        { "handler": "static_response", "status_code": 204 }
-                      ],
-                      "match": [
-                        {
-                          "method": ["OPTIONS"],
-                          "path": [
-                            "/a83dfcb9-ebf9-49de-a300-f057d333bb61/posts/1*"
-                          ]
-                        }
-                      ],
-                      "terminal": true
-                    },
-                    {
-                      "handle": [
-                        {
-                          "handler": "headers",
-                          "response": {
-                            "delete": [
-                              "Access-Control-Allow-Origin",
-                              "Access-Control-Allow-Credentials",
-                              "Vary"
-                            ],
-                            "set": {
-                              "Access-Control-Allow-Credentials": ["true"],
-                              "Access-Control-Allow-Origin": [
-                                "{http.request.header.Origin}"
-                              ],
-                              "Vary": ["Origin"]
-                            }
-                          }
-                        },
-                        {
-                          "db_path": "./veil.db",
-                          "handler": "veil_handler",
-                          "subscription_key": "X-Subscription-Key"
-                        },
-                        {
-                          "handler": "rewrite",
-                          "strip_path_prefix": "/a83dfcb9-ebf9-49de-a300-f057d333bb61"
-                        },
-                        {
-                          "handler": "reverse_proxy",
-                          "headers": {
-                            "request": {
-                              "set": {
-                                "Host": ["jsonplaceholder.typicode.com"]
-                              }
-                            }
-                          },
-                          "transport": {
-                            "protocol": "http",
-                            "tls": { "insecure_skip_verify": true }
-                          },
-                          "upstreams": [
-                            { "dial": "jsonplaceholder.typicode.com:443" }
-                          ]
-                        }
-                      ],
-                      "match": [
-                        {
-                          "method": ["GET"],
-                          "path": [
-                            "/a83dfcb9-ebf9-49de-a300-f057d333bb61/posts/1*"
-                          ]
-                        }
-                      ],
-                      "terminal": true
-                    }
-                  ]
+                  "handler": "static_response",
+                  "status_code": 204
                 }
               ],
               "match": [
-                { "path": ["/a83dfcb9-ebf9-49de-a300-f057d333bb61/posts/1*"] }
-              ],
-              "terminal": true
-            },
-            {
-              "handle": [
                 {
-                  "handler": "subroute",
-                  "routes": [
-                    {
-                      "handle": [
-                        {
-                          "handler": "headers",
-                          "response": {
-                            "delete": [
-                              "Access-Control-Allow-Origin",
-                              "Access-Control-Allow-Credentials",
-                              "Vary"
-                            ],
-                            "set": {
-                              "Access-Control-Allow-Credentials": ["true"],
-                              "Access-Control-Allow-Headers": [
-                                "{http.request.header.Access-Control-Request-Headers}"
-                              ],
-                              "Access-Control-Allow-Methods": [
-                                "GET",
-                                "POST",
-                                "PUT",
-                                "DELETE",
-                                "PATCH",
-                                "OPTIONS"
-                              ],
-                              "Access-Control-Allow-Origin": [
-                                "{http.request.header.Origin}"
-                              ],
-                              "Access-Control-Max-Age": ["86400"],
-                              "Vary": ["Origin"]
-                            }
-                          }
-                        },
-                        { "handler": "static_response", "status_code": 204 }
-                      ],
-                      "match": [
-                        {
-                          "method": ["OPTIONS"],
-                          "path": [
-                            "/26317b3f-eb0d-404e-bf6a-9a817e17b73a/posts/2*"
-                          ]
-                        }
-                      ],
-                      "terminal": true
-                    },
-                    {
-                      "handle": [
-                        {
-                          "handler": "headers",
-                          "response": {
-                            "delete": [
-                              "Access-Control-Allow-Origin",
-                              "Access-Control-Allow-Credentials",
-                              "Vary"
-                            ],
-                            "set": {
-                              "Access-Control-Allow-Credentials": ["true"],
-                              "Access-Control-Allow-Origin": [
-                                "{http.request.header.Origin}"
-                              ],
-                              "Vary": ["Origin"]
-                            }
-                          }
-                        },
-                        {
-                          "db_path": "./veil.db",
-                          "handler": "veil_handler",
-                          "subscription_key": "X-Subscription-Key"
-                        },
-                        {
-                          "handler": "rewrite",
-                          "strip_path_prefix": "/26317b3f-eb0d-404e-bf6a-9a817e17b73a"
-                        },
-                        {
-                          "handler": "reverse_proxy",
-                          "headers": {
-                            "request": {
-                              "set": {
-                                "Host": ["jsonplaceholder.typicode.com"]
-                              }
-                            }
-                          },
-                          "transport": {
-                            "protocol": "http",
-                            "tls": { "insecure_skip_verify": true }
-                          },
-                          "upstreams": [
-                            { "dial": "jsonplaceholder.typicode.com:443" }
-                          ]
-                        }
-                      ],
-                      "match": [
-                        {
-                          "method": ["GET"],
-                          "path": [
-                            "/26317b3f-eb0d-404e-bf6a-9a817e17b73a/posts/2*"
-                          ]
-                        }
-                      ],
-                      "terminal": true
-                    }
-                  ]
+                  "method": ["OPTIONS"]
                 }
-              ],
-              "match": [
-                { "path": ["/26317b3f-eb0d-404e-bf6a-9a817e17b73a/posts/2*"] }
-              ],
-              "terminal": true
-            },
-            {
-              "handle": [
-                {
-                  "handler": "subroute",
-                  "routes": [
-                    {
-                      "handle": [
-                        {
-                          "handler": "headers",
-                          "response": {
-                            "delete": [
-                              "Access-Control-Allow-Origin",
-                              "Access-Control-Allow-Credentials",
-                              "Vary"
-                            ],
-                            "set": {
-                              "Access-Control-Allow-Credentials": ["true"],
-                              "Access-Control-Allow-Headers": [
-                                "{http.request.header.Access-Control-Request-Headers}"
-                              ],
-                              "Access-Control-Allow-Methods": [
-                                "GET",
-                                "POST",
-                                "PUT",
-                                "DELETE",
-                                "PATCH",
-                                "OPTIONS"
-                              ],
-                              "Access-Control-Allow-Origin": [
-                                "{http.request.header.Origin}"
-                              ],
-                              "Access-Control-Max-Age": ["86400"],
-                              "Vary": ["Origin"]
-                            }
-                          }
-                        },
-                        { "handler": "static_response", "status_code": 204 }
-                      ],
-                      "match": [
-                        {
-                          "method": ["OPTIONS"],
-                          "path": [
-                            "/a15c02c4-4fb6-42d7-b09c-4e07fe24a1d1/posts/1*"
-                          ]
-                        }
-                      ],
-                      "terminal": true
-                    },
-                    {
-                      "handle": [
-                        {
-                          "handler": "headers",
-                          "response": {
-                            "delete": [
-                              "Access-Control-Allow-Origin",
-                              "Access-Control-Allow-Credentials",
-                              "Vary"
-                            ],
-                            "set": {
-                              "Access-Control-Allow-Credentials": ["true"],
-                              "Access-Control-Allow-Origin": [
-                                "{http.request.header.Origin}"
-                              ],
-                              "Vary": ["Origin"]
-                            }
-                          }
-                        },
-                        {
-                          "db_path": "./veil.db",
-                          "handler": "veil_handler",
-                          "subscription_key": "X-Subscription-Key"
-                        },
-                        {
-                          "handler": "rewrite",
-                          "strip_path_prefix": "/a15c02c4-4fb6-42d7-b09c-4e07fe24a1d1"
-                        },
-                        {
-                          "handler": "reverse_proxy",
-                          "headers": {
-                            "request": {
-                              "set": {
-                                "Host": ["jsonplaceholder.typicode.com"]
-                              }
-                            }
-                          },
-                          "transport": {
-                            "protocol": "http",
-                            "tls": { "insecure_skip_verify": true }
-                          },
-                          "upstreams": [
-                            { "dial": "jsonplaceholder.typicode.com:443" }
-                          ]
-                        }
-                      ],
-                      "match": [
-                        {
-                          "method": ["GET"],
-                          "path": [
-                            "/a15c02c4-4fb6-42d7-b09c-4e07fe24a1d1/posts/1*"
-                          ]
-                        }
-                      ],
-                      "terminal": true
-                    }
-                  ]
-                }
-              ],
-              "match": [
-                { "path": ["/a15c02c4-4fb6-42d7-b09c-4e07fe24a1d1/posts/1*"] }
-              ],
-              "terminal": true
-            },
-            {
-              "handle": [
-                {
-                  "handler": "subroute",
-                  "routes": [
-                    {
-                      "handle": [
-                        {
-                          "handler": "headers",
-                          "response": {
-                            "delete": [
-                              "Access-Control-Allow-Origin",
-                              "Access-Control-Allow-Credentials",
-                              "Vary"
-                            ],
-                            "set": {
-                              "Access-Control-Allow-Credentials": ["true"],
-                              "Access-Control-Allow-Headers": [
-                                "{http.request.header.Access-Control-Request-Headers}"
-                              ],
-                              "Access-Control-Allow-Methods": [
-                                "GET",
-                                "POST",
-                                "PUT",
-                                "DELETE",
-                                "PATCH",
-                                "OPTIONS"
-                              ],
-                              "Access-Control-Allow-Origin": [
-                                "{http.request.header.Origin}"
-                              ],
-                              "Access-Control-Max-Age": ["86400"],
-                              "Vary": ["Origin"]
-                            }
-                          }
-                        },
-                        { "handler": "static_response", "status_code": 204 }
-                      ],
-                      "match": [
-                        {
-                          "method": ["OPTIONS"],
-                          "path": [
-                            "/65437231-f05d-4433-86eb-8739c97aa918/posts/2*"
-                          ]
-                        }
-                      ],
-                      "terminal": true
-                    },
-                    {
-                      "handle": [
-                        {
-                          "handler": "headers",
-                          "response": {
-                            "delete": [
-                              "Access-Control-Allow-Origin",
-                              "Access-Control-Allow-Credentials",
-                              "Vary"
-                            ],
-                            "set": {
-                              "Access-Control-Allow-Credentials": ["true"],
-                              "Access-Control-Allow-Origin": [
-                                "{http.request.header.Origin}"
-                              ],
-                              "Vary": ["Origin"]
-                            }
-                          }
-                        },
-                        {
-                          "db_path": "./veil.db",
-                          "handler": "veil_handler",
-                          "subscription_key": "X-Subscription-Key"
-                        },
-                        {
-                          "handler": "rewrite",
-                          "strip_path_prefix": "/65437231-f05d-4433-86eb-8739c97aa918"
-                        },
-                        {
-                          "handler": "reverse_proxy",
-                          "headers": {
-                            "request": {
-                              "set": {
-                                "Host": ["jsonplaceholder.typicode.com"]
-                              }
-                            }
-                          },
-                          "transport": {
-                            "protocol": "http",
-                            "tls": { "insecure_skip_verify": true }
-                          },
-                          "upstreams": [
-                            { "dial": "jsonplaceholder.typicode.com:443" }
-                          ]
-                        }
-                      ],
-                      "match": [
-                        {
-                          "method": ["GET"],
-                          "path": [
-                            "/65437231-f05d-4433-86eb-8739c97aa918/posts/2*"
-                          ]
-                        }
-                      ],
-                      "terminal": true
-                    }
-                  ]
-                }
-              ],
-              "match": [
-                { "path": ["/65437231-f05d-4433-86eb-8739c97aa918/posts/2*"] }
-              ],
-              "terminal": true
+              ]
             },
             {
               "handle": [
@@ -501,7 +60,11 @@
                   "subscription_key": "X-Subscription-Key"
                 }
               ],
-              "match": [{ "path": ["/*"] }]
+              "match": [
+                {
+                  "path": ["/*"]
+                }
+              ]
             }
           ]
         }
