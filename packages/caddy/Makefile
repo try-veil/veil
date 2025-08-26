@@ -65,7 +65,7 @@ run:
 	@echo "Starting Caddy with file-based configuration..."
 	CADDY_CONFIG=veil-live.json ./veil run --config veil-live.json
 
-fresh-start: clean-config run
+fresh-start: clean-config build run
 	@echo "Starting Caddy with fresh configuration..."
 
 release-dry-run:
