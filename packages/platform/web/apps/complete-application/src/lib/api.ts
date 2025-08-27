@@ -12,6 +12,9 @@ export interface UserData {
   id: string;
   name?: string;
   email?: string;
+  username?: string;
+  fusionAuthId?: string;
+  tenantId?: string;
   role?: string;
 }
 
@@ -20,7 +23,9 @@ export interface UserData {
  */
 export async function fetchUserData(token: string): Promise<UserData> {
   const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/me`;
-  console.log('Fetching user data from:', apiUrl);
+  console.log('fetchUserData: Making request to:', apiUrl);
+  console.log('fetchUserData: Token length:', token?.length);
+  console.log('fetchUserData: Token preview:', token?.substring(0, 50) + '...');
 
   const response = await fetch(apiUrl, {
     headers: {
@@ -29,20 +34,23 @@ export async function fetchUserData(token: string): Promise<UserData> {
     }
   });
 
-  console.log('User data response status:', response.status);
+  console.log('fetchUserData: Response status:', response.status);
+  console.log('fetchUserData: Response ok:', response.ok);
+  console.log('fetchUserData: Response headers:', Object.fromEntries(response.headers.entries()));
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('User data fetch failed:', {
+    console.error('fetchUserData: Request failed:', {
       status: response.status,
       statusText: response.statusText,
-      error: errorText
+      error: errorText,
+      url: apiUrl
     });
-    throw new Error(`Failed to fetch user data: ${response.status} ${response.statusText}`);
+    throw new Error(`Failed to fetch user data: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
   const userData = await response.json();
-  console.log('User data received:', userData);
+  console.log('fetchUserData: User data received:', userData);
   return userData;
 }
 

@@ -282,6 +282,56 @@
         ]
       }
     },
+    "/internal/wallet/user/{userId}": {
+      "get": {
+        "operationId": "WalletController_getWalletByUserId",
+        "summary": "Get wallet info for a user",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "The user ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the wallet info for the user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "walletId": {
+                      "type": "string"
+                    },
+                    "balance": {
+                      "type": "number"
+                    },
+                    "currency": {
+                      "type": "string"
+                    },
+                    "lastUpdated": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Wallet not found for user"
+          }
+        },
+        "tags": [
+          "wallet"
+        ]
+      }
+    },
     "/internal/wallet/balance/{walletId}": {
       "get": {
         "operationId": "WalletController_getBalance",
@@ -863,10 +913,10 @@
         ]
       }
     },
-    "/credits/{userId}": {
+    "/internal/credits/{userId}/balance": {
       "get": {
-        "operationId": "CreditController_getCreditBalance",
-        "summary": "Get credit balance for a user",
+        "operationId": "CreditController_getCurrentBalance",
+        "summary": "Get current balance (wallet + credit system integrated)",
         "parameters": [
           {
             "name": "userId",
@@ -880,18 +930,32 @@
         ],
         "responses": {
           "200": {
-            "description": "Returns the credit balance",
+            "description": "Current balance",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreditBalanceResponseDto"
+                  "type": "object",
+                  "properties": {
+                    "balance": {
+                      "type": "number"
+                    },
+                    "lastUpdated": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "status": {
+                      "type": "string",
+                      "description": "Wallet status",
+                      "default": "ACTIVE"
+                    }
+                  }
                 }
               }
             }
           }
         },
         "tags": [
-          "credits"
+          "internal/credits"
         ],
         "security": [
           {
@@ -900,7 +964,7 @@
         ]
       }
     },
-    "/credits/{userId}/check": {
+    "/internal/credits/{userId}/check": {
       "post": {
         "operationId": "CreditController_checkCredits",
         "summary": "Check if user has sufficient credits",
@@ -941,7 +1005,7 @@
           }
         },
         "tags": [
-          "credits"
+          "internal/credits"
         ],
         "security": [
           {
@@ -950,7 +1014,65 @@
         ]
       }
     },
-    "/credits/{userId}/deduct": {
+    "/internal/credits/{userId}/add": {
+      "post": {
+        "operationId": "CreditController_addCredits",
+        "summary": "Add credits to user (admin/system use)",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCreditsRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Credits added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "balance": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request"
+          }
+        },
+        "tags": [
+          "internal/credits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/internal/credits/{userId}/deduct": {
       "post": {
         "operationId": "CreditController_deductCredits",
         "summary": "Deduct credits from user",
@@ -981,7 +1103,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CreditBalanceDto"
+                  "type": "object",
+                  "properties": {
+                    "balance": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
                 }
               }
             }
@@ -991,7 +1121,7 @@
           }
         },
         "tags": [
-          "credits"
+          "internal/credits"
         ],
         "security": [
           {
@@ -1000,10 +1130,10 @@
         ]
       }
     },
-    "/credits/{userId}/add": {
+    "/internal/credits/{userId}/purchase": {
       "post": {
-        "operationId": "CreditController_addCredits",
-        "summary": "Add credits to user",
+        "operationId": "CreditController_purchaseCredits",
+        "summary": "Purchase credits via Razorpay",
         "parameters": [
           {
             "name": "userId",
@@ -1020,28 +1150,32 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AddCreditsRequestDto"
+                "type": "object",
+                "properties": {
+                  "creditAmount": {
+                    "type": "number",
+                    "description": "Number of credits to purchase"
+                  },
+                  "amountInRupees": {
+                    "type": "number",
+                    "description": "Amount in rupees"
+                  }
+                },
+                "required": [
+                  "creditAmount",
+                  "amountInRupees"
+                ]
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Credits added successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreditBalanceDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
+            "description": "Razorpay order created successfully"
           }
         },
         "tags": [
-          "credits"
+          "internal/credits"
         ],
         "security": [
           {
@@ -1050,7 +1184,53 @@
         ]
       }
     },
-    "/credits/{userId}/generate-api-key": {
+    "/internal/credits/confirm-payment": {
+      "post": {
+        "operationId": "CreditController_confirmPayment",
+        "summary": "Confirm Razorpay payment and add credits",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "razorpay_payment_id": {
+                    "type": "string"
+                  },
+                  "razorpay_order_id": {
+                    "type": "string"
+                  },
+                  "razorpay_signature": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "razorpay_payment_id",
+                  "razorpay_order_id",
+                  "razorpay_signature"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment confirmed and credits added"
+          }
+        },
+        "tags": [
+          "internal/credits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/internal/credits/{userId}/generate-api-key": {
       "post": {
         "operationId": "CreditController_generateApiKey",
         "summary": "Generate API key and deduct credits",
@@ -1091,7 +1271,7 @@
           }
         },
         "tags": [
-          "credits"
+          "internal/credits"
         ],
         "security": [
           {
@@ -1100,10 +1280,10 @@
         ]
       }
     },
-    "/credits/{userId}/purchase": {
-      "post": {
-        "operationId": "CreditController_purchaseCredits",
-        "summary": "Purchase credits",
+    "/internal/credits/{userId}/debug": {
+      "get": {
+        "operationId": "CreditController_debugBalance",
+        "summary": "Debug balance information for troubleshooting",
         "parameters": [
           {
             "name": "userId",
@@ -1115,38 +1295,411 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Debug information about user balances"
+          }
+        },
+        "tags": [
+          "internal/credits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/internal/razorpay/create-order": {
+      "post": {
+        "operationId": "RazorpayController_createOrder",
+        "summary": "Create a Razorpay order for payment processing",
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PurchaseCreditsRequestDto"
+                "$ref": "#/components/schemas/CreateOrderDto"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Credits purchased successfully",
+            "description": "Order created successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PurchaseCreditsResponseDto"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "order": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "amount": {
+                          "type": "number"
+                        },
+                        "currency": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "type": "number"
+                        }
+                      }
+                    },
+                    "key_id": {
+                      "type": "string"
+                    }
+                  }
                 }
               }
             }
           },
           "400": {
-            "description": "Invalid request"
+            "description": "Bad request"
           }
         },
         "tags": [
-          "credits"
-        ],
-        "security": [
-          {
-            "bearer": []
+          "razorpay"
+        ]
+      }
+    },
+    "/internal/razorpay/verify-payment": {
+      "post": {
+        "operationId": "RazorpayController_verifyPayment",
+        "summary": "Verify payment signature and process payment confirmation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyPaymentDto"
+              }
+            }
           }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment verified successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "verified": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Payment verification failed"
+          }
+        },
+        "tags": [
+          "razorpay"
+        ]
+      }
+    },
+    "/internal/razorpay/webhook": {
+      "post": {
+        "operationId": "RazorpayController_handleWebhook",
+        "summary": "Handle Razorpay webhook events",
+        "parameters": [
+          {
+            "name": "x-razorpay-signature",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Webhook processed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Webhook processing failed"
+          }
+        },
+        "tags": [
+          "razorpay"
+        ]
+      }
+    },
+    "/internal/razorpay/payment/{paymentId}": {
+      "get": {
+        "operationId": "RazorpayController_getPaymentDetails",
+        "summary": "Get payment details from Razorpay",
+        "parameters": [
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "description": "The Razorpay payment ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "payment": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Payment not found"
+          }
+        },
+        "tags": [
+          "razorpay"
+        ]
+      }
+    },
+    "/internal/razorpay/order/{orderId}": {
+      "get": {
+        "operationId": "RazorpayController_getOrderDetails",
+        "summary": "Get order details from Razorpay",
+        "parameters": [
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "description": "The Razorpay order ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "order": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Order not found"
+          }
+        },
+        "tags": [
+          "razorpay"
+        ]
+      }
+    },
+    "/internal/razorpay/refund/{paymentId}": {
+      "post": {
+        "operationId": "RazorpayController_processRefund",
+        "summary": "Process refund for a payment",
+        "parameters": [
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "description": "The Razorpay payment ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                    "description": "Refund amount (optional, full refund if not provided)"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "description": "Reason for refund"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Refund processed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "refund": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Refund processing failed"
+          }
+        },
+        "tags": [
+          "razorpay"
+        ]
+      }
+    },
+    "/internal/razorpay/generate-test-signature": {
+      "post": {
+        "operationId": "RazorpayController_generateTestSignature",
+        "summary": "Generate test signature for payment verification testing",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "order_id": {
+                    "type": "string",
+                    "description": "Razorpay order ID"
+                  },
+                  "payment_id": {
+                    "type": "string",
+                    "description": "Test payment ID"
+                  }
+                },
+                "required": [
+                  "order_id",
+                  "payment_id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Test signature generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "signature": {
+                      "type": "string"
+                    },
+                    "order_id": {
+                      "type": "string"
+                    },
+                    "payment_id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "razorpay"
+        ]
+      }
+    },
+    "/internal/razorpay/health": {
+      "get": {
+        "operationId": "RazorpayController_healthCheck",
+        "summary": "Check Razorpay service health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Service health status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "configured": {
+                      "type": "boolean"
+                    },
+                    "timestamp": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "razorpay"
         ]
       }
     },
@@ -3408,7 +3961,25 @@
       },
       "CreateWalletDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "The user ID for whom the wallet is being created"
+          },
+          "tenantId": {
+            "type": "string",
+            "description": "The tenant ID associated with the wallet"
+          },
+          "initialCredits": {
+            "type": "number",
+            "description": "Initial credits to add to the wallet",
+            "default": 0
+          }
+        },
+        "required": [
+          "userId",
+          "tenantId"
+        ]
       },
       "WalletBalanceResponseDto": {
         "type": "object",
@@ -3429,110 +4000,6 @@
       "RefundPaymentDto": {
         "type": "object",
         "properties": {}
-      },
-      "CreditUsageDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique ID of the credit usage",
-            "example": "1234-5678-90ab-cdef"
-          },
-          "userId": {
-            "type": "string",
-            "description": "User ID",
-            "example": "user-123"
-          },
-          "amount": {
-            "type": "number",
-            "description": "Amount of credits used",
-            "example": 100
-          },
-          "type": {
-            "type": "string",
-            "description": "Type of credit usage",
-            "enum": [
-              "API_CALL",
-              "FEATURE_USAGE",
-              "MANUAL_ADJUSTMENT"
-            ],
-            "example": "API_CALL"
-          },
-          "endpointId": {
-            "type": "string",
-            "description": "Endpoint ID if applicable",
-            "example": "endpoint-123"
-          },
-          "featureId": {
-            "type": "string",
-            "description": "Feature ID if applicable",
-            "example": "feature-123"
-          },
-          "description": {
-            "type": "string",
-            "description": "Description of the usage",
-            "example": "OpenAI API call"
-          },
-          "metadata": {
-            "type": "object",
-            "description": "Additional metadata about the credit usage",
-            "example": {
-              "apiName": "openai",
-              "modelName": "gpt-4"
-            }
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "When the credits were used",
-            "example": "2023-01-01T12:00:00Z"
-          }
-        },
-        "required": [
-          "id",
-          "userId",
-          "amount",
-          "type",
-          "createdAt"
-        ]
-      },
-      "CreditBalanceResponseDto": {
-        "type": "object",
-        "properties": {
-          "balance": {
-            "type": "number",
-            "description": "Current credit balance",
-            "example": 1000
-          },
-          "status": {
-            "type": "string",
-            "description": "Status of the credit balance",
-            "enum": [
-              "ACTIVE",
-              "SUSPENDED",
-              "EXPIRED"
-            ],
-            "example": "ACTIVE"
-          },
-          "expiresAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "When the credits expire, if applicable",
-            "example": "2024-01-01T12:00:00Z"
-          },
-          "recentUsage": {
-            "description": "Recent credit usage",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CreditUsageDto"
-            }
-          }
-        },
-        "required": [
-          "balance",
-          "status",
-          "recentUsage"
-        ]
       },
       "CheckCreditsRequestDto": {
         "type": "object",
@@ -3558,94 +4025,6 @@
         },
         "required": [
           "hasSufficientCredits"
-        ]
-      },
-      "DeductCreditsRequestDto": {
-        "type": "object",
-        "properties": {
-          "amount": {
-            "type": "number",
-            "description": "Amount of credits to deduct",
-            "example": 100
-          },
-          "type": {
-            "type": "string",
-            "description": "Type of credit usage",
-            "enum": [
-              "API_CALL",
-              "FEATURE_USAGE",
-              "MANUAL_ADJUSTMENT"
-            ],
-            "example": "API_CALL"
-          },
-          "metadata": {
-            "type": "object",
-            "description": "Additional metadata about the credit usage",
-            "example": {
-              "apiName": "openai",
-              "modelName": "gpt-4"
-            }
-          }
-        },
-        "required": [
-          "amount",
-          "type"
-        ]
-      },
-      "CreditBalanceDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Unique ID of the credit balance",
-            "example": "balance-123"
-          },
-          "userId": {
-            "type": "string",
-            "description": "User ID",
-            "example": "user-123"
-          },
-          "balance": {
-            "type": "number",
-            "description": "Current credit balance",
-            "example": 1000
-          },
-          "status": {
-            "type": "string",
-            "description": "Status of the credit balance",
-            "enum": [
-              "ACTIVE",
-              "SUSPENDED",
-              "EXPIRED"
-            ],
-            "example": "ACTIVE"
-          },
-          "expiresAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "When the credits expire, if applicable",
-            "example": "2024-01-01T12:00:00Z"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "When the credit balance was created",
-            "example": "2023-01-01T12:00:00Z"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "When the credit balance was last updated",
-            "example": "2023-01-01T12:00:00Z"
-          }
-        },
-        "required": [
-          "id",
-          "userId",
-          "balance",
-          "status",
-          "createdAt",
-          "updatedAt"
         ]
       },
       "AddCreditsRequestDto": {
@@ -3678,6 +4057,38 @@
           "amount",
           "reason",
           "adjustedBy"
+        ]
+      },
+      "DeductCreditsRequestDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "description": "Amount of credits to deduct",
+            "example": 100
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of credit usage",
+            "enum": [
+              "API_CALL",
+              "FEATURE_USAGE",
+              "MANUAL_ADJUSTMENT"
+            ],
+            "example": "API_CALL"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional metadata about the credit usage",
+            "example": {
+              "apiName": "openai",
+              "modelName": "gpt-4"
+            }
+          }
+        },
+        "required": [
+          "amount",
+          "type"
         ]
       },
       "GenerateApiKeyRequestDto": {
@@ -3733,77 +4144,13 @@
           "subscriptionId"
         ]
       },
-      "PurchaseCreditsRequestDto": {
+      "CreateOrderDto": {
         "type": "object",
-        "properties": {
-          "amount": {
-            "type": "number",
-            "description": "Amount of credits to purchase",
-            "example": 1000
-          },
-          "paymentMethodType": {
-            "type": "string",
-            "description": "Payment method type",
-            "example": "CARD",
-            "enum": [
-              "CARD",
-              "CREDITS",
-              "ACH",
-              "OFFLINE"
-            ]
-          },
-          "paymentMethodId": {
-            "type": "string",
-            "description": "Payment method ID",
-            "example": "pm_1234567890"
-          },
-          "currency": {
-            "type": "string",
-            "description": "Currency for the purchase",
-            "example": "USD"
-          }
-        },
-        "required": [
-          "amount",
-          "paymentMethodType"
-        ]
+        "properties": {}
       },
-      "PurchaseCreditsResponseDto": {
+      "VerifyPaymentDto": {
         "type": "object",
-        "properties": {
-          "transactionId": {
-            "type": "string",
-            "description": "Transaction ID",
-            "example": "txn_1234567890"
-          },
-          "creditsAdded": {
-            "type": "number",
-            "description": "Credits added to account",
-            "example": 1000
-          },
-          "newBalance": {
-            "type": "number",
-            "description": "New credit balance",
-            "example": 1900
-          },
-          "paymentStatus": {
-            "type": "string",
-            "description": "Payment status",
-            "example": "SUCCEEDED",
-            "enum": [
-              "PENDING",
-              "PROCESSING",
-              "SUCCEEDED",
-              "FAILED"
-            ]
-          }
-        },
-        "required": [
-          "transactionId",
-          "creditsAdded",
-          "newBalance",
-          "paymentStatus"
-        ]
+        "properties": {}
       },
       "CreateSubscriptionDto": {
         "type": "object",
@@ -3854,31 +4201,6 @@
           "is_variable"
         ]
       },
-      "ParameterDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of the parameter",
-            "example": "location"
-          },
-          "type": {
-            "type": "string",
-            "description": "Type of the parameter",
-            "example": "string"
-          },
-          "required": {
-            "type": "boolean",
-            "description": "Whether the parameter is required",
-            "example": false
-          }
-        },
-        "required": [
-          "name",
-          "type",
-          "required"
-        ]
-      },
       "ApiKeyDto": {
         "type": "object",
         "properties": {
@@ -3907,26 +4229,20 @@
       "QueryParameterDto": {
         "type": "object",
         "properties": {
-          "name": {
+          "key": {
             "type": "string",
-            "description": "Query parameter name",
+            "description": "Query parameter key",
             "example": "page"
           },
-          "type": {
+          "value": {
             "type": "string",
-            "description": "Query parameter type",
-            "example": "string"
-          },
-          "required": {
-            "type": "boolean",
-            "description": "Whether the query parameter is required",
-            "example": false
+            "description": "Query parameter value",
+            "example": "1"
           }
         },
         "required": [
-          "name",
-          "type",
-          "required"
+          "key",
+          "value"
         ]
       },
       "MultipartFieldDto": {
@@ -4086,13 +4402,6 @@
             "description": "Required subscription level",
             "example": "free"
           },
-          "parameters": {
-            "description": "Parameters for the API",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ParameterDto"
-            }
-          },
           "api_keys": {
             "description": "API keys that can access this API",
             "type": "array",
@@ -4238,13 +4547,6 @@
             "type": "string",
             "description": "When the API was last updated",
             "example": "2023-01-01T00:00:00Z"
-          },
-          "parameters": {
-            "description": "Parameters for the API",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ParameterDto"
-            }
           },
           "query_params": {
             "description": "Query parameters",
@@ -4501,6 +4803,38 @@
           "updatedAt",
           "tenantId",
           "apis"
+        ]
+      },
+      "ParameterDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the parameter",
+            "example": "location"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of the parameter",
+            "example": "string",
+            "enum": [
+              "string",
+              "number",
+              "boolean",
+              "array",
+              "object"
+            ]
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether the parameter is required",
+            "example": true
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "required"
         ]
       },
       "ProjectApiDetailsDto": {

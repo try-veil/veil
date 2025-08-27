@@ -8,10 +8,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { CreditService } from './credit.service';
-import {
-  CreditBalance,
-  CreditBalanceResponse,
-} from '../../entities/credit/types';
+import { CreditBalance } from '../../entities/credit/types';
 import { AuthGuard } from '../auth/auth.guard';
 import {
   ApiTags,
@@ -26,35 +23,43 @@ import {
   CheckCreditsRequestDto,
   CheckCreditsResponseDto,
   CreditBalanceDto,
-  CreditBalanceResponseDto,
   DeductCreditsRequestDto,
 } from '../../entities/credit/dto';
 import {
   GenerateApiKeyRequestDto,
   GenerateApiKeyResponseDto,
-  PurchaseCreditsRequestDto,
-  PurchaseCreditsResponseDto,
 } from '../../entities/credit/api-key.dto';
 
-@ApiTags('credits')
+@ApiTags('internal/credits')
 @ApiBearerAuth()
-@Controller('credits')
-@UseGuards(AuthGuard)
+@Controller('internal/credits')
 export class CreditController {
   constructor(private readonly creditService: CreditService) { }
 
-  @Get(':userId')
-  @ApiOperation({ summary: 'Get credit balance for a user' })
+  // ============ BALANCE OPERATIONS ============
+
+  @Get(':userId/balance')
+  @ApiOperation({ summary: 'Get current balance (wallet + credit system integrated)' })
   @ApiParam({ name: 'userId', description: 'User ID' })
   @ApiResponse({
     status: 200,
-    description: 'Returns the credit balance',
-    type: CreditBalanceResponseDto,
+    description: 'Current balance',
+    schema: {
+      type: 'object',
+      properties: {
+        balance: { type: 'number' },
+        lastUpdated: { type: 'string', format: 'date-time' },
+        status: { type: 'string', description: 'Wallet status', default: 'ACTIVE' }
+      }
+    }
   })
-  async getCreditBalance(
-    @Param('userId') userId: string,
-  ): Promise<CreditBalanceResponse> {
-    return this.creditService.getCreditBalance(userId);
+  async getCurrentBalance(@Param('userId') userId: string) {
+    const balance = await this.creditService.getCurrentBalance(userId);
+    return { 
+      balance, 
+      lastUpdated: new Date(),
+      status: 'ACTIVE' // Default status for active wallets
+    };
   }
 
   @Post(':userId/check')
@@ -83,48 +88,29 @@ export class CreditController {
     return { hasSufficientCredits };
   }
 
-  @Post(':userId/deduct')
-  @ApiOperation({ summary: 'Deduct credits from user' })
-  @ApiParam({ name: 'userId', description: 'User ID' })
-  @ApiBody({ type: DeductCreditsRequestDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Credits deducted successfully',
-    type: CreditBalanceDto,
-  })
-  @ApiResponse({ status: 400, description: 'Invalid request' })
-  async deductCredits(
-    @Param('userId') userId: string,
-    @Body()
-    body: DeductCreditsRequestDto,
-  ): Promise<CreditBalance> {
-    if (!body.amount || body.amount <= 0) {
-      throw new BadRequestException('Invalid amount');
-    }
-
-    return this.creditService.deductCredits(
-      userId,
-      body.amount,
-      body.type,
-      body.metadata,
-    );
-  }
+  // ============ CREDIT OPERATIONS ============
 
   @Post(':userId/add')
-  @ApiOperation({ summary: 'Add credits to user' })
+  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Add credits to user (admin/system use)' })
   @ApiParam({ name: 'userId', description: 'User ID' })
   @ApiBody({ type: AddCreditsRequestDto })
   @ApiResponse({
     status: 200,
     description: 'Credits added successfully',
-    type: CreditBalanceDto,
+    schema: {
+      type: 'object',
+      properties: {
+        balance: { type: 'number' },
+        message: { type: 'string' }
+      }
+    }
   })
   @ApiResponse({ status: 400, description: 'Invalid request' })
   async addCredits(
     @Param('userId') userId: string,
-    @Body()
-    body: AddCreditsRequestDto,
-  ): Promise<CreditBalance> {
+    @Body() body: AddCreditsRequestDto,
+  ): Promise<{ balance: number; message: string }> {
     if (!body.amount || body.amount <= 0) {
       throw new BadRequestException('Invalid amount');
     }
@@ -137,16 +123,123 @@ export class CreditController {
       throw new BadRequestException('AdjustedBy is required');
     }
 
-    return this.creditService.addCredits(
+    const newBalance = await this.creditService.addCredits(
       userId,
       body.amount,
       body.reason,
       body.adjustedBy,
       body.metadata,
     );
+
+    return {
+      balance: newBalance,
+      message: `Successfully added ${body.amount} credits`
+    };
   }
 
+  @Post(':userId/deduct')
+  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Deduct credits from user' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiBody({ type: DeductCreditsRequestDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Credits deducted successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        balance: { type: 'number' },
+        message: { type: 'string' }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Invalid request' })
+  async deductCredits(
+    @Param('userId') userId: string,
+    @Body() body: DeductCreditsRequestDto,
+  ): Promise<{ balance: number; message: string }> {
+    if (!body.amount || body.amount <= 0) {
+      throw new BadRequestException('Invalid amount');
+    }
+
+    const newBalance = await this.creditService.deductCredits(
+      userId,
+      body.amount,
+      body.type,
+      body.metadata,
+    );
+
+    return {
+      balance: newBalance,
+      message: `Successfully deducted ${body.amount} credits`
+    };
+  }
+
+  // ============ PURCHASE OPERATIONS ============
+
+  @Post(':userId/purchase')
+  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Purchase credits via Razorpay' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        creditAmount: { type: 'number', description: 'Number of credits to purchase' },
+        amountInRupees: { type: 'number', description: 'Amount in rupees' }
+      },
+      required: ['creditAmount', 'amountInRupees']
+    }
+  })
+  @ApiResponse({ status: 200, description: 'Razorpay order created successfully' })
+  async purchaseCredits(
+    @Param('userId') userId: string,
+    @Body() body: { creditAmount: number; amountInRupees: number }
+  ) {
+    if (!body.creditAmount || body.creditAmount <= 0) {
+      throw new BadRequestException('Invalid credit amount');
+    }
+
+    if (!body.amountInRupees || body.amountInRupees <= 0) {
+      throw new BadRequestException('Invalid amount in rupees');
+    }
+
+    return this.creditService.purchaseCredits(
+      userId,
+      body.creditAmount,
+      body.amountInRupees
+    );
+  }
+
+  @Post('confirm-payment')
+  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Confirm Razorpay payment and add credits' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        razorpay_payment_id: { type: 'string' },
+        razorpay_order_id: { type: 'string' },
+        razorpay_signature: { type: 'string' }
+      },
+      required: ['razorpay_payment_id', 'razorpay_order_id', 'razorpay_signature']
+    }
+  })
+  @ApiResponse({ status: 200, description: 'Payment confirmed and credits added' })
+  async confirmPayment(
+    @Body() body: {
+      razorpay_payment_id: string;
+      razorpay_order_id: string;
+      razorpay_signature: string;
+    }
+  ) {
+    return this.creditService.confirmPayment(body);
+  }
+
+  // ============ API KEY OPERATIONS ============
+
   @Post(':userId/generate-api-key')
+  @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Generate API key and deduct credits' })
   @ApiParam({ name: 'userId', description: 'User ID' })
   @ApiBody({ type: GenerateApiKeyRequestDto })
@@ -173,32 +266,26 @@ export class CreditController {
     );
   }
 
-  @Post(':userId/purchase')
-  @ApiOperation({ summary: 'Purchase credits' })
+  // ============ DEBUG OPERATIONS ============
+
+  @Get(':userId/debug')
+  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Debug balance information for troubleshooting' })
   @ApiParam({ name: 'userId', description: 'User ID' })
-  @ApiBody({ type: PurchaseCreditsRequestDto })
   @ApiResponse({
     status: 200,
-    description: 'Credits purchased successfully',
-    type: PurchaseCreditsResponseDto,
+    description: 'Debug information about user balances'
   })
-  @ApiResponse({ status: 400, description: 'Invalid request' })
-  async purchaseCredits(
-    @Param('userId') userId: string,
-    @Body() body: PurchaseCreditsRequestDto,
-  ): Promise<PurchaseCreditsResponseDto> {
-    if (!body.amount || body.amount <= 0) {
-      throw new BadRequestException('Invalid amount');
+  async debugBalance(@Param('userId') userId: string) {
+    try {
+      const result = await this.creditService.debugBalance(userId);
+      return result;
+    } catch (error) {
+      return {
+        error: error.message,
+        userId,
+        timestamp: new Date()
+      };
     }
-
-    if (!body.paymentMethodType) {
-      throw new BadRequestException('Payment method type is required');
-    }
-
-    return this.creditService.purchaseCredits(userId, body.amount, {
-      paymentMethodType: body.paymentMethodType,
-      paymentMethodId: body.paymentMethodId,
-      currency: body.currency,
-    });
   }
 }

@@ -29,7 +29,6 @@ export class WalletService {
       customerId: prismaWallet.customerId,
       tenantId: prismaWallet.tenantId,
       balance: prismaWallet.balance,
-      creditBalance: prismaWallet.creditBalance,
       currency: prismaWallet.currency,
       createdAt: prismaWallet.createdAt,
       updatedAt: prismaWallet.updatedAt,
@@ -66,6 +65,7 @@ export class WalletService {
   async createWallet(
     userId: string,
     initialBalance: number = 0,
+    tenantId: string
   ): Promise<Wallet> {
     // Check if wallet already exists
     const existingWallet = await this.findWalletByUserId(userId);
@@ -85,13 +85,16 @@ export class WalletService {
     }
 
     // Find default tenant
-    const defaultTenant = await this.prisma.tenant.findFirst({
-      where: { slugifiedKey: 'default' },
-    });
+    // const defaultTenant = await this.prisma.tenant.findFirst({
+    //   where: { slugifiedKey: 'default' },
+    // });
 
-    if (!defaultTenant) {
-      throw new NotFoundException('Default tenant not found');
-    }
+    // if (!defaultTenant) {
+    //   throw new NotFoundException('Default tenant not found');
+    // }
+
+    const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
+    if (!tenant) throw new NotFoundException('Tenant ' + tenantId + ' not found');
 
     // Use a transaction to create wallet and initial transaction
     const prismaWallet = await this.prisma.$transaction(async (prisma) => {
@@ -100,10 +103,10 @@ export class WalletService {
         data: {
           id: uuidv4(),
           customerId: user.id, // Always use the internal user ID
-          tenantId: defaultTenant.id, // Use the actual tenant ID
+          tenantId: tenantId, // Use the actual tenant ID
           balance: initialBalance,
-          creditBalance: initialBalance,
-          currency: 'CREDITS',
+          // creditBalance: initialBalance,
+          currency: 'INR',
         },
       });
 
@@ -144,7 +147,7 @@ export class WalletService {
     });
 
     if (!user) {
-      return null;
+      throw new NotFoundException(`Wallet not found for userId : ${userId}`);
     }
 
     const wallet = await this.prisma.wallet.findFirst({
@@ -213,7 +216,7 @@ export class WalletService {
         where: { id: walletId },
         data: {
           balance: { increment: amount },
-          creditBalance: { increment: amount },
+          // creditBalance: { increment: amount },
         },
       });
 
@@ -245,7 +248,7 @@ export class WalletService {
       }
 
       // Check if wallet has sufficient balance
-      if (wallet.creditBalance < amount) {
+      if (wallet.balance < amount) {
         throw new BadRequestException('Insufficient credits');
       }
 
@@ -270,7 +273,7 @@ export class WalletService {
         where: { id: walletId },
         data: {
           balance: { decrement: amount },
-          creditBalance: { decrement: amount },
+          // creditBalance: { decrement: amount },
         },
       });
 
@@ -288,7 +291,7 @@ export class WalletService {
     amount: number,
   ): Promise<boolean> {
     const wallet = await this.getWallet(walletId);
-    return wallet.creditBalance >= amount;
+    return wallet.balance >= amount;
   }
 
   /**
@@ -329,11 +332,56 @@ export class WalletService {
    */
   async getBalance(walletId: string): Promise<number> {
     const wallet = await this.getWallet(walletId);
-    return wallet.creditBalance;
+    return wallet.balance;
   }
 
   /**
    * Find wallet by API key (for gateway authorization)
+   */
+
+  // need to update logic after subscription logic done.
+  /** 
+   * async findWalletByApiKey(apiKey: string): Promise<Wallet | null> {
+// 1) Canonical: resolve key -> subscription -> user
+const sub = await this.prisma.subscription.findUnique({
+where: { apiKey },
+select: { userId: true },
+});
+if (sub?.userId) {
+return this.findWalletByUserId(sub.userId); // must resolve to internal users.id inside
+}
+
+// 2) Legacy pattern: test_key_<userId>
+const parts = apiKey.split('_');
+if (parts.length === 3 && parts === 'test' && parts === 'key') {
+const legacyUserId = parts;
+return this.findWalletByUserId(legacyUserId);
+}
+
+// 3) Fallback: any wallet transaction referencing this key (e.g. recorded at issuance)
+const tx = await this.prisma.walletTransaction.findFirst({
+where: { referenceId: apiKey },
+include: { wallet: true },
+orderBy: { createdAt: 'desc' },
+});
+return tx?.wallet ? this.mapToWallet(tx.wallet) : null;
+}
+
+And ensure the helper it calls is correct:
+
+async findWalletByUserId(userIdOrFusionId: string): Promise<Wallet | null> {
+// Resolve to internal users.id first
+const user = await this.prisma.user.findFirst({
+where: { OR: [{ id: userIdOrFusionId }, { fusionAuthId: userIdOrFusionId }] },
+select: { id: true },
+});
+if (!user) return null;
+
+const wallet = await this.prisma.wallet.findFirst({
+where: { customerId: user.id }, // use internal id, not the incoming string
+});
+return wallet ? this.mapToWallet(wallet) : null;
+}
    */
   async findWalletByApiKey(apiKey: string): Promise<Wallet | null> {
     // In a real implementation, we'd have a table associating API keys with wallets

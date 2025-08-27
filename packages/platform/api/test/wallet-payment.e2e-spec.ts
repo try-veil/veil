@@ -202,7 +202,7 @@ describe('Wallet and Payment Services (e2e)', () => {
 
       expect(res.status).toBe(201);
       expect(res.body).toHaveProperty('wallet_id');
-      expect(res.body.credit_balance).toBe(100);
+      expect(res.body.balance).toBe(100);
       expect(res.body.status).toBe('active');
 
       // Store the wallet ID for later tests
