@@ -98,120 +98,6 @@
     },
     {
       "id": 7,
-      "title": "✅ Success Rate",
-      "type": "stat",
-      "description": "Percentage of successful requests (status 2xx)",
-      "targets": [
-        {
-          "expr": "(count_over_time({job=\"api\", status=~\"2.*\"} |= \"API request\" [24h]) / count_over_time({job=\"api\"} |= \"API request\" [24h])) * 100",
-          "refId": "A"
-        }
-      ],
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 6,
-        "y": 0
-      },
-      "options": {
-        "reduceOptions": {
-          "values": false,
-          "calcs": ["lastNotNull"],
-          "fields": ""
-        },
-        "orientation": "auto",
-        "textMode": "auto",
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 90
-              },
-              {
-                "color": "green",
-                "value": 95
-              }
-            ]
-          },
-          "unit": "percent",
-          "min": 0,
-          "max": 100
-        }
-      }
-    },
-    {
-      "id": 8,
-      "title": "❌ Error Rate",
-      "type": "stat",
-      "description": "Percentage of failed requests (status 4xx, 5xx)",
-      "targets": [
-        {
-          "expr": "(count_over_time({job=\"api\", status=~\"[45].*\"} |= \"API request\" [24h]) / count_over_time({job=\"api\"} |= \"API request\" [24h])) * 100",
-          "refId": "A"
-        }
-      ],
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 12,
-        "y": 0
-      },
-      "options": {
-        "reduceOptions": {
-          "values": false,
-          "calcs": ["lastNotNull"],
-          "fields": ""
-        },
-        "orientation": "auto",
-        "textMode": "auto",
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 5
-              },
-              {
-                "color": "red",
-                "value": 10
-              }
-            ]
-          },
-          "unit": "percent",
-          "min": 0,
-          "max": 100
-        }
-      }
-    },
-    {
-      "id": 9,
       "title": "⚡ Average Response Time",
       "type": "stat",
       "description": "Average response time for API requests",
@@ -224,7 +110,7 @@
       "gridPos": {
         "h": 8,
         "w": 6,
-        "x": 18,
+        "x": 6,
         "y": 0
       },
       "options": {
@@ -266,6 +152,75 @@
       }
     },
     {
+      "id": 8,
+      "title": "🔧 Requests by HTTP Method",
+      "type": "table",
+      "description": "Distribution of requests by HTTP method",
+      "targets": [
+        {
+          "expr": "sum by (method) (count_over_time({job=\"api\"} |= \"API request\" [24h]))",
+          "refId": "A",
+          "legendFormat": "{{method}}",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "method": "HTTP Method",
+              "Value #A": "Requests"
+            }
+          }
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "pieType": "pie",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "visible",
+          "placement": "right",
+          "values": ["value", "percent"]
+        },
+        "displayLabels": ["name", "percent"]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        },
+        "overrides": []
+      }
+    },
+    {
       "id": 10,
       "title": "📈 Requests Over Time",
       "type": "timeseries",
@@ -279,7 +234,7 @@
       ],
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 24,
         "x": 0,
         "y": 8
       },
@@ -343,61 +298,7 @@
         }
       }
     },
-    {
-      "id": 11,
-      "title": "🔧 Requests by HTTP Method",
-      "type": "table",
-      "description": "Distribution of requests by HTTP method",
-      "targets": [
-        {
-          "expr": "sum by (method) (count_over_time({job=\"api\"} |= \"API request\" [24h]))",
-          "refId": "A",
-          "legendFormat": "{{method}}",
-          "instant": true
-        }
-      ],
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 8
-      },
-      "options": {
-        "reduceOptions": {
-          "values": false,
-          "calcs": ["lastNotNull"],
-          "fields": ""
-        },
-        "pieType": "pie",
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        },
-        "legend": {
-          "displayMode": "visible",
-          "placement": "right",
-          "values": ["value", "percent"]
-        },
-        "displayLabels": ["name", "percent"]
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false,
-              "viz": false
-            }
-          },
-          "mappings": []
-        },
-        "overrides": []
-      }
-    },
+
     {
       "id": 1,
       "title": "My API Requests",
@@ -537,6 +438,17 @@
           }
         ]
       },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "renameByName": {
+              "clean_path": "Endpoint",
+              "Value #A": "Requests"
+            }
+          }
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "custom": {
