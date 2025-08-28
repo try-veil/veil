@@ -26,3 +26,6 @@ packages/caddy/*.timestamp
 packages/caddy/*.exe
 
 .DS_Store
+
+*.timestamp
+packages/caddy/data/

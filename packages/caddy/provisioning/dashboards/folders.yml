@@ -1,0 +1,5 @@
+# provisioning/dashboards/folders.yml
+apiVersion: 1
+
+providers: []
+  # Admin dashboards provider removed

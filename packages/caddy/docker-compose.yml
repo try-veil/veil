@@ -11,6 +11,8 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - ./data/minio:/data
+    networks:
+      - grafana
 
   loki:
     image: grafana/loki:2.9.2
@@ -22,6 +24,8 @@ services:
     command: -config.file=/etc/loki/loki.yaml
     depends_on:
       - minio
+    networks:
+      - grafana
 
   promtail:
     image: grafana/promtail:2.9.2
@@ -32,16 +36,96 @@ services:
     command: -config.file=/etc/promtail/promtail.yaml
     depends_on:
       - loki
+    networks:
+      - grafana
 
+  # Grafana
   grafana:
     image: grafana/grafana:latest
-    container_name: grafana
-    ports:
-      - "4000:3000"   # Change 3001:3000 to 4000:3000 or any free port
     environment:
-      GF_SERVER_ROOT_URL: http://localhost:4000  # Update to match the new port
+      # Basic Grafana settings
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+
+      # OIDC Configuration
+      GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
+      GF_AUTH_GENERIC_OAUTH_NAME: "FusionAuth"
+      GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP: "true"
+      GF_AUTH_GENERIC_OAUTH_CLIENT_ID: "85a03867-dccf-4882-adde-1a79aeec50df"
+      GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: "super-secret-client-secret-that-is-long-enough"
+      GF_AUTH_GENERIC_OAUTH_SCOPES: "openid profile email"
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL: "http://localhost:9011/oauth2/authorize"
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: "http://fusionauth:9011/oauth2/token"
+      GF_AUTH_GENERIC_OAUTH_API_URL: "http://fusionauth:9011/oauth2/userinfo"
+      GF_AUTH_GENERIC_OAUTH_USE_PKCE: "true"
+      
+      # Server settings - tells Grafana what its external URL is
+      GF_SERVER_ROOT_URL: "http://localhost:4000"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "false"
+      GF_AUTH_GENERIC_OAUTH_AUTO_LOGIN: "false"
+
+      # Keep login form but hide it after successful OAuth setup
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_MAP: "grafana-admin:Admin, grafana-editor:Editor, grafana-viewer:Viewer"
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: "contains(roles[*], 'grafana-admin') && 'Admin' || contains(roles[*], 'grafana-editor') && 'Editor' || 'Viewer'"
+
+      # Enable debug logging for OAuth
+      GF_LOG_LEVEL: "debug"
+
+      # Organization settings
+      GF_AUTH_GENERIC_OAUTH_AUTO_ASSIGN_ORG: "true"
+      GF_AUTH_GENERIC_OAUTH_AUTO_ASSIGN_ORG_ID: "1"
+      GF_AUTH_GENERIC_OAUTH_AUTO_ASSIGN_ORG_ROLE: "Viewer"
+
+      # Provisioning configuration
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+    ports:
+      - "4000:3000"
     volumes:
-      - ./grafana.ini:/etc/grafana/grafana.ini
+      - grafana_data:/var/lib/grafana
+      # Mount provisioning files
+      - ./provisioning:/etc/grafana/provisioning
+    networks:
+      - grafana
+      - fusionauth
+
+  # Grafana Initialization - Creates service account and token
+  grafana-init:
+    build:
+      context: ./scripts
+      dockerfile: Dockerfile
     depends_on:
-      - loki
-      - minio
+      - grafana
+    volumes:
+      - shared_data:/shared
+    networks:
+      - grafana
+    restart: "no"
+
+  # Webhook Service for Private Folder Creation
+  # webhook-service:
+  #   build:
+  #     context: ./webhook-service
+  #     dockerfile: Dockerfile
+  #   depends_on:
+  #     - grafana
+  #   environment:
+  #     - GRAFANA_API_URL=http://grafana:3000
+  #     - WEBHOOK_PORT=3001
+  #   ports:
+  #     - "4001:3001"
+  #   networks:
+  #     - grafana
+  #   restart: unless-stopped
+
+networks:
+  grafana:
+    external: true
+    name: veil_grafana
+  fusionauth:
+    external: true
+    name: veil_fusionauth
+
+volumes:
+  grafana_data:
+  shared_data:

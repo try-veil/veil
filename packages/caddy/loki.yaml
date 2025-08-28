@@ -4,6 +4,23 @@ server:
   http_listen_port: 3100
   grpc_listen_port: 9095
 
+# Query range configuration for better query splitting
+query_range:
+  max_retries: 5
+  
+# Querier configuration
+querier:
+  max_concurrent: 4
+  
+# Limits configuration to handle high query load
+limits_config:
+  enforce_metric_name: false
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+  max_query_parallelism: 32
+  max_entries_limit_per_query: 5000
+  split_queries_by_interval: 24h
+
 common:
   path_prefix: /loki
   replication_factor: 1

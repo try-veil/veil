@@ -6,7 +6,7 @@ positions:
   filename: /tmp/positions.yaml
 
 clients:
-  - url: http://host.docker.internal:3100/loki/api/v1/push
+  - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
   - job_name: api_logs
@@ -14,11 +14,22 @@ scrape_configs:
       - json:
           expressions:
             provider_id: provider_id
+            level: level
+            msg: msg
+            path: path
+            method: method
+            status: status
+            response_time: response_time
       - labels:
-          provider_id: ""
+          provider_id:
+          level:
+          path:
+          method:
+          status:
+          job: api
     static_configs:
       - targets:
           - localhost
         labels:
           job: api
-          __path__: /packages/caddy/logs/logs-*.log
+          __path__: /packages/caddy/logs/*.log

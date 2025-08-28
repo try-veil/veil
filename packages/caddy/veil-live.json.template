@@ -70,5 +70,23 @@
         }
       }
     }
+  },
+  "logging": {
+    "logs": {
+      "default": {
+        "encoder": {
+          "format": "json",
+          "time_format": "2006-01-02T15:04:05.000Z07:00"
+        },
+        "level": "INFO",
+        "writer": {
+          "filename": "logs/veil-access.log",
+          "output": "file",
+          "roll_keep": 10,
+          "roll_keep_days": 7,
+          "roll_size_mb": 10
+        }
+      }
+    }
   }
 }
