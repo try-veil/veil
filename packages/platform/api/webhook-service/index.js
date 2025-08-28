@@ -8,7 +8,7 @@ const PORT = process.env.WEBHOOK_PORT || 3001;
 const GRAFANA_API_URL = process.env.GRAFANA_API_URL || 'http://grafana:3000';
 const TOKEN_FILE = '/shared/grafana-token.txt';
 
-console.log('This is new updated code............xxxxxxjjjjjx...');
+console.log('This is new updated code..');
 // Using admin credentials instead of token
 console.log('Using admin credentials for Grafana API access');
 
@@ -118,7 +118,7 @@ app.post('/webhook/user-registered', async (req, res) => {
     
     // Step 4: Provision default dashboards for the user
     console.log(`\n📊 STEP 4: Provisioning default dashboards...`);
-    await provisionDefaultDashboards(grafanaUser, folder);
+    await provisionDefaultDashboards(grafanaUser, folder, user);
 
     const processingTime = Date.now() - startTime;
     console.log(`\n=== 🎉 SUCCESS SUMMARY ===`);
@@ -341,13 +341,15 @@ async function createLogDashboard(folderId, userRole, userEmail, providerId) {
 }
 
 // Provision default dashboards for the user
-async function provisionDefaultDashboards(grafanaUser, folder) {
+async function provisionDefaultDashboards(grafanaUser, folder, fusionAuthUser) {
   console.log(`\n📊 STEP 4: Provisioning personalized dashboards for ${grafanaUser.email}...`);
   
   try {
     // Extract user info - use email as provider ID to match logs
     const providerId = grafanaUser.email; // Use email instead of ID to match log entries
-    const userRole = grafanaUser.login === 'admin' ? 'admin' : 'provider';
+    
+    // Determine user role using the getUserRole function
+    const userRole = fusionAuthUser ? getUserRole(fusionAuthUser) : 'provider';
     
     console.log(`   → Extracted provider ID: ${providerId} for user: ${grafanaUser.email}`);
     console.log(`   → User role: ${userRole}`);
