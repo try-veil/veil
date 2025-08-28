@@ -104,7 +104,8 @@
       "targets": [
         {
           "expr": "avg_over_time({job=\"api\"} |= \"API request\" | json | unwrap response_time [24h])",
-          "refId": "A"
+          "refId": "A",
+          "queryType": "instant"
         }
       ],
       "gridPos": {

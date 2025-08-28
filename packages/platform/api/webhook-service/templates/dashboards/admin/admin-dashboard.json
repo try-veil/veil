@@ -1,6 +1,6 @@
 {
   "id": null,
-  "title": "Veil API Logs - Admin View",
+  "title": "Veil Admin API Analytics",
   "tags": ["veil", "api", "admin"],
   "timezone": "browser",
   "refresh": "30s",

@@ -39,26 +39,6 @@ services:
     networks:
       - grafana
 
-  # grafana:
-  #   image: grafana/grafana:latest
-  #   container_name: grafana
-  #   ports:
-  #     - "4000:3000"   # Change 3001:3000 to 4000:3000 or any free port
-  #   environment:
-  #     GF_SERVER_ROOT_URL: http://localhost:4000  # Update to match the new port
-  #   volumes:
-  #     - ./grafana.ini:/etc/grafana/grafana.ini
-  #     - ./grafana-dashboards:/var/lib/grafana/dashboards
-  #     - ./grafana-provisioning:/etc/grafana/provisioning
-  #   depends_on:
-  #     - loki
-  #     - minio
-
-
-
-
-
-
   # Grafana
   grafana:
     image: grafana/grafana:latest
@@ -105,8 +85,6 @@ services:
       - grafana_data:/var/lib/grafana
       # Mount provisioning files
       - ./provisioning:/etc/grafana/provisioning
-      # Mount separate dashboard directories
-      - ./dashboards/admin:/var/lib/grafana/admin-dashboards
     networks:
       - grafana
       - fusionauth

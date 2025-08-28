@@ -1,13 +1,5 @@
-# provisioning/dashboards/admin-folder.yml
+# provisioning/dashboards/folders.yml
 apiVersion: 1
 
-providers:
-  - name: "admin-dashboards"
-    orgId: 1
-    folder: "Admin"
-    type: file
-    disableDeletion: false
-    editable: true
-    options:
-      path: /var/lib/grafana/admin-dashboards
-    folderUid: "admin-folder"
+providers: []
+  # Admin dashboards provider removed
