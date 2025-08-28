@@ -102,30 +102,30 @@ model Tenant {
     @@map("tenants")
 }
 
-// User Models
 model User {
-    id                 String              @id @default(uuid())
-    fusionAuthId       String?             @unique // UUID from FusionAuth
-    name               String
-    username           String              @unique
-    email              String              @unique
-    slugifiedName      String              @unique
-    type               EntityType          @default(USER)
-    description        String?
-    bio                String?
-    thumbnail          String?
-    parents            String[]            @default([])
-    publishedApisList  String[]            @default([])
-    followedApis       String[]            @default([])
-    attributes         UserAttribute[]
-    metadataAttributes MetadataAttribute[]
-    projects           ProjectAcl[]
-    wallets            Wallet[]
-    createdAt          DateTime            @default(now())
-    updatedAt          DateTime            @updatedAt
-    tenantId           String?
-    tenant             Tenant?   @relation(fields: [tenantId], references: [id])
+    id                  String              @id @default(uuid())
+    name                String
+    username            String              @unique
+    email               String              @unique
+    slugifiedName       String              @unique
+    type                EntityType          @default(USER)
+    description         String?
+    bio                 String?
+    thumbnail           String?
+    parents             String[]            @default([])
+    publishedApisList   String[]            @default([])
+    followedApis        String[]            @default([])
+    createdAt           DateTime            @default(now())
+    updatedAt           DateTime            @updatedAt
+    fusionAuthId        String?             @unique
+    tenantId            String?
     grafanaDashboardUid String?
+    metadataAttributes  MetadataAttribute[]
+    projects            ProjectAcl[]
+    razorpayPayments    RazorpayPayment[]
+    attributes          UserAttribute[]
+    tenant              Tenant?             @relation(fields: [tenantId], references: [id])
+    wallets             Wallet[]
 
     @@map("users")
 }
@@ -166,17 +166,17 @@ model Project {
     favorite           Boolean             @default(false)
     xMashapeKey        String?
     enableLimitsToAPIs Boolean?
-    target_url         String?
-    projectAllowedAPIs ProjectAllowedAPI[]
-    projectAcls        ProjectAcl[]
-    apis               Api[]               @relation("ProjectToApi")
     createdAt          DateTime            @default(now())
     updatedAt          DateTime            @updatedAt
-    ProjectPricing     ProjectPricing[]
-    Subscription       Subscription[]
     tenantId           String
-    tenant             Tenant              @relation(fields: [tenantId], references: [id])
+    target_url         String?
     hubListing         HubListing?         @relation("ProjectToHubListing")
+    projectAcls        ProjectAcl[]
+    projectAllowedAPIs ProjectAllowedAPI[]
+    ProjectPricing     ProjectPricing[]
+    tenant             Tenant              @relation(fields: [tenantId], references: [id])
+    Subscription       Subscription[]
+    apis               Api[]               @relation("ProjectToApi")
 
     @@map("projects")
 }
@@ -208,19 +208,17 @@ model ProjectAllowedAPI {
     @@map("project_allowed_apis")
 }
 
-// Wallet and Payment Models
 model Wallet {
-    id            String              @id @default(uuid())
-    customerId    String // Reference to User
-    customer      User                @relation(fields: [customerId], references: [id])
-    tenantId      String // Reference to Tenant
-    tenant        Tenant              @relation(fields: [tenantId], references: [id])
-    balance       Float
-    creditBalance Float
-    currency      String              @default("CREDITS")
-    transactions  WalletTransaction[]
-    createdAt     DateTime            @default(now())
-    updatedAt     DateTime            @updatedAt
+    id           String              @id @default(uuid())
+    customerId   String
+    tenantId     String
+    balance      Float
+    currency     String              @default("CREDITS")
+    createdAt    DateTime            @default(now())
+    updatedAt    DateTime            @updatedAt
+    transactions WalletTransaction[]
+    customer     User                @relation(fields: [customerId], references: [id])
+    tenant       Tenant              @relation(fields: [tenantId], references: [id])
 
     @@map("wallets")
 }
@@ -247,33 +245,6 @@ model WalletTransaction {
     @@map("wallet_transactions")
 }
 
-enum WalletTransactionType {
-    CREDIT
-    DEBIT
-}
-
-enum WalletTransactionSubtype {
-    PAID
-    FREE
-    EXPIRY
-    PAYMENT
-    REFUND
-    MANUAL
-}
-
-enum WalletTransactionStatus {
-    PENDING
-    COMPLETED
-    FAILED
-    CANCELLED
-}
-
-enum WalletTransactionReferenceType {
-    INVOICE
-    PAYMENT
-    EXTERNAL
-}
-
 model Payment {
     id                String                 @id @default(uuid())
     tenantId          String
@@ -294,9 +265,9 @@ model Payment {
     failedAt          DateTime?
     refundedAt        DateTime?
     errorMessage      String?
-    attempts          PaymentAttempt[]
     createdAt         DateTime               @default(now())
     updatedAt         DateTime               @updatedAt
+    attempts          PaymentAttempt[]
 
     @@map("payments")
 }
@@ -305,7 +276,6 @@ model PaymentAttempt {
     id               String               @id @default(uuid())
     tenantId         String
     paymentId        String
-    payment          Payment              @relation(fields: [paymentId], references: [id])
     attemptNumber    Int
     paymentStatus    PaymentAttemptStatus
     gatewayAttemptId String?
@@ -313,39 +283,11 @@ model PaymentAttempt {
     metadata         Json?
     createdAt        DateTime             @default(now())
     updatedAt        DateTime             @updatedAt
+    payment          Payment              @relation(fields: [paymentId], references: [id])
 
     @@map("payment_attempts")
 }
 
-enum PaymentMethodType {
-    OFFLINE
-    CREDITS
-    CARD
-    ACH
-}
-
-enum PaymentStatus {
-    PENDING
-    PROCESSING
-    SUCCEEDED
-    FAILED
-    REFUNDED
-    PARTIALLY_REFUNDED
-}
-
-enum PaymentAttemptStatus {
-    PENDING
-    PROCESSING
-    SUCCEEDED
-    FAILED
-}
-
-enum PaymentDestinationType {
-    INVOICE
-    WALLET_TOPUP
-}
-
-// Credit Models
 model CreditBalance {
     id        String              @id @default(uuid())
     userId    String              @unique // Making userId unique
@@ -384,6 +326,221 @@ model CreditAdjustment {
     @@map("credit_adjustments")
 }
 
+model ProjectPricing {
+    id            String          @id @default(cuid())
+    projectId     Int
+    name          String
+    description   String?
+    price         Float           @default(0)
+    currency      String          @default("USD")
+    interval      PricingInterval
+    status        PricingStatus   @default(ACTIVE)
+    createdAt     DateTime        @default(now())
+    updatedAt     DateTime        @updatedAt
+    project       Project         @relation(fields: [projectId], references: [id])
+    subscriptions Subscription[]
+
+    @@map("project_pricing")
+}
+
+model Subscription {
+    id          String             @id @default(cuid())
+    tenantId    String
+    projectId   Int
+    pricingId   String?
+    name        String?
+    description String?
+    apiKey      String             @unique
+    status      SubscriptionStatus @default(ACTIVE)
+    startDate   DateTime           @default(now())
+    endDate     DateTime?
+    createdAt   DateTime           @default(now())
+    updatedAt   DateTime           @updatedAt
+    apiId       String
+    cancelledAt DateTime?
+    lastUsed    DateTime?
+    userId      String
+    planId      String?
+    usages      ApiUsage[]
+    api         Api                @relation(fields: [apiId], references: [id])
+    plan        Plan?              @relation(fields: [planId], references: [id])
+    pricing     ProjectPricing?    @relation(fields: [pricingId], references: [id])
+    project     Project            @relation(fields: [projectId], references: [id])
+    tenant      Tenant             @relation(fields: [tenantId], references: [id])
+
+    @@map("subscriptions")
+}
+
+model Api {
+    id                 String              @id @default(uuid())
+    name               String
+    description        String?
+    version            String
+    specification      Json
+    status             ApiStatus           @default(ACTIVE)
+    createdAt          DateTime            @default(now())
+    updatedAt          DateTime            @updatedAt
+    path               String              @unique
+    providerId         String
+    method             String
+    requiredHeaders    Json?
+    documentationUrl   String?
+    bodyConfig         Json?
+    queryParams        Json?
+    projectAllowedAPIs ProjectAllowedAPI[] @relation("projectAllowedAPIs")
+    subscriptions      Subscription[]
+    projects           Project[]           @relation("ProjectToApi")
+
+    @@map("apis")
+}
+
+model Plan {
+    id            String         @id @default(uuid())
+    name          String
+    description   String?
+    createdAt     DateTime       @default(now())
+    updatedAt     DateTime       @updatedAt
+    subscriptions Subscription[]
+
+    @@map("plans")
+}
+
+model ApiUsage {
+    id             String       @id @default(uuid())
+    apiId          String
+    userId         String
+    endpoint       String
+    method         String
+    statusCode     Int
+    latency        Int
+    timestamp      DateTime     @default(now())
+    metadata       Json?
+    subscriptionId String
+    subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+
+    @@map("api_usages")
+}
+
+model HubListing {
+    id                  String      @id @default(uuid())
+    logo                String?
+    category            String
+    shortDescription    String?
+    longDescription     String?
+    website             String?
+    termsOfUse          String?
+    visibleToPublic     Boolean
+    healthCheckUrl      String?
+    apiDocumentation    String?
+    proxySecret         String?
+    requestSizeLimitMb  Int?
+    proxyTimeoutSeconds Int?
+    basicPlanId         String?     @unique
+    proPlanId           String?     @unique
+    ultraPlanId         String?     @unique
+    projectId           Int         @unique
+    basicPlan           PlanConfig? @relation("BasicPlan", fields: [basicPlanId], references: [id])
+    proPlan             PlanConfig? @relation("ProPlan", fields: [proPlanId], references: [id])
+    project             Project     @relation("ProjectToHubListing", fields: [projectId], references: [id])
+    ultraPlan           PlanConfig? @relation("UltraPlan", fields: [ultraPlanId], references: [id])
+}
+
+model PlanConfig {
+    id                   String      @id @default(uuid())
+    enabled              Boolean
+    pricePerMonth        Float
+    requestQuotaPerMonth Float
+    hardLimitQuota       Float
+    basicOf              HubListing? @relation("BasicPlan")
+    proOf                HubListing? @relation("ProPlan")
+    ultraOf              HubListing? @relation("UltraPlan")
+}
+
+model NewsletterSubscription {
+    id        String   @id @default(uuid())
+    email     String   @unique
+    createdAt DateTime @default(now())
+}
+
+model RazorpayPayment {
+    id                String   @id @default(uuid())
+    userId            String
+    razorpayOrderId   String   @unique
+    razorpayPaymentId String?
+    razorpaySignature String?
+    amount            Int
+    currency          String   @default("INR")
+    status            String   @default("created")
+    purpose           String   @default("credits")
+    creditAmount      Int
+    metadata          Json?
+    createdAt         DateTime @default(now())
+    updatedAt         DateTime @updatedAt
+    user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+    @@index([razorpayOrderId])
+    @@index([razorpayPaymentId])
+    @@map("razorpay_payments")
+}
+
+
+
+enum WalletTransactionType {
+    CREDIT
+    DEBIT
+}
+
+enum WalletTransactionSubtype {
+    PAID
+    FREE
+    EXPIRY
+    PAYMENT
+    REFUND
+    MANUAL
+}
+
+enum WalletTransactionStatus {
+    PENDING
+    COMPLETED
+    FAILED
+    CANCELLED
+}
+
+enum WalletTransactionReferenceType {
+    INVOICE
+    PAYMENT
+    EXTERNAL
+}
+
+enum PaymentMethodType {
+    OFFLINE
+    CREDITS
+    CARD
+    ACH
+}
+
+enum PaymentStatus {
+    PENDING
+    PROCESSING
+    SUCCEEDED
+    FAILED
+    REFUNDED
+    PARTIALLY_REFUNDED
+}
+
+enum PaymentAttemptStatus {
+    PENDING
+    PROCESSING
+    SUCCEEDED
+    FAILED
+}
+
+enum PaymentDestinationType {
+    INVOICE
+    WALLET_TOPUP
+}
+
 enum CreditBalanceStatus {
     ACTIVE
     SUSPENDED
@@ -394,23 +551,6 @@ enum CreditUsageType {
     API_CALL
     FEATURE_USAGE
     MANUAL_ADJUSTMENT
-}
-
-model ProjectPricing {
-    id            String          @id @default(cuid())
-    projectId     Int
-    project       Project         @relation(fields: [projectId], references: [id])
-    name          String
-    description   String?
-    price         Float           @default(0)
-    currency      String          @default("USD")
-    interval      PricingInterval
-    status        PricingStatus   @default(ACTIVE)
-    createdAt     DateTime        @default(now())
-    updatedAt     DateTime        @updatedAt
-    subscriptions Subscription[]
-
-    @@map("project_pricing")
 }
 
 enum PricingInterval {
@@ -425,35 +565,6 @@ enum PricingStatus {
     ARCHIVED
 }
 
-model Subscription {
-    id          String             @id @default(cuid())
-    tenantId    String
-    projectId   Int
-    pricingId   String?
-    planId      String?
-    userId      String
-    apiId       String
-    name        String?
-    description String?
-    apiKey      String             @unique
-    status      SubscriptionStatus @default(ACTIVE)
-    startDate   DateTime           @default(now())
-    endDate     DateTime?
-    lastUsed    DateTime?
-    cancelledAt DateTime?
-    createdAt   DateTime           @default(now())
-    updatedAt   DateTime           @updatedAt
-
-    tenant  Tenant          @relation(fields: [tenantId], references: [id])
-    project Project         @relation(fields: [projectId], references: [id])
-    pricing ProjectPricing? @relation(fields: [pricingId], references: [id])
-    api     Api             @relation(fields: [apiId], references: [id])
-    plan    Plan?           @relation(fields: [planId], references: [id])
-    usages  ApiUsage[]
-
-    @@map("subscriptions")
-}
-
 enum SubscriptionStatus {
     ACTIVE
     INACTIVE
@@ -462,107 +573,8 @@ enum SubscriptionStatus {
     CANCELLED
 }
 
-// API Models
-model Api {
-    id                 String              @id @default(uuid())
-    name               String
-    description        String?
-    version            String
-    path               String              @unique
-    providerId         String
-    method             String
-    specification      Json
-    documentationUrl   String? // Added documentationUrl
-    requiredHeaders    Json? // Added requiredHeaders
-    queryParams        Json? // Store query parameters as JSON
-    bodyConfig         Json? // Store body configuration as JSON
-    status             ApiStatus           @default(ACTIVE)
-    subscriptions      Subscription[]
-    projectAllowedAPIs ProjectAllowedAPI[] @relation("projectAllowedAPIs")
-    projects           Project[]           @relation("ProjectToApi")
-    createdAt          DateTime            @default(now())
-    updatedAt          DateTime            @updatedAt
-
-    @@map("apis")
-}
-
 enum ApiStatus {
     ACTIVE
     INACTIVE
     DEPRECATED
 }
-
-model Plan {
-    id            String         @id @default(uuid())
-    name          String
-    description   String?
-    subscriptions Subscription[]
-    createdAt     DateTime       @default(now())
-    updatedAt     DateTime       @updatedAt
-
-    @@map("plans")
-}
-
-model ApiUsage {
-    id             String       @id @default(uuid())
-    apiId          String
-    userId         String
-    subscriptionId String
-    endpoint       String
-    method         String
-    statusCode     Int
-    latency        Int
-    timestamp      DateTime     @default(now())
-    metadata       Json?
-    subscription   Subscription @relation(fields: [subscriptionId], references: [id])
-
-    @@map("api_usages")
-}
-
-
-model HubListing {
-  id                    String      @id @default(uuid())
-  logo                  String?
-  category              String
-  shortDescription      String?
-  longDescription       String?
-  website               String?
-  termsOfUse            String?
-  visibleToPublic       Boolean
-  healthCheckUrl        String?
-  apiDocumentation      String?
-  proxySecret           String?
-  requestSizeLimitMb    Int?
-  proxyTimeoutSeconds   Int?
-
-  basicPlanId           String?    @unique
-  basicPlan             PlanConfig? @relation("BasicPlan", fields: [basicPlanId], references: [id])
-
-  proPlanId             String?    @unique
-  proPlan               PlanConfig? @relation("ProPlan", fields: [proPlanId], references: [id])
-
-  ultraPlanId           String?    @unique
-  ultraPlan             PlanConfig? @relation("UltraPlan", fields: [ultraPlanId], references: [id])
-
-  projectId             Int         @unique
-  project               Project     @relation("ProjectToHubListing", fields: [projectId], references: [id])
-}
-
-model PlanConfig {
-  id                    String   @id @default(uuid())
-  enabled               Boolean
-  pricePerMonth         Float
-  requestQuotaPerMonth  Float
-  hardLimitQuota        Float
-
-  basicOf               HubListing? @relation("BasicPlan")
-  proOf                 HubListing? @relation("ProPlan")
-  ultraOf               HubListing? @relation("UltraPlan")
-}
-
-model NewsletterSubscription {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  createdAt DateTime @default(now())
-}
-

@@ -37,11 +37,10 @@ export default function Navbar({ session, user }: NavbarProps) {
         className={`fixed top-4 left-1/2 -translate-x-1/2 rounded-3xl z-50 transition-all duration-300 ease-in-out 
         bg-[#ffffffe9] dark:bg-[#020817] border border-[#0000001A]
         w-[90vw] max-w-6xl
-      ${
-        scrolled
-          ? "shadow-lg dark:shadow-[0_4px_12px_rgba(255,255,255,0.08)]"
-          : "shadow-[6px_6px_12px_rgba(0,0,0,0.05),-6px_-6px_12px_rgba(255,255,255,0.7)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.4),-6px_-6px_12px_rgba(255,255,255,0.05)]"
-      }`}
+      ${scrolled
+            ? "shadow-lg dark:shadow-[0_4px_12px_rgba(255,255,255,0.08)]"
+            : "shadow-[6px_6px_12px_rgba(0,0,0,0.05),-6px_-6px_12px_rgba(255,255,255,0.7)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.4),-6px_-6px_12px_rgba(255,255,255,0.05)]"
+          }`}
         style={{ backdropFilter: "blur(12px)" }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -89,13 +88,19 @@ export default function Navbar({ session, user }: NavbarProps) {
                 My Projects
               </Link>
               <Link
+                href="/billing"
+                className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
+              >
+                Billing
+              </Link>
+              <Link
                 href="/marketplace"
                 className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
               >
                 Marketplace
               </Link>
 
-              <LoginButton  />
+              <LoginButton />
             </div>
 
             {/* Mobile menu button */}
@@ -107,19 +112,16 @@ export default function Navbar({ session, user }: NavbarProps) {
               >
                 <div className="relative w-6 h-5">
                   <span
-                    className={`absolute h-0.5 w-6 bg-current transform transition duration-300 ease-in-out ${
-                      isOpen ? "rotate-45 translate-y-2.5" : ""
-                    }`}
+                    className={`absolute h-0.5 w-6 bg-current transform transition duration-300 ease-in-out ${isOpen ? "rotate-45 translate-y-2.5" : ""
+                      }`}
                   ></span>
                   <span
-                    className={`absolute h-0.5 w-6 bg-current transform transition-opacity duration-300 ease-in-out ${
-                      isOpen ? "opacity-0" : ""
-                    } top-2`}
+                    className={`absolute h-0.5 w-6 bg-current transform transition-opacity duration-300 ease-in-out ${isOpen ? "opacity-0" : ""
+                      } top-2`}
                   ></span>
                   <span
-                    className={`absolute h-0.5 w-6 bg-current transform transition duration-300 ease-in-out ${
-                      isOpen ? "-rotate-45 -translate-y-2.5" : ""
-                    } top-4`}
+                    className={`absolute h-0.5 w-6 bg-current transform transition duration-300 ease-in-out ${isOpen ? "-rotate-45 -translate-y-2.5" : ""
+                      } top-4`}
                   ></span>
                 </div>
               </button>
@@ -129,11 +131,10 @@ export default function Navbar({ session, user }: NavbarProps) {
 
         {/* Mobile menu */}
         <div
-          className={`lg:hidden transform transition-all duration-300 ease-in-out ${
-            isOpen
+          className={`lg:hidden transform transition-all duration-300 ease-in-out ${isOpen
               ? "max-h-96 opacity-100"
               : "max-h-0 opacity-0 overflow-hidden"
-          }`}
+            }`}
         >
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-50 shadow-inner">
             <Link
@@ -172,8 +173,14 @@ export default function Navbar({ session, user }: NavbarProps) {
             >
               My Projects
             </Link>
+            <Link
+              href="/billing"
+              className="text-gray-700 dark:text-white hover:text-black block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+            >
+              Billing
+            </Link>
             <div className="pt-4 pb-2">
-              <LoginButton  />
+              <LoginButton />
             </div>
           </div>
         </div>

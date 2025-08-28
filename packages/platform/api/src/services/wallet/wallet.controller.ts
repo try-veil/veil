@@ -19,11 +19,18 @@ import {
   ApiParam,
   ApiBody,
   ApiQuery,
+  ApiProperty,
 } from '@nestjs/swagger';
 
 // DTOs for request/response
 class CreateWalletDto {
+  @ApiProperty({ description: 'The user ID for whom the wallet is being created' })
   userId: string;
+  
+  @ApiProperty({ description: 'The tenant ID associated with the wallet' })
+  tenantId: string;
+  
+  @ApiProperty({ description: 'Initial credits to add to the wallet', required: false, default: 0 })
   initialCredits?: number;
 }
 
@@ -41,7 +48,7 @@ class DeductCreditsDto {
 
 class WalletBalanceResponseDto {
   walletId: string;
-  creditBalance: number;
+  balance: number;
   lastUpdated: Date;
 }
 
@@ -73,11 +80,12 @@ export class WalletController {
       const wallet = await this.walletService.createWallet(
         createWalletDto.userId,
         createWalletDto.initialCredits || 0,
+        createWalletDto.tenantId,
       );
 
       return {
         wallet_id: wallet.id,
-        credit_balance: wallet.creditBalance,
+        credit_balance: wallet.balance,
         status: 'active',
         created_at: wallet.createdAt,
       };
@@ -86,6 +94,45 @@ export class WalletController {
         throw new ConflictException(error.message);
       }
       throw new BadRequestException(error.message);
+    }
+  }
+
+  @Get('user/:userId')
+  @ApiOperation({ summary: 'Get wallet info for a user' })
+  @ApiParam({ name: 'userId', description: 'The user ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the wallet info for the user',
+    schema: {
+      type: 'object',
+      properties: {
+        walletId: { type: 'string' },
+        balance: { type: 'number' },
+        currency: { type: 'string' },
+        lastUpdated: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'Wallet not found for user' })
+  async getWalletByUserId(@Param('userId') userId: string) {
+    try {
+      const wallet = await this.walletService.findWalletByUserId(userId);
+      
+      if (!wallet) {
+        throw new NotFoundException(`Wallet not found for user ${userId}`);
+      }
+
+      return {
+        walletId: wallet.id,
+        balance: wallet.balance,
+        currency: wallet.currency,
+        lastUpdated: wallet.updatedAt,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new NotFoundException(`Wallet not found for user ${userId}`);
     }
   }
 
@@ -106,7 +153,7 @@ export class WalletController {
 
       return {
         walletId: wallet.id,
-        creditBalance: wallet.creditBalance,
+        balance: wallet.balance,
         lastUpdated: wallet.updatedAt,
       };
     } catch (error) {
@@ -151,9 +198,9 @@ export class WalletController {
 
       return {
         transaction_id: transaction.id,
-        previous_balance: wallet.creditBalance - addCreditsDto.amount,
+        previous_balance: wallet.balance - addCreditsDto.amount,
         added_amount: addCreditsDto.amount,
-        current_balance: wallet.creditBalance,
+        current_balance: wallet.balance,
       };
     } catch (error) {
       if (error.message.includes('not found')) {
@@ -192,7 +239,7 @@ export class WalletController {
     try {
       // Get current balance before deduction
       const wallet = await this.walletService.getWallet(walletId);
-      const previousBalance = wallet.creditBalance;
+      const previousBalance = wallet.balance;
 
       const transaction = await this.walletService.deductCredits(
         walletId,
@@ -210,7 +257,7 @@ export class WalletController {
         transaction_id: transaction.id,
         previous_balance: previousBalance,
         deducted_amount: deductCreditsDto.amount,
-        current_balance: updatedWallet.creditBalance,
+        current_balance: updatedWallet.balance,
       };
     } catch (error) {
       if (error.message.includes('not found')) {
@@ -364,10 +411,10 @@ export class WalletController {
 
     return {
       has_sufficient_credits: hasSufficientCredits,
-      current_balance: wallet.creditBalance,
+      current_balance: wallet.balance,
       required_amount: amount,
       remaining_if_used: hasSufficientCredits
-        ? wallet.creditBalance - amount
+        ? wallet.balance - amount
         : 0,
     };
   }

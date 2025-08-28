@@ -37,12 +37,7 @@ export interface LocalePrice {
   symbol: string | null;
 }
 
-export interface RateLimit {
-  enabled: boolean;
-  unit: number;
-  unitName: string;
-  amount: number;
-}
+
 
 export interface BillingPlan {
   id: string;
@@ -354,7 +349,6 @@ export interface Wallet {
   tenantId: string;
   customerId: string;
   balance: number; // Overall balance (could include non-credit funds in future)
-  creditBalance: number; // Specific balance from credits
   currency: string;
   createdAt: Date;
   updatedAt: Date;
