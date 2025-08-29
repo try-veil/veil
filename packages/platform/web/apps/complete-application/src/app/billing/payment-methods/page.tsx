@@ -9,6 +9,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useUser } from "@/contexts/UserContext";
 import { CheckCircle, AlertCircle, Loader2, CreditCard, Edit2, Trash2, Star } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface PaymentMethod {
     id: string;
@@ -19,7 +26,7 @@ interface PaymentMethod {
     isDefault: boolean;
 }
 
-export default function BillingInformationContent() {
+export default function SavedCards() {
     const [cardNumber, setCardNumber] = useState("");
     const [expiryDate, setExpiryDate] = useState("");
     const [securityCode, setSecurityCode] = useState("");
@@ -291,22 +298,16 @@ export default function BillingInformationContent() {
         }
     };
 
-    return (
-        <div className="flex w-full items-center justify-center pt-24 pb-4">
-            <div className="flex h-[calc(100vh-7rem)] w-full max-w-4xl flex-col px-2">
-                {/* Header Section */}
-                <div className="py-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-2xl font-bold tracking-tight">
-                                Billing Information
-                            </h1>
-                        </div>
-                    </div>
-                </div>
+    const toggleAddForm = () => {
+        setEditingCard(null);
+        setShowAddForm((prev) => !prev);
+    };
 
+    return (
+        <div className="flex w-full pb-4">
+       
                 {/* Content Section */}
-                <div className="flex-1 overflow-auto py-6">
+                <div className="flex-1">
                     <div className="max-w-4xl space-y-6">
                         {/* Success Message */}
                         {successMessage && (
@@ -325,7 +326,7 @@ export default function BillingInformationContent() {
                                     <CardTitle>Payment Methods</CardTitle>
                                     <Button
                                         type="button"
-                                        onClick={() => setShowAddForm(!showAddForm)}
+                                        onClick={toggleAddForm}
                                         variant={showAddForm ? "outline" : "default"}
                                     >
                                         {showAddForm ? "Cancel" : "Add New Card"}
@@ -408,167 +409,169 @@ export default function BillingInformationContent() {
 
                         {/* Add/Edit Card Form */}
                         {showAddForm && (
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>
-                                        {editingCard ? "Update Card Details" : "Add New Card"}
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-6">
-                                    {/* General Error */}
-                                    {errors.general && (
-                                        <Alert variant="destructive">
-                                            <AlertCircle className="h-4 w-4" />
-                                            <AlertDescription>
-                                                {errors.general}
-                                            </AlertDescription>
-                                        </Alert>
-                                    )}
+                            <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>
+                                            {editingCard ? "Update Card Details" : "Add New Card"}
+                                        </DialogTitle>
+                                    </DialogHeader>
+                                    <div className="space-y-6">
+                                        {/* General Error */}
+                                        {errors.general && (
+                                            <Alert variant="destructive">
+                                                <AlertCircle className="h-4 w-4" />
+                                                <AlertDescription>
+                                                    {errors.general}
+                                                </AlertDescription>
+                                            </Alert>
+                                        )}
 
-                                    {/* Card Number - Only show when adding new card */}
-                                    {!editingCard && (
-                                        <div className="space-y-2">
-                                            <Label htmlFor="cardNumber">Card number</Label>
-                                            <div className="relative">
-                                                <Input
-                                                    id="cardNumber"
-                                                    placeholder="1234 1234 1234 1234"
-                                                    value={cardNumber}
-                                                    onChange={handleCardNumberChange}
-                                                    className={`pr-20 ${errors.cardNumber ? 'border-red-500' : ''}`}
-                                                />
-                                                {errors.cardNumber && (
-                                                    <p className="text-sm text-red-500 mt-1">{errors.cardNumber}</p>
-                                                )}
-                                                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
-                                                    <div className="text-xs bg-blue-600 text-white px-1 py-0.5 rounded">VISA</div>
-                                                    <div className="text-xs bg-red-600 text-white px-1 py-0.5 rounded">MC</div>
-                                                    <div className="text-xs bg-blue-800 text-white px-1 py-0.5 rounded">AMEX</div>
-                                                    <div className="text-xs bg-gray-600 text-white px-1 py-0.5 rounded">DC</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Expiry Date and Security Code */}
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="expiryDate">Expiry date</Label>
-                                            <Input
-                                                id="expiryDate"
-                                                placeholder="MM/YY"
-                                                value={expiryDate}
-                                                onChange={handleExpiryChange}
-                                                className={errors.expiryDate ? 'border-red-500' : ''}
-                                            />
-                                            {errors.expiryDate && (
-                                                <p className="text-sm text-red-500 mt-1">{errors.expiryDate}</p>
-                                            )}
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="securityCode">Security code</Label>
-                                            {!editingCard && (
+                                        {/* Card Number - Only show when adding new card */}
+                                        {!editingCard && (
+                                            <div className="space-y-2">
+                                                <Label htmlFor="cardNumber">Card number</Label>
                                                 <div className="relative">
                                                     <Input
-                                                        id="securityCode"
-                                                        placeholder="CVC"
-                                                        value={securityCode}
-                                                        onChange={handleSecurityCodeChange}
-                                                        className={errors.securityCode ? 'border-red-500' : ''}
+                                                        id="cardNumber"
+                                                        placeholder="1234 1234 1234 1234"
+                                                        value={cardNumber}
+                                                        onChange={handleCardNumberChange}
+                                                        className={`pr-20 ${errors.cardNumber ? 'border-red-500' : ''}`}
                                                     />
-                                                    {errors.securityCode && (
-                                                        <p className="text-sm text-red-500 mt-1">{errors.securityCode}</p>
+                                                    {errors.cardNumber && (
+                                                        <p className="text-sm text-red-500 mt-1">{errors.cardNumber}</p>
                                                     )}
-                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                                        <div className="text-xs text-muted-foreground">123</div>
+                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
+                                                        <div className="text-xs bg-blue-600 text-white px-1 py-0.5 rounded">VISA</div>
+                                                        <div className="text-xs bg-red-600 text-white px-1 py-0.5 rounded">MC</div>
+                                                        <div className="text-xs bg-blue-800 text-white px-1 py-0.5 rounded">AMEX</div>
+                                                        <div className="text-xs bg-gray-600 text-white px-1 py-0.5 rounded">DC</div>
                                                     </div>
                                                 </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Country */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="country">Country</Label>
-                                        <Select value={country} onValueChange={setCountry}>
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="India">India</SelectItem>
-                                                <SelectItem value="United States">United States</SelectItem>
-                                                <SelectItem value="United Kingdom">United Kingdom</SelectItem>
-                                                <SelectItem value="Canada">Canada</SelectItem>
-                                                <SelectItem value="Australia">Australia</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-
-                                    {/* Set as Default - Only show when adding new card */}
-                                    {!editingCard && (
-                                        <div className="flex items-center space-x-2">
-                                            <Checkbox
-                                                id="setAsDefault"
-                                                checked={setAsDefault}
-                                                onCheckedChange={(checked) => setSetAsDefault(checked as boolean)}
-                                            />
-                                            <Label htmlFor="setAsDefault" className="text-sm">
-                                                Set as default payment method
-                                            </Label>
-                                        </div>
-                                    )}
-
-                                    {/* Info Text */}
-                                    <div className="space-y-2 text-sm text-muted-foreground">
-                                        <p>Your card details will be saved for future purchases and subscription renewals.</p>
-                                        {!editingCard && (
-                                            <p>
-                                                RapidAPI will validate your card by placing a temporary authorization hold of $0.50, this
-                                                temporary hold will be automatically released after several days.
-                                            </p>
+                                            </div>
                                         )}
-                                    </div>
 
-                                    {/* Action Buttons */}
-                                    <div className="flex gap-3">
-                                        <Button
-                                            type="button"
-                                            onClick={editingCard ? handleUpdateCard : handleAddCard}
-                                            className="flex-1"
-                                            disabled={isLoading}
-                                        >
-                                            {isLoading ? (
-                                                <>
-                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                    {editingCard ? "Updating..." : "Adding Card..."}
-                                                </>
-                                            ) : (
-                                                <>
-                                                    {editingCard ? "Update Card" : "Add Card"} →
-                                                </>
+                                        {/* Expiry Date and Security Code */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="expiryDate">Expiry date</Label>
+                                                <Input
+                                                    id="expiryDate"
+                                                    placeholder="MM/YY"
+                                                    value={expiryDate}
+                                                    onChange={handleExpiryChange}
+                                                    className={errors.expiryDate ? 'border-red-500' : ''}
+                                                />
+                                                {errors.expiryDate && (
+                                                    <p className="text-sm text-red-500 mt-1">{errors.expiryDate}</p>
+                                                )}
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="securityCode">Security code</Label>
+                                                {!editingCard && (
+                                                    <div className="relative">
+                                                        <Input
+                                                            id="securityCode"
+                                                            placeholder="CVC"
+                                                            value={securityCode}
+                                                            onChange={handleSecurityCodeChange}
+                                                            className={errors.securityCode ? 'border-red-500' : ''}
+                                                        />
+                                                        {errors.securityCode && (
+                                                            <p className="text-sm text-red-500 mt-1">{errors.securityCode}</p>
+                                                        )}
+                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                            <div className="text-xs text-muted-foreground">123</div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Country */}
+                                        <div className="space-y-2">
+                                            <Label htmlFor="country">Country</Label>
+                                            <Select value={country} onValueChange={setCountry}>
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="India">India</SelectItem>
+                                                    <SelectItem value="United States">United States</SelectItem>
+                                                    <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                                                    <SelectItem value="Canada">Canada</SelectItem>
+                                                    <SelectItem value="Australia">Australia</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        {/* Set as Default - Only show when adding new card */}
+                                        {!editingCard && (
+                                            <div className="flex items-center space-x-2">
+                                                <Checkbox
+                                                    id="setAsDefault"
+                                                    checked={setAsDefault}
+                                                    onCheckedChange={(checked) => setSetAsDefault(checked as boolean)}
+                                                />
+                                                <Label htmlFor="setAsDefault" className="text-sm">
+                                                    Set as default payment method
+                                                </Label>
+                                            </div>
+                                        )}
+
+                                        {/* Info Text */}
+                                        <div className="space-y-2 text-sm text-muted-foreground">
+                                            <p>Your card details will be saved for future purchases and subscription renewals.</p>
+                                            {!editingCard && (
+                                                <p>
+                                                    RapidAPI will validate your card by placing a temporary authorization hold of $0.50, this
+                                                    temporary hold will be automatically released after several days.
+                                                </p>
                                             )}
-                                        </Button>
-                                        {editingCard && (
+                                        </div>
+
+                                        {/* Action Buttons */}
+                                        <div className="flex gap-3">
                                             <Button
                                                 type="button"
-                                                variant="outline"
-                                                onClick={() => {
-                                                    setEditingCard(null);
-                                                    setShowAddForm(false);
-                                                    setExpiryDate("");
-                                                    setCountry("India");
-                                                }}
+                                                onClick={editingCard ? handleUpdateCard : handleAddCard}
+                                                className="flex-1"
+                                                disabled={isLoading}
                                             >
-                                                Cancel
+                                                {isLoading ? (
+                                                    <>
+                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                        {editingCard ? "Updating..." : "Adding Card..."}
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        {editingCard ? "Update Card" : "Add Card"} →
+                                                    </>
+                                                )}
                                             </Button>
-                                        )}
+                                            {editingCard && (
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        setEditingCard(null);
+                                                        setShowAddForm(false);
+                                                        setExpiryDate("");
+                                                        setCountry("India");
+                                                    }}
+                                                >
+                                                    Cancel
+                                                </Button>
+                                            )}
+                                        </div>
                                     </div>
-                                </CardContent>
-                            </Card>
+                                </DialogContent>
+                            </Dialog>
                         )}
                     </div>
                 </div>
-            </div>
+            
         </div>
     );
 }

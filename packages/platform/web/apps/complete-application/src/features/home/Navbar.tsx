@@ -88,7 +88,7 @@ export default function Navbar({ session, user }: NavbarProps) {
                 My Projects
               </Link>
               <Link
-                href="/billing"
+                href="/billing/wallet"
                 className="text-gray-700 dark:text-white hover:text-black transition-colors duration-200"
               >
                 Billing
@@ -174,7 +174,7 @@ export default function Navbar({ session, user }: NavbarProps) {
               My Projects
             </Link>
             <Link
-              href="/billing"
+              href="/billing/wallet"
               className="text-gray-700 dark:text-white hover:text-black block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
             >
               Billing

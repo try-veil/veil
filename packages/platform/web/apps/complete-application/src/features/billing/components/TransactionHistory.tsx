@@ -1,6 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { getTransactionHistory, Transaction } from "@/lib/billing-api";
@@ -9,7 +15,9 @@ interface TransactionHistoryProps {
   walletId: string | null;
 }
 
-export default function TransactionHistory({ walletId }: TransactionHistoryProps) {
+export default function TransactionHistory({
+  walletId,
+}: TransactionHistoryProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,25 +49,30 @@ export default function TransactionHistory({ walletId }: TransactionHistoryProps
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'completed':
-      case 'success':
-        return 'default';
-      case 'pending':
-        return 'secondary';
-      case 'failed':
-        return 'destructive';
+      case "completed":
+        return "green-800";
+      case "success":
+        return "default";
+      case "pending":
+        return "secondary";
+      case "failed":
+        return "destructive";
       default:
-        return 'secondary';
+        return "secondary";
     }
   };
 
   const formatAmount = (amount: number, type: string) => {
-    const prefix = type.toLowerCase().includes('debit') || type.toLowerCase().includes('deduct') ? '-' : '+';
+    const prefix =
+      type.toLowerCase().includes("debit") ||
+      type.toLowerCase().includes("deduct")
+        ? "-"
+        : "+";
     return `${prefix}${Math.abs(amount)}`;
   };
 
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle>Transaction History</CardTitle>
         <CardDescription>Recent credit transactions</CardDescription>
@@ -80,9 +93,7 @@ export default function TransactionHistory({ walletId }: TransactionHistoryProps
             ))}
           </div>
         ) : error ? (
-          <div className="text-center py-8 text-muted-foreground">
-            {error}
-          </div>
+          <div className="text-center py-8 text-muted-foreground">{error}</div>
         ) : transactions.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             No transactions found
@@ -90,25 +101,30 @@ export default function TransactionHistory({ walletId }: TransactionHistoryProps
         ) : (
           <div className="space-y-3">
             {transactions.slice(0, 10).map((transaction) => (
-              <div key={transaction.id} className="flex justify-between items-center p-3 border rounded">
-                <div>
-                  <div className="font-medium">
+              <Card key={transaction.id} className="w-full flex items-center justify-between">
+                <CardHeader>
+                  <CardTitle>
                     {transaction.description || transaction.type}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {new Date(transaction.createdAt).toLocaleDateString()} at{' '}
+                  </CardTitle>
+                  <CardDescription>
+                    {new Date(transaction.createdAt).toLocaleDateString()} at{" "}
                     {new Date(transaction.createdAt).toLocaleTimeString()}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="py-0">
+                  <div className="text-center space-y-6 mx-auto">
+                    <div className="flex flex-col items-end gap-0">
+                      <span className="font-semibold text-xl">
+                        {formatAmount(transaction.amount, transaction.type)}{" "}
+                        credits
+                      </span>
+                      <Badge className={`bg-${getStatusColor(transaction.status)}`}>
+                        {transaction.status}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">
-                    {formatAmount(transaction.amount, transaction.type)} credits
-                  </span>
-                  <Badge variant={getStatusColor(transaction.status)}>
-                    {transaction.status}
-                  </Badge>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}
