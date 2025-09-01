@@ -32,6 +32,16 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { subscribeToApi } from "@/app/api/wallet/route";
+import { useUser } from "@/contexts/UserContext";
+import { useRouter } from "next/navigation";
 
 // Dynamically import MarkdownPreview for rendering only
 const MarkdownPreview = dynamic(
@@ -45,9 +55,14 @@ const Overview = () => {
   );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>("");
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const { accessToken } = useAuth();
   const { selectedProject, isLoading: projectLoading } = useProject();
+  const { user } = useUser();
+  const router = useRouter();
 
   useEffect(() => {
     const fetchProjectData = async () => {
@@ -78,6 +93,42 @@ const Overview = () => {
 
     fetchProjectData();
   }, [accessToken, selectedProject?.id, projectLoading]);
+
+  const handleSubscribe = async () => {
+    if (!selectedPlan || !accessToken || !projectData?.hubListing) return;
+
+    let pricing: number | undefined;
+    if (selectedPlan === "basicPlan") {
+      pricing = projectData?.hubListing.basicPlan?.pricePerMonth;
+    } else if (selectedPlan === "proPlan") {
+      pricing = projectData?.hubListing.proPlan?.pricePerMonth;
+    } else if (selectedPlan === "ultraPlan") {
+      pricing = projectData?.hubListing.ultraPlan?.pricePerMonth;
+    }
+    const userId = user?.id;
+
+    console.log("Access Token:", accessToken);
+    console.log("User ID:", userId);
+    console.log("Selected Plan:", selectedPlan);
+    console.log("Pricing (credits):", pricing);
+
+    if (typeof pricing !== "number") {
+      alert("Pricing information is missing for the selected plan.");
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      await subscribeToApi(pricing, userId, accessToken);
+      alert("Subscription successful!");
+      router.push(`/consumer/${selectedProject?.id}/playground`);
+    } catch (err: any) {
+      alert(err.message || "Failed to subscribe to the plan.");
+    } finally {
+      setIsProcessing(false);
+      setIsDialogOpen(false);
+    }
+  };
 
   // Show loading state
   if (projectLoading || isLoading) {
@@ -199,8 +250,16 @@ const Overview = () => {
               </p>
             </div>
           </CardContent>
-          <div className="text-center mt-8">
-            <Button className="w-full">Choose Basic Plan</Button>
+          <div className="text-center mt-8 mb-4">
+            <Button
+              className="w-full"
+              onClick={() => {
+                setSelectedPlan("basicPlan");
+                setIsDialogOpen(true);
+              }}
+            >
+              Choose Basic Plan
+            </Button>
           </div>
         </Card>
 
@@ -228,8 +287,16 @@ const Overview = () => {
               </p>
             </div>
           </CardContent>
-          <div className="text-center mt-8">
-            <Button className="w-full">Upgrade to Pro Plan</Button>
+          <div className="text-center mt-8 mb-4">
+            <Button
+              className="w-full"
+              onClick={() => {
+                setSelectedPlan("proPlan");
+                setIsDialogOpen(true);
+              }}
+            >
+              Upgrade to Pro Plan
+            </Button>
           </div>
         </Card>
 
@@ -257,11 +324,43 @@ const Overview = () => {
               </p>
             </div>
           </CardContent>
-          <div className="text-center mt-8">
-            <Button className="w-full">Choose Ultra Plan</Button>
+          <div className="text-center mt-8 mb-4">
+            <Button
+              className="w-full"
+              onClick={() => {
+                setSelectedPlan("ultraPlan");
+                setIsDialogOpen(true);
+              }}
+            >
+              Choose Ultra Plan
+            </Button>
           </div>
         </Card>
       </div>
+
+      {/* Subscription Confirmation Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Subscription</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to subscribe to the {selectedPlan}?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-4">
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubscribe}
+              disabled={isProcessing}
+              className={isProcessing ? "animate-pulse" : ""}
+            >
+              {isProcessing ? "Processing..." : "Confirm"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* No Hub Listing Message */}
       {!hubListing && (
