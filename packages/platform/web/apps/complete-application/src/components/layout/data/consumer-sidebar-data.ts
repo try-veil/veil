@@ -20,6 +20,7 @@ import {
   IconUserOff,
   IconUsers,
   IconBuildingBank,
+  IconCash,
 } from "@tabler/icons-react";
 import { AudioWaveform, Command, GalleryVerticalEnd } from "lucide-react";
 import { ConsumerSidebarData } from "../types";
@@ -56,6 +57,11 @@ export const getConsumerSidebarData = (): ConsumerSidebarData => {
             title: "API Overview",
             url: `/consumer/${selectedProject.id}/overview`,
             icon: IconPackages,
+          },
+          {
+            title: "Pricing",
+            url: `/consumer/${selectedProject.id}/pricing`,
+            icon: IconCash,
           },
           {
             title: "Playground",

@@ -30,6 +30,27 @@ export interface HubListing {
   healthCheckUrl?: string;
   apiDocumentation?: string;
   projectId: number;
+  basicPlan?: {
+    id: string,
+    enabled: boolean,
+    pricePerMonth: number,
+    requestQuotaPerMonth: number,
+    hardLimitQuota: number
+  }
+  proPlan?: {
+    id: string,
+    enabled: boolean,
+    pricePerMonth: number,
+    requestQuotaPerMonth: number,
+    hardLimitQuota: number
+  }
+  ultraPlan?: {
+    id: string,
+    enabled: boolean,
+    pricePerMonth: number,
+    requestQuotaPerMonth: number,
+    hardLimitQuota: number
+  }
 }
 
 export interface ProjectWithHubListing {
