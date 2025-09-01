@@ -90,11 +90,6 @@ export function useProviderSidebarData() {
             icon: IconLayoutDashboard,
           },
           {
-            title: "Analytics",
-            url: `/projects/${selectedProject?.id}/analytics`,
-            icon: IconChartBar,
-          },
-          {
             title: "Settings",
             url: `/projects/${selectedProject?.id}/settings`,
             icon: IconSettingsCog,
@@ -118,6 +113,11 @@ export function useProviderSidebarData() {
             title: "Revenue",
             url: `/projects/${selectedProject?.id}/hub-listing/revenue`,
             icon: IconTax,
+          },
+          {
+            title: "Analytics",
+            url: `/projects/${selectedProject?.id}/analytics`,
+            icon: IconChartBar,
           },
         ],
       },
