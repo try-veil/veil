@@ -118,7 +118,7 @@ export default function TransactionHistory({
                         {formatAmount(transaction.amount, transaction.type)}{" "}
                         credits
                       </span>
-                      <Badge className={`bg-${getStatusColor(transaction.status)}`}>
+                      <Badge>
                         {transaction.status}
                       </Badge>
                     </div>

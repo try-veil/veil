@@ -9,6 +9,7 @@ import {
 } from "@/lib/billing-api";
 import WalletBalanceCard from "./components/WalletBalanceCard";
 import CreditPurchaseForm from "./components/CreditPurchaseForm";
+import LinkBankAccount from "./components/LinkBankAccount";
 
 export default function BillingContent() {
   const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(
@@ -83,6 +84,7 @@ export default function BillingContent() {
           {/* Left Column - Wallet & Purchase */}
           <div className="space-y-6">
             <WalletBalanceCard balance={walletBalance} isLoading={isLoading} />
+            <LinkBankAccount />
           </div>
 
           {/* Right Column - Transaction History */}
