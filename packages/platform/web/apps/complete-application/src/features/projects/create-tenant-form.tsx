@@ -8,6 +8,7 @@ import * as z from "zod";
 import { useUser } from "@/contexts/UserContext";
 import { createTenant } from "@/app/api/tenant/route";
 import { useAuth } from "@/contexts/AuthContext";
+import { createWallet } from "@/app/api/wallet/route";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -43,7 +44,7 @@ export function CreateTenantForm() {
       tenantDomain: "",
     },
   });
-  console.log(accessToken)
+  console.log(accessToken);
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!accessToken) {
       toast({
@@ -57,17 +58,42 @@ export function CreateTenantForm() {
     setIsLoading(true);
     try {
       // Create tenant
-      await createTenant({
-        name: values.tenantName,
-        domain: values.tenantDomain,
-      }, accessToken);
+      const tenant = await createTenant(
+        {
+          name: values.tenantName,
+          domain: values.tenantDomain,
+        },
+        accessToken
+      );
 
       // Refresh user data to get updated tenant ID
       await refreshUserData();
 
+      // Ensure user ID is a string
+      const userId = user?.id || "";
+
+      // Create wallet for the user
+
+      console.log("Creating wallet with:", { userId, tenantId: tenant.id });
+      if (!userId) {
+        throw new Error("User ID is missing");
+      }
+      if (!tenant.id) {
+        throw new Error("Tenant ID is missing");
+      }
+
+      await createWallet(
+        {
+          userId: userId,
+          tenantId: tenant.id,
+          initialCredits: 0,
+        },
+        accessToken
+      );
+
       toast({
         title: "Success",
-        description: "Organization created successfully.",
+        description: "Organization and wallet created successfully.",
       });
 
       // Reset form
@@ -77,10 +103,13 @@ export function CreateTenantForm() {
       // This ensures both user context and projects are freshly fetched
       window.location.reload();
     } catch (error) {
-      console.error('Error creating tenant:', error);
+      console.error("Error creating tenant or wallet:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -133,4 +162,11 @@ export function CreateTenantForm() {
       </div>
     </div>
   );
+}
+
+// Update the Tenant type to include an id property
+interface Tenant {
+  id: string;
+  name: string;
+  domain: string;
 }
