@@ -9,7 +9,8 @@ import {
   IconSettingsCog,
   IconFile,
   IconBuildingBank,
-  IconRouteAltRight
+  IconRouteAltRight,
+  IconTax
 } from "@tabler/icons-react";
 import { Command } from "lucide-react";
 import { useProject } from "@/context/project-context";
@@ -112,6 +113,11 @@ export function useProviderSidebarData() {
             title: "Monetize",
             url: `/projects/${selectedProject?.id}/hub-listing/monetize`,
             icon: IconBuildingBank,
+          },
+          {
+            title: "Revenue",
+            url: `/projects/${selectedProject?.id}/hub-listing/revenue`,
+            icon: IconTax,
           },
         ],
       },

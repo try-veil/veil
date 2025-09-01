@@ -36,7 +36,6 @@ export function DataTableToolbar<TData>({
               options={[
                 { label: 'Active', value: 'active' },
                 { label: 'Inactive', value: 'inactive' },
-                { label: 'Invited', value: 'invited' },
                 { label: 'Suspended', value: 'suspended' },
               ]}
             />
