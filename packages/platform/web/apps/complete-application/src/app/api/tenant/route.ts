@@ -1,11 +1,12 @@
 export interface Tenant {
+  id: string;
   name: string;
   domain: string;
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
-export async function createTenant(data: Tenant, token: string): Promise<Tenant> {
+export async function createTenant(data: Omit<Tenant, 'id'>, token: string): Promise<Tenant> {
   try {
     const response = await fetch(`${API_BASE_URL}/tenants`, {
       method: 'POST',
@@ -23,7 +24,7 @@ export async function createTenant(data: Tenant, token: string): Promise<Tenant>
       throw new Error(resData.error || 'Failed to create tenant');
     }
 
-    return resData;
+    return resData as Tenant; // Ensure the response matches the Tenant type
   } catch (error) {
     console.error('[createTenant] Error:', error);
     throw error;

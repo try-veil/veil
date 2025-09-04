@@ -12,7 +12,7 @@ export interface UserContextData {
   role?: string;
   accessToken?: string;
   refreshToken?: string;
-  tenantId?:string;
+  tenantId?: string;
 }
 
 // Context interface
@@ -28,8 +28,8 @@ const UserContext = createContext<UserContextType>({
   user: null,
   isLoading: true,
   error: null,
-  refreshUserData: async () => {},
-  setUser: (user: UserContextData | null) => {},
+  refreshUserData: async () => { },
+  setUser: (user: UserContextData | null) => { },
 });
 
 export const useUser = () => useContext(UserContext);
@@ -45,8 +45,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const { accessToken, refreshToken, isAuthenticated } = useAuth();
 
   const refreshUserData = async () => {
-    if (!accessToken ) {
-      console.log('No access token available');
+    if (!accessToken) {
+      console.log('UserContext: No access token available');
       setUser(null);
       setIsLoading(false);
       return;
@@ -54,18 +54,22 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
     setIsLoading(true);
     try {
-      console.log('Fetching user data with token:', accessToken.substring(0, 20) + '...');
+      console.log('UserContext: Fetching user data with token:', accessToken.substring(0, 20) + '...');
+      console.log('UserContext: isAuthenticated:', isAuthenticated);
+      
       // Fetch user data from API
       const userData = await fetchUserData(accessToken);
-      console.log('User data fetched successfully:', userData);
-      
+      console.log('UserContext: User data fetched successfully:', userData);
+
       setUser(userData);
       setError(null);
     } catch (err) {
-      console.error('Error fetching user data:', err);
-      console.error('Error details:', {
+      console.error('UserContext: Error fetching user data:', err);
+      console.error('UserContext: Error details:', {
         message: err instanceof Error ? err.message : 'Unknown error',
-        token: accessToken ? 'Present' : 'Missing'
+        token: accessToken ? 'Present' : 'Missing',
+        tokenLength: accessToken?.length,
+        isAuthenticated
       });
       setError('Failed to load user data');
       // Don't set user to null on error, keep existing user data

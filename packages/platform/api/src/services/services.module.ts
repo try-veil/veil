@@ -12,6 +12,8 @@ import { UserModule } from './user/user.module';
 import { HubListingModule } from './hublisting/hublisting.module';
 import { MarketplaceModule } from './marketplace/marketplace.module';
 import { PlanModule } from './plan/plan.module';
+import { RazorpayModule } from './razorpay/razorpay.module';
+
 
 @Module({
   imports: [
@@ -28,6 +30,7 @@ import { PlanModule } from './plan/plan.module';
     UserModule,
     HubListingModule,
     MarketplaceModule,
+    RazorpayModule,
   ],
   exports: [
     PrismaModule,
@@ -43,6 +46,7 @@ import { PlanModule } from './plan/plan.module';
     UserModule,
     HubListingModule,
     MarketplaceModule,
+    RazorpayModule,
   ],
 })
 export class ServicesModule {}
