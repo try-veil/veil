@@ -42,6 +42,7 @@ import {
 import { subscribeToApi } from "@/app/api/wallet/route";
 import { useUser } from "@/contexts/UserContext";
 import { useRouter } from "next/navigation";
+import { getWalletBalance } from "@/app/api/wallet/route";
 
 // Dynamically import MarkdownPreview for rendering only
 const MarkdownPreview = dynamic(
@@ -58,6 +59,12 @@ const Overview = () => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [subscriptionDetails, setSubscriptionDetails] = useState<{
+    oldBalance: number;
+    newBalance: number;
+    pricing: number;
+  } | null>(null);
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
 
   const { accessToken } = useAuth();
   const { selectedProject, isLoading: projectLoading } = useProject();
@@ -107,11 +114,6 @@ const Overview = () => {
     }
     const userId = user?.id;
 
-    console.log("Access Token:", accessToken);
-    console.log("User ID:", userId);
-    console.log("Selected Plan:", selectedPlan);
-    console.log("Pricing (credits):", pricing);
-
     if (typeof pricing !== "number") {
       alert("Pricing information is missing for the selected plan.");
       return;
@@ -119,9 +121,14 @@ const Overview = () => {
 
     try {
       setIsProcessing(true);
-      await subscribeToApi(pricing, userId, accessToken);
-      alert("Subscription successful!");
-      router.push(`/consumer/${selectedProject?.id}/playground`);
+      const { oldBalance, newBalance } = await subscribeToApi(pricing, userId, accessToken);
+
+      setSubscriptionDetails({
+        oldBalance: parseFloat(oldBalance.toFixed(2)),
+        newBalance: parseFloat(newBalance.toFixed(2)),
+        pricing,
+      });
+      setIsSubscriptionModalOpen(true);
     } catch (err: any) {
       alert(err.message || "Failed to subscribe to the plan.");
     } finally {
@@ -360,6 +367,81 @@ const Overview = () => {
             </Button>
           </div>
         </DialogContent>
+      </Dialog>
+
+      {/* Successful Subscription Modal */}
+      <Dialog open={isSubscriptionModalOpen} onOpenChange={setIsSubscriptionModalOpen}>
+        {/* <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Subscription Successful</DialogTitle>
+            <DialogDescription>
+              <div className="space-y-4">
+                <p>Old Wallet Balance: {subscriptionDetails?.oldBalance} credits</p>
+                <p>Pricing: {subscriptionDetails?.pricing} credits</p>
+                <p>New Wallet Balance: {subscriptionDetails?.newBalance} credits</p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsSubscriptionModalOpen(false);
+                router.push(`/consumer/${selectedProject?.id}/playground`);
+              }}
+            >
+              Close
+            </Button>
+          </div>
+        </DialogContent> */}
+        <DialogContent className="animate-fadeIn bg-white text-black p-6 rounded-lg shadow-md border border-gray-300 w-[400px]">
+  <DialogHeader className="border-b border-dashed border-gray-400 pb-4 mb-4">
+    <DialogTitle className="text-2xl font-bold text-center">Receipt</DialogTitle>
+    <DialogDescription className="text-center text-gray-600">
+      Subscription Successful
+    </DialogDescription>
+  </DialogHeader>
+
+  {/* Bill body */}
+  <div className="space-y-3 font-mono text-sm">
+    <div className="flex justify-between">
+      <span>Previous Wallet Balance</span>
+      <span>{subscriptionDetails?.oldBalance} credits</span>
+    </div>
+    <div className="flex justify-between">
+      <span>Pricing</span>
+      <span>{subscriptionDetails?.pricing} credits</span>
+    </div>
+    <div className="flex justify-between font-bold border-t border-dashed border-gray-400 pt-2">
+      <span>Current Wallet Balance</span>
+      <span>{subscriptionDetails?.newBalance} credits</span>
+    </div>
+  </div>
+
+  {/* Stamp effect */}
+  <div className="absolute top-16 right-6 text-3xl font-extrabold text-green-600 border-4 border-green-600 px-4 py-2 rounded-md uppercase rotate-[-10deg] animate-stamp opacity-90">
+    Successful
+  </div>
+
+  {/* Footer */}
+  <div className="border-t border-dashed border-gray-400 mt-6 pt-4 flex justify-center text-xs text-gray-500">
+    Thank you for your subscription!
+  </div>
+
+  {/* Close button */}
+  <div className="flex justify-end gap-4 mt-6">
+    <Button
+      variant="outline"
+      onClick={() => {
+        setIsSubscriptionModalOpen(false)
+        router.push(`/consumer/${selectedProject?.id}/playground`)
+      }}
+    >
+      Close
+    </Button>
+  </div>
+</DialogContent>
+
       </Dialog>
 
       {/* No Hub Listing Message */}

@@ -132,7 +132,7 @@ export default function page() {
               Here&apos;s a list of your api calls!
             </p>
           </div>
-          <TasksPrimaryButtons />
+          {/* <TasksPrimaryButtons /> */}
         </div>
         <div className='flex-1 overflow-auto py-1 lg:flex-row'>
           <DataTable data={tasks} columns={columns} />

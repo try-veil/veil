@@ -100,7 +100,7 @@ export async function getWalletInfo(userId: string, token: string): Promise<any>
   }
 }
 
-export async function subscribeToApi(pricing: number, userId: string, token: string): Promise<void> {
+export async function subscribeToApi(pricing: number, userId: string, token: string): Promise<{ oldBalance: number; newBalance: number }> {
   try {
     // Get wallet info
     const walletInfo = await getWalletInfo(userId, token);
@@ -111,11 +111,21 @@ export async function subscribeToApi(pricing: number, userId: string, token: str
     }
 
     // Check wallet balance
-    const walletBalance = await getWalletBalance(walletId, token);
+    const oldBalance = await getWalletBalance(walletId, token);
 
-    if (pricing <= walletBalance) {
+    console.log("Old Balance:", oldBalance);
+    console.log("Pricing:", pricing);
+
+    if (pricing <= oldBalance) {
       // Deduct wallet balance
       await deductWalletBalance(walletId, pricing, token);
+
+      // Fetch updated wallet balance
+      const newBalance = await getWalletBalance(walletId, token);
+
+      console.log("New Balance:", newBalance);
+
+      return { oldBalance, newBalance };
     } else {
       throw new Error("Insufficient wallet balance");
     }

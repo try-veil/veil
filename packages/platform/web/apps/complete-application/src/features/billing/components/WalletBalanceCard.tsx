@@ -39,7 +39,7 @@ export default function WalletBalanceCard({ balance, isLoading }: WalletBalanceC
         <div className="flex items-center justify-between">
           <div>
             <div className="text-3xl font-bold">
-              {balance?.balance || 0} Credits
+              {balance?.balance.toFixed(2) || 0} Credits
             </div>
             {balance?.expiresAt && (
               <p className="text-sm text-muted-foreground">
