@@ -1,36 +1,15 @@
 import { Elysia, t } from 'elysia';
 import { db, apis, users, apiCategories, apiSubscriptions, apiUsageAnalytics } from '../db';
-import { requireRole } from '../middleware/auth';
-import { AuthUtils } from '../utils/auth';
+import { requireRole, authMiddleware } from '../middleware/auth';
 import { createApiSchema, updateApiSchema, paginationSchema } from '../validation/schemas';
 import { eq, and, desc, count, sum, avg } from 'drizzle-orm';
+import { GatewayService } from '../services/gateway-service';
 
 export const sellerRoutes = new Elysia({ prefix: '/seller' })
+  .use(authMiddleware)
   .use(requireRole(['seller', 'admin']))
-  .get('/dashboard', async ({ headers, set }) => {
+  .get('/dashboard', async ({ user, set }) => {
     try {
-      // Get user from headers directly
-      const token = headers.authorization?.replace('Bearer ', '');
-      if (!token) {
-        set.status = 401;
-        return { success: false, message: 'No token provided' };
-      }
-
-      const payload = AuthUtils.verifyToken(token);
-      if (!payload) {
-        set.status = 401;
-        return { success: false, message: 'Invalid token' };
-      }
-
-      const [user] = await db.select({
-        id: users.id,
-        role: users.role,
-      }).from(users).where(eq(users.id, payload.userId)).limit(1);
-
-      if (!user) {
-        set.status = 401;
-        return { success: false, message: 'User not found' };
-      }
 
       // Get seller's API count
       const [apiCountResult] = await db.select({ count: count() })
@@ -83,30 +62,8 @@ export const sellerRoutes = new Elysia({ prefix: '/seller' })
       };
     }
   })
-  .get('/apis', async ({ query, headers, set }) => {
+  .get('/apis', async ({ query, user, set }) => {
     try {
-      // Get user from headers directly
-      const token = headers.authorization?.replace('Bearer ', '');
-      if (!token) {
-        set.status = 401;
-        return { success: false, message: 'No token provided' };
-      }
-
-      const payload = AuthUtils.verifyToken(token);
-      if (!payload) {
-        set.status = 401;
-        return { success: false, message: 'Invalid token' };
-      }
-
-      const [user] = await db.select({
-        id: users.id,
-        role: users.role,
-      }).from(users).where(eq(users.id, payload.userId)).limit(1);
-
-      if (!user) {
-        set.status = 401;
-        return { success: false, message: 'User not found' };
-      }
 
       const { page = 1, limit = 10 } = paginationSchema.parse(query);
       const offset = (page - 1) * limit;
@@ -168,30 +125,8 @@ export const sellerRoutes = new Elysia({ prefix: '/seller' })
       };
     }
   })
-  .post('/apis', async ({ body, headers, set }) => {
+  .post('/apis', async ({ body, user, set }) => {
     try {
-      // Get user from headers directly
-      const token = headers.authorization?.replace('Bearer ', '');
-      if (!token) {
-        set.status = 401;
-        return { success: false, message: 'No token provided' };
-      }
-
-      const payload = AuthUtils.verifyToken(token);
-      if (!payload) {
-        set.status = 401;
-        return { success: false, message: 'Invalid token' };
-      }
-
-      const [user] = await db.select({
-        id: users.id,
-        role: users.role,
-      }).from(users).where(eq(users.id, payload.userId)).limit(1);
-
-      if (!user) {
-        set.status = 401;
-        return { success: false, message: 'User not found' };
-      }
 
       const validatedData = createApiSchema.parse(body);
 
@@ -208,13 +143,31 @@ export const sellerRoutes = new Elysia({ prefix: '/seller' })
         pricingModel: validatedData.pricingModel,
         requestLimit: validatedData.requestLimit,
         isPublic: validatedData.isPublic,
-        isActive: false, // APIs start inactive until reviewed
+        isActive: true, // APIs are now active by default
       }).returning();
+
+      // Register API with Veil Gateway
+      try {
+        const gatewayService = new GatewayService();
+        await gatewayService.registerAPI({
+          uid: newApi.uid,
+          name: newApi.name,
+          endpoint: newApi.endpoint,
+          baseUrl: newApi.baseUrl,
+          methods: ['GET', 'POST'], // Default methods, can be configured later
+          requiredHeaders: [] // No required headers by default
+        });
+        console.log(`API ${newApi.name} (${newApi.uid}) registered with Veil gateway successfully`);
+      } catch (gatewayError) {
+        console.error('Failed to register API with gateway:', gatewayError);
+        // Note: We don't fail the API creation if gateway registration fails
+        // The API still exists in the platform and can be manually synced later
+      }
 
       set.status = 201;
       return {
         success: true,
-        message: 'API created successfully. It will be reviewed before going live.',
+        message: 'API created successfully and is now live in the marketplace.',
         data: { api: newApi }
       };
     } catch (error: any) {
@@ -390,8 +343,59 @@ export const sellerRoutes = new Elysia({ prefix: '/seller' })
       };
     }
   })
+  .patch('/apis/:uid/toggle-status', async ({ params: { uid }, user, set }) => {
+    try {
+
+      // Check if API exists and belongs to user
+      const [existingApi] = await db.select()
+        .from(apis)
+        .where(and(
+          eq(apis.uid, uid),
+          eq(apis.sellerId, user.id)
+        ))
+        .limit(1);
+
+      if (!existingApi) {
+        set.status = 404;
+        return {
+          success: false,
+          message: 'API not found'
+        };
+      }
+
+      // Toggle the isActive status
+      const [updatedApi] = await db.update(apis)
+        .set({
+          isActive: !existingApi.isActive,
+          updatedAt: new Date(),
+        })
+        .where(eq(apis.uid, uid))
+        .returning();
+
+      const statusMessage = updatedApi.isActive ? 'activated' : 'deactivated';
+
+      return {
+        success: true,
+        message: `API ${statusMessage} successfully`,
+        data: {
+          api: {
+            uid: updatedApi.uid,
+            name: updatedApi.name,
+            isActive: updatedApi.isActive
+          }
+        }
+      };
+    } catch (error: any) {
+      set.status = 500;
+      return {
+        success: false,
+        message: 'Failed to toggle API status'
+      };
+    }
+  })
   .get('/apis/:uid/analytics', async ({ params: { uid }, user, query, set }) => {
     try {
+
       const { page = 1, limit = 30 } = paginationSchema.parse(query);
       const offset = (page - 1) * limit;
 

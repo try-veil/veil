@@ -5,6 +5,7 @@ go 1.21
 require (
 	github.com/bytedance/mockey v1.2.14
 	github.com/caddyserver/caddy/v2 v2.7.6
+	github.com/google/uuid v1.3.1
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.25.0
 	gorm.io/driver/sqlite v1.5.7
@@ -41,7 +42,6 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/cel-go v0.15.1 // indirect
 	github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1 // indirect
-	github.com/google/uuid v1.3.1 // indirect
 	github.com/gopherjs/gopherjs v1.12.80 // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect

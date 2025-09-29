@@ -16,9 +16,11 @@ import (
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	"github.com/try-veil/veil/packages/caddy/internal/config"
 	"github.com/try-veil/veil/packages/caddy/internal/dto"
+	"github.com/try-veil/veil/packages/caddy/internal/events"
 	"github.com/try-veil/veil/packages/caddy/internal/models"
 	"github.com/try-veil/veil/packages/caddy/internal/store"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -27,8 +29,10 @@ import (
 type VeilHandler struct {
 	DBPath          string             `json:"db_path,omitempty"`
 	SubscriptionKey string             `json:"subscription_key,omitempty"`
+	EventsEndpoint  string             `json:"events_endpoint,omitempty"`
 	Config          *config.VeilConfig `json:"-"`
 	store           *store.APIStore
+	eventQueue      events.UsageEventQueue
 	logger          *zap.Logger
 	ctx             caddy.Context
 }
@@ -53,6 +57,11 @@ func (h *VeilHandler) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 			return d.ArgErr()
 		}
 		h.SubscriptionKey = d.Val()
+
+		// Optional third argument for events endpoint
+		if d.NextArg() {
+			h.EventsEndpoint = d.Val()
+		}
 	}
 	return nil
 }
@@ -83,14 +92,33 @@ func (h *VeilHandler) Provision(ctx caddy.Context) error {
 		return fmt.Errorf("failed to run database migrations: %v", err)
 	}
 
+	// Initialize event queue with default endpoint if not provided
+	eventsEndpoint := h.EventsEndpoint
+	if eventsEndpoint == "" {
+		eventsEndpoint = "http://localhost:3000/api/v1/usage/events"
+	}
+
+	h.eventQueue = events.NewHTTPEventQueue(eventsEndpoint, h.logger)
+	if err := h.eventQueue.Start(); err != nil {
+		h.logger.Warn("failed to start event queue", zap.Error(err))
+		// Don't fail the entire handler if event queue fails to start
+		h.eventQueue = nil
+	}
+
 	h.logger.Info("VeilHandler provisioned successfully",
-		zap.String("db_path", h.DBPath))
+		zap.String("db_path", h.DBPath),
+		zap.String("events_endpoint", h.EventsEndpoint))
 
 	return nil
 }
 
 // Stop implements caddy.App.
 func (h *VeilHandler) Stop() error {
+	if h.eventQueue != nil {
+		if err := h.eventQueue.Stop(); err != nil {
+			h.logger.Error("failed to stop event queue", zap.Error(err))
+		}
+	}
 	return nil
 }
 
@@ -508,6 +536,7 @@ func (h *VeilHandler) Validate() error {
 	if h.SubscriptionKey == "" {
 		return fmt.Errorf("subscription_key header name is required")
 	}
+	// EventsEndpoint is optional
 	return nil
 }
 
@@ -592,6 +621,44 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 	h.logger.Debug("request authorized",
 		zap.String("path", r.URL.Path),
 		zap.String("method", r.Method))
+
+	// Capture usage event if event queue is enabled
+	if h.eventQueue != nil {
+		// Wrap response writer to capture response details
+		recorder := events.NewResponseRecorder(w)
+
+		// Calculate request size
+		requestSize := r.ContentLength
+		if requestSize < 0 {
+			requestSize = 0
+		}
+
+		// Process the request
+		err := next.ServeHTTP(recorder, r)
+
+		// Create usage event
+		usageEvent := events.UsageEvent{
+			ID:             uuid.New().String(),
+			APIPath:        r.URL.Path,
+			SubscriptionKey: apiKey,
+			Method:         r.Method,
+			ResponseTime:   recorder.GetResponseTime().Milliseconds(),
+			StatusCode:     recorder.StatusCode,
+			Success:        recorder.IsSuccess(),
+			Timestamp:      time.Now(),
+			RequestSize:    requestSize,
+			ResponseSize:   recorder.ResponseSize,
+		}
+
+		// Enqueue the event (non-blocking)
+		if err := h.eventQueue.Enqueue(usageEvent); err != nil {
+			h.logger.Warn("failed to enqueue usage event",
+				zap.Error(err),
+				zap.String("api_path", r.URL.Path))
+		}
+
+		return err
+	}
 
 	return next.ServeHTTP(w, r)
 }

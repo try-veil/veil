@@ -1,116 +1,61 @@
 import { Elysia, t } from 'elysia';
-import { db, apis, users, apiCategories, apiRatings, apiSubscriptions } from '../db';
+import { z } from 'zod';
+import { MarketplaceService } from '../services/marketplace-service';
 import { authMiddleware } from '../middleware/auth';
 import { apiSearchSchema, createSubscriptionSchema, createRatingSchema } from '../validation/schemas';
-import { eq, and, or, like, gte, lte, desc, asc, count, sql, avg } from 'drizzle-orm';
+import {
+  marketplaceQuerySchema,
+  apiUidParamSchema,
+  featuredQuerySchema,
+  type MarketplaceQuery,
+  type APIUidParam,
+  type FeaturedQuery
+} from '../validation/marketplace-validation';
+import { db, apis, apiSubscriptions, apiRatings } from '../db';
+import { eq, and, sql, avg } from 'drizzle-orm';
+
+const marketplaceService = new MarketplaceService();
 
 export const marketplaceRoutes = new Elysia({ prefix: '/marketplace' })
+  // Get all marketplace APIs
   .get('/apis', async ({ query, set }) => {
     try {
       const validatedQuery = apiSearchSchema.parse(query);
       const { page, limit, sortBy, sortOrder, query: searchQuery, category, minPrice, maxPrice, pricingModel } = validatedQuery;
-      
-      const offset = (page - 1) * limit;
 
-      // Build WHERE conditions
-      const conditions = [
-        eq(apis.isActive, true),
-        eq(apis.isPublic, true)
-      ];
+      const filters = {
+        search: searchQuery,
+        categoryId: category ? parseInt(category) : undefined,
+        pricingModel,
+        minPrice: minPrice ? parseFloat(minPrice) : undefined,
+        maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+        sortBy: sortBy as any,
+      };
 
-      if (searchQuery) {
-        conditions.push(
-          or(
-            like(apis.name, `%${searchQuery}%`),
-            like(apis.description, `%${searchQuery}%`)
-          )!
-        );
-      }
+      const pagination = { page, limit };
+      const result = await marketplaceService.getMarketplaceAPIs(filters, pagination);
 
-      if (category) {
-        conditions.push(eq(apiCategories.name, category));
-      }
-
-      if (minPrice) {
-        conditions.push(gte(apis.price, minPrice));
-      }
-
-      if (maxPrice) {
-        conditions.push(lte(apis.price, maxPrice));
-      }
-
-      if (pricingModel) {
-        conditions.push(eq(apis.pricingModel, pricingModel));
-      }
-
-      // Build ORDER BY
-      const orderByColumn = {
-        name: apis.name,
-        price: apis.price,
-        rating: apis.averageRating,
-        created_at: apis.createdAt,
-      }[sortBy];
-
-      const orderDirection = sortOrder === 'desc' ? desc : asc;
-
-      // Get APIs with seller and category info
-      const apiList = await db.select({
-        id: apis.id,
-        uid: apis.uid,
-        name: apis.name,
-        description: apis.description,
-        version: apis.version,
-        endpoint: apis.endpoint,
-        price: apis.price,
-        pricingModel: apis.pricingModel,
-        requestLimit: apis.requestLimit,
-        averageRating: apis.averageRating,
-        totalRatings: apis.totalRatings,
-        totalSubscriptions: apis.totalSubscriptions,
-        createdAt: apis.createdAt,
-        seller: {
-          id: users.id,
-          firstName: users.firstName,
-          lastName: users.lastName,
-        },
-        category: {
-          id: apiCategories.id,
-          name: apiCategories.name,
-        },
-      })
-      .from(apis)
-      .leftJoin(users, eq(apis.sellerId, users.id))
-      .leftJoin(apiCategories, eq(apis.categoryId, apiCategories.id))
-      .where(and(...conditions))
-      .orderBy(orderDirection(orderByColumn))
-      .limit(limit)
-      .offset(offset);
-
-      // Get total count for pagination
-      const [totalResult] = await db.select({ count: count() })
-        .from(apis)
-        .leftJoin(apiCategories, eq(apis.categoryId, apiCategories.id))
-        .where(and(...conditions));
-
-      const total = totalResult.count;
-      const totalPages = Math.ceil(total / limit);
+      const totalPages = Math.ceil(result.total / limit);
 
       return {
         success: true,
         data: {
-          apis: apiList,
+          apis: result.apis,
           pagination: {
             page,
             limit,
-            total,
+            total: result.total,
             totalPages,
             hasNext: page < totalPages,
             hasPrev: page > 1,
           }
+        },
+        meta: {
+          timestamp: new Date().toISOString(),
         }
       };
     } catch (error: any) {
-      set.status = 400;
+      set.status = 500;
       return {
         success: false,
         message: error.message || 'Failed to fetch APIs',
@@ -118,46 +63,128 @@ export const marketplaceRoutes = new Elysia({ prefix: '/marketplace' })
       };
     }
   })
-  .get('/apis/:uid', async ({ params: { uid }, set }) => {
-    try {
-      const [api] = await db.select({
-        id: apis.id,
-        uid: apis.uid,
-        name: apis.name,
-        description: apis.description,
-        version: apis.version,
-        endpoint: apis.endpoint,
-        baseUrl: apis.baseUrl,
-        documentation: apis.documentation,
-        price: apis.price,
-        pricingModel: apis.pricingModel,
-        requestLimit: apis.requestLimit,
-        averageRating: apis.averageRating,
-        totalRatings: apis.totalRatings,
-        totalSubscriptions: apis.totalSubscriptions,
-        createdAt: apis.createdAt,
-        seller: {
-          id: users.id,
-          firstName: users.firstName,
-          lastName: users.lastName,
-        },
-        category: {
-          id: apiCategories.id,
-          name: apiCategories.name,
-          description: apiCategories.description,
-        },
-      })
-      .from(apis)
-      .leftJoin(users, eq(apis.sellerId, users.id))
-      .leftJoin(apiCategories, eq(apis.categoryId, apiCategories.id))
-      .where(and(
-        eq(apis.uid, uid),
-        eq(apis.isActive, true),
-        eq(apis.isPublic, true)
-      ))
-      .limit(1);
 
-      if (!api) {
+  // Get featured APIs
+  .get('/featured', async ({ query, set }) => {
+    try {
+      const validatedQuery = featuredQuerySchema.parse(query);
+      const featuredAPIs = await marketplaceService.getFeaturedAPIs(validatedQuery.limit);
+
+      return {
+        success: true,
+        data: {
+          apis: featuredAPIs,
+          count: featuredAPIs.length,
+        },
+        meta: {
+          timestamp: new Date().toISOString(),
+        }
+      };
+    } catch (error: any) {
+      set.status = 500;
+      return {
+        success: false,
+        message: error.message || 'Failed to fetch featured APIs'
+      };
+    }
+  })
+
+  // Get trending APIs
+  .get('/trending', async ({ query, set }) => {
+    try {
+      const validatedQuery = featuredQuerySchema.parse(query);
+      const trendingAPIs = await marketplaceService.getTrendingAPIs(validatedQuery.limit);
+
+      return {
+        success: true,
+        data: {
+          apis: trendingAPIs,
+          count: trendingAPIs.length,
+        },
+        meta: {
+          timestamp: new Date().toISOString(),
+        }
+      };
+    } catch (error: any) {
+      set.status = 500;
+      return {
+        success: false,
+        message: error.message || 'Failed to fetch trending APIs'
+      };
+    }
+  })
+
+  // Search APIs
+  .get('/search', async ({ query, set }) => {
+    try {
+      const q = query.q as string;
+      if (!q || q.trim().length === 0) {
+        set.status = 400;
+        return {
+          success: false,
+          message: 'Search query is required'
+        };
+      }
+
+      const validatedQuery = apiSearchSchema.parse({
+        ...query,
+        query: q
+      });
+
+      const filters = {
+        pricingModel: validatedQuery.pricingModel,
+        minPrice: validatedQuery.minPrice ? parseFloat(validatedQuery.minPrice) : undefined,
+        maxPrice: validatedQuery.maxPrice ? parseFloat(validatedQuery.maxPrice) : undefined,
+        sortBy: validatedQuery.sortBy as any,
+      };
+
+      const pagination = { page: validatedQuery.page, limit: validatedQuery.limit };
+      const result = await marketplaceService.searchAPIs(q, filters, pagination);
+
+      const totalPages = Math.ceil(result.total / validatedQuery.limit);
+
+      return {
+        success: true,
+        data: {
+          apis: result.apis,
+          pagination: {
+            page: validatedQuery.page,
+            limit: validatedQuery.limit,
+            total: result.total,
+            totalPages,
+            hasNext: validatedQuery.page < totalPages,
+            hasPrev: validatedQuery.page > 1,
+          }
+        },
+        meta: {
+          query: q,
+          timestamp: new Date().toISOString(),
+        }
+      };
+    } catch (error: any) {
+      set.status = 500;
+      return {
+        success: false,
+        message: error.message || 'Failed to search APIs'
+      };
+    }
+  })
+
+  // Get API details by UID
+  .get('/apis/:uid', async ({ params, set }) => {
+    try {
+      const { uid } = apiUidParamSchema.parse(params);
+      const apiDetails = await marketplaceService.getAPIDetails(uid);
+
+      return {
+        success: true,
+        data: { api: apiDetails },
+        meta: {
+          timestamp: new Date().toISOString(),
+        }
+      };
+    } catch (error: any) {
+      if (error.message === 'API not found') {
         set.status = 404;
         return {
           success: false,
@@ -165,44 +192,48 @@ export const marketplaceRoutes = new Elysia({ prefix: '/marketplace' })
         };
       }
 
-      // Get recent ratings
-      const recentRatings = await db.select({
-        id: apiRatings.id,
-        rating: apiRatings.rating,
-        review: apiRatings.review,
-        createdAt: apiRatings.createdAt,
-        user: {
-          firstName: users.firstName,
-          lastName: users.lastName,
-        },
-      })
-      .from(apiRatings)
-      .leftJoin(users, eq(apiRatings.userId, users.id))
-      .where(eq(apiRatings.apiId, api.id))
-      .orderBy(desc(apiRatings.createdAt))
-      .limit(10);
-
-      return {
-        success: true,
-        data: {
-          api: {
-            ...api,
-            ratings: recentRatings,
-          }
-        }
-      };
-    } catch (error: any) {
       set.status = 500;
       return {
         success: false,
-        message: 'Failed to fetch API details'
+        message: error.message || 'Failed to fetch API details'
       };
     }
   })
+
+  // Get all categories
+  .get('/categories', async ({ set }) => {
+    try {
+      const categories = await marketplaceService.getCategories();
+
+      return {
+        success: true,
+        data: { categories },
+        meta: {
+          timestamp: new Date().toISOString(),
+        }
+      };
+    } catch (error: any) {
+      console.error('Categories endpoint error:', error);
+      set.status = 500;
+      return {
+        success: false,
+        message: error.message || 'Failed to fetch categories'
+      };
+    }
+  })
+
+  // Authenticated routes
   .use(authMiddleware)
   .post('/apis/:uid/subscribe', async ({ params: { uid }, body, user, set }) => {
     try {
-      const validatedData = createSubscriptionSchema.parse(body);
+      console.log('Subscribe route - user object:', user);
+      console.log('Subscribe route - user.id:', user?.id);
+
+      // Create a schema without apiId since we get it from the URL
+      const marketplaceSubscriptionSchema = z.object({
+        requestsLimit: z.number().int().positive().optional(),
+      });
+      const validatedData = marketplaceSubscriptionSchema.parse(body);
 
       // Find the API
       const [api] = await db.select()
@@ -275,6 +306,7 @@ export const marketplaceRoutes = new Elysia({ prefix: '/marketplace' })
       requestsLimit: t.Optional(t.Number())
     })
   })
+
   .post('/apis/:uid/rate', async ({ params: { uid }, body, user, set }) => {
     try {
       const validatedData = createRatingSchema.parse(body);
@@ -379,33 +411,4 @@ export const marketplaceRoutes = new Elysia({ prefix: '/marketplace' })
       rating: t.Number({ minimum: 1, maximum: 5 }),
       review: t.Optional(t.String())
     })
-  })
-  .get('/categories', async ({ set }) => {
-    try {
-      const categories = await db.select({
-        id: apiCategories.id,
-        name: apiCategories.name,
-        description: apiCategories.description,
-        apiCount: count(apis.id),
-      })
-      .from(apiCategories)
-      .leftJoin(apis, and(
-        eq(apiCategories.id, apis.categoryId),
-        eq(apis.isActive, true),
-        eq(apis.isPublic, true)
-      ))
-      .groupBy(apiCategories.id, apiCategories.name, apiCategories.description)
-      .orderBy(asc(apiCategories.name));
-
-      return {
-        success: true,
-        data: { categories }
-      };
-    } catch (error: any) {
-      set.status = 500;
-      return {
-        success: false,
-        message: 'Failed to fetch categories'
-      };
-    }
   });

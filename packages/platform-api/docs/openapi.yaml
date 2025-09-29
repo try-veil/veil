@@ -1,0 +1,112 @@
+openapi: 3.0.3
+info:
+  title: Veil SaaS Platform API
+  version: 1.0.0
+  description: |-
+
+    # Veil SaaS Platform API
+
+    A comprehensive API marketplace platform that enables:
+
+    - **API Discovery**: Browse and discover APIs across multiple categories
+    - **Subscription Management**: Flexible subscription tiers and usage-based billing
+    - **Provider Onboarding**: Easy API submission and approval workflow  
+    - **Analytics & Monitoring**: Detailed usage tracking and performance metrics
+    - **Secure Access**: JWT authentication and API key management
+    - **Admin Controls**: Complete administrative dashboard and approval systems
+
+    ## Getting Started
+
+    1. **Register**: Create an account using the `/api/v1/auth/register` endpoint
+    2. **Login**: Authenticate using the `/api/v1/auth/login` endpoint
+    3. **Browse APIs**: Explore available APIs via `/api/v1/marketplace`
+    4. **Subscribe**: Choose a subscription plan via `/api/v1/subscriptions`
+    5. **Generate Keys**: Create API keys via `/api/v1/api-keys`
+
+    ## Authentication
+
+    Most endpoints require authentication via JWT Bearer tokens:
+    ```
+    Authorization: Bearer <your_jwt_token>
+    ```
+
+    Some marketplace endpoints also support API key authentication:
+    ```
+    X-API-Key: <your_api_key>
+    ```
+
+    ## Rate Limits
+
+    - **Free Tier**: 1,000 requests/month, 10 requests/minute
+    - **Starter Tier**: 10,000 requests/month, 50 requests/minute  
+    - **Professional Tier**: 100,000 requests/month, 200 requests/minute
+    - **Enterprise Tier**: Unlimited requests, 1,000 requests/minute
+
+    ## Support
+
+    - **Documentation**: https://docs.veil.dev
+    - **Support Email**: support@veil.dev
+    - **Status Page**: https://status.veil.dev
+          
+  contact:
+    name: Veil Platform Team
+    url: https://veil.dev
+    email: support@veil.dev
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: https://api.veil.dev
+    description: Production server
+  - url: https://staging-api.veil.dev
+    description: Staging server
+  - url: http://localhost:3000
+    description: Development server
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Marketplace
+    description: API discovery and browsing
+  - name: Categories
+    description: API category management
+  - name: Provider
+    description: API provider onboarding and management
+  - name: Subscriptions
+    description: Subscription plans and billing
+  - name: Payments
+    description: Payment processing and invoicing
+  - name: Analytics
+    description: Usage analytics and reporting
+  - name: Seller
+    description: API seller dashboard
+  - name: API Keys
+    description: API key management
+  - name: Profile
+    description: User profile management
+  - name: Admin
+    description: Administrative functions
+  - name: Approvals
+    description: Approval workflows
+  - name: Usage
+    description: Usage tracking and monitoring
+  - name: Quota
+    description: Quota management and monitoring
+  - name: System
+    description: System health and information
+paths: {}
+components:
+  schemas: {}
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT authentication token obtained from login endpoint
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for accessing marketplace endpoints
+externalDocs:
+  description: Complete API Documentation
+  url: https://docs.veil.dev

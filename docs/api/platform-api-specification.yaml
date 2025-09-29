@@ -1,0 +1,1516 @@
+openapi: 3.0.3
+info:
+  title: Veil API Marketplace Platform
+  description: |
+    Comprehensive API specification for the Veil API marketplace platform.
+    This platform enables API providers to easily sell their APIs and consumers to discover and subscribe to APIs.
+    
+    ## Key Features
+    - User registration and authentication
+    - API marketplace with discovery
+    - Subscription management
+    - API key management
+    - Payment processing integration
+    - Analytics and reporting
+    - Admin panel functionality
+    
+    ## Authentication
+    Most endpoints require JWT Bearer token authentication obtained through the login endpoint.
+    
+    ## Rate Limiting
+    API endpoints are rate-limited to ensure fair usage. Limits are applied per user/IP.
+    
+  version: 2.0.0
+  contact:
+    name: Veil Platform Support
+    url: https://github.com/try-veil/veil
+    email: support@veil.platform
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.veil.platform/api/v1
+    description: Production server
+  - url: https://staging-api.veil.platform/api/v1
+    description: Staging server
+  - url: http://localhost:3000/api/v1
+    description: Development server
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Marketplace
+    description: API marketplace and discovery
+  - name: Provider
+    description: API provider management
+  - name: Consumer
+    description: API consumer operations
+  - name: Subscriptions
+    description: Subscription management
+  - name: API Keys
+    description: API key management
+  - name: Analytics
+    description: Usage analytics and reporting
+  - name: Admin
+    description: Administrative operations
+  - name: Gateway Integration
+    description: Internal gateway communication
+
+paths:
+  # Authentication Endpoints
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a new user
+      description: Create a new user account with email and password
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRegistrationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: User login
+      description: Authenticate user with email and password
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticationResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/verify:
+    post:
+      tags: [Authentication]
+      summary: Verify JWT token
+      description: Verify the validity of a JWT token
+      operationId: verifyToken
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh JWT token
+      description: Generate a new JWT token using refresh token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+              required: [refreshToken]
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticationResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # Marketplace Endpoints
+  /marketplace/apis:
+    get:
+      tags: [Marketplace]
+      summary: List marketplace APIs
+      description: Get paginated list of available APIs in the marketplace
+      operationId: listMarketplaceAPIs
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - name: category
+          in: query
+          description: Filter by API category
+          schema:
+            type: string
+        - name: pricing_model
+          in: query
+          description: Filter by pricing model
+          schema:
+            type: string
+            enum: [per_request, monthly, yearly, free]
+        - name: sort
+          in: query
+          description: Sort criteria
+          schema:
+            type: string
+            enum: [popularity, rating, price_low, price_high, newest]
+            default: popularity
+      responses:
+        '200':
+          description: List of marketplace APIs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketplaceAPIsResponse'
+
+  /marketplace/apis/{apiUid}:
+    get:
+      tags: [Marketplace]
+      summary: Get API details
+      description: Get detailed information about a specific API
+      operationId: getMarketplaceAPI
+      parameters:
+        - $ref: '#/components/parameters/ApiUidParam'
+      responses:
+        '200':
+          description: API details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketplaceAPIDetails'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /marketplace/apis/{apiUid}/subscribe:
+    post:
+      tags: [Marketplace, Subscriptions]
+      summary: Subscribe to API
+      description: Create a subscription to access an API
+      operationId: subscribeToAPI
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApiUidParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionRequest'
+      responses:
+        '201':
+          description: Subscription created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Already subscribed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /marketplace/categories:
+    get:
+      tags: [Marketplace]
+      summary: List API categories
+      description: Get all available API categories
+      operationId: listAPICategories
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/APICategory'
+
+  # Provider Endpoints
+  /provider/apis:
+    get:
+      tags: [Provider]
+      summary: List provider APIs
+      description: Get all APIs created by the authenticated provider
+      operationId: listProviderAPIs
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: status
+          in: query
+          description: Filter by API status
+          schema:
+            type: string
+            enum: [active, inactive, pending_approval, rejected]
+      responses:
+        '200':
+          description: List of provider APIs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderAPIsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags: [Provider]
+      summary: Create new API
+      description: Register a new API in the platform
+      operationId: createProviderAPI
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAPIRequest'
+      responses:
+        '201':
+          description: API created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /provider/apis/{apiUid}:
+    get:
+      tags: [Provider]
+      summary: Get provider API details
+      description: Get detailed information about provider's API
+      operationId: getProviderAPI
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApiUidParam'
+      responses:
+        '200':
+          description: API details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderAPIDetails'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Provider]
+      summary: Update API
+      description: Update an existing API configuration
+      operationId: updateProviderAPI
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApiUidParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAPIRequest'
+      responses:
+        '200':
+          description: API updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Provider]
+      summary: Delete API
+      description: Remove an API from the platform
+      operationId: deleteProviderAPI
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApiUidParam'
+      responses:
+        '204':
+          description: API deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /provider/apis/{apiUid}/analytics:
+    get:
+      tags: [Provider, Analytics]
+      summary: Get API analytics
+      description: Get usage analytics for a specific API
+      operationId: getAPIAnalytics
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApiUidParam'
+        - name: from_date
+          in: query
+          description: Start date (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: to_date
+          in: query
+          description: End date (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: granularity
+          in: query
+          description: Data granularity
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+            default: day
+      responses:
+        '200':
+          description: API analytics data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIAnalytics'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Consumer Endpoints
+  /consumer/subscriptions:
+    get:
+      tags: [Consumer, Subscriptions]
+      summary: List user subscriptions
+      description: Get all subscriptions for the authenticated user
+      operationId: listUserSubscriptions
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: status
+          in: query
+          description: Filter by subscription status
+          schema:
+            type: string
+            enum: [active, suspended, cancelled, expired]
+      responses:
+        '200':
+          description: List of user subscriptions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSubscriptionsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /consumer/subscriptions/{subscriptionUid}:
+    get:
+      tags: [Consumer, Subscriptions]
+      summary: Get subscription details
+      description: Get detailed information about a specific subscription
+      operationId: getUserSubscription
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: subscriptionUid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Subscription details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionDetails'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Consumer, Subscriptions]
+      summary: Cancel subscription
+      description: Cancel an active subscription
+      operationId: cancelSubscription
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: subscriptionUid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Subscription cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionCancellation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # API Key Management
+  /api-keys:
+    get:
+      tags: [API Keys]
+      summary: List user API keys
+      description: Get all API keys for the authenticated user
+      operationId: listUserAPIKeys
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: subscription_uid
+          in: query
+          description: Filter by subscription
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter by key status
+          schema:
+            type: string
+            enum: [active, inactive, expired]
+      responses:
+        '200':
+          description: List of API keys
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIKeysResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api-keys/{keyUid}:
+    get:
+      tags: [API Keys]
+      summary: Get API key details
+      description: Get information about a specific API key
+      operationId: getAPIKey
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: keyUid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: API key details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIKeyDetails'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [API Keys]
+      summary: Update API key
+      description: Update API key properties
+      operationId: updateAPIKey
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: keyUid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAPIKeyRequest'
+      responses:
+        '200':
+          description: API key updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIKeyDetails'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [API Keys]
+      summary: Delete API key
+      description: Delete an API key
+      operationId: deleteAPIKey
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: keyUid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: API key deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api-keys/{keyUid}/regenerate:
+    post:
+      tags: [API Keys]
+      summary: Regenerate API key
+      description: Generate a new key value for an existing API key
+      operationId: regenerateAPIKey
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: keyUid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: API key regenerated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegenerateKeyResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Gateway Integration (Internal)
+  /internal/gateway/register-route:
+    post:
+      tags: [Gateway Integration]
+      summary: Register API route with gateway
+      description: Internal endpoint to register API route with Caddy gateway
+      operationId: registerGatewayRoute
+      security:
+        - serviceAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GatewayRouteRequest'
+      responses:
+        '201':
+          description: Route registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GatewayRouteResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /internal/gateway/register-key:
+    post:
+      tags: [Gateway Integration]
+      summary: Register API key with gateway
+      description: Internal endpoint to register API key with Caddy gateway
+      operationId: registerGatewayKey
+      security:
+        - serviceAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GatewayKeyRequest'
+      responses:
+        '201':
+          description: Key registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GatewayKeyResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # Admin endpoints would continue here...
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from the login endpoint
+
+    serviceAuth:
+      type: apiKey
+      in: header
+      name: X-Service-Token
+      description: Service-to-service authentication token
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: Page number (1-based)
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+
+    LimitParam:
+      name: limit
+      in: query
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+    SearchParam:
+      name: search
+      in: query
+      description: Search query
+      schema:
+        type: string
+
+    ApiUidParam:
+      name: apiUid
+      in: path
+      required: true
+      description: API unique identifier
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    # Authentication Schemas
+    UserRegistrationRequest:
+      type: object
+      required: [email, password, firstName, lastName, role]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          minLength: 8
+          example: "SecurePass123"
+        firstName:
+          type: string
+          minLength: 1
+          example: "John"
+        lastName:
+          type: string
+          minLength: 1
+          example: "Doe"
+        role:
+          type: string
+          enum: [buyer, seller]
+          example: "buyer"
+
+    UserRegistrationResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserProfile'
+        message:
+          type: string
+          example: "Registration successful"
+
+    UserLoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          example: "SecurePass123"
+
+    AuthenticationResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refreshToken:
+          type: string
+          example: "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4="
+        expiresIn:
+          type: integer
+          description: Token expiry time in seconds
+          example: 3600
+        user:
+          $ref: '#/components/schemas/UserProfile'
+
+    UserProfile:
+      type: object
+      properties:
+        uid:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        firstName:
+          type: string
+          example: "John"
+        lastName:
+          type: string
+          example: "Doe"
+        role:
+          type: string
+          enum: [buyer, seller, admin]
+          example: "buyer"
+        isActive:
+          type: boolean
+          example: true
+        emailVerified:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    # API Schemas
+    APICategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Weather"
+        description:
+          type: string
+          example: "Weather and climate APIs"
+        apiCount:
+          type: integer
+          description: Number of APIs in this category
+          example: 25
+
+    CreateAPIRequest:
+      type: object
+      required: [name, description, endpoint, baseUrl, methods]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          example: "Weather API"
+        description:
+          type: string
+          minLength: 1
+          example: "Get current weather and forecasts for any location"
+        version:
+          type: string
+          default: "1.0.0"
+          example: "1.0.0"
+        endpoint:
+          type: string
+          example: "/weather"
+        baseUrl:
+          type: string
+          format: uri
+          example: "https://api.weather.com"
+        categoryId:
+          type: integer
+          example: 1
+        documentation:
+          type: string
+          format: uri
+          example: "https://docs.weather.com/api"
+        methods:
+          type: array
+          items:
+            type: string
+            enum: [GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD]
+          example: ["GET"]
+        requiredHeaders:
+          type: array
+          items:
+            type: string
+          example: ["X-API-Version"]
+        pricingModel:
+          type: string
+          enum: [per_request, monthly, yearly, free]
+          default: per_request
+          example: "per_request"
+        price:
+          type: string
+          pattern: '^\d+\.\d{2}$'
+          example: "0.01"
+        requestLimit:
+          type: integer
+          minimum: 1
+          default: 1000
+          example: 1000
+        isPublic:
+          type: boolean
+          default: true
+          example: true
+
+    UpdateAPIRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        version:
+          type: string
+        endpoint:
+          type: string
+        baseUrl:
+          type: string
+          format: uri
+        categoryId:
+          type: integer
+        documentation:
+          type: string
+          format: uri
+        methods:
+          type: array
+          items:
+            type: string
+            enum: [GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD]
+        requiredHeaders:
+          type: array
+          items:
+            type: string
+        pricingModel:
+          type: string
+          enum: [per_request, monthly, yearly, free]
+        price:
+          type: string
+          pattern: '^\d+\.\d{2}$'
+        requestLimit:
+          type: integer
+          minimum: 1
+        isPublic:
+          type: boolean
+
+    APIResponse:
+      type: object
+      properties:
+        uid:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          example: "Weather API"
+        description:
+          type: string
+          example: "Get current weather and forecasts"
+        version:
+          type: string
+          example: "1.0.0"
+        status:
+          type: string
+          enum: [active, inactive, pending_approval, rejected]
+          example: "active"
+        isPublic:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    # Marketplace Schemas
+    MarketplaceAPIsResponse:
+      type: object
+      properties:
+        apis:
+          type: array
+          items:
+            $ref: '#/components/schemas/MarketplaceAPIItem'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    MarketplaceAPIItem:
+      type: object
+      properties:
+        uid:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          example: "Weather API"
+        description:
+          type: string
+          example: "Get current weather and forecasts"
+        category:
+          $ref: '#/components/schemas/APICategory'
+        pricingModel:
+          type: string
+          enum: [per_request, monthly, yearly, free]
+          example: "per_request"
+        price:
+          type: string
+          example: "0.01"
+        averageRating:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 5
+          example: 4.5
+        totalRatings:
+          type: integer
+          example: 124
+        totalSubscriptions:
+          type: integer
+          example: 1250
+        provider:
+          type: object
+          properties:
+            name:
+              type: string
+              example: "Weather Corp"
+            verified:
+              type: boolean
+              example: true
+
+    MarketplaceAPIDetails:
+      allOf:
+        - $ref: '#/components/schemas/MarketplaceAPIItem'
+        - type: object
+          properties:
+            endpoint:
+              type: string
+              example: "/weather"
+            methods:
+              type: array
+              items:
+                type: string
+              example: ["GET"]
+            documentation:
+              type: string
+              format: uri
+              example: "https://docs.weather.com/api"
+            sampleRequests:
+              type: array
+              items:
+                type: object
+                properties:
+                  method:
+                    type: string
+                  path:
+                    type: string
+                  description:
+                    type: string
+            recentReviews:
+              type: array
+              items:
+                $ref: '#/components/schemas/APIReview'
+
+    APIReview:
+      type: object
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        review:
+          type: string
+        reviewerName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    # Subscription Schemas
+    SubscriptionRequest:
+      type: object
+      required: [requestsLimit]
+      properties:
+        requestsLimit:
+          type: integer
+          minimum: 1
+          example: 10000
+        keyName:
+          type: string
+          example: "Production Key"
+        notes:
+          type: string
+          example: "For production use"
+
+    SubscriptionResponse:
+      type: object
+      properties:
+        subscription:
+          $ref: '#/components/schemas/SubscriptionDetails'
+        apiKey:
+          $ref: '#/components/schemas/APIKeyDetails'
+
+    SubscriptionDetails:
+      type: object
+      properties:
+        uid:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        api:
+          $ref: '#/components/schemas/APIResponse'
+        status:
+          type: string
+          enum: [active, suspended, cancelled, expired]
+          example: "active"
+        requestsLimit:
+          type: integer
+          example: 10000
+        requestsUsed:
+          type: integer
+          example: 2456
+        startDate:
+          type: string
+          format: date-time
+          example: "2024-01-15T00:00:00Z"
+        endDate:
+          type: string
+          format: date-time
+          example: "2024-02-15T00:00:00Z"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+
+    SubscriptionCancellation:
+      type: object
+      properties:
+        uid:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [cancelled]
+        cancelledAt:
+          type: string
+          format: date-time
+        refundAmount:
+          type: string
+          example: "15.50"
+
+    # API Key Schemas
+    APIKeyDetails:
+      type: object
+      properties:
+        uid:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          example: "Production Key"
+        keyValue:
+          type: string
+          description: Only returned during creation and regeneration
+          example: "veil_sk_1234567890abcdef"
+        isActive:
+          type: boolean
+          example: true
+        lastUsed:
+          type: string
+          format: date-time
+          example: "2024-01-20T14:30:00Z"
+        expiresAt:
+          type: string
+          format: date-time
+          example: "2024-12-31T23:59:59Z"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        subscription:
+          $ref: '#/components/schemas/SubscriptionDetails'
+
+    UpdateAPIKeyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        isActive:
+          type: boolean
+        expiresAt:
+          type: string
+          format: date-time
+
+    RegenerateKeyResponse:
+      type: object
+      properties:
+        uid:
+          type: string
+          format: uuid
+        keyValue:
+          type: string
+          example: "veil_sk_newkey1234567890"
+        previousKeyInvalidated:
+          type: boolean
+          example: true
+        regeneratedAt:
+          type: string
+          format: date-time
+
+    # Analytics Schemas
+    APIAnalytics:
+      type: object
+      properties:
+        totalRequests:
+          type: integer
+          example: 15000
+        successfulRequests:
+          type: integer
+          example: 14850
+        failedRequests:
+          type: integer
+          example: 150
+        averageResponseTime:
+          type: number
+          format: float
+          description: In milliseconds
+          example: 125.5
+        requestsByPeriod:
+          type: array
+          items:
+            type: object
+            properties:
+              period:
+                type: string
+                format: date-time
+              requests:
+                type: integer
+              successRate:
+                type: number
+                format: float
+        topConsumers:
+          type: array
+          items:
+            type: object
+            properties:
+              consumerName:
+                type: string
+              requests:
+                type: integer
+        revenueMetrics:
+          type: object
+          properties:
+            totalRevenue:
+              type: string
+              example: "1,250.00"
+            monthlyRecurring:
+              type: string
+              example: "850.00"
+
+    # Gateway Integration Schemas
+    GatewayRouteRequest:
+      type: object
+      required: [apiUid, path, upstream, methods]
+      properties:
+        apiUid:
+          type: string
+          format: uuid
+        path:
+          type: string
+          example: "/weather-api/*"
+        upstream:
+          type: string
+          format: uri
+          example: "https://api.weather.com/v1"
+        methods:
+          type: array
+          items:
+            type: string
+            enum: [GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD]
+        requiredHeaders:
+          type: array
+          items:
+            type: string
+        stripPathPrefix:
+          type: boolean
+          default: true
+
+    GatewayRouteResponse:
+      type: object
+      properties:
+        routeId:
+          type: string
+        status:
+          type: string
+          enum: [success, error]
+        message:
+          type: string
+
+    GatewayKeyRequest:
+      type: object
+      required: [apiUid, keyValue, userId]
+      properties:
+        apiUid:
+          type: string
+          format: uuid
+        keyValue:
+          type: string
+        userId:
+          type: string
+          format: uuid
+        isActive:
+          type: boolean
+          default: true
+        expiresAt:
+          type: string
+          format: date-time
+
+    GatewayKeyResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success, error]
+        message:
+          type: string
+
+    # Common Schemas
+    PaginationInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 150
+        totalPages:
+          type: integer
+          example: 8
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "ValidationError"
+        message:
+          type: string
+          example: "Invalid request parameters"
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+        timestamp:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        requestId:
+          type: string
+          example: "req_123456789"
+
+    # Response containers
+    ProviderAPIsResponse:
+      type: object
+      properties:
+        apis:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderAPIDetails'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    ProviderAPIDetails:
+      allOf:
+        - $ref: '#/components/schemas/APIResponse'
+        - type: object
+          properties:
+            subscriptionCount:
+              type: integer
+            monthlyRevenue:
+              type: string
+            analytics:
+              type: object
+              properties:
+                totalRequests:
+                  type: integer
+                successRate:
+                  type: number
+                  format: float
+
+    UserSubscriptionsResponse:
+      type: object
+      properties:
+        subscriptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubscriptionDetails'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    APIKeysResponse:
+      type: object
+      properties:
+        keys:
+          type: array
+          items:
+            $ref: '#/components/schemas/APIKeyDetails'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid parameters or request body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Unauthorized - authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Conflict:
+      description: Conflict - resource already exists
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    TooManyRequests:
+      description: Too many requests - rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

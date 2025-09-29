@@ -10,6 +10,7 @@ export const users = pgTable('users', {
   firstName: varchar('first_name', { length: 100 }).notNull(),
   lastName: varchar('last_name', { length: 100 }).notNull(),
   role: varchar('role', { length: 20 }).default('buyer').notNull(), // 'buyer', 'seller', 'admin'
+  fusionAuthId: varchar('fusion_auth_id', { length: 255 }).unique(),
   isActive: boolean('is_active').default(true).notNull(),
   emailVerified: boolean('email_verified').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -17,6 +18,7 @@ export const users = pgTable('users', {
 }, (table) => ({
   emailIdx: index('users_email_idx').on(table.email),
   uidIdx: index('users_uid_idx').on(table.uid),
+  fusionAuthIdIdx: index('users_fusion_auth_id_idx').on(table.fusionAuthId),
 }));
 
 // API Categories table
@@ -121,6 +123,70 @@ export const apiUsageAnalytics = pgTable('api_usage_analytics', {
   dateIdx: index('analytics_date_idx').on(table.date),
 }));
 
+// Payment Records table
+export const paymentRecords = pgTable('payment_records', {
+  id: serial('id').primaryKey(),
+  uid: uuid('uid').defaultRandom().unique().notNull(),
+  subscriptionId: integer('subscription_id').references(() => apiSubscriptions.id).notNull(),
+  amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+  currency: varchar('currency', { length: 3 }).default('USD').notNull(),
+  status: varchar('status', { length: 20 }).notNull(), // 'pending', 'completed', 'failed', 'refunded'
+  paymentProvider: varchar('payment_provider', { length: 50 }).notNull(), // 'stripe', 'paypal'
+  paymentProviderTransactionId: varchar('payment_provider_transaction_id', { length: 255 }),
+  paymentMethod: varchar('payment_method', { length: 50 }), // 'card', 'bank_transfer', 'paypal'
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  subscriptionIdx: index('payments_subscription_idx').on(table.subscriptionId),
+  statusIdx: index('payments_status_idx').on(table.status),
+  createdAtIdx: index('payments_created_at_idx').on(table.createdAt),
+}));
+
+// API Required Headers table (for storing dynamic headers per API)
+export const apiRequiredHeaders = pgTable('api_required_headers', {
+  id: serial('id').primaryKey(),
+  apiId: integer('api_id').references(() => apis.id).notNull(),
+  headerName: varchar('header_name', { length: 100 }).notNull(),
+  headerValue: varchar('header_value', { length: 255 }), // Optional default value
+  isStatic: boolean('is_static').default(false).notNull(), // true = fixed value, false = dynamic
+  description: text('description'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  apiIdx: index('api_headers_api_idx').on(table.apiId),
+}));
+
+// API Allowed Methods table (for storing HTTP methods per API)
+export const apiAllowedMethods = pgTable('api_allowed_methods', {
+  id: serial('id').primaryKey(),
+  apiId: integer('api_id').references(() => apis.id).notNull(),
+  method: varchar('method', { length: 10 }).notNull(), // 'GET', 'POST', 'PUT', 'DELETE', etc.
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  apiIdx: index('api_methods_api_idx').on(table.apiId),
+  methodIdx: index('api_methods_method_idx').on(table.method),
+}));
+
+// Usage Records table (for tracking API usage and analytics)
+export const usageRecords = pgTable('usage_records', {
+  id: serial('id').primaryKey(),
+  apiKeyId: integer('api_key_id').references(() => apiKeys.id).notNull(),
+  apiId: integer('api_id').references(() => apis.id).notNull(),
+  timestamp: timestamp('timestamp').defaultNow().notNull(),
+  endpoint: varchar('endpoint', { length: 500 }).notNull(),
+  method: varchar('method', { length: 10 }).notNull(),
+  statusCode: integer('status_code').notNull(),
+  responseTime: integer('response_time').notNull(), // in milliseconds
+  requestSize: integer('request_size').default(0).notNull(), // in bytes
+  responseSize: integer('response_size').default(0).notNull(), // in bytes
+  userAgent: text('user_agent'),
+  ipAddress: varchar('ip_address', { length: 45 }), // IPv6 compatible
+}, (table) => ({
+  apiKeyIdx: index('usage_records_api_key_idx').on(table.apiKeyId),
+  apiIdx: index('usage_records_api_idx').on(table.apiId),
+  timestampIdx: index('usage_records_timestamp_idx').on(table.timestamp),
+  statusIdx: index('usage_records_status_idx').on(table.statusCode),
+}));
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   apis: many(apis),
@@ -143,6 +209,8 @@ export const apisRelations = relations(apis, ({ one, many }) => ({
   }),
   subscriptions: many(apiSubscriptions),
   ratings: many(apiRatings),
+  requiredHeaders: many(apiRequiredHeaders),
+  allowedMethods: many(apiAllowedMethods),
 }));
 
 export const apiSubscriptionsRelations = relations(apiSubscriptions, ({ one, many }) => ({
@@ -156,6 +224,7 @@ export const apiSubscriptionsRelations = relations(apiSubscriptions, ({ one, man
   }),
   apiKeys: many(apiKeys),
   analytics: many(apiUsageAnalytics),
+  paymentRecords: many(paymentRecords),
 }));
 
 export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
@@ -180,5 +249,37 @@ export const apiUsageAnalyticsRelations = relations(apiUsageAnalytics, ({ one })
   subscription: one(apiSubscriptions, {
     fields: [apiUsageAnalytics.subscriptionId],
     references: [apiSubscriptions.id],
+  }),
+}));
+
+export const paymentRecordsRelations = relations(paymentRecords, ({ one }) => ({
+  subscription: one(apiSubscriptions, {
+    fields: [paymentRecords.subscriptionId],
+    references: [apiSubscriptions.id],
+  }),
+}));
+
+export const usageRecordsRelations = relations(usageRecords, ({ one }) => ({
+  apiKey: one(apiKeys, {
+    fields: [usageRecords.apiKeyId],
+    references: [apiKeys.id],
+  }),
+  api: one(apis, {
+    fields: [usageRecords.apiId],
+    references: [apis.id],
+  }),
+}));
+
+export const apiRequiredHeadersRelations = relations(apiRequiredHeaders, ({ one }) => ({
+  api: one(apis, {
+    fields: [apiRequiredHeaders.apiId],
+    references: [apis.id],
+  }),
+}));
+
+export const apiAllowedMethodsRelations = relations(apiAllowedMethods, ({ one }) => ({
+  api: one(apis, {
+    fields: [apiAllowedMethods.apiId],
+    references: [apis.id],
   }),
 }));

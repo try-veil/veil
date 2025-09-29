@@ -4,6 +4,7 @@ import { authMiddleware } from '../middleware/auth';
 import { createApiKeySchema, updateApiKeySchema, paginationSchema } from '../validation/schemas';
 import { AuthUtils } from '../utils/auth';
 import { eq, and, desc, count } from 'drizzle-orm';
+import { GatewayService } from '../services/gateway-service';
 
 export const apiKeyRoutes = new Elysia({ prefix: '/api-keys' })
   .use(authMiddleware)
@@ -184,6 +185,33 @@ export const apiKeyRoutes = new Elysia({ prefix: '/api-keys' })
         expiresAt: apiKeys.expiresAt,
         createdAt: apiKeys.createdAt,
       });
+
+      // Get API info for gateway registration
+      const [apiInfo] = await db.select({
+        uid: apis.uid,
+        name: apis.name,
+      })
+      .from(apis)
+      .where(eq(apis.id, subscription.apiId))
+      .limit(1);
+
+      if (apiInfo) {
+        try {
+          // Register API key with Veil gateway
+          const gatewayService = new GatewayService();
+          await gatewayService.addAPIKeys(apiInfo.uid, [{
+            keyValue: newApiKey.keyValue,
+            name: newApiKey.name,
+            isActive: newApiKey.isActive,
+            expiresAt: newApiKey.expiresAt || undefined
+          }]);
+          console.log(`API key ${newApiKey.name} registered with Veil gateway for API ${apiInfo.name}`);
+        } catch (gatewayError) {
+          console.error('Failed to register API key with gateway:', gatewayError);
+          // Note: We don't fail the request here, just log the error
+          // The key exists in the database and can be manually synced later
+        }
+      }
 
       set.status = 201;
       return {

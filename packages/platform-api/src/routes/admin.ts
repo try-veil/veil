@@ -4,9 +4,11 @@ import { requireRole } from '../middleware/auth';
 import { createCategorySchema, paginationSchema } from '../validation/schemas';
 import { veilClient } from '../services/veil-client';
 import { eq, and, desc, count } from 'drizzle-orm';
+import { adminApprovalRoutes } from './admin/approval';
 
 export const adminRoutes = new Elysia({ prefix: '/admin' })
   .use(requireRole(['admin']))
+  .use(adminApprovalRoutes)
   .get('/stats', async ({ set }) => {
     try {
       const [totalUsers] = await db.select({ count: count() }).from(users);
