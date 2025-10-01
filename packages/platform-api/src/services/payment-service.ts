@@ -1,6 +1,8 @@
 import { PaymentRepository, CreatePaymentData, UpdatePaymentData, PaymentWithDetails, PaymentFilters } from '../repositories/payment-repository';
 import { SubscriptionRepository } from '../repositories/subscription-repository';
 import { APIRepository } from '../repositories/api-repository';
+import { pricingService } from './pricing/pricing-service';
+import { PricingRepository } from '../repositories/pricing-repository';
 
 export interface PaymentProvider {
   name: string;
@@ -224,13 +226,15 @@ export class PaymentService {
   private paymentRepository: PaymentRepository;
   private subscriptionRepository: SubscriptionRepository;
   private apiRepository: APIRepository;
+  private pricingRepository: PricingRepository;
   private providers: Map<string, PaymentProvider>;
 
   constructor() {
     this.paymentRepository = new PaymentRepository();
     this.subscriptionRepository = new SubscriptionRepository();
     this.apiRepository = new APIRepository();
-    
+    this.pricingRepository = new PricingRepository();
+
     // Initialize payment providers
     this.providers = new Map();
     this.providers.set('stripe', new StripeProvider());
@@ -238,7 +242,7 @@ export class PaymentService {
   }
 
   /**
-   * Calculate pricing for an API subscription
+   * Calculate pricing for an API subscription using the pricing engine
    */
   async calculatePricing(
     apiUid: string,
@@ -254,95 +258,77 @@ export class PaymentService {
         throw new Error('API not found');
       }
 
-      let basePrice = parseFloat(api.price);
-      
-      // Apply plan multipliers
-      const planMultipliers = {
-        basic: 1,
-        pro: 2.5,
-        enterprise: 5,
-        custom: 1,
-      };
-      
-      basePrice *= planMultipliers[planType as keyof typeof planMultipliers] || 1;
+      // Get pricing models for this API
+      const allModels = await pricingService.getAvailablePricingModels(api.id);
 
-      // Apply billing cycle discounts
-      const billingDiscounts = {
-        monthly: 0,
-        yearly: 0.15, // 15% discount for yearly
-        one_time: 0,
-      };
-      
-      const billingDiscount = billingDiscounts[billingCycle as keyof typeof billingDiscounts] || 0;
-      
-      // Calculate setup fee (for enterprise plans)
-      const setupFee = planType === 'enterprise' ? basePrice * 0.1 : 0;
-
-      // Apply quantity
-      basePrice *= quantity;
-
-      // Calculate discount
-      let discountAmount = basePrice * billingDiscount;
-
-      // Apply discount code (mock implementation)
-      if (discountCode) {
-        const discountCodes = {
-          'LAUNCH50': 0.5,
-          'WELCOME25': 0.25,
-          'STUDENT20': 0.2,
-        };
-        
-        const discountRate = discountCodes[discountCode as keyof typeof discountCodes];
-        if (discountRate) {
-          discountAmount += basePrice * discountRate;
-        }
+      if (allModels.length === 0) {
+        // Fallback to legacy pricing if no pricing models configured
+        return this.calculateLegacyPricing(api, planType, billingCycle, requestsLimit, discountCode, quantity);
       }
 
-      // Calculate tax (mock 10% tax)
-      const taxableAmount = basePrice - discountAmount;
-      const taxAmount = Math.max(0, taxableAmount * 0.1);
+      // Find matching pricing model based on billing cycle
+      const pricingModel = allModels.find(m => m.billingCycle === billingCycle) || allModels[0];
 
-      const totalAmount = basePrice + setupFee - discountAmount + taxAmount;
+      // Create mock usage data for price calculation
+      const mockUsage = {
+        subscriptionId: 0, // Placeholder for new subscription
+        totalRequests: requestsLimit || 1000,
+        successfulRequests: requestsLimit || 1000,
+        failedRequests: 0,
+        dataTransferredBytes: 0,
+        dataTransferredGB: 0,
+      };
 
-      const breakdown = [
-        {
-          description: `${api.name} - ${planType} plan (${billingCycle})`,
-          amount: basePrice,
-          type: 'base' as const,
-        }
-      ];
+      // Create mock billing period for calculation
+      const mockBillingPeriod = {
+        id: 0,
+        uid: '',
+        subscriptionId: 0,
+        pricingModelId: pricingModel.id!,
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        status: 'active' as const,
+        usageSnapshot: null,
+        calculatedAmount: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // Calculate price using pricing engine
+      const calculation = await pricingService.calculateSubscriptionPrice(
+        mockUsage.subscriptionId,
+        pricingModel.id!,
+        mockUsage,
+        discountCode
+      );
+
+      // Apply quantity multiplier if > 1
+      const quantityMultiplier = quantity > 1 ? quantity : 1;
+
+      // Convert pricing engine output to PricingCalculation format
+      const setupFee = planType === 'enterprise' ? calculation.calculation.baseAmount * 0.1 : 0;
+
+      const breakdown = calculation.calculation.breakdown.map(item => ({
+        description: item.description || '',
+        amount: (item.amount || 0) * quantityMultiplier,
+        type: this.mapBreakdownType(item.tier),
+      }));
 
       if (setupFee > 0) {
         breakdown.push({
-          description: 'Setup fee',
+          description: 'Enterprise setup fee',
           amount: setupFee,
           type: 'setup' as const,
         });
       }
 
-      if (discountAmount > 0) {
-        breakdown.push({
-          description: 'Discounts',
-          amount: -discountAmount,
-          type: 'discount' as const,
-        });
-      }
-
-      if (taxAmount > 0) {
-        breakdown.push({
-          description: 'Tax',
-          amount: taxAmount,
-          type: 'tax' as const,
-        });
-      }
-
       return {
-        basePrice,
+        basePrice: calculation.calculation.baseAmount * quantityMultiplier,
         setupFee,
-        discountAmount,
-        taxAmount,
-        totalAmount,
-        currency: 'USD', // Default currency
+        discountAmount: (calculation.calculation.discountAmount || 0) * quantityMultiplier,
+        taxAmount: (calculation.calculation.taxAmount || 0) * quantityMultiplier,
+        totalAmount: calculation.calculation.totalAmount * quantityMultiplier + setupFee,
+        currency: pricingModel.currency,
         breakdown,
       };
 
@@ -350,6 +336,73 @@ export class PaymentService {
       console.error('Error calculating pricing:', error);
       throw error;
     }
+  }
+
+  /**
+   * Legacy pricing calculation (fallback when no pricing models configured)
+   */
+  private async calculateLegacyPricing(
+    api: any,
+    planType: string,
+    billingCycle: string,
+    requestsLimit?: number,
+    discountCode?: string,
+    quantity: number = 1
+  ): Promise<PricingCalculation> {
+    let basePrice = parseFloat(api.price);
+
+    // Apply plan multipliers
+    const planMultipliers = { basic: 1, pro: 2.5, enterprise: 5, custom: 1 };
+    basePrice *= planMultipliers[planType as keyof typeof planMultipliers] || 1;
+
+    // Apply billing cycle discounts
+    const billingDiscounts = { monthly: 0, yearly: 0.15, one_time: 0 };
+    const billingDiscount = billingDiscounts[billingCycle as keyof typeof billingDiscounts] || 0;
+
+    const setupFee = planType === 'enterprise' ? basePrice * 0.1 : 0;
+    basePrice *= quantity;
+
+    let discountAmount = basePrice * billingDiscount;
+
+    // Apply discount code via pricing engine
+    if (discountCode) {
+      try {
+        const promotion = await pricingService.validatePromotionCode(discountCode);
+        if (promotion && promotion.type === 'percentage_discount') {
+          discountAmount += basePrice * (promotion.value / 100);
+        } else if (promotion && promotion.type === 'fixed_discount') {
+          discountAmount += Math.min(promotion.value, basePrice);
+        }
+      } catch (error) {
+        console.warn('Failed to apply promotion code:', error);
+      }
+    }
+
+    const taxableAmount = basePrice - discountAmount;
+    const taxAmount = Math.max(0, taxableAmount * 0.1);
+    const totalAmount = basePrice + setupFee - discountAmount + taxAmount;
+
+    const breakdown = [
+      { description: `${api.name} - ${planType} plan (${billingCycle})`, amount: basePrice, type: 'base' as const }
+    ];
+
+    if (setupFee > 0) breakdown.push({ description: 'Setup fee', amount: setupFee, type: 'setup' as const });
+    if (discountAmount > 0) breakdown.push({ description: 'Discounts', amount: -discountAmount, type: 'discount' as const });
+    if (taxAmount > 0) breakdown.push({ description: 'Tax', amount: taxAmount, type: 'tax' as const });
+
+    return { basePrice, setupFee, discountAmount, taxAmount, totalAmount, currency: 'USD', breakdown };
+  }
+
+  /**
+   * Map pricing engine breakdown tier to payment breakdown type
+   */
+  private mapBreakdownType(tier?: string): 'base' | 'setup' | 'discount' | 'tax' | 'fee' {
+    if (!tier) return 'base';
+    if (tier.includes('setup')) return 'setup';
+    if (tier.includes('discount') || tier.includes('promotion')) return 'discount';
+    if (tier.includes('tax')) return 'tax';
+    if (tier.includes('fee') || tier.includes('overage')) return 'fee';
+    return 'base';
   }
 
   /**

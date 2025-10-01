@@ -1,6 +1,8 @@
 import { APIRepository, CreateAPIData, UpdateAPIData, APIWithDetails, APISearchFilters, PaginationOptions } from '../repositories/api-repository';
 import { CategoryRepository } from '../repositories/category-repository';
 import { GatewayService, APIGatewayConfig } from './gateway-service';
+import { executeTwoPhaseCommit, idempotencyManager } from '../utils/two-phase-commit';
+import { db } from '../db';
 
 export interface CreateAPIRequest {
   name: string;
@@ -57,46 +59,136 @@ export class APIService {
 
   /**
    * Create a new API (Provider only)
+   * API goes live immediately - no approval needed
+   * Uses two-phase commit to ensure atomicity between database and gateway
    */
   async createAPI(sellerId: number, data: CreateAPIRequest): Promise<APIWithDetails> {
-    try {
-      // Validate category exists if provided
-      if (data.categoryId) {
-        const categoryExists = await this.categoryRepository.exists(data.categoryId);
-        if (!categoryExists) {
-          throw new Error('Invalid category ID');
+    // Generate idempotency key to prevent duplicate API creation
+    const idempotencyKey = `api-create-${sellerId}-${data.name}-${data.endpoint}-${Date.now()}`;
+
+    // Check for duplicate operation
+    const cached = await idempotencyManager.check<APIWithDetails>(idempotencyKey);
+    if (cached) {
+      console.log(`[API Creation] Returning cached result for idempotency key: ${idempotencyKey}`);
+      return cached;
+    }
+
+    // Validate inputs before starting transaction
+    if (data.categoryId) {
+      const categoryExists = await this.categoryRepository.exists(data.categoryId);
+      if (!categoryExists) {
+        throw new Error('Invalid category ID');
+      }
+    }
+
+    this.validateMethods(data.methods);
+
+    if (data.price && !this.isValidPrice(data.price)) {
+      throw new Error('Invalid price format');
+    }
+
+    // Store API reference for gateway phase
+    let createdAPI: any = null;
+
+    // Execute two-phase commit transaction
+    const result = await executeTwoPhaseCommit<APIWithDetails>({
+      phases: [
+        {
+          name: 'database',
+          prepare: async () => {
+            // Phase 1: Create API in database with active status
+            const createData: CreateAPIData = {
+              sellerId,
+              ...data,
+              isActive: true, // API goes live immediately
+            };
+
+            const api = await this.apiRepository.create(createData);
+            createdAPI = api; // Store for gateway phase
+            console.log(`[2PC] Database prepare: Created API ${api.uid} (ID: ${api.id})`);
+
+            return api;
+          },
+          commit: async (api) => {
+            // Database commit is implicit (already persisted in prepare)
+            console.log(`[2PC] Database commit: API ${api.uid} confirmed`);
+          },
+          rollback: async (api) => {
+            // Rollback: Delete the API from database
+            if (api) {
+              console.log(`[2PC] Database rollback: Deleting API ${api.uid} (ID: ${api.id})`);
+              await this.apiRepository.delete(api.id);
+            }
+          }
+        },
+        {
+          name: 'gateway',
+          prepare: async () => {
+            // Gateway prepare: Validate we have the API data
+            if (!createdAPI) {
+              throw new Error('Database phase did not complete - no API created');
+            }
+            return { validated: true };
+          },
+          commit: async () => {
+            // Phase 2: Register with Gateway
+            if (!createdAPI) {
+              throw new Error('API not found for gateway registration');
+            }
+
+            const gatewayConfig: APIGatewayConfig = {
+              uid: createdAPI.uid,
+              name: createdAPI.name,
+              endpoint: data.endpoint,
+              baseUrl: data.baseUrl,
+              methods: data.methods,
+              requiredHeaders: (data.requiredHeaders || []).map(h => h.name),
+            };
+
+            await this.gatewayService.registerAPI(gatewayConfig);
+            console.log(`[2PC] Gateway commit: Registered API ${createdAPI.uid}`);
+          },
+          rollback: async () => {
+            // Rollback: Unregister from gateway if it was registered
+            try {
+              if (createdAPI) {
+                console.log(`[2PC] Gateway rollback: Unregistering API ${createdAPI.uid}`);
+                await this.gatewayService.unregisterAPI(createdAPI.uid);
+              }
+            } catch (error) {
+              console.error('[2PC] Gateway rollback failed:', error);
+              // Don't throw - best effort rollback
+            }
+          }
+        }
+      ],
+      options: {
+        maxRetries: 3,
+        retryDelayMs: 1000,
+        timeoutMs: 30000,
+        onRetry: (phase, attempt, error) => {
+          console.warn(`[API Creation] Retry attempt ${attempt} for phase ${phase}:`, error.message);
         }
       }
+    });
 
-      // Validate methods
-      this.validateMethods(data.methods);
-      
-      // Validate pricing
-      if (data.price && !this.isValidPrice(data.price)) {
-        throw new Error('Invalid price format');
-      }
-
-      // Create API in database
-      const createData: CreateAPIData = {
-        sellerId,
-        ...data,
-      };
-
-      const api = await this.apiRepository.create(createData);
-
-      // Get the full API details
-      const apiDetails = await this.apiRepository.findByUid(api.uid);
-      if (!apiDetails) {
-        throw new Error('Failed to retrieve created API');
-      }
-
-      console.log(`API created successfully: ${api.name} (${api.uid})`);
-      return apiDetails;
-
-    } catch (error) {
-      console.error('Error creating API:', error);
-      throw error;
+    // Check if transaction succeeded
+    if (!result.success) {
+      console.error(`[API Creation] Transaction failed at phase ${result.phase}:`, result.error);
+      throw result.error || new Error('API creation transaction failed');
     }
+
+    // Get the full API details
+    const apiDetails = await this.apiRepository.findByUid(result.data.uid);
+    if (!apiDetails) {
+      throw new Error('Failed to retrieve created API');
+    }
+
+    // Store in idempotency cache
+    await idempotencyManager.store(idempotencyKey, apiDetails);
+
+    console.log(`API created and activated successfully: ${apiDetails.name} (${apiDetails.uid})`);
+    return apiDetails;
   }
 
   /**

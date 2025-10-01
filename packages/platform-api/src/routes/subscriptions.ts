@@ -449,6 +449,171 @@ export const subscriptionRoutes = new Elysia({ prefix: '/subscriptions' })
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
+  })
+
+  /**
+   * Preview plan change without applying
+   */
+  .get('/:uid/plan-change/preview', async ({ params, query, set }) => {
+    try {
+      const newPricingModelId = parseInt(query.newPricingModelId as string);
+      const applyImmediately = query.applyImmediately === 'true';
+
+      if (!newPricingModelId) {
+        set.status = 400;
+        return {
+          success: false,
+          message: 'newPricingModelId is required'
+        };
+      }
+
+      const preview = await subscriptionService.previewPlanChange(
+        params.uid,
+        newPricingModelId,
+        applyImmediately
+      );
+
+      return {
+        success: true,
+        data: preview
+      };
+    } catch (error) {
+      set.status = 400;
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to preview plan change'
+      };
+    }
+  }, {
+    detail: {
+      tags: ['Subscriptions'],
+      summary: 'Preview plan change',
+      description: 'Preview the impact of changing subscription plan without applying the change',
+    },
+    params: t.Object({
+      uid: t.String()
+    }),
+    query: t.Object({
+      newPricingModelId: t.String(),
+      applyImmediately: t.Optional(t.String())
+    })
+  })
+
+  /**
+   * Upgrade subscription plan
+   */
+  .post('/:uid/upgrade', async ({ params, body, set }) => {
+    try {
+      const { newPricingModelId } = body as { newPricingModelId: number };
+
+      if (!newPricingModelId) {
+        set.status = 400;
+        return {
+          success: false,
+          message: 'newPricingModelId is required'
+        };
+      }
+
+      const result = await subscriptionService.upgradePlan(params.uid, newPricingModelId);
+
+      return {
+        success: true,
+        message: 'Subscription upgraded successfully',
+        data: {
+          subscription: result.subscription,
+          proration: {
+            creditAmount: result.proration.creditAmount,
+            chargeAmount: result.proration.chargeAmount,
+            netAmount: result.proration.netAmount,
+            daysRemaining: result.proration.daysRemaining,
+            effectiveDate: result.proration.effectiveDate,
+            nextBillingDate: result.proration.nextBillingDate
+          }
+        }
+      };
+    } catch (error) {
+      set.status = 400;
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to upgrade subscription'
+      };
+    }
+  }, {
+    detail: {
+      tags: ['Subscriptions'],
+      summary: 'Upgrade subscription plan',
+      description: 'Upgrade to a higher-tier plan with prorated billing',
+    },
+    params: t.Object({
+      uid: t.String()
+    }),
+    body: t.Object({
+      newPricingModelId: t.Number()
+    })
+  })
+
+  /**
+   * Downgrade subscription plan
+   */
+  .post('/:uid/downgrade', async ({ params, body, set }) => {
+    try {
+      const { newPricingModelId, applyImmediately } = body as {
+        newPricingModelId: number;
+        applyImmediately?: boolean;
+      };
+
+      if (!newPricingModelId) {
+        set.status = 400;
+        return {
+          success: false,
+          message: 'newPricingModelId is required'
+        };
+      }
+
+      const result = await subscriptionService.downgradePlan(
+        params.uid,
+        newPricingModelId,
+        applyImmediately || false
+      );
+
+      return {
+        success: true,
+        message: applyImmediately
+          ? 'Subscription downgraded successfully'
+          : 'Subscription downgrade scheduled for end of billing period',
+        data: {
+          subscription: result.subscription,
+          proration: {
+            creditAmount: result.proration.creditAmount,
+            chargeAmount: result.proration.chargeAmount,
+            netAmount: result.proration.netAmount,
+            daysRemaining: result.proration.daysRemaining,
+            effectiveDate: result.proration.effectiveDate,
+            nextBillingDate: result.proration.nextBillingDate
+          },
+          scheduledFor: result.scheduledFor
+        }
+      };
+    } catch (error) {
+      set.status = 400;
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to downgrade subscription'
+      };
+    }
+  }, {
+    detail: {
+      tags: ['Subscriptions'],
+      summary: 'Downgrade subscription plan',
+      description: 'Downgrade to a lower-tier plan with optional immediate application',
+    },
+    params: t.Object({
+      uid: t.String()
+    }),
+    body: t.Object({
+      newPricingModelId: t.Number(),
+      applyImmediately: t.Optional(t.Boolean())
+    })
   });
 
 // Note: Admin routes for subscription management will be added to admin routes

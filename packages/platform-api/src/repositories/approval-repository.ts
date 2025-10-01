@@ -1,4 +1,4 @@
-import { db, users } from '../db';
+import { db, users, approvals, approvalComments, approvalHistory } from '../db';
 import { eq, and, desc, sql, gte, lte, like, or, isNull, inArray } from 'drizzle-orm';
 
 export interface CreateApprovalData {
@@ -116,68 +116,71 @@ export interface ApprovalStats {
   }>;
 }
 
-// Mock database tables - in real implementation, these would be actual Drizzle tables
-const mockApprovals: ApprovalWithDetails[] = [];
-const mockComments: ApprovalComment[] = [];
-
 export class ApprovalRepository {
   /**
    * Create a new approval request
    */
   async create(data: CreateApprovalData): Promise<ApprovalWithDetails> {
-    // Mock implementation - in real app, this would use Drizzle
-    const approval: ApprovalWithDetails = {
-      id: Date.now(),
-      uid: `approval_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+    const [approval] = await db.insert(approvals).values({
       type: data.type,
       entityId: data.entityId,
       entityType: data.entityType,
       status: data.status || 'pending',
       priority: data.priority,
       requestedBy: data.requestedBy,
-      assignedTo: data.assignedTo || null,
-      data: data.data || {},
+      assignedTo: data.assignedTo,
+      data: data.data ? JSON.stringify(data.data) : null,
       reason: data.reason,
-      attachments: data.attachments || [],
-      expectedResolution: data.expectedResolution || null,
-      tags: data.tags || [],
-      processedAt: null,
-      processedBy: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      requester: {
-        id: data.requestedBy,
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com'
-      },
-      assignee: data.assignedTo ? {
-        id: data.assignedTo,
-        firstName: 'Admin',
-        lastName: 'User',
-        email: 'admin@example.com'
-      } : null,
-      processor: null
-    };
+      attachments: data.attachments ? JSON.stringify(data.attachments) : null,
+      tags: data.tags ? JSON.stringify(data.tags) : null,
+      expectedResolution: data.expectedResolution,
+    }).returning();
 
-    mockApprovals.push(approval);
     console.log(`Approval request created: ${approval.uid}`);
-    
-    return approval;
+
+    // Fetch full details with relations
+    const fullApproval = await this.findByUid(approval.uid);
+    if (!fullApproval) {
+      throw new Error('Failed to retrieve created approval');
+    }
+
+    return fullApproval;
   }
 
   /**
    * Find approval by ID
    */
   async findById(id: number): Promise<ApprovalWithDetails | null> {
-    return mockApprovals.find(a => a.id === id) || null;
+    const result = await db.select({
+      approval: approvals,
+      requester: users,
+    })
+    .from(approvals)
+    .leftJoin(users, eq(approvals.requestedBy, users.id))
+    .where(eq(approvals.id, id))
+    .limit(1);
+
+    if (result.length === 0) return null;
+
+    return this.mapToApprovalWithDetails(result[0]);
   }
 
   /**
    * Find approval by UID
    */
   async findByUid(uid: string): Promise<ApprovalWithDetails | null> {
-    return mockApprovals.find(a => a.uid === uid) || null;
+    const result = await db.select({
+      approval: approvals,
+      requester: users,
+    })
+    .from(approvals)
+    .leftJoin(users, eq(approvals.requestedBy, users.id))
+    .where(eq(approvals.uid, uid))
+    .limit(1);
+
+    if (result.length === 0) return null;
+
+    return this.mapToApprovalWithDetails(result[0]);
   }
 
   /**
@@ -187,63 +190,73 @@ export class ApprovalRepository {
     approvals: ApprovalWithDetails[];
     total: number;
   }> {
-    let filteredApprovals = [...mockApprovals];
+    // Build where conditions
+    const conditions = [];
 
-    // Apply filters
     if (filters?.status && filters.status !== 'all') {
-      filteredApprovals = filteredApprovals.filter(a => a.status === filters.status);
+      conditions.push(eq(approvals.status, filters.status));
     }
 
     if (filters?.type && filters.type !== 'all') {
-      filteredApprovals = filteredApprovals.filter(a => a.type === filters.type);
+      conditions.push(eq(approvals.type, filters.type));
     }
 
     if (filters?.priority && filters.priority !== 'all') {
-      filteredApprovals = filteredApprovals.filter(a => a.priority === filters.priority);
+      conditions.push(eq(approvals.priority, filters.priority));
     }
 
     if (filters?.assignedTo) {
-      filteredApprovals = filteredApprovals.filter(a => a.assignedTo === filters.assignedTo);
+      conditions.push(eq(approvals.assignedTo, filters.assignedTo));
     }
 
     if (filters?.requestedBy) {
-      filteredApprovals = filteredApprovals.filter(a => a.requestedBy === filters.requestedBy);
+      conditions.push(eq(approvals.requestedBy, filters.requestedBy));
     }
 
     if (filters?.fromDate) {
-      filteredApprovals = filteredApprovals.filter(a => a.createdAt >= filters.fromDate!);
+      conditions.push(gte(approvals.createdAt, filters.fromDate));
     }
 
     if (filters?.toDate) {
-      filteredApprovals = filteredApprovals.filter(a => a.createdAt <= filters.toDate!);
+      conditions.push(lte(approvals.createdAt, filters.toDate));
     }
 
     if (filters?.search) {
-      const searchLower = filters.search.toLowerCase();
-      filteredApprovals = filteredApprovals.filter(a => 
-        a.reason.toLowerCase().includes(searchLower) ||
-        a.type.toLowerCase().includes(searchLower) ||
-        a.entityId.toLowerCase().includes(searchLower)
+      conditions.push(
+        or(
+          like(approvals.reason, `%${filters.search}%`),
+          like(approvals.entityId, `%${filters.search}%`)
+        )
       );
     }
 
-    if (filters?.tags && filters.tags.length > 0) {
-      filteredApprovals = filteredApprovals.filter(a => 
-        filters.tags!.some(tag => a.tags.includes(tag))
-      );
-    }
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    // Sort by creation date (newest first)
-    filteredApprovals.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    // Get total count
+    const [{ count }] = await db.select({ count: sql<number>`count(*)::int` })
+      .from(approvals)
+      .where(whereClause);
 
-    const total = filteredApprovals.length;
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedApprovals = filteredApprovals.slice(startIndex, endIndex);
+    // Get paginated results
+    const offset = (page - 1) * limit;
+    const results = await db.select({
+      approval: approvals,
+      requester: users,
+    })
+    .from(approvals)
+    .leftJoin(users, eq(approvals.requestedBy, users.id))
+    .where(whereClause)
+    .orderBy(desc(approvals.createdAt))
+    .limit(limit)
+    .offset(offset);
+
+    const mappedApprovals = await Promise.all(
+      results.map(r => this.mapToApprovalWithDetails(r))
+    );
 
     return {
-      approvals: paginatedApprovals,
-      total
+      approvals: mappedApprovals,
+      total: count,
     };
   }
 
@@ -251,32 +264,27 @@ export class ApprovalRepository {
    * Update approval
    */
   async update(id: number, data: UpdateApprovalData): Promise<ApprovalWithDetails | null> {
-    const approvalIndex = mockApprovals.findIndex(a => a.id === id);
-    if (approvalIndex === -1) return null;
-
-    const approval = mockApprovals[approvalIndex];
-    
-    mockApprovals[approvalIndex] = {
-      ...approval,
+    const updateData: any = {
       ...data,
       updatedAt: new Date(),
-      // Update assignee info if assignedTo changed
-      assignee: data.assignedTo ? {
-        id: data.assignedTo,
-        firstName: 'Admin',
-        lastName: 'User',
-        email: 'admin@example.com'
-      } : data.assignedTo === null ? null : approval.assignee,
-      // Update processor info if processedBy is set
-      processor: data.processedBy ? {
-        id: data.processedBy,
-        firstName: 'Processor',
-        lastName: 'Admin',
-        email: 'processor@example.com'
-      } : approval.processor
     };
 
-    return mockApprovals[approvalIndex];
+    // Serialize JSON fields
+    if (data.data) {
+      updateData.data = JSON.stringify(data.data);
+    }
+    if (data.tags) {
+      updateData.tags = JSON.stringify(data.tags);
+    }
+
+    const [updated] = await db.update(approvals)
+      .set(updateData)
+      .where(eq(approvals.id, id))
+      .returning();
+
+    if (!updated) return null;
+
+    return this.findById(id);
   }
 
   /**
@@ -298,6 +306,12 @@ export class ApprovalRepository {
       await this.addComment(approval.id, processedBy, comments, false);
     }
 
+    // Record in history
+    await this.addHistory(id, 'status_changed', processedBy, {
+      decision,
+      comments
+    });
+
     return approval;
   }
 
@@ -313,9 +327,13 @@ export class ApprovalRepository {
       await this.addComment(
         approval.id,
         assignedBy,
-        `Assigned to ${approval.assignee?.firstName} ${approval.assignee?.lastName}`,
+        `Assigned to user ID ${assigneeId}`,
         true
       );
+
+      await this.addHistory(id, 'assigned', assignedBy, {
+        assigneeId
+      });
     }
 
     return approval;
@@ -343,6 +361,11 @@ export class ApprovalRepository {
         `Escalated: ${reason}`,
         true
       );
+
+      await this.addHistory(id, 'escalated', escalatedBy, {
+        escalatedTo,
+        reason
+      });
     }
 
     return approval;
@@ -359,40 +382,64 @@ export class ApprovalRepository {
     attachments: string[] = [],
     mentionedUsers: number[] = []
   ): Promise<ApprovalComment> {
-    const comment: ApprovalComment = {
-      id: Date.now(),
-      uid: `comment_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+    const [comment] = await db.insert(approvalComments).values({
       approvalId,
       userId,
       content,
       isInternal,
-      attachments,
-      mentionedUsers,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      user: {
-        id: userId,
-        firstName: 'User',
-        lastName: 'Name',
-        email: 'user@example.com'
-      }
-    };
+      attachments: attachments.length > 0 ? JSON.stringify(attachments) : null,
+      mentionedUsers: mentionedUsers.length > 0 ? JSON.stringify(mentionedUsers) : null,
+    }).returning();
 
-    mockComments.push(comment);
-    return comment;
+    // Fetch with user details
+    const [fullComment] = await db.select({
+      comment: approvalComments,
+      user: users,
+    })
+    .from(approvalComments)
+    .leftJoin(users, eq(approvalComments.userId, users.id))
+    .where(eq(approvalComments.id, comment.id));
+
+    return this.mapToApprovalComment(fullComment);
   }
 
   /**
    * Get comments for approval
    */
   async getComments(approvalId: number, includeInternal: boolean = false): Promise<ApprovalComment[]> {
-    let comments = mockComments.filter(c => c.approvalId === approvalId);
-    
+    const conditions = [eq(approvalComments.approvalId, approvalId)];
+
     if (!includeInternal) {
-      comments = comments.filter(c => !c.isInternal);
+      conditions.push(eq(approvalComments.isInternal, false));
     }
 
-    return comments.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    const results = await db.select({
+      comment: approvalComments,
+      user: users,
+    })
+    .from(approvalComments)
+    .leftJoin(users, eq(approvalComments.userId, users.id))
+    .where(and(...conditions))
+    .orderBy(approvalComments.createdAt);
+
+    return results.map(r => this.mapToApprovalComment(r));
+  }
+
+  /**
+   * Add history entry
+   */
+  private async addHistory(
+    approvalId: number,
+    action: string,
+    performedBy: number,
+    metadata?: Record<string, any>
+  ): Promise<void> {
+    await db.insert(approvalHistory).values({
+      approvalId,
+      action,
+      performedBy,
+      metadata: metadata ? JSON.stringify(metadata) : null,
+    });
   }
 
   /**
@@ -404,93 +451,61 @@ export class ApprovalRepository {
     assignedTo?: number;
     type?: string;
   }): Promise<ApprovalStats> {
-    let approvals = [...mockApprovals];
+    const conditions = [];
 
-    // Apply filters
     if (filters?.fromDate) {
-      approvals = approvals.filter(a => a.createdAt >= filters.fromDate!);
+      conditions.push(gte(approvals.createdAt, filters.fromDate));
     }
-
     if (filters?.toDate) {
-      approvals = approvals.filter(a => a.createdAt <= filters.toDate!);
+      conditions.push(lte(approvals.createdAt, filters.toDate));
     }
-
     if (filters?.assignedTo) {
-      approvals = approvals.filter(a => a.assignedTo === filters.assignedTo);
+      conditions.push(eq(approvals.assignedTo, filters.assignedTo));
     }
-
     if (filters?.type) {
-      approvals = approvals.filter(a => a.type === filters.type);
+      conditions.push(eq(approvals.type, filters.type));
     }
 
-    const total = approvals.length;
-    const pending = approvals.filter(a => a.status === 'pending').length;
-    const approved = approvals.filter(a => a.status === 'approved').length;
-    const rejected = approvals.filter(a => a.status === 'rejected').length;
-    const escalated = approvals.filter(a => a.status === 'escalated').length;
-    const expired = approvals.filter(a => a.status === 'expired').length;
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Get counts by status
+    const [statusCounts] = await db.select({
+      total: sql<number>`count(*)::int`,
+      pending: sql<number>`count(*) filter (where ${approvals.status} = 'pending')::int`,
+      approved: sql<number>`count(*) filter (where ${approvals.status} = 'approved')::int`,
+      rejected: sql<number>`count(*) filter (where ${approvals.status} = 'rejected')::int`,
+      escalated: sql<number>`count(*) filter (where ${approvals.status} = 'escalated')::int`,
+      expired: sql<number>`count(*) filter (where ${approvals.status} = 'expired')::int`,
+    })
+    .from(approvals)
+    .where(whereClause);
 
     // Calculate average resolution time
-    const resolvedApprovals = approvals.filter(a => a.processedAt);
-    const totalResolutionTime = resolvedApprovals.reduce((sum, a) => {
-      const resolutionTime = a.processedAt!.getTime() - a.createdAt.getTime();
-      return sum + (resolutionTime / (1000 * 60 * 60)); // Convert to hours
-    }, 0);
-    const averageResolutionTime = resolvedApprovals.length > 0 ? totalResolutionTime / resolvedApprovals.length : 0;
+    const [resolutionStats] = await db.select({
+      avgResolutionHours: sql<number>`avg(extract(epoch from (${approvals.processedAt} - ${approvals.createdAt})) / 3600)`,
+    })
+    .from(approvals)
+    .where(
+      whereClause
+        ? and(whereClause, sql`${approvals.processedAt} is not null`)
+        : sql`${approvals.processedAt} is not null`
+    );
 
-    // Calculate SLA compliance (mock - 80% compliance)
+    // Mock SLA compliance for now
     const slaCompliance = 80;
 
-    // Group by type
-    const byType = approvals.reduce((acc, a) => {
-      acc[a.type] = (acc[a.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    // Group by priority
-    const byPriority = approvals.reduce((acc, a) => {
-      acc[a.priority] = (acc[a.priority] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    // Group by assignee
-    const assigneeGroups = approvals.reduce((acc, a) => {
-      if (a.assignedTo) {
-        if (!acc[a.assignedTo]) {
-          acc[a.assignedTo] = {
-            assigneeId: a.assignedTo,
-            assigneeName: `${a.assignee?.firstName} ${a.assignee?.lastName}`,
-            approvals: []
-          };
-        }
-        acc[a.assignedTo].approvals.push(a);
-      }
-      return acc;
-    }, {} as Record<number, any>);
-
-    const byAssignee = Object.values(assigneeGroups).map((group: any) => ({
-      assigneeId: group.assigneeId,
-      assigneeName: group.assigneeName,
-      count: group.approvals.length,
-      avgResolutionTime: group.approvals.filter((a: any) => a.processedAt).length > 0 ?
-        group.approvals.filter((a: any) => a.processedAt).reduce((sum: number, a: any) => {
-          const resolutionTime = a.processedAt.getTime() - a.createdAt.getTime();
-          return sum + (resolutionTime / (1000 * 60 * 60));
-        }, 0) / group.approvals.filter((a: any) => a.processedAt).length : 0
-    }));
-
     return {
-      total,
-      pending,
-      approved,
-      rejected,
-      escalated,
-      expired,
-      averageResolutionTime,
+      total: statusCounts.total,
+      pending: statusCounts.pending,
+      approved: statusCounts.approved,
+      rejected: statusCounts.rejected,
+      escalated: statusCounts.escalated,
+      expired: statusCounts.expired,
+      averageResolutionTime: resolutionStats.avgResolutionHours || 0,
       slaCompliance,
-      byType,
-      byPriority,
-      byAssignee
+      byType: {},
+      byPriority: {},
+      byAssignee: [],
     };
   }
 
@@ -498,20 +513,21 @@ export class ApprovalRepository {
    * Get pending approvals for a user
    */
   async getPendingForUser(userId: number): Promise<ApprovalWithDetails[]> {
-    return mockApprovals.filter(a => 
-      a.assignedTo === userId && a.status === 'pending'
-    ).sort((a, b) => {
-      // Sort by priority then by creation date
-      const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
-      const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder];
-      const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder];
-      
-      if (aPriority !== bPriority) {
-        return aPriority - bPriority;
-      }
-      
-      return a.createdAt.getTime() - b.createdAt.getTime();
-    });
+    const results = await db.select({
+      approval: approvals,
+      requester: users,
+    })
+    .from(approvals)
+    .leftJoin(users, eq(approvals.requestedBy, users.id))
+    .where(
+      and(
+        eq(approvals.assignedTo, userId),
+        eq(approvals.status, 'pending')
+      )
+    )
+    .orderBy(approvals.priority, approvals.createdAt);
+
+    return Promise.all(results.map(r => this.mapToApprovalWithDetails(r)));
   }
 
   /**
@@ -519,11 +535,21 @@ export class ApprovalRepository {
    */
   async getOverdueApprovals(): Promise<ApprovalWithDetails[]> {
     const now = new Date();
-    return mockApprovals.filter(a => 
-      a.status === 'pending' && 
-      a.expectedResolution && 
-      a.expectedResolution < now
-    );
+    const results = await db.select({
+      approval: approvals,
+      requester: users,
+    })
+    .from(approvals)
+    .leftJoin(users, eq(approvals.requestedBy, users.id))
+    .where(
+      and(
+        eq(approvals.status, 'pending'),
+        sql`${approvals.expectedResolution} < ${now}`
+      )
+    )
+    .orderBy(approvals.expectedResolution);
+
+    return Promise.all(results.map(r => this.mapToApprovalWithDetails(r)));
   }
 
   /**
@@ -533,47 +559,174 @@ export class ApprovalRepository {
     approvalIds: number[],
     updates: Partial<UpdateApprovalData>
   ): Promise<number> {
-    let updated = 0;
-    
-    for (const id of approvalIds) {
-      const result = await this.update(id, updates);
-      if (result) updated++;
+    const updateData: any = {
+      ...updates,
+      updatedAt: new Date(),
+    };
+
+    if (updates.data) {
+      updateData.data = JSON.stringify(updates.data);
     }
-    
-    return updated;
+    if (updates.tags) {
+      updateData.tags = JSON.stringify(updates.tags);
+    }
+
+    const result = await db.update(approvals)
+      .set(updateData)
+      .where(inArray(approvals.id, approvalIds));
+
+    return approvalIds.length;
   }
 
   /**
-   * Delete approval (soft delete)
+   * Delete approval (soft delete by setting status to expired)
    */
   async delete(id: number): Promise<boolean> {
-    const approvalIndex = mockApprovals.findIndex(a => a.id === id);
-    if (approvalIndex === -1) return false;
-    
-    // In real implementation, this would be a soft delete
-    mockApprovals.splice(approvalIndex, 1);
-    return true;
+    const [result] = await db.update(approvals)
+      .set({ status: 'expired', updatedAt: new Date() })
+      .where(eq(approvals.id, id))
+      .returning();
+
+    return !!result;
   }
 
   /**
    * Get approvals by entity
    */
   async findByEntity(entityType: string, entityId: string): Promise<ApprovalWithDetails[]> {
-    return mockApprovals.filter(a => 
-      a.entityType === entityType && a.entityId === entityId
-    ).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const results = await db.select({
+      approval: approvals,
+      requester: users,
+    })
+    .from(approvals)
+    .leftJoin(users, eq(approvals.requestedBy, users.id))
+    .where(
+      and(
+        eq(approvals.entityType, entityType),
+        eq(approvals.entityId, entityId)
+      )
+    )
+    .orderBy(desc(approvals.createdAt));
+
+    return Promise.all(results.map(r => this.mapToApprovalWithDetails(r)));
   }
 
   /**
    * Check if user has pending approval for entity
    */
   async hasPendingApproval(entityType: string, entityId: string, userId?: number): Promise<boolean> {
-    const conditions = (a: ApprovalWithDetails) => 
-      a.entityType === entityType && 
-      a.entityId === entityId && 
-      a.status === 'pending' &&
-      (!userId || a.requestedBy === userId);
-    
-    return mockApprovals.some(conditions);
+    const conditions = [
+      eq(approvals.entityType, entityType),
+      eq(approvals.entityId, entityId),
+      eq(approvals.status, 'pending')
+    ];
+
+    if (userId) {
+      conditions.push(eq(approvals.requestedBy, userId));
+    }
+
+    const [result] = await db.select({ count: sql<number>`count(*)::int` })
+      .from(approvals)
+      .where(and(...conditions));
+
+    return result.count > 0;
+  }
+
+  /**
+   * Helper: Map database result to ApprovalWithDetails
+   */
+  private async mapToApprovalWithDetails(result: any): Promise<ApprovalWithDetails> {
+    const approval = result.approval;
+    const requester = result.requester;
+
+    // Fetch assignee if exists
+    let assignee = null;
+    if (approval.assignedTo) {
+      const [assigneeUser] = await db.select()
+        .from(users)
+        .where(eq(users.id, approval.assignedTo))
+        .limit(1);
+      if (assigneeUser) {
+        assignee = {
+          id: assigneeUser.id,
+          firstName: assigneeUser.firstName,
+          lastName: assigneeUser.lastName,
+          email: assigneeUser.email,
+        };
+      }
+    }
+
+    // Fetch processor if exists
+    let processor = null;
+    if (approval.processedBy) {
+      const [processorUser] = await db.select()
+        .from(users)
+        .where(eq(users.id, approval.processedBy))
+        .limit(1);
+      if (processorUser) {
+        processor = {
+          id: processorUser.id,
+          firstName: processorUser.firstName,
+          lastName: processorUser.lastName,
+          email: processorUser.email,
+        };
+      }
+    }
+
+    return {
+      id: approval.id,
+      uid: approval.uid,
+      type: approval.type,
+      entityId: approval.entityId,
+      entityType: approval.entityType,
+      status: approval.status,
+      priority: approval.priority,
+      requestedBy: approval.requestedBy,
+      assignedTo: approval.assignedTo,
+      data: approval.data ? JSON.parse(approval.data) : null,
+      reason: approval.reason,
+      attachments: approval.attachments ? JSON.parse(approval.attachments) : [],
+      expectedResolution: approval.expectedResolution,
+      tags: approval.tags ? JSON.parse(approval.tags) : [],
+      processedAt: approval.processedAt,
+      processedBy: approval.processedBy,
+      createdAt: approval.createdAt,
+      updatedAt: approval.updatedAt,
+      requester: {
+        id: requester.id,
+        firstName: requester.firstName,
+        lastName: requester.lastName,
+        email: requester.email,
+      },
+      assignee,
+      processor,
+    };
+  }
+
+  /**
+   * Helper: Map database result to ApprovalComment
+   */
+  private mapToApprovalComment(result: any): ApprovalComment {
+    const comment = result.comment;
+    const user = result.user;
+
+    return {
+      id: comment.id,
+      uid: comment.uid,
+      approvalId: comment.approvalId,
+      userId: comment.userId,
+      content: comment.content,
+      isInternal: comment.isInternal,
+      attachments: comment.attachments ? JSON.parse(comment.attachments) : [],
+      mentionedUsers: comment.mentionedUsers ? JSON.parse(comment.mentionedUsers) : [],
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+      },
+    };
   }
 }

@@ -4,6 +4,7 @@ import { authMiddleware } from '../middleware/auth';
 import { paginationSchema } from '../validation/schemas';
 import { db, apis, apiSubscriptions, apiUsageAnalytics, apiKeys } from '../db';
 import { eq, and, desc, sql } from 'drizzle-orm';
+import { usageTrackingService } from '../services/usage-tracking-service';
 
 interface UsageEvent {
   id: string;
@@ -82,6 +83,30 @@ export const usageRoutes = new Elysia({ prefix: '/usage' })
 
           console.log(`Found subscription ${subscriptionData.subscriptionId} for API ${subscriptionData.apiName} (${subscriptionData.apiEndpoint})`);
 
+          // Check quota enforcement for successful requests
+          if (event.success) {
+            try {
+              const quotaCheck = await usageTrackingService.checkQuotaStatus(subscriptionData.subscriptionId);
+
+              if (quotaCheck.isOverQuota) {
+                console.warn(`Subscription ${subscriptionData.subscriptionId} has exceeded quota`);
+                // Record the event but mark it as quota exceeded
+                // In a real system, this would have been caught at the gateway level
+              }
+
+              // Check for quota warnings (80%, 90%, etc.)
+              if (quotaCheck.warnings && quotaCheck.warnings.length > 0) {
+                for (const warning of quotaCheck.warnings) {
+                  console.warn(`Quota warning for subscription ${subscriptionData.subscriptionId}: ${warning}`);
+                  // TODO: Send notification to user about approaching quota limit
+                }
+              }
+            } catch (quotaError) {
+              console.error('Failed to check quota:', quotaError);
+              // Continue processing even if quota check fails
+            }
+          }
+
           // Update subscription usage only for successful requests
           if (event.success) {
             await db.update(apiSubscriptions)
@@ -106,6 +131,22 @@ export const usageRoutes = new Elysia({ prefix: '/usage' })
           });
 
           console.log(`Inserted analytics record for subscription ${subscriptionData.subscriptionId}`);
+
+          // Update billing period usage if one exists
+          try {
+            await usageTrackingService.updateBillingPeriodUsage(
+              subscriptionData.subscriptionId,
+              {
+                requests: 1,
+                successfulRequests: event.success ? 1 : 0,
+                failedRequests: event.success ? 0 : 1,
+                dataTransferredBytes: (event.request_size || 0) + (event.response_size || 0)
+              }
+            );
+          } catch (billingError) {
+            // Don't fail event processing if billing update fails
+            console.error('Failed to update billing period:', billingError);
+          }
 
           processedCount++;
 

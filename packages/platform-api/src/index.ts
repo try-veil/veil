@@ -21,6 +21,11 @@ import { analyticsRoutes } from "./routes/analytics";
 import { approvalRoutes } from "./routes/approvals";
 import { usageRoutes } from "./routes/usage";
 import { quotaRoutes } from "./routes/quota";
+import { pricingRoutes } from "./routes/pricing";
+import { eventRoutes } from "./routes/events";
+import { pricingService } from "./services/pricing/pricing-service";
+import { jobScheduler } from "./jobs/scheduler";
+import { startEventQueue, stopEventQueue } from "./services/event-handlers";
 
 const app = new Elysia()
   // Add middleware
@@ -47,6 +52,8 @@ const app = new Elysia()
         { name: 'Approvals', description: 'Approval workflow endpoints' },
         { name: 'Usage', description: 'API usage tracking and analytics endpoints' },
         { name: 'Quota', description: 'API quota management and monitoring endpoints' },
+        { name: 'Pricing', description: 'Pricing models, invoices, and billing management endpoints' },
+        { name: 'Events', description: 'Event queue monitoring and management endpoints' },
       ],
       servers: [
         {
@@ -92,6 +99,8 @@ const app = new Elysia()
       .use(approvalRoutes)
       .use(usageRoutes)
       .use(quotaRoutes)
+      .use(pricingRoutes)
+      .use(eventRoutes)
   )
   
   // 404 handler
@@ -101,13 +110,42 @@ const app = new Elysia()
       success: false,
       message: "Route not found",
     };
-  })
-  
-  .listen(config.port);
+  });
 
-console.log(
-  `🚀 Veil SaaS BFF Server is running at http://${app.server?.hostname}:${app.server?.port}`
-);
+// Initialize services before starting the server
+async function initializeServices() {
+  try {
+    console.log('🔧 Initializing services...');
+
+    // Initialize pricing service - loads YAML configurations and syncs to database
+    await pricingService.initialize();
+    console.log('✅ Pricing service initialized');
+
+    // Start event queue for reliable event processing with retries
+    startEventQueue();
+    console.log('✅ Event queue started');
+
+    // Start background job scheduler
+    jobScheduler.start();
+    console.log('✅ Job scheduler started');
+
+  } catch (error) {
+    console.error('❌ Failed to initialize services:', error);
+    // Don't fail startup if pricing service initialization fails
+    // This allows the API to start even if pricing config is missing
+  }
+}
+
+// Start server after initialization
+(async () => {
+  await initializeServices();
+
+  app.listen(config.port);
+
+  console.log(
+    `🚀 Veil SaaS BFF Server is running at http://${app.server?.hostname}:${app.server?.port}`
+  );
+})();
 
 console.log(`📊 Environment: ${config.nodeEnv}`);
 console.log(`🔗 Database URL: ${config.database.url.replace(/:[^:]*@/, ':****@')}`);
@@ -116,12 +154,16 @@ console.log(`🔒 CORS Origin: http://localhost:3001,http://localhost:3000`);
 // Graceful shutdown
 process.on('SIGINT', () => {
   console.log('\n🛑 Shutting down server gracefully...');
+  stopEventQueue();
+  jobScheduler.stop();
   app.stop();
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
   console.log('\n🛑 Shutting down server gracefully...');
+  stopEventQueue();
+  jobScheduler.stop();
   app.stop();
   process.exit(0);
 });
