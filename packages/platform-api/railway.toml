@@ -1,8 +1,5 @@
 [build]
-builder = "NIXPACKS"
-
-[build.nixpacksPlan]
-providers = ["bun"]
+builder = "RAILPACK"
 
 [deploy]
 startCommand = "bun run start"

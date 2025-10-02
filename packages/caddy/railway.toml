@@ -1,6 +1,6 @@
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
+dockerfilePath = "Dockerfile.railway"
 
 [deploy]
 startCommand = "/usr/bin/veil run --config /etc/caddy/Caddyfile"
