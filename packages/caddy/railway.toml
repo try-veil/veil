@@ -1,8 +1,22 @@
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile.railway"
+dockerfilePath = "packages/caddy/Dockerfile.railway"
 
 [deploy]
 startCommand = "/usr/bin/veil run --config /etc/caddy/Caddyfile"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
+
+# IMPORTANT: Volume Configuration Required
+# Volumes cannot be configured in railway.toml - must be done via Railway dashboard/CLI
+#
+# Steps to add volume:
+# 1. Go to Caddy service in Railway dashboard
+# 2. Navigate to Settings -> Volumes
+# 3. Click "Add Volume"
+# 4. Set mount path: /data
+# 5. This will persist the SQLite database at /data/veil.db
+#
+# Railway will automatically provide these environment variables:
+# - RAILWAY_VOLUME_NAME
+# - RAILWAY_VOLUME_MOUNT_PATH=/data

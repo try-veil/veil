@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.23-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 # Install build dependencies for CGO
 RUN apk add --no-cache \
@@ -46,8 +46,8 @@ RUN mkdir -p /data/caddy /config \
 # Copy the binary from builder
 COPY --from=builder /build/veil /usr/bin/veil
 
-# Copy Caddyfile
-COPY Caddyfile /etc/caddy/Caddyfile
+# Copy Railway-specific Caddyfile
+COPY Caddyfile.railway /etc/caddy/Caddyfile
 
 # Set working directory
 WORKDIR /data
@@ -61,9 +61,6 @@ EXPOSE 2019 2020 2021
 # Set environment variables
 ENV XDG_CONFIG_HOME=/config \
     XDG_DATA_HOME=/data
-
-# Define volumes
-VOLUME ["/data", "/config"]
 
 # Command to run the server
 ENTRYPOINT ["/usr/bin/veil"]
