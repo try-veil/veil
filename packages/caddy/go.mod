@@ -5,6 +5,7 @@ go 1.21
 require (
 	github.com/bytedance/mockey v1.2.14
 	github.com/caddyserver/caddy/v2 v2.7.6
+	github.com/google/uuid v1.3.1
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.25.0
 	gorm.io/driver/sqlite v1.5.7
@@ -41,7 +42,6 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/cel-go v0.15.1 // indirect
 	github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1 // indirect
-	github.com/google/uuid v1.3.1 // indirect
 	github.com/gopherjs/gopherjs v1.12.80 // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
@@ -63,7 +63,7 @@ require (
 	github.com/manifoldco/promptui v0.9.0 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
-	github.com/mattn/go-sqlite3 v1.14.24 // indirect
+	github.com/mattn/go-sqlite3 v1.14.28 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/mholt/acmez v1.2.0 // indirect

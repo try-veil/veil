@@ -2,6 +2,8 @@
 
 Veil is a Caddy module that provides API management capabilities, including subscription-based access control and request validation. It acts as a middleware that validates API requests based on subscription levels and required headers.
 
+Disclaimer: 🚧 ⚠️ This is a heavily under development and the API is subject to change.
+
 ## Demo
 
 Below is a small recording of the terminal we onboard the [Dummy JSON](https://dummyjson.com/todos) API and put it behind veil.
@@ -16,12 +18,11 @@ Below is a small recording of the terminal we onboard the [Dummy JSON](https://d
 - Dynamic API onboarding
 - SQLite database storage
 
-
 ## Local Setup
 
 1. Clone the project
 2. Veil depends on [go](https://go.dev), [xcaddy](https://github.com/caddyserver/xcaddy), and whatever platform specific `C` compilation tools you'll need to compile with `CGO_ENABLED=1`.
-  2.1 Setup scripts have been provided for some platforms - [macOS](./scripts/README.md)
+   2.1 Setup scripts have been provided for some platforms - [macOS](./scripts/README.md)
 3. The [Makefile](./Makefile) has the commands required for you to get around to working with Veil.
 
 For a detailed setup guide please refer [setup docs](./docs/docs/contribution/setup.md)
@@ -40,8 +41,8 @@ Refer the base [Caddyfile](./Caddyfile) for the config around registering Veil a
 
 - [Veil Docs](https://try-veil.github.io/veil/)
 - OpenAPI swagger reference
-  - [Veil Core](https://try-veil.github.io/veil/docs/swagger/veil-api-management)
-
+  - [Veil Core](https://try-veil.github.io/veil/docs/swagger/veil-api-management) | Will be fixed later (Currently massively changed)
+  - [Platform API](https://veil.apidocumentation.com/reference) | Auth token details missing. See [local docs](./packages/platform/api/docs.json).
 
 ## License
 

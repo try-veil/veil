@@ -1,0 +1,50 @@
+{
+  "name": "bff",
+  "version": "1.0.50",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist",
+    "test": "bun test",
+    "test:unit": "bun test tests/unit",
+    "test:e2e": "bun run tests/run-tests.ts",
+    "test:e2e:verbose": "bun run tests/run-tests.ts --verbose",
+    "test:e2e:coverage": "bun run tests/run-tests.ts --coverage",
+    "test:watch": "bun test --watch",
+    "test:ci": "bun run tests/run-tests.ts --bail --coverage",
+    "lint": "echo 'Lint not configured - add eslint/prettier if needed'",
+    "typecheck": "bun --check src/index.ts",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "bun run src/scripts/migrate.ts",
+    "db:seed": "bun run src/scripts/seed.ts",
+    "db:reset": "bun run src/scripts/reset.ts",
+    "docs:openapi": "bun run scripts/generate-openapi.ts",
+    "docs:generate": "bun run docs:openapi"
+  },
+  "dependencies": {
+    "@elysiajs/bearer": "^0.8.0",
+    "@elysiajs/cors": "^0.8.0",
+    "@elysiajs/jwt": "^0.8.0",
+    "@elysiajs/swagger": "^0.8.0",
+    "@fusionauth/typescript-client": "^1.60.0",
+    "bcryptjs": "^2.4.3",
+    "drizzle-orm": "^0.44.5",
+    "elysia": "latest",
+    "js-yaml": "^4.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "postgres": "^3.4.3",
+    "uuid": "^9.0.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/js-yaml": "^4.0.9",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/uuid": "^9.0.7",
+    "bun-types": "latest",
+    "drizzle-kit": "^0.31.4"
+  },
+  "module": "src/index.js"
+}

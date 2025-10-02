@@ -1,0 +1,347 @@
+---
+description: 
+globs: packages/**/handlers/*.go
+alwaysApply: false
+---
+ ---
+description: Guidelines for implementing API handlers in Go
+globs: packages/**/handlers/*.go
+alwaysApply: false
+---
+# API Handlers Implementation
+
+## Basic Principles
+
+API handlers should be:
+1. Focused on a single responsibility
+2. Well-structured with clear request/response flow
+3. Properly validate input
+4. Return appropriate status codes and error messages
+5. Be well-documented
+
+## Handler Structure
+
+Handlers should follow this general structure:
+
+```go
+package handlers
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    
+    "github.com/your-org/your-project/internal/models"
+    "github.com/your-org/your-project/internal/services"
+    "go.uber.org/zap"
+)
+
+// APIHandler handles API endpoints
+type APIHandler struct {
+    service *services.Service
+    logger  *zap.Logger
+}
+
+// NewAPIHandler creates a new APIHandler
+func NewAPIHandler(service *services.Service, logger *zap.Logger) *APIHandler {
+    return &APIHandler{
+        service: service,
+        logger:  logger,
+    }
+}
+
+// GetItem handles GET /api/items/:id requests
+func (h *APIHandler) GetItem(w http.ResponseWriter, r *http.Request) {
+    // Get ID from URL path or query parameters
+    id := r.URL.Query().Get("id")
+    if id == "" {
+        h.sendErrorResponse(w, http.StatusBadRequest, "missing id parameter")
+        return
+    }
+    
+    // Call service layer
+    item, err := h.service.GetItem(r.Context(), id)
+    if err != nil {
+        h.logger.Error("failed to get item", 
+            zap.String("id", id), 
+            zap.Error(err))
+        
+        if errors.Is(err, services.ErrItemNotFound) {
+            h.sendErrorResponse(w, http.StatusNotFound, "item not found")
+            return
+        }
+        
+        h.sendErrorResponse(w, http.StatusInternalServerError, "internal server error")
+        return
+    }
+    
+    // Send successful response
+    h.sendJSONResponse(w, http.StatusOK, item)
+}
+
+// CreateItem handles POST /api/items requests
+func (h *APIHandler) CreateItem(w http.ResponseWriter, r *http.Request) {
+    // Parse and validate request body
+    var req models.CreateItemRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        h.sendErrorResponse(w, http.StatusBadRequest, "invalid request body")
+        return
+    }
+    
+    // Validate request
+    if err := req.Validate(); err != nil {
+        h.sendErrorResponse(w, http.StatusBadRequest, err.Error())
+        return
+    }
+    
+    // Call service layer
+    item, err := h.service.CreateItem(r.Context(), req)
+    if err != nil {
+        h.logger.Error("failed to create item", 
+            zap.Any("request", req), 
+            zap.Error(err))
+        
+        h.sendErrorResponse(w, http.StatusInternalServerError, "internal server error")
+        return
+    }
+    
+    // Send successful response
+    h.sendJSONResponse(w, http.StatusCreated, item)
+}
+
+// Helper methods
+
+// sendJSONResponse sends a JSON response with the given status code and data
+func (h *APIHandler) sendJSONResponse(w http.ResponseWriter, status int, data interface{}) {
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(status)
+    
+    if err := json.NewEncoder(w).Encode(data); err != nil {
+        h.logger.Error("failed to encode response", zap.Error(err))
+        http.Error(w, "internal server error", http.StatusInternalServerError)
+    }
+}
+
+// sendErrorResponse sends an error response with the given status code and message
+func (h *APIHandler) sendErrorResponse(w http.ResponseWriter, status int, message string) {
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(status)
+    
+    response := map[string]string{"error": message}
+    if err := json.NewEncoder(w).Encode(response); err != nil {
+        h.logger.Error("failed to encode error response", zap.Error(err))
+        http.Error(w, "internal server error", http.StatusInternalServerError)
+    }
+}
+```
+
+## Best Practices
+
+### 1. Use Handler Methods for Different Endpoints
+
+Group related endpoints in a handler struct and use methods for each endpoint:
+
+```go
+// UserHandler handles user-related endpoints
+type UserHandler struct {
+    service *services.UserService
+    logger  *zap.Logger
+}
+
+// GetUser handles GET /users/:id
+func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+    // Implementation
+}
+
+// CreateUser handles POST /users
+func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
+    // Implementation
+}
+
+// UpdateUser handles PUT /users/:id
+func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+    // Implementation
+}
+
+// DeleteUser handles DELETE /users/:id
+func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+    // Implementation
+}
+```
+
+### 2. Validate Input Data
+
+Always validate input data before processing:
+
+```go
+// Request validation
+type CreateUserRequest struct {
+    Name     string `json:"name"`
+    Email    string `json:"email"`
+    Password string `json:"password"`
+}
+
+func (r CreateUserRequest) Validate() error {
+    if r.Name == "" {
+        return fmt.Errorf("name is required")
+    }
+    
+    if r.Email == "" {
+        return fmt.Errorf("email is required")
+    }
+    
+    if !isValidEmail(r.Email) {
+        return fmt.Errorf("invalid email format")
+    }
+    
+    if len(r.Password) < 8 {
+        return fmt.Errorf("password must be at least 8 characters")
+    }
+    
+    return nil
+}
+
+// In handler
+func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
+    var req CreateUserRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        h.sendErrorResponse(w, http.StatusBadRequest, "invalid request body")
+        return
+    }
+    
+    if err := req.Validate(); err != nil {
+        h.sendErrorResponse(w, http.StatusBadRequest, err.Error())
+        return
+    }
+    
+    // Continue processing...
+}
+```
+
+### 3. Use Appropriate Status Codes
+
+Return appropriate HTTP status codes for different scenarios:
+
+```go
+// Success status codes
+// 200 OK - Standard response for successful HTTP requests
+h.sendJSONResponse(w, http.StatusOK, result)
+
+// 201 Created - Request has been fulfilled and a new resource created
+h.sendJSONResponse(w, http.StatusCreated, newResource)
+
+// 204 No Content - Request processed successfully but no content to return
+w.WriteHeader(http.StatusNoContent)
+
+// Client error status codes
+// 400 Bad Request - Malformed request or invalid input
+h.sendErrorResponse(w, http.StatusBadRequest, "invalid input")
+
+// 401 Unauthorized - Authentication required
+h.sendErrorResponse(w, http.StatusUnauthorized, "authentication required")
+
+// 403 Forbidden - Authenticated but not authorized
+h.sendErrorResponse(w, http.StatusForbidden, "not authorized")
+
+// 404 Not Found - Resource not found
+h.sendErrorResponse(w, http.StatusNotFound, "resource not found")
+
+// 409 Conflict - Request conflicts with current state
+h.sendErrorResponse(w, http.StatusConflict, "resource already exists")
+
+// Server error status codes
+// 500 Internal Server Error - Generic server error
+h.sendErrorResponse(w, http.StatusInternalServerError, "internal server error")
+```
+
+### 4. Structured Logging
+
+Use structured logging to make debugging easier:
+
+```go
+// With context fields
+h.logger.Info("processing request",
+    zap.String("user_id", userID),
+    zap.String("request_id", requestID),
+    zap.String("method", r.Method),
+    zap.String("path", r.URL.Path))
+
+// Error logging
+h.logger.Error("failed to process request",
+    zap.String("user_id", userID),
+    zap.String("request_id", requestID),
+    zap.Any("request_body", requestBody),
+    zap.Error(err))
+```
+
+### 5. Middleware Integration
+
+Use middleware for cross-cutting concerns:
+
+```go
+// Middleware chaining
+http.HandleFunc("/api/resource", authMiddleware(
+    loggingMiddleware(
+        rateLimitMiddleware(
+            handler.HandleResource))))
+
+// Middleware example
+func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        // Get token from header
+        token := r.Header.Get("Authorization")
+        if token == "" {
+            http.Error(w, "unauthorized", http.StatusUnauthorized)
+            return
+        }
+        
+        // Validate token
+        user, err := validateToken(token)
+        if err != nil {
+            http.Error(w, "invalid token", http.StatusUnauthorized)
+            return
+        }
+        
+        // Set user in context
+        ctx := context.WithValue(r.Context(), "user", user)
+        next(w, r.WithContext(ctx))
+    }
+}
+```
+
+### 6. Error Handling
+
+Handle errors consistently:
+
+```go
+// Error handling in handlers
+func (h *ItemHandler) GetItem(w http.ResponseWriter, r *http.Request) {
+    id := r.URL.Query().Get("id")
+    if id == "" {
+        h.sendErrorResponse(w, http.StatusBadRequest, "missing id parameter")
+        return
+    }
+    
+    item, err := h.service.GetItem(r.Context(), id)
+    if err != nil {
+        h.logger.Error("failed to get item", 
+            zap.String("id", id), 
+            zap.Error(err))
+        
+        // Map domain errors to HTTP status codes
+        switch {
+        case errors.Is(err, services.ErrItemNotFound):
+            h.sendErrorResponse(w, http.StatusNotFound, "item not found")
+        case errors.Is(err, services.ErrInvalidID):
+            h.sendErrorResponse(w, http.StatusBadRequest, "invalid item id")
+        case errors.Is(err, services.ErrPermissionDenied):
+            h.sendErrorResponse(w, http.StatusForbidden, "permission denied")
+        default:
+            h.sendErrorResponse(w, http.StatusInternalServerError, "internal server error")
+        }
+        return
+    }
+    
+    h.sendJSONResponse(w, http.StatusOK, item)
+}
+```

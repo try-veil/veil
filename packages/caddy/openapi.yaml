@@ -1,0 +1,719 @@
+openapi: 3.0.3
+info:
+  title: Veil API Management Server
+  description: |
+    Veil is a Caddy module that provides API gateway functionality with subscription validation and key management.
+    This documentation covers the management API endpoints for onboarding APIs, managing API keys, and configuring routes.
+    
+    The Veil handler operates on two main ports:
+    - Port 2020: Management API for onboarding and configuration
+    - Port 2021: Proxied APIs with validation
+    
+    ## Key Features
+    - API onboarding with upstream configuration
+    - API key management with activation/deactivation
+    - Method-based access control
+    - Required header validation
+    - Dynamic Caddy configuration updates
+  version: 1.0.0
+  contact:
+    name: Veil Support
+    url: https://github.com/try-veil/veil
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:2020
+    description: Management API Server
+  - url: http://localhost:2021
+    description: Proxied APIs Server
+
+paths:
+  /veil/api/routes:
+    post:
+      summary: Onboard a new API
+      description: |
+        Onboards a new API by creating the configuration and updating Caddy routes.
+        This endpoint creates the API configuration in the database and dynamically
+        updates the Caddy server configuration to proxy requests to the upstream service.
+      operationId: onboardAPI
+      tags:
+        - API Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/APIOnboardRequest'
+            examples:
+              weather-api:
+                summary: Weather API Example
+                value:
+                  path: "/weather/*"
+                  upstream: "http://localhost:8083/weather"
+                  required_subscription: "weather-subscription"
+                  methods: ["GET"]
+                  required_headers: ["X-Test-Header"]
+                  api_keys:
+                    - key: "weather-test-key-1"
+                      name: "Weather Test Key"
+                      is_active: true
+              order-api:
+                summary: Order API Example
+                value:
+                  path: "/order/*"
+                  upstream: "http://localhost:8082/order"
+                  required_subscription: "order-subscription"
+                  methods: ["GET", "POST", "PUT", "DELETE"]
+                  required_headers: ["X-Auth-Token"]
+                  parameters:
+                    - name: "id"
+                      type: "path"
+                      required: true
+                  api_keys:
+                    - key: "order-api-key-1"
+                      name: "Order API Key 1"
+                      is_active: true
+                    - key: "order-api-key-2"
+                      name: "Order API Key 2"
+                      is_active: false
+      responses:
+        '201':
+          description: API onboarded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+              example:
+                status: "success"
+                message: "API onboarded successfully"
+                api:
+                  id: 1
+                  path: "/weather/*"
+                  upstream: "http://localhost:8083/weather"
+                  required_subscription: "weather-subscription"
+                  methods:
+                    - method: "GET"
+                  api_keys:
+                    - key: "weather-test-key-1"
+                      name: "Weather Test Key"
+                      is_active: true
+        '400':
+          description: Bad request - missing required fields or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Path and upstream are required"
+        '409':
+          description: Conflict - API path already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "API path already exists"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Failed to store API configuration"
+
+  /veil/api/routes/{apiPath}:
+    put:
+      summary: Update an existing API
+      description: |
+        Updates an existing API configuration. The API path is used as the identifier.
+        This operation will update the database and reload the Caddy configuration.
+      operationId: updateAPI
+      tags:
+        - API Management
+      parameters:
+        - name: apiPath
+          in: path
+          required: true
+          description: The API path to update (URL-encoded)
+          schema:
+            type: string
+          example: "%2Fweather%2F%2A"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/APIOnboardRequest'
+      responses:
+        '201':
+          description: API updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '404':
+          description: API not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    patch:
+      summary: Partially update an existing API
+      description: |
+        Partially updates an existing API configuration. Only provided fields will be updated.
+      operationId: patchAPI
+      tags:
+        - API Management
+      parameters:
+        - name: apiPath
+          in: path
+          description: The API path to update (URL-encoded)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/APIOnboardRequest'
+      responses:
+        '201':
+          description: API updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '404':
+          description: API not found
+        '500':
+          description: Internal server error
+
+    delete:
+      summary: Delete an API
+      description: |
+        Deletes an API configuration from the database. This will also remove
+        the corresponding routes from the Caddy configuration.
+      operationId: deleteAPI
+      tags:
+        - API Management
+      parameters:
+        - name: apiPath
+          in: path
+          description: The API path to delete (URL-encoded)
+          schema:
+            type: string
+          example: "%2Fweather%2F%2A"
+      responses:
+        '200':
+          description: API deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+              example:
+                status: "success"
+                message: "API deleted successfully"
+        '404':
+          description: API not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /veil/api/keys:
+    post:
+      summary: Add API keys to an existing API
+      description: |
+        Adds new API keys to an existing API configuration. The keys will be
+        immediately available for authentication.
+      operationId: addAPIKeys
+      tags:
+        - API Key Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/APIKeysRequest'
+            example:
+              path: "/weather/*"
+              api_keys:
+                - key: "new-weather-key-1"
+                  name: "New Weather Key 1"
+                  is_active: true
+                - key: "new-weather-key-2"
+                  name: "New Weather Key 2"
+                  is_active: false
+      responses:
+        '201':
+          description: API keys added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '400':
+          description: Bad request - missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Path and at least one API key are required"
+        '404':
+          description: API not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Add API keys to an existing API (alternative method)
+      description: |
+        Alternative endpoint for adding API keys using PUT method.
+        Functionally identical to the POST method.
+      operationId: addAPIKeysPut
+      tags:
+        - API Key Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/APIKeysRequest'
+      responses:
+        '201':
+          description: API keys added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '400':
+          description: Bad request
+        '404':
+          description: API not found
+        '500':
+          description: Internal server error
+
+    delete:
+      summary: Delete an API key
+      description: |
+        Deletes a specific API key from an API configuration.
+        The key will be immediately revoked and no longer usable for authentication.
+      operationId: deleteAPIKey
+      tags:
+        - API Key Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/APIKeyDeleteRequest'
+            example:
+              path: "/weather/*"
+              api_key: "weather-key-to-delete"
+      responses:
+        '200':
+          description: API key deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+              example:
+                status: "success"
+                message: "API key deleted successfully"
+        '400':
+          description: Bad request - missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Path and API key are required"
+        '404':
+          description: API or API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /veil/api/keys/status:
+    put:
+      summary: Update API key status
+      description: |
+        Updates the active status of an API key. This can be used to
+        activate or deactivate keys without deleting them.
+      operationId: updateAPIKeyStatus
+      tags:
+        - API Key Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/APIKeyStatusRequest'
+            example:
+              path: "/weather/*"
+              api_key: "weather-test-key-1"
+              is_active: false
+      responses:
+        '200':
+          description: API key status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+              example:
+                status: "success"
+                message: "API key status updated successfully"
+                api:
+                  id: 1
+                  path: "/weather/*"
+                  api_keys:
+                    - key: "weather-test-key-1"
+                      name: "Weather Test Key"
+                      is_active: false
+        '400':
+          description: Bad request - missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Path and API key are required"
+        '404':
+          description: API not found or API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    patch:
+      summary: Update API key status (alternative method)
+      description: |
+        Alternative endpoint for updating API key status using PATCH method.
+        Functionally identical to the PUT method.
+      operationId: updateAPIKeyStatusPatch
+      tags:
+        - API Key Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/APIKeyStatusRequest'
+      responses:
+        '200':
+          description: API key status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '400':
+          description: Bad request
+        '404':
+          description: API not found or API key not found
+        '500':
+          description: Internal server error
+
+components:
+  schemas:
+    APIOnboardRequest:
+      type: object
+      required:
+        - path
+        - upstream
+        - methods
+      properties:
+        path:
+          type: string
+          description: |
+            The API path pattern. Should include wildcards (*) for sub-path matching.
+            Example: "/weather/*" will match "/weather/current", "/weather/forecast", etc.
+          example: "/weather/*"
+        upstream:
+          type: string
+          format: uri
+          description: |
+            The upstream service URL where requests should be proxied.
+            Can be HTTP or HTTPS.
+          example: "http://localhost:8083/weather"
+        required_subscription:
+          type: string
+          description: |
+            The subscription type required to access this API.
+            Used for billing and access control.
+          example: "weather-subscription"
+        methods:
+          type: array
+          items:
+            type: string
+            enum: [GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD]
+          description: |
+            HTTP methods allowed for this API.
+            Only listed methods will be accepted.
+          example: ["GET", "POST"]
+        required_headers:
+          type: array
+          items:
+            type: string
+          description: |
+            List of header names that must be present in requests.
+            Requests missing these headers will be rejected with 400.
+          example: ["X-Test-Header", "Authorization"]
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+          description: |
+            API parameter definitions for validation and documentation.
+        api_keys:
+          type: array
+          items:
+            $ref: '#/components/schemas/APIKey'
+          description: |
+            Initial set of API keys for this API.
+            Additional keys can be added later via the keys endpoint.
+
+    Parameter:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+          description: Parameter name
+          example: "user_id"
+        type:
+          type: string
+          enum: [query, path, header, body]
+          description: Parameter location type
+          example: "query"
+        required:
+          type: boolean
+          default: false
+          description: Whether this parameter is required
+          example: true
+
+    APIKey:
+      type: object
+      required:
+        - key
+        - name
+      properties:
+        key:
+          type: string
+          description: |
+            The actual API key value used for authentication.
+            Should be unique across all APIs.
+          example: "weather-api-key-123"
+        name:
+          type: string
+          description: |
+            Human-readable name for the API key.
+            Used for identification and management.
+          example: "Weather API Key - Production"
+        is_active:
+          type: boolean
+          default: true
+          description: |
+            Whether this API key is active and can be used for authentication.
+            Inactive keys will be rejected.
+          example: true
+        expires_at:
+          type: string
+          format: date-time
+          description: |
+            Optional expiration date for the API key.
+            If set, the key will be invalid after this date.
+          example: "2024-12-31T23:59:59Z"
+
+    APIKeysRequest:
+      type: object
+      required:
+        - path
+        - api_keys
+      properties:
+        path:
+          type: string
+          description: The API path to add keys to
+          example: "/weather/*"
+        api_keys:
+          type: array
+          items:
+            $ref: '#/components/schemas/APIKey'
+          minItems: 1
+          description: Array of API keys to add
+
+    APIKeyStatusRequest:
+      type: object
+      required:
+        - path
+        - api_key
+      properties:
+        path:
+          type: string
+          description: The API path containing the key
+          example: "/weather/*"
+        api_key:
+          type: string
+          description: The API key to update
+          example: "weather-test-key-1"
+        is_active:
+          type: boolean
+          description: New active status for the key
+          example: false
+
+    APIKeyDeleteRequest:
+      type: object
+      required:
+        - path
+        - api_key
+      properties:
+        path:
+          type: string
+          description: The API path containing the key to delete
+          example: "/weather/*"
+        api_key:
+          type: string
+          description: The API key to delete
+          example: "weather-key-to-delete"
+
+    APIResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success, error]
+          description: Response status indicator
+          example: "success"
+        message:
+          type: string
+          description: Human-readable response message
+          example: "API onboarded successfully"
+        api:
+          type: object
+          description: |
+            API configuration object (structure varies by endpoint).
+            Contains the complete API configuration including keys, methods, etc.
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message describing what went wrong
+          example: "Path and upstream are required"
+
+    APIConfig:
+      type: object
+      description: Complete API configuration object
+      properties:
+        id:
+          type: integer
+          description: Unique API configuration ID
+          example: 1
+        path:
+          type: string
+          description: API path pattern
+          example: "/weather/*"
+        upstream:
+          type: string
+          description: Upstream service URL
+          example: "http://localhost:8083/weather"
+        required_subscription:
+          type: string
+          description: Required subscription type
+          example: "weather-subscription"
+        last_accessed:
+          type: string
+          format: date-time
+          description: Last time this API was accessed
+        request_count:
+          type: integer
+          description: Total number of requests made to this API
+          example: 1250
+        methods:
+          type: array
+          items:
+            type: object
+            properties:
+              method:
+                type: string
+                example: "GET"
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+        required_headers:
+          type: array
+          items:
+            type: string
+          example: ["X-Test-Header"]
+        api_keys:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/APIKey'
+              - type: object
+                properties:
+                  api_config_id:
+                    type: integer
+                    description: Reference to the parent API configuration
+                    example: 1
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Subscription-Key
+      description: |
+        API key for accessing protected endpoints on port 2021.
+        This is not used for the management API on port 2020.
+
+tags:
+  - name: API Management
+    description: |
+      Operations for onboarding, updating, and deleting API configurations.
+      These endpoints manage the core API gateway functionality.
+  - name: API Key Management
+    description: |
+      Operations for managing API keys including adding, deleting, and
+      updating the status of keys for existing APIs.
+
+externalDocs:
+  description: Veil GitHub Repository
+  url: https://github.com/try-veil/veil

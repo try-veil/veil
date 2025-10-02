@@ -1,0 +1,360 @@
+---
+description: Testing guidelines and best practices for Go
+globs: packages/**/test/**/*.go
+alwaysApply: false
+---
+# Testing Guidelines
+
+## Basic Principles
+
+1. Write tests for all public functions and methods
+2. Follow the AAA (Arrange-Act-Assert) pattern
+3. Use table-driven tests when testing multiple cases
+4. Mock external dependencies
+5. Focus on testing behavior, not implementation details
+6. Write tests that are easy to understand and maintain
+
+## Test Structure
+
+### Unit Tests
+
+Unit tests should follow this structure:
+
+```go
+package handler_test // Use _test suffix for external package testing
+
+import (
+    "context"
+    "testing"
+    
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
+    
+    "github.com/your-org/your-project/internal/handlers"
+    "github.com/your-org/your-project/internal/models"
+    "github.com/your-org/your-project/internal/mocks"
+)
+
+func TestHandlerMethod(t *testing.T) {
+    // ARRANGE
+    // Set up test dependencies
+    mockService := mocks.NewMockService()
+    logger := mocks.NewMockLogger()
+    
+    handler := handlers.NewHandler(mockService, logger)
+    
+    // Set up expectations
+    expectedInput := "test-input"
+    expectedOutput := "test-output"
+    mockService.On("ServiceMethod", expectedInput).Return(expectedOutput, nil)
+    
+    // ACT
+    // Call the method being tested
+    result, err := handler.HandleMethod(context.Background(), expectedInput)
+    
+    // ASSERT
+    // Verify the results
+    require.NoError(t, err)
+    assert.Equal(t, expectedOutput, result)
+    mockService.AssertExpectations(t)
+}
+```
+
+### Table-Driven Tests
+
+Use table-driven tests for testing multiple scenarios:
+
+```go
+func TestValidateUser(t *testing.T) {
+    // Define test cases
+    testCases := []struct {
+        name        string
+        input       models.User
+        expectedErr error
+    }{
+        {
+            name: "valid user",
+            input: models.User{
+                Name:  "John Doe",
+                Email: "john@example.com",
+                Age:   30,
+            },
+            expectedErr: nil,
+        },
+        {
+            name: "missing name",
+            input: models.User{
+                Email: "john@example.com",
+                Age:   30,
+            },
+            expectedErr: models.ErrMissingName,
+        },
+        {
+            name: "invalid email",
+            input: models.User{
+                Name:  "John Doe",
+                Email: "invalid-email",
+                Age:   30,
+            },
+            expectedErr: models.ErrInvalidEmail,
+        },
+        {
+            name: "negative age",
+            input: models.User{
+                Name:  "John Doe",
+                Email: "john@example.com",
+                Age:   -5,
+            },
+            expectedErr: models.ErrInvalidAge,
+        },
+    }
+    
+    // Run test cases
+    for _, tc := range testCases {
+        t.Run(tc.name, func(t *testing.T) {
+            // Act
+            err := models.ValidateUser(tc.input)
+            
+            // Assert
+            if tc.expectedErr != nil {
+                assert.ErrorIs(t, err, tc.expectedErr)
+            } else {
+                assert.NoError(t, err)
+            }
+        })
+    }
+}
+```
+
+### HTTP Handler Tests
+
+Test HTTP handlers using httptest package:
+
+```go
+func TestHandleGetUser(t *testing.T) {
+    // Arrange
+    mockService := mocks.NewMockService()
+    handler := handlers.NewUserHandler(mockService)
+    
+    userID := "user-123"
+    mockUser := models.User{
+        ID:    userID,
+        Name:  "John Doe",
+        Email: "john@example.com",
+    }
+    
+    mockService.On("GetUser", userID).Return(mockUser, nil)
+    
+    // Create a request
+    req := httptest.NewRequest("GET", "/users/"+userID, nil)
+    rec := httptest.NewRecorder()
+    
+    // Set route params (using chi router as an example)
+    chiCtx := chi.NewRouteContext()
+    chiCtx.URLParams.Add("id", userID)
+    req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
+    
+    // Act
+    handler.HandleGetUser(rec, req)
+    
+    // Assert
+    assert.Equal(t, http.StatusOK, rec.Code)
+    
+    var response models.User
+    err := json.NewDecoder(rec.Body).Decode(&response)
+    require.NoError(t, err)
+    
+    assert.Equal(t, mockUser.ID, response.ID)
+    assert.Equal(t, mockUser.Name, response.Name)
+    assert.Equal(t, mockUser.Email, response.Email)
+    
+    mockService.AssertExpectations(t)
+}
+```
+
+## Test Doubles
+
+Use appropriate test doubles for dependencies:
+
+### Mocks
+
+Use mocks for verifying interactions:
+
+```go
+// Using testify/mock
+type MockUserRepository struct {
+    mock.Mock
+}
+
+func (m *MockUserRepository) GetUser(id string) (models.User, error) {
+    args := m.Called(id)
+    return args.Get(0).(models.User), args.Error(1)
+}
+
+func (m *MockUserRepository) SaveUser(user models.User) error {
+    args := m.Called(user)
+    return args.Error(0)
+}
+
+// In test
+func TestUserService(t *testing.T) {
+    mockRepo := new(MockUserRepository)
+    service := services.NewUserService(mockRepo)
+    
+    userID := "user-123"
+    mockUser := models.User{ID: userID, Name: "John"}
+    
+    // Set expectations
+    mockRepo.On("GetUser", userID).Return(mockUser, nil)
+    
+    // Act
+    user, err := service.GetUser(userID)
+    
+    // Assert
+    require.NoError(t, err)
+    assert.Equal(t, mockUser, user)
+    mockRepo.AssertExpectations(t)
+}
+```
+
+### Stubs
+
+Use stubs for providing fixed responses:
+
+```go
+// Stub implementation
+type StubUserRepository struct {
+    users map[string]models.User
+}
+
+func NewStubUserRepository(predefinedUsers map[string]models.User) *StubUserRepository {
+    return &StubUserRepository{
+        users: predefinedUsers,
+    }
+}
+
+func (s *StubUserRepository) GetUser(id string) (models.User, error) {
+    user, ok := s.users[id]
+    if !ok {
+        return models.User{}, errors.New("user not found")
+    }
+    return user, nil
+}
+
+// In test
+func TestUserService(t *testing.T) {
+    // Create stub with predefined data
+    predefinedUsers := map[string]models.User{
+        "user-123": {ID: "user-123", Name: "John"},
+        "user-456": {ID: "user-456", Name: "Jane"},
+    }
+    stubRepo := NewStubUserRepository(predefinedUsers)
+    
+    service := services.NewUserService(stubRepo)
+    
+    // Act
+    user, err := service.GetUser("user-123")
+    
+    // Assert
+    require.NoError(t, err)
+    assert.Equal(t, "John", user.Name)
+}
+```
+
+## Integration Tests
+
+For integration tests that require actual dependencies:
+
+```go
+// Integration test
+func TestUserRepositoryIntegration(t *testing.T) {
+    // Skip in short mode
+    if testing.Short() {
+        t.Skip("skipping integration test in short mode")
+    }
+    
+    // Set up test database
+    db, err := setupTestDatabase()
+    require.NoError(t, err)
+    defer cleanupTestDatabase(db)
+    
+    // Create repository with real database
+    repo := repository.NewUserRepository(db)
+    
+    // Test data
+    testUser := models.User{
+        ID:    uuid.New().String(),
+        Name:  "Test User",
+        Email: "test@example.com",
+    }
+    
+    // Act - Create user
+    err = repo.SaveUser(testUser)
+    require.NoError(t, err)
+    
+    // Act - Get user
+    retrievedUser, err := repo.GetUser(testUser.ID)
+    
+    // Assert
+    require.NoError(t, err)
+    assert.Equal(t, testUser.ID, retrievedUser.ID)
+    assert.Equal(t, testUser.Name, retrievedUser.Name)
+    assert.Equal(t, testUser.Email, retrievedUser.Email)
+}
+```
+
+## Test Helpers
+
+Create test helpers for common setup and assertions:
+
+```go
+// Test helpers
+func setupTestHandler(t *testing.T) (*handlers.UserHandler, *mocks.MockUserService) {
+    t.Helper()
+    
+    mockService := mocks.NewMockUserService()
+    logger := mocks.NewMockLogger()
+    handler := handlers.NewUserHandler(mockService, logger)
+    
+    return handler, mockService
+}
+
+func assertJSONResponse(t *testing.T, recorder *httptest.ResponseRecorder, expectedStatus int, expectedBody interface{}) {
+    t.Helper()
+    
+    // Check status code
+    assert.Equal(t, expectedStatus, recorder.Code)
+    
+    // Check content type
+    assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
+    
+    // Check body
+    var actualBody interface{}
+    err := json.Unmarshal(recorder.Body.Bytes(), &actualBody)
+    require.NoError(t, err)
+    
+    expectedJSON, err := json.Marshal(expectedBody)
+    require.NoError(t, err)
+    
+    var expectedBodyInterface interface{}
+    err = json.Unmarshal(expectedJSON, &expectedBodyInterface)
+    require.NoError(t, err)
+    
+    assert.Equal(t, expectedBodyInterface, actualBody)
+}
+```
+
+## Test Coverage
+
+Aim for high test coverage but focus on critical paths:
+
+```bash
+# Run tests with coverage
+go test ./... -coverprofile=coverage.out
+
+# View coverage in browser
+go tool cover -html=coverage.out
+
+# Check coverage percentage
+go tool cover -func=coverage.out
+``` 
