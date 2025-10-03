@@ -1,9 +1,46 @@
 import { Elysia, t } from 'elysia';
 import { db, users, apiSubscriptions, apis, apiKeys } from '../db';
 import { authMiddleware } from '../middleware/auth';
+import { fusionAuthService } from '../services/fusionauth-service';
 import { updateProfileSchema, changePasswordSchema, paginationSchema } from '../validation/schemas';
 import { AuthUtils } from '../utils/auth';
 import { eq, and, desc, count } from 'drizzle-orm';
+
+// Helper function for inline auth
+async function authenticateUser(headers: any, set: any) {
+  const authHeader = headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    set.status = 401;
+    return null;
+  }
+
+  const token = authHeader.substring(7);
+  const validationResult = await fusionAuthService.validateToken(token);
+
+  if (!validationResult.valid || !validationResult.user) {
+    set.status = 401;
+    return null;
+  }
+
+  const fusionAuthUser = validationResult.user;
+
+  const [localUser] = await db.select({
+    id: users.id,
+    uid: users.uid,
+    email: users.email,
+    firstName: users.firstName,
+    lastName: users.lastName,
+    role: users.role,
+    isActive: users.isActive,
+  }).from(users).where(eq(users.email, fusionAuthUser.email)).limit(1);
+
+  if (!localUser || !localUser.isActive) {
+    set.status = 401;
+    return null;
+  }
+
+  return localUser;
+}
 
 export const profileRoutes = new Elysia({ prefix: '/profile' })
   .use(authMiddleware)
@@ -244,8 +281,14 @@ export const profileRoutes = new Elysia({ prefix: '/profile' })
       };
     }
   })
-  .get('/subscriptions', async ({ query, user, set }) => {
+  .get('/subscriptions', async ({ query, user, set, headers }) => {
     try {
+      // WORKAROUND: Inline auth check
+      const authenticatedUser = await authenticateUser(headers, set);
+      if (!authenticatedUser) {
+        return { success: false, message: 'Authentication required' };
+      }
+
       const { page = 1, limit = 10 } = paginationSchema.parse(query);
       const offset = (page - 1) * limit;
 
@@ -272,14 +315,14 @@ export const profileRoutes = new Elysia({ prefix: '/profile' })
       })
       .from(apiSubscriptions)
       .innerJoin(apis, eq(apiSubscriptions.apiId, apis.id))
-      .where(eq(apiSubscriptions.userId, user.id))
+      .where(eq(apiSubscriptions.userId, authenticatedUser.id))
       .orderBy(desc(apiSubscriptions.createdAt))
       .limit(limit)
       .offset(offset);
 
       const [totalResult] = await db.select({ count: count() })
         .from(apiSubscriptions)
-        .where(eq(apiSubscriptions.userId, user.id));
+        .where(eq(apiSubscriptions.userId, authenticatedUser.id));
 
       const total = totalResult.count;
       const totalPages = Math.ceil(total / limit);

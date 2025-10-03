@@ -2,6 +2,7 @@ import { Elysia, t } from 'elysia';
 import { z } from 'zod';
 import { MarketplaceService } from '../services/marketplace-service';
 import { authMiddleware } from '../middleware/auth';
+import { fusionAuthService } from '../services/fusionauth-service';
 import { apiSearchSchema, createSubscriptionSchema, createRatingSchema } from '../validation/schemas';
 import {
   marketplaceQuerySchema,
@@ -11,7 +12,7 @@ import {
   type APIUidParam,
   type FeaturedQuery
 } from '../validation/marketplace-validation';
-import { db, apis, apiSubscriptions, apiRatings } from '../db';
+import { db, apis, apiSubscriptions, apiRatings, users } from '../db';
 import { eq, and, sql, avg } from 'drizzle-orm';
 
 const marketplaceService = new MarketplaceService();
@@ -224,10 +225,57 @@ export const marketplaceRoutes = new Elysia({ prefix: '/marketplace' })
 
   // Authenticated routes
   .use(authMiddleware)
-  .post('/apis/:uid/subscribe', async ({ params: { uid }, body, user, set }) => {
+  .post('/apis/:uid/subscribe', async ({ params: { uid }, body, user, set, headers }) => {
     try {
-      console.log('Subscribe route - user object:', user);
-      console.log('Subscribe route - user.id:', user?.id);
+      // WORKAROUND: Inline auth check since middleware isn't executing
+      const authHeader = headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        set.status = 401;
+        return {
+          success: false,
+          message: 'Authentication required'
+        };
+      }
+
+      const token = authHeader.substring(7);
+      const validationResult = await fusionAuthService.validateToken(token);
+
+      if (!validationResult.valid || !validationResult.user) {
+        set.status = 401;
+        return {
+          success: false,
+          message: 'Invalid or expired token'
+        };
+      }
+
+      const fusionAuthUser = validationResult.user;
+
+      // Get local user by email
+      const [localUser] = await db.select({
+        id: users.id,
+        uid: users.uid,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: users.role,
+        isActive: users.isActive,
+      }).from(users)
+        .where(eq(users.email, fusionAuthUser.email))
+        .limit(1);
+
+      if (!localUser || !localUser.isActive) {
+        set.status = 401;
+        return {
+          success: false,
+          message: 'User not found or inactive'
+        };
+      }
+
+      const authenticatedUser = localUser;
+      // END WORKAROUND
+
+      console.log('Subscribe route - user object:', authenticatedUser);
+      console.log('Subscribe route - user.id:', authenticatedUser.id);
 
       // Create a schema without apiId since we get it from the URL
       const marketplaceSubscriptionSchema = z.object({
@@ -257,7 +305,7 @@ export const marketplaceRoutes = new Elysia({ prefix: '/marketplace' })
       const [existingSubscription] = await db.select()
         .from(apiSubscriptions)
         .where(and(
-          eq(apiSubscriptions.userId, user.id),
+          eq(apiSubscriptions.userId, authenticatedUser.id),
           eq(apiSubscriptions.apiId, api.id),
           eq(apiSubscriptions.status, 'active')
         ))
@@ -274,7 +322,7 @@ export const marketplaceRoutes = new Elysia({ prefix: '/marketplace' })
       // Create subscription
       const requestsLimit = validatedData.requestsLimit || api.requestLimit;
       const [newSubscription] = await db.insert(apiSubscriptions).values({
-        userId: user.id,
+        userId: authenticatedUser.id,
         apiId: api.id,
         requestsLimit,
         status: 'active',

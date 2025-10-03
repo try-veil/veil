@@ -1,34 +1,66 @@
 import { Elysia, t } from 'elysia';
 import { db, apis, users, apiCategories, apiSubscriptions, apiUsageAnalytics } from '../db';
-import { requireRole, authMiddleware } from '../middleware/auth';
+import { authMiddleware } from '../middleware/auth';
+import { fusionAuthService } from '../services/fusionauth-service';
 import { createApiSchema, updateApiSchema, paginationSchema } from '../validation/schemas';
 import { eq, and, desc, count, sum, avg } from 'drizzle-orm';
 import { GatewayService } from '../services/gateway-service';
 
 export const sellerRoutes = new Elysia({ prefix: '/seller' })
   .use(authMiddleware)
-  .use(requireRole(['seller', 'admin']))
   .get('/dashboard', async ({ user, set }) => {
     try {
+      console.log('Dashboard - user from context:', JSON.stringify(user, null, 2));
+
+      if (!user) {
+        console.error('Dashboard - user is undefined!');
+        set.status = 401;
+        return {
+          success: false,
+          message: 'User not authenticated'
+        };
+      }
+
+      if (!user.id) {
+        console.error('Dashboard - user.id is undefined!', user);
+        set.status = 401;
+        return {
+          success: false,
+          message: 'User ID not found in authentication context'
+        };
+      }
+
+      const authenticatedUser = user;
 
       // Get seller's API count
-      const [apiCountResult] = await db.select({ count: count() })
+      console.log('Dashboard - Fetching API count for seller ID:', authenticatedUser.id);
+      const apiCountResults = await db.select({ count: count() })
         .from(apis)
-        .where(eq(apis.sellerId, user.id));
+        .where(eq(apis.sellerId, authenticatedUser.id));
+      console.log('Dashboard - API count results:', apiCountResults);
+      const apiCountResult = apiCountResults[0] || { count: 0 };
+      const totalApis = Number(apiCountResult.count) || 0;
+      console.log('Dashboard - Total APIs:', totalApis);
 
       // Get total subscriptions across all APIs
-      const [subscriptionCountResult] = await db.select({ count: count() })
+      console.log('Dashboard - Fetching subscriptions count');
+      const subscriptionCountResults = await db.select({ count: count() })
         .from(apiSubscriptions)
         .innerJoin(apis, eq(apiSubscriptions.apiId, apis.id))
         .where(and(
-          eq(apis.sellerId, user.id),
+          eq(apis.sellerId, authenticatedUser.id),
           eq(apiSubscriptions.status, 'active')
         ));
+      console.log('Dashboard - Subscription count results:', subscriptionCountResults);
+      const subscriptionCountResult = subscriptionCountResults[0] || { count: 0 };
+      const totalSubscriptions = Number(subscriptionCountResult.count) || 0;
+      console.log('Dashboard - Total subscriptions:', totalSubscriptions);
 
       // Get total revenue (this would need payment integration)
       const totalRevenue = '0.00'; // Placeholder
 
       // Get recent APIs
+      console.log('Dashboard - Fetching recent APIs');
       const recentApis = await db.select({
         id: apis.id,
         uid: apis.uid,
@@ -39,34 +71,65 @@ export const sellerRoutes = new Elysia({ prefix: '/seller' })
         createdAt: apis.createdAt,
       })
       .from(apis)
-      .where(eq(apis.sellerId, user.id))
+      .where(eq(apis.sellerId, authenticatedUser.id))
       .orderBy(desc(apis.createdAt))
       .limit(5);
+      console.log('Dashboard - Recent APIs count:', recentApis.length);
 
       return {
         success: true,
         data: {
           stats: {
-            totalApis: apiCountResult.count,
-            totalSubscriptions: subscriptionCountResult.count,
+            totalApis,
+            totalSubscriptions,
             totalRevenue,
           },
           recentApis,
         }
       };
     } catch (error: any) {
+      console.error('Dashboard endpoint error:', error);
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      console.error('User context:', { userId: user?.id, userEmail: user?.email, userRole: user?.role });
       set.status = 500;
       return {
         success: false,
-        message: 'Failed to fetch dashboard data'
+        message: 'Failed to fetch dashboard data',
+        error: error.message || 'Unknown error occurred',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
       };
     }
   })
   .get('/apis', async ({ query, user, set }) => {
     try {
+      console.log('GET /apis - user from context:', JSON.stringify(user, null, 2));
 
+      if (!user) {
+        console.error('GET /apis - user is undefined!');
+        set.status = 401;
+        return {
+          success: false,
+          message: 'User not authenticated'
+        };
+      }
+
+      if (!user.id) {
+        console.error('GET /apis - user.id is undefined!', user);
+        set.status = 401;
+        return {
+          success: false,
+          message: 'User ID not found in authentication context'
+        };
+      }
+
+      const authenticatedUser = user;
       const { page = 1, limit = 10 } = paginationSchema.parse(query);
       const offset = (page - 1) * limit;
+
+      console.log('GET /apis - Fetching APIs for seller ID:', authenticatedUser.id);
 
       const apiList = await db.select({
         id: apis.id,
@@ -90,17 +153,19 @@ export const sellerRoutes = new Elysia({ prefix: '/seller' })
       })
       .from(apis)
       .leftJoin(apiCategories, eq(apis.categoryId, apiCategories.id))
-      .where(eq(apis.sellerId, user.id))
+      .where(eq(apis.sellerId, authenticatedUser.id))
       .orderBy(desc(apis.createdAt))
       .limit(limit)
       .offset(offset);
 
       const [totalResult] = await db.select({ count: count() })
         .from(apis)
-        .where(eq(apis.sellerId, user.id));
+        .where(eq(apis.sellerId, authenticatedUser.id));
 
       const total = totalResult.count;
       const totalPages = Math.ceil(total / limit);
+
+      console.log('GET /apis - Successfully fetched', apiList.length, 'APIs. Total:', total);
 
       return {
         success: true,
@@ -117,6 +182,11 @@ export const sellerRoutes = new Elysia({ prefix: '/seller' })
         }
       };
     } catch (error: any) {
+      console.error('GET /apis - Error occurred:', error);
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      console.error('User context:', { userId: user?.id, userEmail: user?.email, userRole: user?.role });
       set.status = 400;
       return {
         success: false,
@@ -127,11 +197,19 @@ export const sellerRoutes = new Elysia({ prefix: '/seller' })
   })
   .post('/apis', async ({ body, user, set }) => {
     try {
+      if (!user || !user.id) {
+        set.status = 401;
+        return {
+          success: false,
+          message: 'User not authenticated'
+        };
+      }
 
+      const authenticatedUser = user;
       const validatedData = createApiSchema.parse(body);
 
       const [newApi] = await db.insert(apis).values({
-        sellerId: user.id,
+        sellerId: authenticatedUser.id,
         name: validatedData.name,
         description: validatedData.description,
         version: validatedData.version,
@@ -199,6 +277,15 @@ export const sellerRoutes = new Elysia({ prefix: '/seller' })
   })
   .get('/apis/:uid', async ({ params: { uid }, user, set }) => {
     try {
+      if (!user || !user.id) {
+        set.status = 401;
+        return {
+          success: false,
+          message: 'User not authenticated'
+        };
+      }
+
+      const authenticatedUser = user;
       const [api] = await db.select({
         id: apis.id,
         uid: apis.uid,
@@ -227,7 +314,7 @@ export const sellerRoutes = new Elysia({ prefix: '/seller' })
       .leftJoin(apiCategories, eq(apis.categoryId, apiCategories.id))
       .where(and(
         eq(apis.uid, uid),
-        eq(apis.sellerId, user.id)
+        eq(apis.sellerId, authenticatedUser.id)
       ))
       .limit(1);
 
@@ -253,6 +340,15 @@ export const sellerRoutes = new Elysia({ prefix: '/seller' })
   })
   .put('/apis/:uid', async ({ params: { uid }, body, user, set }) => {
     try {
+      if (!user || !user.id) {
+        set.status = 401;
+        return {
+          success: false,
+          message: 'User not authenticated'
+        };
+      }
+
+      const authenticatedUser = user;
       const validatedData = updateApiSchema.parse(body);
 
       // Check if API exists and belongs to user
@@ -260,7 +356,7 @@ export const sellerRoutes = new Elysia({ prefix: '/seller' })
         .from(apis)
         .where(and(
           eq(apis.uid, uid),
-          eq(apis.sellerId, user.id)
+          eq(apis.sellerId, authenticatedUser.id)
         ))
         .limit(1);
 
@@ -296,12 +392,21 @@ export const sellerRoutes = new Elysia({ prefix: '/seller' })
   })
   .delete('/apis/:uid', async ({ params: { uid }, user, set }) => {
     try {
+      if (!user || !user.id) {
+        set.status = 401;
+        return {
+          success: false,
+          message: 'User not authenticated'
+        };
+      }
+
+      const authenticatedUser = user;
       // Check if API exists and belongs to user
       const [existingApi] = await db.select()
         .from(apis)
         .where(and(
           eq(apis.uid, uid),
-          eq(apis.sellerId, user.id)
+          eq(apis.sellerId, authenticatedUser.id)
         ))
         .limit(1);
 
@@ -345,13 +450,22 @@ export const sellerRoutes = new Elysia({ prefix: '/seller' })
   })
   .patch('/apis/:uid/toggle-status', async ({ params: { uid }, user, set }) => {
     try {
+      if (!user || !user.id) {
+        set.status = 401;
+        return {
+          success: false,
+          message: 'User not authenticated'
+        };
+      }
+
+      const authenticatedUser = user;
 
       // Check if API exists and belongs to user
       const [existingApi] = await db.select()
         .from(apis)
         .where(and(
           eq(apis.uid, uid),
-          eq(apis.sellerId, user.id)
+          eq(apis.sellerId, authenticatedUser.id)
         ))
         .limit(1);
 
@@ -395,6 +509,15 @@ export const sellerRoutes = new Elysia({ prefix: '/seller' })
   })
   .get('/apis/:uid/analytics', async ({ params: { uid }, user, query, set }) => {
     try {
+      if (!user || !user.id) {
+        set.status = 401;
+        return {
+          success: false,
+          message: 'User not authenticated'
+        };
+      }
+
+      const authenticatedUser = user;
 
       const { page = 1, limit = 30 } = paginationSchema.parse(query);
       const offset = (page - 1) * limit;
@@ -404,7 +527,7 @@ export const sellerRoutes = new Elysia({ prefix: '/seller' })
         .from(apis)
         .where(and(
           eq(apis.uid, uid),
-          eq(apis.sellerId, user.id)
+          eq(apis.sellerId, authenticatedUser.id)
         ))
         .limit(1);
 

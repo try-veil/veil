@@ -149,12 +149,17 @@ export class GatewayService {
    * Normalize upstream URL by combining base URL and endpoint
    */
   private normalizeUpstream(baseUrl: string, endpoint: string): string {
+    // If endpoint is a full URL (starts with http:// or https://), just return it
+    if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
+      return endpoint;
+    }
+
     // Remove trailing slash from base URL
     const normalizedBase = baseUrl.replace(/\/$/, '');
-    
+
     // Ensure endpoint starts with /
     const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    
+
     return `${normalizedBase}${normalizedEndpoint}`;
   }
 
