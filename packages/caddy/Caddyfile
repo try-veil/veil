@@ -5,6 +5,7 @@
 	debug
 }
 
+# Port 2020: Veil Management API
 :2020 {
 	log {
 		output stderr
@@ -13,10 +14,24 @@
 	}
 
 	# Global veil handler configuration with database path and subscription header
+	# Optional third parameter: events endpoint (for HTTP-based event streaming)
+	# If not provided, uses structured logging to stdout (RFC pattern)
 	veil_handler ./veil.db X-Subscription-Key
 
 	# Management API route - must be last
 	handle /veil/api/* {
 		veil_handler ./veil.db X-Subscription-Key
 	}
+}
+
+# Port 2021: Veil Proxy (dynamically onboarded API routes)
+:2021 {
+	log {
+		output stderr
+		format console
+		level DEBUG
+	}
+
+	# Routes are dynamically added here via the management API
+	# This server is managed by the veil_handler when APIs are onboarded
 }

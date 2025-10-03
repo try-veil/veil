@@ -1,0 +1,921 @@
+{"level":"info","ts":1759417688.946016,"msg":"maxprocs: Leaving GOMAXPROCS=10: CPU quota undefined"}
+{"level":"info","ts":1759417688.947007,"msg":"GOMEMLIMIT is updated","package":"github.com/KimMachineGun/automemlimit/memlimit","GOMEMLIMIT":15461882265,"previous":9223372036854775807}
+{"level":"info","ts":1759417688.947152,"msg":"using config from file","file":"Caddyfile"}
+{"level":"info","ts":1759417688.949399,"msg":"adapted config to JSON","adapter":"caddyfile"}
+{"level":"info","ts":1759417688.951882,"logger":"admin","msg":"admin endpoint started","address":"0.0.0.0:2019","enforce_origin":false,"origins":["//0.0.0.0:2019"]}
+{"level":"warn","ts":1759417688.951891,"logger":"admin","msg":"admin endpoint on open interface; host checking disabled","address":"0.0.0.0:2019"}
+{"level":"info","ts":1759417688.952904,"logger":"http.auto_https","msg":"automatic HTTPS is completely disabled for server","server_name":"srv0"}
+{"level":"info","ts":1759417688.952909,"logger":"http.auto_https","msg":"automatic HTTPS is completely disabled for server","server_name":"srv1"}
+{"level":"debug","ts":1759417688.952916,"logger":"http.auto_https","msg":"adjusted config","tls":{"automation":{"policies":[{}]}},"http":{"servers":{"srv0":{"listen":[":2020"],"routes":[{"handle":[{"handler":"subroute","routes":[{"handle":[{"db_path":"./veil.db","handler":"veil_handler","subscription_key":"X-Subscription-Key"}]}]}]},{"handle":[{"db_path":"./veil.db","handler":"veil_handler","subscription_key":"X-Subscription-Key"}]}],"automatic_https":{"disable":true},"logs":{"default_logger_name":"log0"}},"srv1":{"listen":[":2021"],"automatic_https":{"disable":true},"logs":{"default_logger_name":"log1"}}}}}
+{"level":"info","ts":1759417688.9531898,"logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0x140000eed80"}
+{"level":"info","ts":1759417688.953233,"logger":"http.handlers.veil_handler","msg":"initializing database connection","db_path":"./veil.db"}
+{"level":"info","ts":1759417688.959711,"logger":"http.handlers.veil_handler","msg":"successfully connected to database","db_path":"./veil.db"}
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.038ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_configs"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.065ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_configs" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.021ms] [34;1m[rows:-][0m SELECT * FROM `api_configs` LIMIT 1
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.007ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_deleted_at"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.006ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_path"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_keys"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.024ms] [34;1m[rows:4][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_keys" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.006ms] [34;1m[rows:-][0m SELECT * FROM `api_keys` LIMIT 1
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.010ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_keys" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_api_keys"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_api_keys %" OR sql LIKE "%CONSTRAINT `fk_api_configs_api_keys`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_api_keys]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_api_keys	%")
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.009ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_deleted_at"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.006ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_api_config_id"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_key"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_methods"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.034ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_methods" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.007ms] [34;1m[rows:-][0m SELECT * FROM `api_methods` LIMIT 1
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.010ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_methods" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_methods"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_methods %" OR sql LIKE "%CONSTRAINT `fk_api_configs_methods`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_methods]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_methods	%")
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_deleted_at"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_api_config_id"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_parameters"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.020ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_parameters" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.006ms] [34;1m[rows:-][0m SELECT * FROM `api_parameters` LIMIT 1
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.010ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_parameters" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_parameters"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_parameters %" OR sql LIKE "%CONSTRAINT `fk_api_configs_parameters`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_parameters]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_parameters	%")
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_deleted_at"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_api_config_id"
+{"level":"info","ts":1759417688.963928,"logger":"http.handlers.veil_handler","msg":"successfully ran database migrations"}
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_configs"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.020ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_configs" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.006ms] [34;1m[rows:-][0m SELECT * FROM `api_configs` LIMIT 1
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_deleted_at"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_path"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.007ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_methods"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.021ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_methods" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT * FROM `api_methods` LIMIT 1
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.008ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_methods" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_methods"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_methods %" OR sql LIKE "%CONSTRAINT `fk_api_configs_methods`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_methods]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_methods	%")
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_deleted_at"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_api_config_id"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_parameters"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.021ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_parameters" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT * FROM `api_parameters` LIMIT 1
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.007ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_parameters" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_parameters"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_parameters %" OR sql LIKE "%CONSTRAINT `fk_api_configs_parameters`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_parameters]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_parameters	%")
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_deleted_at"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_api_config_id"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_keys"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.017ms] [34;1m[rows:4][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_keys" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT * FROM `api_keys` LIMIT 1
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.007ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_keys" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_api_keys"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_api_keys %" OR sql LIKE "%CONSTRAINT `fk_api_configs_api_keys`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_api_keys]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_api_keys	%")
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_deleted_at"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_api_config_id"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_key"
+{"level":"info","ts":1759417688.966013,"logger":"http.handlers.veil_handler.veil_handler","msg":"event streaming disabled (set ENABLE_EVENT_STREAMING=true to enable)"}
+{"level":"info","ts":1759417688.966016,"logger":"http.handlers.veil_handler.veil_handler","msg":"VeilHandler provisioned successfully","db_path":"./veil.db","event_streaming_enabled":false}
+{"level":"info","ts":1759417688.9660292,"logger":"http.handlers.veil_handler","msg":"initializing database connection","db_path":"./veil.db"}
+{"level":"info","ts":1759417688.966207,"logger":"http.handlers.veil_handler","msg":"successfully connected to database","db_path":"./veil.db"}
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.058ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_configs"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.026ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_configs" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.007ms] [34;1m[rows:-][0m SELECT * FROM `api_configs` LIMIT 1
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_deleted_at"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_path"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_keys"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.019ms] [34;1m[rows:4][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_keys" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.006ms] [34;1m[rows:-][0m SELECT * FROM `api_keys` LIMIT 1
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.008ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_keys" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_api_keys"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_api_keys %" OR sql LIKE "%CONSTRAINT `fk_api_configs_api_keys`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_api_keys]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_api_keys	%")
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_key"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_deleted_at"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_api_config_id"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_methods"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.017ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_methods" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT * FROM `api_methods` LIMIT 1
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.007ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_methods" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_methods"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_methods %" OR sql LIKE "%CONSTRAINT `fk_api_configs_methods`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_methods]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_methods	%")
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_deleted_at"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_api_config_id"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.003ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_parameters"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.016ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_parameters" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT * FROM `api_parameters` LIMIT 1
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.008ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_parameters" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_parameters"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_parameters %" OR sql LIKE "%CONSTRAINT `fk_api_configs_parameters`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_parameters]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_parameters	%")
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_deleted_at"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_api_config_id"
+{"level":"info","ts":1759417688.9685462,"logger":"http.handlers.veil_handler","msg":"successfully ran database migrations"}
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_configs"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.016ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_configs" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT * FROM `api_configs` LIMIT 1
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_deleted_at"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_path"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.003ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_methods"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.015ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_methods" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT * FROM `api_methods` LIMIT 1
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.007ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_methods" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_methods"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_methods %" OR sql LIKE "%CONSTRAINT `fk_api_configs_methods`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_methods]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_methods	%")
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_deleted_at"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_api_config_id"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.006ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_parameters"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.016ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_parameters" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT * FROM `api_parameters` LIMIT 1
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.006ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_parameters" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_parameters"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_parameters %" OR sql LIKE "%CONSTRAINT `fk_api_configs_parameters`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_parameters]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_parameters	%")
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_deleted_at"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_api_config_id"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_keys"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.016ms] [34;1m[rows:4][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_keys" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT * FROM `api_keys` LIMIT 1
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.010ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_keys" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_api_keys"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_api_keys %" OR sql LIKE "%CONSTRAINT `fk_api_configs_api_keys`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_api_keys]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_api_keys	%")
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_key"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_deleted_at"
+
+2025/10/02 20:38:08 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_api_config_id"
+{"level":"info","ts":1759417688.9696178,"logger":"http.handlers.veil_handler.veil_handler","msg":"event streaming disabled (set ENABLE_EVENT_STREAMING=true to enable)"}
+{"level":"info","ts":1759417688.9696221,"logger":"http.handlers.veil_handler.veil_handler","msg":"VeilHandler provisioned successfully","db_path":"./veil.db","event_streaming_enabled":false}
+{"level":"debug","ts":1759417688.969849,"logger":"http","msg":"starting server loop","address":"[::]:2020","tls":false,"http3":false}
+{"level":"warn","ts":1759417688.969982,"logger":"http","msg":"HTTP/2 skipped because it requires TLS","network":"tcp","addr":":2020"}
+{"level":"warn","ts":1759417688.9699929,"logger":"http","msg":"HTTP/3 skipped because it requires TLS","network":"tcp","addr":":2020"}
+{"level":"info","ts":1759417688.9699972,"logger":"http.log","msg":"server running","name":"srv0","protocols":["h1","h2","h3"]}
+{"level":"debug","ts":1759417688.970146,"logger":"http","msg":"starting server loop","address":"[::]:2021","tls":false,"http3":false}
+{"level":"warn","ts":1759417688.970152,"logger":"http","msg":"HTTP/2 skipped because it requires TLS","network":"tcp","addr":":2021"}
+{"level":"warn","ts":1759417688.970154,"logger":"http","msg":"HTTP/3 skipped because it requires TLS","network":"tcp","addr":":2021"}
+{"level":"info","ts":1759417688.970156,"logger":"http.log","msg":"server running","name":"srv1","protocols":["h1","h2","h3"]}
+{"level":"debug","ts":1759417688.970499,"logger":"events","msg":"event","name":"started","id":"64454dc5-47ed-4f46-996b-9dabe12cc7ce","origin":"","data":null}
+{"level":"info","ts":1759417688.9711628,"msg":"autosaved config (load with --resume flag)","file":"/Users/techsavvyash/Library/Application Support/Caddy/autosave.json"}
+{"level":"info","ts":1759417688.971169,"msg":"serving initial configuration"}
+{"level":"info","ts":1759417688.9801679,"logger":"tls","msg":"storage cleaning happened too recently; skipping for now","storage":"FileStorage:/Users/techsavvyash/Library/Application Support/Caddy","instance":"41ce614b-2005-4cd8-880e-bb7506f7227f","try_again":1759504088.980167,"try_again_in":86399.999999791}
+{"level":"info","ts":1759417688.980284,"logger":"tls","msg":"finished cleaning storage units"}
+2025/10/02 15:08:15.327	[34mINFO[0m	http.log.access.log1	NOP	{"request": {"remote_ip": "::1", "remote_port": "52666", "client_ip": "::1", "proto": "HTTP/1.1", "method": "GET", "host": "localhost:2021", "uri": "/", "headers": {"User-Agent": ["curl/8.7.1"], "Accept": ["*/*"]}}, "bytes_read": 0, "user_id": "", "duration": 0.000001542, "size": 0, "status": 0, "resp_headers": {"Server": ["Caddy"]}}
+{"level":"debug","ts":1759417706.723147,"logger":"http.handlers.veil_handler.veil_handler","msg":"handling management API request","path":"/veil/api/routes","method":"POST"}
+{"level":"info","ts":1759417706.723401,"logger":"http.handlers.veil_handler.veil_handler","msg":"handling API onboarding request","method":"POST","path":"/veil/api/routes"}
+{"level":"debug","ts":1759417706.723959,"logger":"http.handlers.veil_handler.veil_handler","msg":"received request body","body":"{\"path\":\"/weather/*\",\"upstream\":\"http://localhost:8083/weather\",\"required_subscription\":\"weather-subscription\",\"methods\":[\"GET\"],\"required_headers\":[\"X-Test-Header\"],\"api_keys\":[{\"key\":\"weather-test-key-2\",\"name\":\"Weather Test Key 2\"}]}"}
+{"level":"debug","ts":1759417706.7242088,"logger":"http.handlers.veil_handler.veil_handler","msg":"parsed request DTO","path":"/weather/*","upstream":"http://localhost:8083/weather","methods":["GET"],"required_headers":["X-Test-Header"],"parameters":null,"api_keys_count":1}
+{"level":"debug","ts":1759417706.724242,"logger":"http.handlers.veil_handler.veil_handler","msg":"created API config object","path":"/weather/*","upstream":"http://localhost:8083/weather","methods_count":1,"parameters_count":0,"api_keys_count":1}
+{"level":"info","ts":1759417706.7242482,"logger":"http.handlers.veil_handler.veil_handler","msg":"storing API config in database"}
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:43
+[0m[33m[0.108ms] [34;1m[rows:1][0m INSERT INTO `api_methods` (`created_at`,`updated_at`,`deleted_at`,`api_config_id`,`method`) VALUES ("2025-10-02 20:38:26.725","2025-10-02 20:38:26.725",NULL,4,"GET") ON CONFLICT (`id`) DO UPDATE SET `api_config_id`=`excluded`.`api_config_id` RETURNING `id`
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:43
+[0m[33m[0.319ms] [34;1m[rows:1][0m INSERT INTO `api_keys` (`created_at`,`updated_at`,`deleted_at`,`api_config_id`,`key`,`name`,`is_active`,`expires_at`) VALUES ("2025-10-02 20:38:26.725","2025-10-02 20:38:26.725",NULL,4,"weather-test-key-2","Weather Test Key 2",true,NULL) ON CONFLICT (`id`) DO UPDATE SET `api_config_id`=`excluded`.`api_config_id` RETURNING `id`
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:43
+[0m[33m[2.000ms] [34;1m[rows:1][0m INSERT INTO `api_configs` (`created_at`,`updated_at`,`deleted_at`,`path`,`upstream`,`required_subscription`,`last_accessed`,`request_count`,`required_headers`) VALUES ("2025-10-02 20:38:26.724","2025-10-02 20:38:26.724",NULL,"/weather/*","http://localhost:8083/weather","weather-subscription","0000-00-00 00:00:00",0,"[""X-Test-Header""]") RETURNING `id`
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:53
+[0m[33m[0.042ms] [34;1m[rows:1][0m SELECT * FROM `api_keys` WHERE `api_keys`.`api_config_id` = 4 AND `api_keys`.`deleted_at` IS NULL
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:53
+[0m[33m[0.324ms] [34;1m[rows:1][0m SELECT * FROM `api_configs` WHERE `api_configs`.`id` = 4 AND `api_configs`.`deleted_at` IS NULL ORDER BY `api_configs`.`id` LIMIT 1
+{"level":"info","ts":1759417706.7266529,"logger":"http.handlers.veil_handler.veil_handler","msg":"updating Caddy configuration"}
+{"level":"info","ts":1759417706.72986,"logger":"admin.api","msg":"received request","method":"GET","host":"localhost:2019","uri":"/config/","remote_ip":"::1","remote_port":"52736","headers":{"Accept-Encoding":["gzip"],"User-Agent":["Go-http-client/1.1"]}}
+{"level":"debug","ts":1759417706.7305548,"logger":"http.handlers.veil_handler.veil_handler","msg":"generating rewrite pattern","original_path":"/weather/*","rewrite_path":"/weather","last_segment":"weather"}
+{"level":"debug","ts":1759417706.730568,"logger":"http.handlers.veil_handler.veil_handler","msg":"configuring path patterns","original_path":"/weather/*","matching_path":"/weather/*","rewrite_path":"/weather"}
+{"level":"debug","ts":1759417706.730884,"logger":"http.handlers.veil_handler.veil_handler","msg":"updated configuration","config":"{\n  \"admin\": {\n    \"listen\": \"0.0.0.0:2019\"\n  },\n  \"apps\": {\n    \"http\": {\n      \"servers\": {\n        \"srv0\": {\n          \"automatic_https\": {\n            \"disable\": true\n          },\n          \"listen\": [\n            \":2020\"\n          ],\n          \"logs\": {\n            \"default_logger_name\": \"log0\"\n          },\n          \"routes\": [\n            {\n              \"handle\": [\n                {\n                  \"handler\": \"subroute\",\n                  \"routes\": [\n                    {\n                      \"handle\": [\n                        {\n                          \"db_path\": \"./veil.db\",\n                          \"handler\": \"veil_handler\",\n                          \"subscription_key\": \"X-Subscription-Key\"\n                        }\n                      ]\n                    }\n                  ]\n                }\n              ],\n              \"match\": [\n                {\n                  \"path\": [\n                    \"/veil/api/*\"\n                  ]\n                }\n              ]\n            },\n            {\n              \"handle\": [\n                {\n                  \"db_path\": \"./veil.db\",\n                  \"handler\": \"veil_handler\",\n                  \"subscription_key\": \"X-Subscription-Key\"\n                }\n              ]\n            }\n          ]\n        },\n        \"srv1\": {\n          \"automatic_https\": {\n            \"disable\": true\n          },\n          \"listen\": [\n            \":2021\"\n          ],\n          \"logs\": {\n            \"default_logger_name\": \"log1\"\n          },\n          \"routes\": [\n            {\n              \"handle\": [\n                {\n                  \"handler\": \"subroute\",\n                  \"routes\": [\n                    {\n                      \"handle\": [\n                        {\n                          \"db_path\": \"./veil.db\",\n                          \"handler\": \"veil_handler\",\n                          \"subscription_key\": \"X-Subscription-Key\"\n                        },\n                        {\n                          \"handler\": \"reverse_proxy\",\n                          \"headers\": {\n                            \"request\": {\n                              \"set\": {\n                                \"Host\": [\n                                  \"localhost:8083\"\n                                ]\n                              }\n                            }\n                          },\n                          \"rewrite\": {\n                            \"method\": \"GET\",\n                            \"path_regexp\": [\n                              {\n                                \"find\": \"^/weather\",\n                                \"replace\": \"/weather\"\n                              }\n                            ]\n                          },\n                          \"transport\": {\n                            \"protocol\": \"http\"\n                          },\n                          \"upstreams\": [\n                            {\n                              \"dial\": \"localhost:8083\"\n                            }\n                          ]\n                        }\n                      ]\n                    }\n                  ]\n                }\n              ],\n              \"match\": [\n                {\n                  \"method\": [\n                    \"GET\"\n                  ],\n                  \"path\": [\n                    \"/weather/*\"\n                  ]\n                }\n              ],\n              \"terminal\": true\n            }\n          ]\n        }\n      }\n    }\n  },\n  \"logging\": {\n    \"logs\": {\n      \"default\": {\n        \"exclude\": [\n          \"http.log.access.log0\",\n          \"http.log.access.log1\"\n        ],\n        \"level\": \"DEBUG\"\n      },\n      \"log0\": {\n        \"encoder\": {\n          \"format\": \"console\"\n        },\n        \"include\": [\n          \"http.log.access.log0\"\n        ],\n        \"level\": \"DEBUG\",\n        \"writer\": {\n          \"output\": \"stderr\"\n        }\n      },\n      \"log1\": {\n        \"encoder\": {\n          \"format\": \"console\"\n        },\n        \"include\": [\n          \"http.log.access.log1\"\n        ],\n        \"level\": \"DEBUG\",\n        \"writer\": {\n          \"output\": \"stderr\"\n        }\n      }\n    }\n  }\n}"}
+{"level":"info","ts":1759417706.7314072,"logger":"admin","msg":"admin endpoint started","address":"0.0.0.0:2019","enforce_origin":false,"origins":["//0.0.0.0:2019"]}
+{"level":"warn","ts":1759417706.731414,"logger":"admin","msg":"admin endpoint on open interface; host checking disabled","address":"0.0.0.0:2019"}
+{"level":"info","ts":1759417706.731489,"logger":"http.auto_https","msg":"automatic HTTPS is completely disabled for server","server_name":"srv0"}
+{"level":"info","ts":1759417706.731499,"logger":"http.auto_https","msg":"automatic HTTPS is completely disabled for server","server_name":"srv1"}
+{"level":"debug","ts":1759417706.731513,"logger":"http.auto_https","msg":"adjusted config","tls":{"automation":{"policies":[{}]}},"http":{"servers":{"srv0":{"listen":[":2020"],"routes":[{"handle":[{"handler":"subroute","routes":[{"handle":[{"db_path":"./veil.db","handler":"veil_handler","subscription_key":"X-Subscription-Key"}]}]}]},{"handle":[{"db_path":"./veil.db","handler":"veil_handler","subscription_key":"X-Subscription-Key"}]}],"automatic_https":{"disable":true},"logs":{"default_logger_name":"log0"}},"srv1":{"listen":[":2021"],"routes":[{"handle":[{"handler":"subroute","routes":[{"handle":[{"db_path":"./veil.db","handler":"veil_handler","subscription_key":"X-Subscription-Key"},{"handler":"reverse_proxy","headers":{"request":{"set":{"Host":["localhost:8083"]}}},"rewrite":{"method":"GET","path_regexp":[{"find":"^/weather","replace":"/weather"}]},"transport":{"protocol":"http"},"upstreams":[{"dial":"localhost:8083"}]}]}]}],"terminal":true}],"automatic_https":{"disable":true},"logs":{"default_logger_name":"log1"}}}}}
+{"level":"info","ts":1759417706.731543,"logger":"admin","msg":"stopped previous server","address":"0.0.0.0:2019"}
+{"level":"info","ts":1759417706.731562,"logger":"http.handlers.veil_handler","msg":"initializing database connection","db_path":"./veil.db"}
+{"level":"info","ts":1759417706.731957,"logger":"http.handlers.veil_handler","msg":"successfully connected to database","db_path":"./veil.db"}
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.013ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_configs"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.047ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_configs" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.011ms] [34;1m[rows:-][0m SELECT * FROM `api_configs` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.007ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_path"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_keys"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.025ms] [34;1m[rows:4][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_keys" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.007ms] [34;1m[rows:-][0m SELECT * FROM `api_keys` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.013ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_keys" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_api_keys"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_api_keys %" OR sql LIKE "%CONSTRAINT `fk_api_configs_api_keys`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_api_keys]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_api_keys	%")
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_api_config_id"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_key"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_methods"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.021ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_methods" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT * FROM `api_methods` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.008ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_methods" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_methods"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_methods %" OR sql LIKE "%CONSTRAINT `fk_api_configs_methods`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_methods]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_methods	%")
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_api_config_id"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.006ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_parameters"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.019ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_parameters" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT * FROM `api_parameters` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.007ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_parameters" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_parameters"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_parameters %" OR sql LIKE "%CONSTRAINT `fk_api_configs_parameters`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_parameters]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_parameters	%")
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_api_config_id"
+{"level":"info","ts":1759417706.733453,"logger":"http.handlers.veil_handler","msg":"successfully ran database migrations"}
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_configs"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.017ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_configs" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.006ms] [34;1m[rows:-][0m SELECT * FROM `api_configs` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_path"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_methods"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.017ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_methods" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT * FROM `api_methods` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.007ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_methods" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_methods"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_methods %" OR sql LIKE "%CONSTRAINT `fk_api_configs_methods`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_methods]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_methods	%")
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_api_config_id"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_parameters"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.017ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_parameters" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.009ms] [34;1m[rows:-][0m SELECT * FROM `api_parameters` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.007ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_parameters" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_parameters"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_parameters %" OR sql LIKE "%CONSTRAINT `fk_api_configs_parameters`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_parameters]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_parameters	%")
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_api_config_id"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.003ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_keys"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.017ms] [34;1m[rows:4][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_keys" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT * FROM `api_keys` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.007ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_keys" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_api_keys"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_api_keys %" OR sql LIKE "%CONSTRAINT `fk_api_configs_api_keys`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_api_keys]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_api_keys	%")
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_key"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_api_config_id"
+{"level":"info","ts":1759417706.7344582,"logger":"http.handlers.veil_handler.veil_handler","msg":"event streaming disabled (set ENABLE_EVENT_STREAMING=true to enable)"}
+{"level":"info","ts":1759417706.734463,"logger":"http.handlers.veil_handler.veil_handler","msg":"VeilHandler provisioned successfully","db_path":"./veil.db","event_streaming_enabled":false}
+{"level":"info","ts":1759417706.7344909,"logger":"http.handlers.veil_handler","msg":"initializing database connection","db_path":"./veil.db"}
+{"level":"info","ts":1759417706.734671,"logger":"http.handlers.veil_handler","msg":"successfully connected to database","db_path":"./veil.db"}
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_configs"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.018ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_configs" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.006ms] [34;1m[rows:-][0m SELECT * FROM `api_configs` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_path"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_keys"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.017ms] [34;1m[rows:4][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_keys" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT * FROM `api_keys` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.008ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_keys" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_api_keys"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_api_keys %" OR sql LIKE "%CONSTRAINT `fk_api_configs_api_keys`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_api_keys]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_api_keys	%")
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_api_config_id"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_key"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_methods"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.016ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_methods" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT * FROM `api_methods` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.007ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_methods" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_methods"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_methods %" OR sql LIKE "%CONSTRAINT `fk_api_configs_methods`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_methods]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_methods	%")
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.011ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.114ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_api_config_id"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.017ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_parameters"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.042ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_parameters" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.012ms] [34;1m[rows:-][0m SELECT * FROM `api_parameters` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.014ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_parameters" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_parameters"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_parameters %" OR sql LIKE "%CONSTRAINT `fk_api_configs_parameters`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_parameters]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_parameters	%")
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.006ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_api_config_id"
+{"level":"info","ts":1759417706.736963,"logger":"http.handlers.veil_handler","msg":"successfully ran database migrations"}
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_configs"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.022ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_configs" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.007ms] [34;1m[rows:-][0m SELECT * FROM `api_configs` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_path"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_methods"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.021ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_methods" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT * FROM `api_methods` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.009ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_methods" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_methods"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_methods %" OR sql LIKE "%CONSTRAINT `fk_api_configs_methods`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_methods]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_methods	%")
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_api_config_id"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_parameters"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.024ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_parameters" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.006ms] [34;1m[rows:-][0m SELECT * FROM `api_parameters` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.008ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_parameters" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_parameters"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_parameters %" OR sql LIKE "%CONSTRAINT `fk_api_configs_parameters`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_parameters]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_parameters	%")
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_api_config_id"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_keys"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.022ms] [34;1m[rows:4][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_keys" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.006ms] [34;1m[rows:-][0m SELECT * FROM `api_keys` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.009ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_keys" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_api_keys"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_api_keys %" OR sql LIKE "%CONSTRAINT `fk_api_configs_api_keys`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_api_keys]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_api_keys	%")
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.006ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_api_config_id"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_key"
+{"level":"info","ts":1759417706.738026,"logger":"http.handlers.veil_handler.veil_handler","msg":"event streaming disabled (set ENABLE_EVENT_STREAMING=true to enable)"}
+{"level":"info","ts":1759417706.7380311,"logger":"http.handlers.veil_handler.veil_handler","msg":"VeilHandler provisioned successfully","db_path":"./veil.db","event_streaming_enabled":false}
+{"level":"info","ts":1759417706.738077,"logger":"http.handlers.veil_handler","msg":"initializing database connection","db_path":"./veil.db"}
+{"level":"info","ts":1759417706.738322,"logger":"http.handlers.veil_handler","msg":"successfully connected to database","db_path":"./veil.db"}
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.006ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_configs"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.020ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_configs" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.006ms] [34;1m[rows:-][0m SELECT * FROM `api_configs` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_path"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_keys"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.019ms] [34;1m[rows:4][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_keys" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT * FROM `api_keys` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.008ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_keys" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_api_keys"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_api_keys %" OR sql LIKE "%CONSTRAINT `fk_api_configs_api_keys`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_api_keys]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_api_keys	%")
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_key"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_api_config_id"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_methods"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.017ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_methods" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT * FROM `api_methods` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.007ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_methods" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_methods"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_methods %" OR sql LIKE "%CONSTRAINT `fk_api_configs_methods`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_methods]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_methods	%")
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_api_config_id"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_parameters"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.017ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_parameters" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT * FROM `api_parameters` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.009ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_parameters" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_parameters"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_parameters %" OR sql LIKE "%CONSTRAINT `fk_api_configs_parameters`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_parameters]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_parameters	%")
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/config/config.go:58
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_api_config_id"
+{"level":"info","ts":1759417706.739572,"logger":"http.handlers.veil_handler","msg":"successfully ran database migrations"}
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_configs"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.016ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_configs" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.006ms] [34;1m[rows:-][0m SELECT * FROM `api_configs` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_configs" AND name = "idx_api_configs_path"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_methods"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.017ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_methods" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT * FROM `api_methods` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.007ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_methods" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_methods"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_methods %" OR sql LIKE "%CONSTRAINT `fk_api_configs_methods`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_methods]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_methods	%")
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_methods" AND name = "idx_api_methods_api_config_id"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_parameters"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.016ms] [34;1m[rows:3][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_parameters" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT * FROM `api_parameters` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.007ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_parameters" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_parameters"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_parameters %" OR sql LIKE "%CONSTRAINT `fk_api_configs_parameters`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_parameters]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_parameters	%")
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_parameters" AND name = "idx_api_parameters_api_config_id"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.004ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type='table' AND name="api_keys"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.017ms] [34;1m[rows:4][0m SELECT sql FROM sqlite_master WHERE type IN ("table","index") AND tbl_name = "api_keys" AND sql IS NOT NULL order by type = "table" desc
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.013ms] [34;1m[rows:-][0m SELECT * FROM `api_keys` LIMIT 1
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.015ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "table" AND tbl_name = "api_keys" AND (sql LIKE "%CONSTRAINT ""fk_api_configs_api_keys"" %" OR sql LIKE "%CONSTRAINT fk_api_configs_api_keys %" OR sql LIKE "%CONSTRAINT `fk_api_configs_api_keys`%" OR sql LIKE "%CONSTRAINT [fk_api_configs_api_keys]%" OR sql LIKE "%CONSTRAINT 	fk_api_configs_api_keys	%")
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.008ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_deleted_at"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_api_config_id"
+
+2025/10/02 20:38:26 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:273
+[0m[33m[0.005ms] [34;1m[rows:-][0m SELECT count(*) FROM sqlite_master WHERE type = "index" AND tbl_name = "api_keys" AND name = "idx_api_keys_key"
+{"level":"info","ts":1759417706.740797,"logger":"http.handlers.veil_handler.veil_handler","msg":"event streaming disabled (set ENABLE_EVENT_STREAMING=true to enable)"}
+{"level":"info","ts":1759417706.740801,"logger":"http.handlers.veil_handler.veil_handler","msg":"VeilHandler provisioned successfully","db_path":"./veil.db","event_streaming_enabled":false}
+{"level":"debug","ts":1759417706.742017,"logger":"http","msg":"starting server loop","address":"[::]:2020","tls":false,"http3":false}
+{"level":"warn","ts":1759417706.7420301,"logger":"http","msg":"HTTP/2 skipped because it requires TLS","network":"tcp","addr":":2020"}
+{"level":"warn","ts":1759417706.742034,"logger":"http","msg":"HTTP/3 skipped because it requires TLS","network":"tcp","addr":":2020"}
+{"level":"info","ts":1759417706.742038,"logger":"http.log","msg":"server running","name":"srv0","protocols":["h1","h2","h3"]}
+{"level":"debug","ts":1759417706.742153,"logger":"http","msg":"starting server loop","address":"[::]:2021","tls":false,"http3":false}
+{"level":"warn","ts":1759417706.7421598,"logger":"http","msg":"HTTP/2 skipped because it requires TLS","network":"tcp","addr":":2021"}
+{"level":"warn","ts":1759417706.742163,"logger":"http","msg":"HTTP/3 skipped because it requires TLS","network":"tcp","addr":":2021"}
+{"level":"info","ts":1759417706.742165,"logger":"http.log","msg":"server running","name":"srv1","protocols":["h1","h2","h3"]}
+{"level":"debug","ts":1759417706.742188,"logger":"events","msg":"event","name":"started","id":"ce4b9f6c-019f-44cb-8400-85d9b2c0130b","origin":"","data":null}
+{"level":"debug","ts":1759417706.742199,"logger":"events","msg":"event","name":"stopping","id":"0b6bf5d4-5ba7-4903-971d-57318be2e2b2","origin":"","data":null}
+{"level":"info","ts":1759417706.742207,"logger":"http","msg":"servers shutting down with eternal grace period"}
+{"level":"info","ts":1759417706.7427049,"msg":"autosaved config (load with --resume flag)","file":"/Users/techsavvyash/Library/Application Support/Caddy/autosave.json"}
+{"level":"info","ts":1759417706.7427142,"logger":"http.handlers.veil_handler.veil_handler","msg":"successfully updated Caddy configuration","path":"/weather/*","upstream":"http://localhost:8083/weather"}
+{"level":"info","ts":1759417706.743516,"logger":"http.handlers.veil_handler.veil_handler","msg":"saved Caddy configuration","path":"configs/caddy-config-20251002-203826.json"}
+{"level":"info","ts":1759417706.7435231,"logger":"http.handlers.veil_handler.veil_handler","msg":"API onboarded successfully","path":"/weather/*","upstream":"http://localhost:8083/weather"}
+2025/10/02 15:08:26.743	[34mINFO[0m	http.log.access.log0	handled request	{"request": {"remote_ip": "::1", "remote_port": "52735", "client_ip": "::1", "proto": "HTTP/1.1", "method": "POST", "host": "localhost:2020", "uri": "/veil/api/routes", "headers": {"User-Agent": ["curl/8.7.1"], "Accept": ["*/*"], "Content-Type": ["application/json"], "Content-Length": ["236"]}}, "bytes_read": 236, "user_id": "", "duration": 0.020465541, "size": 796, "status": 201, "resp_headers": {"Server": ["Caddy"]}}
+
+2025/10/02 20:38:31 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[0.050ms] [34;1m[rows:1][0m SELECT * FROM `api_keys` WHERE `api_keys`.`api_config_id` = 4 AND `api_keys`.`deleted_at` IS NULL
+
+2025/10/02 20:38:31 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[0.032ms] [34;1m[rows:1][0m SELECT * FROM `api_methods` WHERE `api_methods`.`api_config_id` = 4 AND `api_methods`.`deleted_at` IS NULL
+
+2025/10/02 20:38:31 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[1.423ms] [34;1m[rows:0][0m SELECT * FROM `api_parameters` WHERE `api_parameters`.`api_config_id` = 4 AND `api_parameters`.`deleted_at` IS NULL
+
+2025/10/02 20:38:31 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[2.210ms] [34;1m[rows:1][0m SELECT * FROM `api_configs` WHERE `api_configs`.`deleted_at` IS NULL
+{"level":"debug","ts":1759417711.6051562,"logger":"http.handlers.veil_handler.veil_handler","msg":"request authorized","path":"/weather/current","method":"GET"}
+{"level":"debug","ts":1759417711.6053278,"logger":"http.handlers.reverse_proxy","msg":"selected upstream","dial":"localhost:8083","total_upstreams":1}
+{"level":"debug","ts":1759417711.607007,"logger":"http.handlers.reverse_proxy","msg":"upstream roundtrip","upstream":"localhost:8083","duration":0.00164375,"request":{"remote_ip":"::1","remote_port":"52770","client_ip":"::1","proto":"HTTP/1.1","method":"GET","host":"localhost:8083","uri":"/weather/current","headers":{"X-Forwarded-Proto":["http"],"Accept":["*/*"],"X-Subscription-Key":["weather-test-key-2"],"X-Forwarded-For":["::1"],"X-Forwarded-Host":["localhost:2021"],"Via":["1.1 Caddy"],"X-Test-Header":["test"],"User-Agent":["curl/8.7.1"]}},"headers":{"Server":["BaseHTTP/0.6 Python/3.9.6"],"Date":["Thu, 02 Oct 2025 15:08:31 GMT"],"Content-Type":["application/json"]},"status":200}
+2025/10/02 15:08:31.607	[34mINFO[0m	http.log.access.log1	handled request	{"request": {"remote_ip": "::1", "remote_port": "52770", "client_ip": "::1", "proto": "HTTP/1.1", "method": "GET", "host": "localhost:2021", "uri": "/weather/current", "headers": {"X-Test-Header": ["test"], "User-Agent": ["curl/8.7.1"], "Accept": ["*/*"], "X-Subscription-Key": ["weather-test-key-2"]}}, "bytes_read": 0, "user_id": "", "duration": 0.004502041, "size": 88, "status": 200, "resp_headers": {"Server": ["BaseHTTP/0.6 Python/3.9.6"], "Date": ["Thu, 02 Oct 2025 15:08:31 GMT"], "Content-Type": ["application/json"], "Via": ["1.0 Caddy"]}}
+{"level":"info","ts":1759417716.412589,"logger":"admin.api","msg":"received request","method":"GET","host":"localhost:2019","uri":"/config/apps/http/servers","remote_ip":"::1","remote_port":"52781","headers":{"Accept":["*/*"],"User-Agent":["curl/8.7.1"]}}
+{"level":"info","ts":1759417721.08449,"logger":"admin.api","msg":"received request","method":"GET","host":"localhost:2019","uri":"/config/apps/http/servers/srv1/routes","remote_ip":"::1","remote_port":"52794","headers":{"Accept":["*/*"],"User-Agent":["curl/8.7.1"]}}
+{"level":"info","ts":1759417725.826299,"logger":"admin.api","msg":"received request","method":"GET","host":"localhost:2019","uri":"/config/apps/http/servers/srv1/routes","remote_ip":"::1","remote_port":"52826","headers":{"Accept":["*/*"],"User-Agent":["curl/8.7.1"]}}
+{"level":"debug","ts":1759466612.663439,"logger":"http.handlers.veil_handler.veil_handler","msg":"handling management API request","path":"/veil/api/routes","method":"POST"}
+{"level":"info","ts":1759466612.664779,"logger":"http.handlers.veil_handler.veil_handler","msg":"handling API onboarding request","method":"POST","path":"/veil/api/routes"}
+{"level":"debug","ts":1759466612.669388,"logger":"http.handlers.veil_handler.veil_handler","msg":"received request body","body":"{\n  \"path\": \"/weather/*\",\n  \"upstream\": \"http://localhost:8083/weather\",\n  \"required_subscription\": \"weather-subscription\",\n  \"methods\": [\"GET\"],\n  \"required_headers\": [\"X-Test-Header\"],\n  \"api_keys\": [{\"key\": \"weather-test-key-2\", \"name\": \"Weather Test Key 2\"}]\n}"}
+{"level":"debug","ts":1759466612.67975,"logger":"http.handlers.veil_handler.veil_handler","msg":"parsed request DTO","path":"/weather/*","upstream":"http://localhost:8083/weather","methods":["GET"],"required_headers":["X-Test-Header"],"parameters":null,"api_keys_count":1}
+{"level":"debug","ts":1759466612.6805649,"logger":"http.handlers.veil_handler.veil_handler","msg":"created API config object","path":"/weather/*","upstream":"http://localhost:8083/weather","methods_count":1,"parameters_count":0,"api_keys_count":1}
+{"level":"info","ts":1759466612.68151,"logger":"http.handlers.veil_handler.veil_handler","msg":"storing API config in database"}
+
+2025/10/03 10:13:32 [31;1mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:43 [35;1mUNIQUE constraint failed: api_configs.path
+[0m[33m[21.376ms] [34;1m[rows:0][0m INSERT INTO `api_configs` (`created_at`,`updated_at`,`deleted_at`,`path`,`upstream`,`required_subscription`,`last_accessed`,`request_count`,`required_headers`) VALUES ("2025-10-03 10:13:32.692","2025-10-03 10:13:32.692",NULL,"/weather/*","http://localhost:8083/weather","weather-subscription","0000-00-00 00:00:00",0,"[""X-Test-Header""]") RETURNING `id`
+{"level":"error","ts":1759466612.7078662,"logger":"http.handlers.veil_handler.veil_handler","msg":"failed to store API config","error":"UNIQUE constraint failed: api_configs.path","db_path":"./veil.db","api_path":"/weather/*","error_details":"UNIQUE constraint failed: api_configs.path"}
+2025/10/03 04:43:32.708	[34mINFO[0m	http.log.access.log0	handled request	{"request": {"remote_ip": "::1", "remote_port": "50052", "client_ip": "::1", "proto": "HTTP/1.1", "method": "POST", "host": "localhost:2020", "uri": "/veil/api/routes", "headers": {"User-Agent": ["curl/8.7.1"], "Accept": ["*/*"], "Content-Type": ["application/json"], "Content-Length": ["264"]}}, "bytes_read": 264, "user_id": "", "duration": 0.046544375, "size": 24, "status": 409, "resp_headers": {"Content-Type": ["text/plain; charset=utf-8"], "X-Content-Type-Options": ["nosniff"], "Server": ["Caddy"]}}
+
+2025/10/03 10:20:07 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[0.654ms] [34;1m[rows:1][0m SELECT * FROM `api_keys` WHERE `api_keys`.`api_config_id` = 4 AND `api_keys`.`deleted_at` IS NULL
+
+2025/10/03 10:20:07 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[0.069ms] [34;1m[rows:1][0m SELECT * FROM `api_methods` WHERE `api_methods`.`api_config_id` = 4 AND `api_methods`.`deleted_at` IS NULL
+
+2025/10/03 10:20:07 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[0.019ms] [34;1m[rows:0][0m SELECT * FROM `api_parameters` WHERE `api_parameters`.`api_config_id` = 4 AND `api_parameters`.`deleted_at` IS NULL
+
+2025/10/03 10:20:07 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[5.168ms] [34;1m[rows:1][0m SELECT * FROM `api_configs` WHERE `api_configs`.`deleted_at` IS NULL
+{"level":"debug","ts":1759467007.7275891,"logger":"http.handlers.veil_handler.veil_handler","msg":"request authorized","path":"/weather/current","method":"GET"}
+{"level":"debug","ts":1759467007.7287931,"logger":"http.handlers.reverse_proxy","msg":"selected upstream","dial":"localhost:8083","total_upstreams":1}
+{"level":"debug","ts":1759467007.741618,"logger":"http.handlers.reverse_proxy","msg":"upstream roundtrip","upstream":"localhost:8083","duration":0.011815542,"request":{"remote_ip":"::1","remote_port":"50730","client_ip":"::1","proto":"HTTP/1.1","method":"GET","host":"localhost:8083","uri":"/weather/current","headers":{"X-Forwarded-Proto":["http"],"Via":["1.1 Caddy"],"X-Forwarded-For":["::1"],"X-Forwarded-Host":["localhost:2021"],"User-Agent":["curl/8.7.1"],"Accept":["*/*"],"X-Subscription-Key":["weather-test-key-2"],"X-Test-Header":["test"]}},"headers":{"Server":["BaseHTTP/0.6 Python/3.9.6"],"Date":["Fri, 03 Oct 2025 04:50:07 GMT"],"Content-Type":["application/json"]},"status":200}
+2025/10/03 04:50:07.743	[34mINFO[0m	http.log.access.log1	handled request	{"request": {"remote_ip": "::1", "remote_port": "50730", "client_ip": "::1", "proto": "HTTP/1.1", "method": "GET", "host": "localhost:2021", "uri": "/weather/current", "headers": {"User-Agent": ["curl/8.7.1"], "Accept": ["*/*"], "X-Subscription-Key": ["weather-test-key-2"], "X-Test-Header": ["test"]}}, "bytes_read": 0, "user_id": "", "duration": 0.021674584, "size": 88, "status": 200, "resp_headers": {"Date": ["Fri, 03 Oct 2025 04:50:07 GMT"], "Content-Type": ["application/json"], "Via": ["1.0 Caddy"], "Server": ["BaseHTTP/0.6 Python/3.9.6"]}}
+
+2025/10/03 10:20:13 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[0.044ms] [34;1m[rows:1][0m SELECT * FROM `api_keys` WHERE `api_keys`.`api_config_id` = 4 AND `api_keys`.`deleted_at` IS NULL
+
+2025/10/03 10:20:13 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[0.028ms] [34;1m[rows:1][0m SELECT * FROM `api_methods` WHERE `api_methods`.`api_config_id` = 4 AND `api_methods`.`deleted_at` IS NULL
+
+2025/10/03 10:20:13 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[0.029ms] [34;1m[rows:0][0m SELECT * FROM `api_parameters` WHERE `api_parameters`.`api_config_id` = 4 AND `api_parameters`.`deleted_at` IS NULL
+
+2025/10/03 10:20:13 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[0.404ms] [34;1m[rows:1][0m SELECT * FROM `api_configs` WHERE `api_configs`.`deleted_at` IS NULL
+{"level":"debug","ts":1759467013.2564101,"logger":"http.handlers.veil_handler.veil_handler","msg":"request authorized","path":"/weather/current","method":"GET"}
+{"level":"debug","ts":1759467013.256433,"logger":"http.handlers.reverse_proxy","msg":"selected upstream","dial":"localhost:8083","total_upstreams":1}
+{"level":"debug","ts":1759467013.2580218,"logger":"http.handlers.reverse_proxy","msg":"upstream roundtrip","upstream":"localhost:8083","duration":0.001566959,"request":{"remote_ip":"::1","remote_port":"50751","client_ip":"::1","proto":"HTTP/1.1","method":"GET","host":"localhost:8083","uri":"/weather/current","headers":{"X-Subscription-Key":["weather-test-key-2"],"X-Test-Header":["test"],"User-Agent":["curl/8.7.1"],"X-Forwarded-For":["::1"],"Via":["1.1 Caddy"],"X-Forwarded-Proto":["http"],"X-Forwarded-Host":["localhost:2021"],"Accept":["*/*"]}},"headers":{"Content-Type":["application/json"],"Server":["BaseHTTP/0.6 Python/3.9.6"],"Date":["Fri, 03 Oct 2025 04:50:13 GMT"]},"status":200}
+2025/10/03 04:50:13.258	[34mINFO[0m	http.log.access.log1	handled request	{"request": {"remote_ip": "::1", "remote_port": "50751", "client_ip": "::1", "proto": "HTTP/1.1", "method": "GET", "host": "localhost:2021", "uri": "/weather/current", "headers": {"User-Agent": ["curl/8.7.1"], "Accept": ["*/*"], "X-Subscription-Key": ["weather-test-key-2"], "X-Test-Header": ["test"]}}, "bytes_read": 0, "user_id": "", "duration": 0.002130042, "size": 88, "status": 200, "resp_headers": {"Via": ["1.0 Caddy"], "Server": ["BaseHTTP/0.6 Python/3.9.6"], "Date": ["Fri, 03 Oct 2025 04:50:13 GMT"], "Content-Type": ["application/json"]}}
+
+2025/10/03 10:20:33 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[1.997ms] [34;1m[rows:1][0m SELECT * FROM `api_keys` WHERE `api_keys`.`api_config_id` = 4 AND `api_keys`.`deleted_at` IS NULL
+
+2025/10/03 10:20:33 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[0.036ms] [34;1m[rows:1][0m SELECT * FROM `api_methods` WHERE `api_methods`.`api_config_id` = 4 AND `api_methods`.`deleted_at` IS NULL
+
+2025/10/03 10:20:33 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[0.045ms] [34;1m[rows:0][0m SELECT * FROM `api_parameters` WHERE `api_parameters`.`api_config_id` = 4 AND `api_parameters`.`deleted_at` IS NULL
+
+2025/10/03 10:20:33 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[2.869ms] [34;1m[rows:1][0m SELECT * FROM `api_configs` WHERE `api_configs`.`deleted_at` IS NULL
+{"level":"debug","ts":1759467033.525315,"logger":"http.handlers.veil_handler.veil_handler","msg":"request authorized","path":"/weather/current","method":"GET"}
+2025/10/03 04:50:33.525	[34mINFO[0m	http.log.access.log0	NOP	{"request": {"remote_ip": "::1", "remote_port": "50798", "client_ip": "::1", "proto": "HTTP/1.1", "method": "GET", "host": "localhost:2020", "uri": "/weather/current", "headers": {"X-Subscription-Key": ["weather-test-key-2"], "X-Test-Header": ["test"], "User-Agent": ["curl/8.7.1"], "Accept": ["*/*"]}}, "bytes_read": 0, "user_id": "", "duration": 0.002913708, "size": 0, "status": 0, "resp_headers": {"Server": ["Caddy"]}}
+
+2025/10/03 10:20:48 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[0.075ms] [34;1m[rows:1][0m SELECT * FROM `api_keys` WHERE `api_keys`.`api_config_id` = 4 AND `api_keys`.`deleted_at` IS NULL
+
+2025/10/03 10:20:48 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[0.061ms] [34;1m[rows:1][0m SELECT * FROM `api_methods` WHERE `api_methods`.`api_config_id` = 4 AND `api_methods`.`deleted_at` IS NULL
+
+2025/10/03 10:20:48 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[0.024ms] [34;1m[rows:0][0m SELECT * FROM `api_parameters` WHERE `api_parameters`.`api_config_id` = 4 AND `api_parameters`.`deleted_at` IS NULL
+
+2025/10/03 10:20:48 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[0.775ms] [34;1m[rows:1][0m SELECT * FROM `api_configs` WHERE `api_configs`.`deleted_at` IS NULL
+{"level":"debug","ts":1759467048.8429382,"logger":"http.handlers.veil_handler.veil_handler","msg":"API key validation failed","path":"/weather/current","error":"invalid API key"}
+2025/10/03 04:50:48.842	[34mINFO[0m	http.log.access.log1	handled request	{"request": {"remote_ip": "::1", "remote_port": "50828", "client_ip": "::1", "proto": "HTTP/1.1", "method": "GET", "host": "localhost:2021", "uri": "/weather/current", "headers": {"User-Agent": ["curl/8.7.1"], "Accept": ["*/*"], "X-Subscription-Key": ["order-test-key-2"], "X-Test-Header": ["test"]}}, "bytes_read": 0, "user_id": "", "duration": 0.000834791, "size": 13, "status": 401, "resp_headers": {"Server": ["Caddy"], "Content-Type": ["text/plain; charset=utf-8"], "X-Content-Type-Options": ["nosniff"]}}
+
+2025/10/03 10:20:52 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[0.046ms] [34;1m[rows:1][0m SELECT * FROM `api_keys` WHERE `api_keys`.`api_config_id` = 4 AND `api_keys`.`deleted_at` IS NULL
+
+2025/10/03 10:20:52 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[0.023ms] [34;1m[rows:1][0m SELECT * FROM `api_methods` WHERE `api_methods`.`api_config_id` = 4 AND `api_methods`.`deleted_at` IS NULL
+
+2025/10/03 10:20:52 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[0.017ms] [34;1m[rows:0][0m SELECT * FROM `api_parameters` WHERE `api_parameters`.`api_config_id` = 4 AND `api_parameters`.`deleted_at` IS NULL
+
+2025/10/03 10:20:52 [32mgithub.com/try-veil/veil/packages/caddy@v0.0.0-20251002124804-7d6cfaa8b222/internal/store/api_store.go:80
+[0m[33m[0.376ms] [34;1m[rows:1][0m SELECT * FROM `api_configs` WHERE `api_configs`.`deleted_at` IS NULL
+{"level":"debug","ts":1759467052.16804,"logger":"http.handlers.veil_handler.veil_handler","msg":"API key validation failed","path":"/weather/current","error":"invalid API key"}
+2025/10/03 04:50:52.168	[34mINFO[0m	http.log.access.log1	handled request	{"request": {"remote_ip": "::1", "remote_port": "50835", "client_ip": "::1", "proto": "HTTP/1.1", "method": "GET", "host": "localhost:2021", "uri": "/weather/current", "headers": {"User-Agent": ["curl/8.7.1"], "Accept": ["*/*"], "X-Subscription-Key": ["order-test-key-2"], "X-Test-Header": ["test"]}}, "bytes_read": 0, "user_id": "", "duration": 0.000417208, "size": 13, "status": 401, "resp_headers": {"Server": ["Caddy"], "Content-Type": ["text/plain; charset=utf-8"], "X-Content-Type-Options": ["nosniff"]}}
