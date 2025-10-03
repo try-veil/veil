@@ -205,28 +205,28 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 	// Remove any wildcards from the path for the rewrite pattern
 	apiPathForRewrite := strings.TrimSuffix(strings.TrimSuffix(api.Path, "*"), "/")
 
-	// Simply extract the last path segment
-	pathParts := strings.Split(apiPathForRewrite, "/")
-	var lastSegment string
-	if len(pathParts) > 0 {
-		lastSegment = pathParts[len(pathParts)-1]
+	// Extract the upstream path from the upstream URL
+	upstreamPath := "/"
+	if parsedUpstream, err := url.Parse(api.Upstream); err == nil && parsedUpstream.Path != "" {
+		upstreamPath = parsedUpstream.Path
 	}
 
 	h.logger.Debug("generating rewrite pattern",
 		zap.String("original_path", api.Path),
 		zap.String("rewrite_path", apiPathForRewrite),
-		zap.String("last_segment", lastSegment))
+		zap.String("upstream_path", upstreamPath))
 
-	// Create a rewrite rule with a direct replacement without capture groups
+	// Create a rewrite rule that strips the API ID prefix and replaces with upstream path
+	// The regex captures everything after the API ID prefix
 	rewriteConfig := fmt.Sprintf(`"rewrite": {
 		"method": "GET",
 		"path_regexp": [
 			{
-				"find": "^%s",
-				"replace": "/%s"
+				"find": "^%s(.*)",
+				"replace": "%s$1"
 			}
 		]
-	},`, apiPathForRewrite, lastSegment)
+	},`, apiPathForRewrite, upstreamPath)
 
 	// Get the list of methods from the API config
 	methodsList := []string{}

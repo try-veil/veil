@@ -182,20 +182,42 @@ export const apiKeyRoutes = new Elysia({ prefix: '/api-keys' })
       // Generate API key
       const keyValue = AuthUtils.generateApiKey();
 
-      const [newApiKey] = await db.insert(apiKeys).values({
+      const [insertedKey] = await db.insert(apiKeys).values({
         subscriptionId: subscription.id,
         keyValue,
         name: validatedData.name,
         expiresAt: validatedData.expiresAt ? new Date(validatedData.expiresAt) : null,
-      }).returning({
+      }).returning();
+
+      // Fetch the complete API key with subscription and API details
+      const [newApiKey] = await db.select({
         id: apiKeys.id,
         uid: apiKeys.uid,
         keyValue: apiKeys.keyValue,
         name: apiKeys.name,
         isActive: apiKeys.isActive,
+        lastUsed: apiKeys.lastUsed,
         expiresAt: apiKeys.expiresAt,
         createdAt: apiKeys.createdAt,
-      });
+        subscription: {
+          id: apiSubscriptions.id,
+          uid: apiSubscriptions.uid,
+          status: apiSubscriptions.status,
+          requestsUsed: apiSubscriptions.requestsUsed,
+          requestsLimit: apiSubscriptions.requestsLimit,
+        },
+        api: {
+          id: apis.id,
+          uid: apis.uid,
+          name: apis.name,
+          endpoint: apis.endpoint,
+        },
+      })
+      .from(apiKeys)
+      .innerJoin(apiSubscriptions, eq(apiKeys.subscriptionId, apiSubscriptions.id))
+      .innerJoin(apis, eq(apiSubscriptions.apiId, apis.id))
+      .where(eq(apiKeys.id, insertedKey.id))
+      .limit(1);
 
       // Get API info for gateway registration
       const [apiInfo] = await db.select({
