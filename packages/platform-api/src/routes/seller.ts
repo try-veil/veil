@@ -1,13 +1,92 @@
 import { Elysia, t } from 'elysia';
 import { db, apis, users, apiCategories, apiSubscriptions, apiUsageAnalytics } from '../db';
-import { authMiddleware } from '../middleware/auth';
 import { fusionAuthService } from '../services/fusionauth-service';
 import { createApiSchema, updateApiSchema, paginationSchema } from '../validation/schemas';
 import { eq, and, desc, count, sum, avg } from 'drizzle-orm';
 import { GatewayService } from '../services/gateway-service';
 
+// Helper to extract and validate user from headers
+async function getUserFromHeaders(headers: any): Promise<any> {
+  const token = headers.authorization?.startsWith('Bearer ')
+    ? headers.authorization.substring(7)
+    : null;
+
+  if (!token) {
+    throw new Error('No token provided');
+  }
+
+  const validationResult = await fusionAuthService.validateToken(token);
+
+  if (!validationResult.valid || !validationResult.user) {
+    throw new Error('Invalid or expired token');
+  }
+
+  const fusionAuthUser = validationResult.user;
+
+  let [localUser] = await db.select({
+    id: users.id,
+    uid: users.uid,
+    email: users.email,
+    firstName: users.firstName,
+    lastName: users.lastName,
+    role: users.role,
+    isActive: users.isActive,
+    fusionAuthId: users.fusionAuthId,
+  }).from(users)
+    .where(eq(users.email, fusionAuthUser.email))
+    .limit(1);
+
+  if (!localUser) {
+    const [newUser] = await db.insert(users).values({
+      email: fusionAuthUser.email,
+      firstName: fusionAuthUser.firstName,
+      lastName: fusionAuthUser.lastName,
+      role: fusionAuthUser.roles[0] || 'user',
+      fusionAuthId: fusionAuthUser.id,
+      isActive: true,
+      password: '',
+    }).returning({
+      id: users.id,
+      uid: users.uid,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      role: users.role,
+      isActive: users.isActive,
+      fusionAuthId: users.fusionAuthId,
+    });
+    localUser = newUser;
+  } else if (!localUser.fusionAuthId) {
+    await db.update(users)
+      .set({ fusionAuthId: fusionAuthUser.id })
+      .where(eq(users.id, localUser.id));
+    localUser.fusionAuthId = fusionAuthUser.id || null;
+  }
+
+  if (!localUser.isActive) {
+    throw new Error('User account is deactivated');
+  }
+
+  if (!localUser.id || !localUser.email) {
+    throw new Error('User data is incomplete');
+  }
+
+  return localUser;
+}
+
 export const sellerRoutes = new Elysia({ prefix: '/seller' })
-  .use(authMiddleware)
+  .derive(async ({ headers, set }) => {
+    console.log('🔐 Seller auth - headers.authorization:', headers.authorization ? 'Present' : 'Missing');
+    try {
+      const user = await getUserFromHeaders(headers);
+      console.log('✅ Seller auth - user authenticated:', user.email);
+      return { user };
+    } catch (error: any) {
+      console.error('🔴 Seller auth - error:', error.message);
+      set.status = 401;
+      throw error;
+    }
+  })
   .get('/dashboard', async ({ user, set }) => {
     try {
       console.log('Dashboard - user from context:', JSON.stringify(user, null, 2));
