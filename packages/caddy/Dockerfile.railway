@@ -37,24 +37,18 @@ RUN apk add --no-cache \
     sqlite-libs \
     tzdata
 
-# Create a non-root user
-RUN adduser -D -u 1000 caddy
-
-# Create necessary directories
-RUN mkdir -p /data/caddy /config \
-    && chown -R caddy:caddy /data /config
-
 # Copy the binary from builder
 COPY --from=builder /build/veil /usr/bin/veil
 
 # Copy Railway-specific Caddyfile
 COPY Caddyfile.railway /etc/caddy/Caddyfile
 
-# Set working directory
-WORKDIR /data
+# Create necessary directories
+# Running as root in Railway to ensure volume write permissions
+RUN mkdir -p /data /config
 
-# Switch to non-root user
-USER caddy
+# Set working directory to /data (Railway volume will be mounted here)
+WORKDIR /data
 
 # Expose necessary ports
 EXPOSE 2019 2020 2021
