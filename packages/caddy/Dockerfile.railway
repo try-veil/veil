@@ -23,7 +23,8 @@ WORKDIR /build
 COPY . .
 
 # Build the custom Caddy binary with Veil module
-RUN CGO_ENABLED=1 xcaddy build \
+# Pin to v2.7.6 to match go.mod and ensure compatibility with Go 1.23
+RUN CGO_ENABLED=1 xcaddy build v2.7.6 \
     --with github.com/try-veil/veil/packages/caddy=. \
     --output veil
 
