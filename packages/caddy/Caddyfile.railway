@@ -14,10 +14,11 @@
 
 	# Global veil handler configuration with database path and subscription header
 	# Database will be stored in Railway volume mounted at /data
-	veil_handler /data/veil.db X-Subscription-Key
+	# Using relative path to avoid Caddyfile parser treating absolute paths as route matchers
+	veil_handler veil.db X-Subscription-Key
 
 	# Management API route - must be last
 	handle /veil/api/* {
-		veil_handler /data/veil.db X-Subscription-Key
+		veil_handler veil.db X-Subscription-Key
 	}
 }

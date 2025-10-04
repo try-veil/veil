@@ -58,13 +58,15 @@ func (VeilHandler) CaddyModule() caddy.ModuleInfo {
 
 // UnmarshalCaddyfile implements caddyfile.Unmarshaler.
 func (h *VeilHandler) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
+	// The directive name is already consumed when UnmarshalCaddyfile is called,
+	// but we use a for loop with d.Next() to handle multiple occurrences
 	for d.Next() {
 		// Get all arguments
 		args := d.RemainingArgs()
 
 		// Need at least 2 arguments: db_path and subscription_key
 		if len(args) < 2 {
-			return d.ArgErr()
+			return d.Errf("expected at least 2 arguments (db_path, subscription_key), got %d", len(args))
 		}
 
 		h.DBPath = args[0]
@@ -74,7 +76,18 @@ func (h *VeilHandler) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 		if len(args) >= 3 {
 			h.EventsEndpoint = args[2]
 		}
+
+		// Ensure no extra arguments beyond the first 3
+		if len(args) > 3 {
+			return d.Errf("expected at most 3 arguments, got %d", len(args))
+		}
+
+		// Reject any block configuration as this directive doesn't support it
+		for d.NextBlock(d.Nesting()) {
+			return d.Err("veil_handler directive does not support block configuration")
+		}
 	}
+
 	return nil
 }
 
