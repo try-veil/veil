@@ -31,7 +31,7 @@ import { natsClient } from "./services/nats-client";
 
 const app = new Elysia()
   // Add middleware
-  .use(customCors(['http://localhost:3001', 'http://localhost:3000']))
+  .use(customCors(config.cors.origins))
   .use(swagger({
     documentation: {
       info: {
@@ -161,7 +161,7 @@ async function initializeServices() {
 
 console.log(`📊 Environment: ${config.nodeEnv}`);
 console.log(`🔗 Database URL: ${config.database.url.replace(/:[^:]*@/, ':****@')}`);
-console.log(`🔒 CORS Origin: http://localhost:3001,http://localhost:3000`);
+console.log(`🔒 CORS Origins: ${config.cors.origins.join(', ')}`);
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
