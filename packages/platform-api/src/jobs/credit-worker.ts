@@ -102,12 +102,52 @@ export class CreditWorker {
 
       if (updated) {
         console.log(`[Credit Worker] Incremented usage for subscription ${apiKey.subscriptionId}: ${updated.requestsUsed}/${updated.requestsLimit}`);
+
+        // Check if subscription has reached its limit
+        if (updated.requestsUsed >= updated.requestsLimit) {
+          console.warn(`[Credit Worker] Subscription ${apiKey.subscriptionId} has reached its limit! Deactivating API key ${apiKey.id}`);
+
+          // Deactivate the API key in platform-api database
+          await this.apiKeyRepo.deactivate(apiKey.id);
+
+          // Publish event to sync inactive status to Caddy
+          await this.publishKeySyncEvent(apiKey.keyValue, false);
+        }
       } else {
         console.warn(`[Credit Worker] Failed to increment usage for subscription ${apiKey.subscriptionId}`);
       }
     } catch (error) {
       console.error('[Credit Worker] Error processing event:', error);
       throw error; // Re-throw to be caught by outer handler
+    }
+  }
+
+  /**
+   * Publish key sync event to update Caddy's database
+   * @param keyValue - The API key value
+   * @param isActive - Whether the key should be active
+   */
+  private async publishKeySyncEvent(keyValue: string, isActive: boolean): Promise<void> {
+    try {
+      const connection = await natsClient.getConnection();
+      if (!connection) {
+        console.error('[Credit Worker] Cannot publish sync event - no NATS connection');
+        return;
+      }
+
+      const syncEvent = {
+        key_value: keyValue,
+        is_active: isActive,
+        timestamp: new Date().toISOString(),
+        reason: isActive ? 'reactivated' : 'exhausted_quota',
+      };
+
+      const eventJSON = JSON.stringify(syncEvent);
+      await connection.publish('key.sync', this.sc.encode(eventJSON));
+
+      console.log(`[Credit Worker] Published key sync event for key ${keyValue.substring(0, 15)}... (active: ${isActive})`);
+    } catch (error) {
+      console.error('[Credit Worker] Error publishing key sync event:', error);
     }
   }
 

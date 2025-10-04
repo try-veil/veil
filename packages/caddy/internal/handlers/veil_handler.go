@@ -168,6 +168,9 @@ func (h *VeilHandler) Stop() error {
 	return nil
 }
 
+// ErrKeyInactive is returned when an API key is found but is inactive (exhausted quota)
+var ErrKeyInactive = fmt.Errorf("API key is inactive due to exhausted quota")
+
 // validateAPIKey checks if the provided API key is valid for the given path
 func (h *VeilHandler) validateAPIKey(path string, apiKey string) (*models.APIConfig, error) {
 	if apiKey == "" {
@@ -184,17 +187,25 @@ func (h *VeilHandler) validateAPIKey(path string, apiKey string) (*models.APICon
 		return nil, fmt.Errorf("API not found for path: %s", path)
 	}
 
-	// Validate API key
-	valid := false
+	// Validate API key and check if it's active
+	keyFound := false
+	keyActive := false
 	for _, key := range api.APIKeys {
-		if key.Key == apiKey && *key.IsActive {
-			valid = true
+		if key.Key == apiKey {
+			keyFound = true
+			if key.IsActive != nil && *key.IsActive {
+				keyActive = true
+			}
 			break
 		}
 	}
 
-	if !valid {
+	if !keyFound {
 		return nil, fmt.Errorf("invalid API key")
+	}
+
+	if !keyActive {
+		return nil, ErrKeyInactive
 	}
 
 	return api, nil
@@ -641,7 +652,13 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 		h.logger.Debug("API key validation failed",
 			zap.String("path", r.URL.Path),
 			zap.Error(err))
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+
+		// Return 429 for inactive keys (exhausted quota), 401 for invalid keys
+		if err == ErrKeyInactive {
+			http.Error(w, "Too Many Requests: API key quota exhausted", http.StatusTooManyRequests)
+		} else {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		}
 		return nil
 	}
 
