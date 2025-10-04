@@ -59,10 +59,10 @@ export const config = {
   fusionAuth: {
     serverUrl: process.env.FUSIONAUTH_SERVER_URL || 'http://localhost:9011',
     apiKey: process.env.FUSIONAUTH_API_KEY || 'fusionauth-kickstart-api-key',
-    applicationId: process.env.FUSIONAUTH_APPLICATION_ID || '12345678-1234-1234-1234-123456789012',
-    clientId: process.env.FUSIONAUTH_CLIENT_ID || '12345678-1234-1234-1234-123456789012',
-    clientSecret: process.env.FUSIONAUTH_CLIENT_SECRET || '5ufLk_CtysYmhQn76NlmZkzVY0Q1XPWVGMgEmNDcWtE',
-    tenantId: process.env.FUSIONAUTH_TENANT_ID || '9f255291-7f43-4721-995a-e7c622384755',
+    applicationId: process.env.FUSIONAUTH_APPLICATION_ID || '4d329f78-fe1f-5b29-be59-f5f03904bf43',
+    clientId: process.env.FUSIONAUTH_CLIENT_ID || '4d329f78-fe1f-5b29-be59-f5f03904bf43',
+    clientSecret: process.env.FUSIONAUTH_CLIENT_SECRET || 'veil-super-secret-client-secret-for-development',
+    tenantId: process.env.FUSIONAUTH_TENANT_ID || 'b811d4c7-632f-042e-96a8-8a6d08794098',
     redirectUri: process.env.FUSIONAUTH_REDIRECT_URI || 'http://localhost:3001/auth/callback',
   },
 };

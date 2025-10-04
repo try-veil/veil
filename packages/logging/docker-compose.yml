@@ -40,6 +40,7 @@ services:
       DATABASE_PASSWORD: fusionauth_password
       FUSIONAUTH_APP_MEMORY: 512M
       FUSIONAUTH_APP_RUNTIME_MODE: development
+      FUSIONAUTH_APP_SILENT_MODE: "true"
       SEARCH_TYPE: elasticsearch
       SEARCH_SERVERS: http://search:9200
       FUSIONAUTH_APP_URL: http://fusionauth:9011

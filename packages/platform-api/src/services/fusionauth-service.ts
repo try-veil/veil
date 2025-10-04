@@ -130,6 +130,7 @@ export class FusionAuthService {
         loginId: credentials.email,
         password: credentials.password,
         applicationId: this.config.applicationId,
+        generateRefreshToken: true,
       };
 
       const response = await this.client.login(request);
