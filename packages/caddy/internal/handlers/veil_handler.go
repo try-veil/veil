@@ -218,15 +218,21 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 
 	// Create a rewrite rule that strips the API ID prefix and replaces with upstream path
 	// The regex captures everything after the API ID prefix
+	// IMPORTANT: Use $1 (not ${1}) for regex backreference - Caddy's path_regexp expects this format
+	replacePath := upstreamPath + "$1"
 	rewriteConfig := fmt.Sprintf(`"rewrite": {
 		"method": "GET",
 		"path_regexp": [
 			{
 				"find": "^%s(.*)",
-				"replace": "%s$1"
+				"replace": "%s"
 			}
 		]
-	},`, apiPathForRewrite, upstreamPath)
+	},`, apiPathForRewrite, replacePath)
+
+	h.logger.Debug("generated rewrite config",
+		zap.String("replace_path", replacePath),
+		zap.String("rewrite_config", rewriteConfig))
 
 	// Get the list of methods from the API config
 	methodsList := []string{}
@@ -295,6 +301,9 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 		],
 		"terminal": true
 	}`, methodsJSON, apiPathForMatching, transportConfig, rewriteConfig, h.getUpstreamDialAddress(api.Upstream), h.getUpstreamHost(api.Upstream))
+
+	h.logger.Debug("generated route JSON before unmarshal",
+		zap.String("newRouteJSON", newRouteJSON))
 
 	var newRoute map[string]interface{}
 	if err := json.Unmarshal([]byte(newRouteJSON), &newRoute); err != nil {

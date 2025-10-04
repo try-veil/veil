@@ -137,10 +137,14 @@ export const authMiddleware = new Elysia()
       };
     }
   })
-  .derive(({ store }) => {
+  .derive(({ store, request }) => {
     // Expose the user from store to route handlers
+    console.log('🔍 Auth middleware .derive() EXECUTING for:', request.url);
+    console.log('🔍 Store.user value:', (store as any).user ? 'PRESENT' : 'UNDEFINED');
+    const derivedUser = (store as any).user;
+    console.log('🔍 Returning user to route:', derivedUser ? `id: ${derivedUser.id}` : 'UNDEFINED');
     return {
-      user: (store as any).user
+      user: derivedUser
     };
   });
 
