@@ -17,7 +17,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "bun run src/scripts/migrate.ts",
+    "db:migrate": "drizzle-kit migrate",
     "db:seed": "bun run src/scripts/seed.ts",
     "db:reset": "bun run src/scripts/reset.ts",
     "docs:openapi": "bun run scripts/generate-openapi.ts",
