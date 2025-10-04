@@ -12,7 +12,7 @@ export interface AuthContext {
     lastName: string;
     role: string;
     isActive: boolean;
-    fusionAuthId: string;
+    fusionAuthId: string | null;
   };
 }
 
@@ -61,7 +61,7 @@ async function getUserFromHeaders(headers: any): Promise<AuthContext['user']> {
       email: fusionAuthUser.email,
       firstName: fusionAuthUser.firstName,
       lastName: fusionAuthUser.lastName,
-      role: fusionAuthUser.roles[0] || 'buyer', // Use first role or default to buyer
+      role: fusionAuthUser.roles[0] || 'user', // Use first role or default to user
       fusionAuthId: fusionAuthUser.id,
       isActive: true,
       password: '', // Empty password since auth is handled by FusionAuth
@@ -84,12 +84,17 @@ async function getUserFromHeaders(headers: any): Promise<AuthContext['user']> {
         .set({ fusionAuthId: fusionAuthUser.id })
         .where(eq(users.id, localUser.id));
 
-      localUser.fusionAuthId = fusionAuthUser.id;
+      localUser.fusionAuthId = fusionAuthUser.id || null;
     }
   }
 
   if (!localUser.isActive) {
     throw new Error('User account is deactivated');
+  }
+
+  // Ensure all required fields are present
+  if (!localUser.id || !localUser.email) {
+    throw new Error('User data is incomplete');
   }
 
   return localUser;
@@ -98,7 +103,7 @@ async function getUserFromHeaders(headers: any): Promise<AuthContext['user']> {
 console.log('🔐 Auth middleware initialized and ready');
 
 export const authMiddleware = new Elysia()
-  .derive(async ({ headers, set, request }) => {
+  .onBeforeHandle(async ({ headers, set, request, store }) => {
     try {
       console.log('🔐 Auth middleware EXECUTING for:', request.method, request.url);
       console.log('Auth middleware - headers.authorization:', headers.authorization ? 'Present' : 'Missing');
@@ -110,40 +115,75 @@ export const authMiddleware = new Elysia()
       console.log('Auth middleware - user found:', user ? `id: ${user.id}, email: ${user.email}` : 'null');
 
       if (!user) {
-        console.log('Auth middleware - user is null/undefined');
+        console.error('🔴 Auth middleware - user is null/undefined, blocking request');
         set.status = 401;
-        throw new Error('User not found');
+        return {
+          success: false,
+          message: 'Authentication required'
+        };
       }
 
-      return { user };
+      console.log('✅ Auth middleware - user authenticated:', user.email, 'role:', user.role);
+      // Store user in store so routes can access it via derive
+      (store as any).user = user;
     } catch (error: any) {
-      console.log('Auth middleware - error:', error.message);
-      console.log('Auth middleware - error details:', error);
+      console.error('🔴 Auth middleware - error:', error.message);
+      console.error('Auth middleware - error details:', error);
       set.status = 401;
-      throw new Error(error.message || 'Authentication failed');
+      return {
+        success: false,
+        message: 'Authentication failed',
+        error: error.message
+      };
     }
+  })
+  .derive(({ store, request }) => {
+    // Expose the user from store to route handlers
+    console.log('🔍 Auth middleware .derive() EXECUTING for:', request.url);
+    console.log('🔍 Store.user value:', (store as any).user ? 'PRESENT' : 'UNDEFINED');
+    const derivedUser = (store as any).user;
+    console.log('🔍 Returning user to route:', derivedUser ? `id: ${derivedUser.id}` : 'UNDEFINED');
+    return {
+      user: derivedUser
+    };
   });
 
 export const requireRole = (requiredRoles: string[]) => {
   return new Elysia()
-    .derive(async ({ headers, set }) => {
+    .onBeforeHandle(async ({ headers, set, store }) => {
       try {
         const user = await getUserFromHeaders(headers);
 
         if (!requiredRoles.includes(user.role)) {
+          console.error('🔴 Role check failed - user role:', user.role, 'required:', requiredRoles);
           set.status = 403;
-          throw new Error('Insufficient permissions');
+          return {
+            success: false,
+            message: 'Insufficient permissions'
+          };
         }
 
-        return { user };
+        console.log('✅ Role check passed - user role:', user.role);
+        (store as any).user = user;
       } catch (error: any) {
-        console.log('Role requirement middleware - error:', error.message);
+        console.error('🔴 Role requirement middleware - error:', error.message);
         if (error.message === 'Insufficient permissions') {
           set.status = 403;
+          return {
+            success: false,
+            message: 'Insufficient permissions'
+          };
         } else {
           set.status = 401;
+          return {
+            success: false,
+            message: 'Authentication failed',
+            error: error.message
+          };
         }
-        throw error;
       }
+    })
+    .derive(({ store }) => {
+      return { user: (store as any).user };
     });
 };

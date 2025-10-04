@@ -209,7 +209,6 @@ export class MarketplaceService {
    * Transform API to marketplace format
    */
   private transformToMarketplaceAPI(api: APIWithDetails): MarketplaceAPI {
-    console.log('Marketplace Service - Transform API', api.name, 'seller:', api.seller);
     return {
       uid: api.uid,
       name: api.name,

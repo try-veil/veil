@@ -1,0 +1,17 @@
+# Air temporary directory
+tmp/
+
+# Air build errors log
+build-errors.log
+
+# Build artifacts
+veil
+
+# Database files
+*.db
+
+# Go timestamp files
+*.timestamp
+
+# OS files
+.DS_Store

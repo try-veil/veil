@@ -131,10 +131,23 @@ services:
       - grafana
     restart: unless-stopped
 
+  # NATS Messaging Server for Credit Consumption
+  nats:
+    image: nats:2.10-alpine
+    ports:
+      - "4222:4222"  # Client connections
+      - "8222:8222"  # HTTP monitoring
+    command: ["-js", "-m", "8222"]  # Enable JetStream and monitoring
+    networks:
+      - veil
+    restart: unless-stopped
+
 networks:
   fusionauth:
     driver: bridge
   grafana:
+    driver: bridge
+  veil:
     driver: bridge
 
 volumes:

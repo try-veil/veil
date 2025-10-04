@@ -1,7 +1,7 @@
 PACKAGE_NAME := github.com/try-veil/veil
 GOLANG_CROSS_VERSION ?= v1.21.5
 
-.PHONY: build clean test setup release-dry-run release watch
+.PHONY: build clean test setup release-dry-run release watch dev
 
 setup:
 	go mod tidy
@@ -28,6 +28,14 @@ test-e2e:
 
 run:
 	./veil run --config Caddyfile
+
+# Development mode with hot reload using Air
+dev:
+	@if ! command -v air > /dev/null; then \
+		echo "Air is not installed. Installing..."; \
+		go install github.com/cosmtrek/air@latest; \
+	fi
+	air
 
 release-dry-run:
 	@docker run \
@@ -77,7 +85,12 @@ help:
 	@echo "Available targets:"
 	@echo "  build         - Build Caddy with Veil module"
 	@echo "  clean         - Remove build artifacts"
+	@echo "  clean-db      - Remove database files"
 	@echo "  test          - Run tests"
+	@echo "  test-e2e      - Run end-to-end tests"
+	@echo "  run           - Run the Veil server"
+	@echo "  dev           - Run in development mode with hot reload (Air)"
+	@echo "  watch         - Watch for changes and rebuild (legacy)"
 	@echo "  release       - Create a new release using goreleaser"
 	@echo "  release-dry-run - Test release process without publishing"
 	@echo "  all           - Build everything (default)"

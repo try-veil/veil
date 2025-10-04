@@ -1,14 +1,9 @@
 {
   "variables": {
-    "applicationId": "85a03867-dccf-4882-adde-1a79aeec50df",
-    "grafanaClientSecret": "super-secret-client-secret-that-is-long-enough",
-    "adminUserId": "00000000-0000-0000-0000-000000000001",
-    "grafanaAdminUserId": "00000000-0000-0000-0000-000000000002",
-    "grafanaEditorUserId": "00000000-0000-0000-0000-000000000003",
-    "grafanaViewerUserId": "00000000-0000-0000-0000-000000000004",
-    "grafanaLambdaId": "00000000-0000-0000-0000-000000000010",
-    "grafanaRegistrationWebhookId": "00000000-0000-0000-0000-000000000021",
-    "defaultTenantId": "9f255291-7f43-4721-995a-e7c622384755"
+    "veilApplicationId": "4d329f78-fe1f-5b29-be59-f5f03904bf43",
+    "veilClientSecret": "veil-super-secret-client-secret-for-development",
+    "veilTestUserId": "00000000-0000-0000-0000-000000000005",
+    "veilSellerUserId": "00000000-0000-0000-0000-000000000006"
   },
   "apiKeys": [
     {
@@ -19,84 +14,50 @@
   "requests": [
     {
       "method": "POST",
-      "url": "/api/user/#{adminUserId}",
-      "body": {
-        "user": {
-          "id": "#{adminUserId}",
-          "email": "admin@fa.com",
-          "firstName": "Admin",
-          "lastName": "User",
-          "password": "adminpassword",
-          "active": true
-        }
-      }
-    },
-    {
-      "method": "POST",
-      "url": "/api/user/registration/#{adminUserId}",
-      "body": {
-        "registration": {
-          "applicationId": "3c219e58-ed0e-4b18-ad48-f4f92793ae32",
-          "roles": ["admin"]
-        }
-      }
-    },
-    {
-      "method": "POST",
-      "url": "/api/lambda/#{grafanaLambdaId}",
-      "body": {
-        "lambda": {
-          "id": "#{grafanaLambdaId}",
-          "name": "Populate Grafana Roles",
-          "type": "JWTPopulate",
-          "engineType": "GraalJS",
-          "body": "function populate(jwt, user, registration) { const grafanaApplicationId = '85a03867-dccf-4882-adde-1a79aeec50df'; if (registration && registration.applicationId === grafanaApplicationId) { jwt.roles = registration.roles; } }"
-        }
-      }
-    },
-    {
-      "method": "POST",
-      "url": "/api/application/#{applicationId}",
+      "url": "/api/application/#{veilApplicationId}",
       "body": {
         "application": {
-          "id": "#{applicationId}",
-          "name": "Grafana",
+          "id": "#{veilApplicationId}",
+          "name": "Veil Platform",
           "registrationConfiguration": {
             "enabled": true,
             "type": "basic"
           },
           "oauthConfiguration": {
             "authorizedRedirectURLs": [
-              "http://localhost:3000/login/generic_oauth"
+              "http://localhost:3001/auth/callback",
+              "http://localhost:3000/auth/callback"
             ],
-            "clientId": "#{applicationId}",
-            "clientSecret": "#{grafanaClientSecret}",
-            "enabledGrants": ["authorization_code", "refresh_token"],
+            "authorizedOriginURLs": [
+              "http://localhost:3001",
+              "http://localhost:3000"
+            ],
+            "clientId": "#{veilApplicationId}",
+            "clientSecret": "#{veilClientSecret}",
+            "enabledGrants": ["authorization_code", "refresh_token", "password"],
             "generateRefreshTokens": true,
-            "requireClientAuthentication": true,
-            "logoutURL": "http://localhost:3000/logout",
-            "clientAuthenticationPolicy": "Required",
-            "proofKeyForCodeExchangePolicy": "Required"
+            "requireClientAuthentication": false,
+            "logoutURL": "http://localhost:3001/",
+            "clientAuthenticationPolicy": "NotRequired",
+            "proofKeyForCodeExchangePolicy": "NotRequiredWhenUsingClientAuthentication"
           },
           "jwtConfiguration": {
             "enabled": true,
             "timeToLiveInSeconds": 3600,
-            "refreshTokenTimeToLiveInMinutes": 43200,
-            "accessTokenPopulateId": "#{grafanaLambdaId}",
-            "idTokenPopulateId": "#{grafanaLambdaId}"
+            "refreshTokenTimeToLiveInMinutes": 43200
           },
           "roles": [
             {
-              "name": "grafana-admin",
-              "description": "Grafana Administrator"
+              "name": "user",
+              "description": "Regular user"
             },
             {
-              "name": "grafana-editor",
-              "description": "Grafana Editor"
+              "name": "seller",
+              "description": "API seller"
             },
             {
-              "name": "grafana-viewer",
-              "description": "Grafana Viewer"
+              "name": "admin",
+              "description": "Platform administrator"
             }
           ]
         }
@@ -104,12 +65,12 @@
     },
     {
       "method": "POST",
-      "url": "/api/user/#{grafanaAdminUserId}",
+      "url": "/api/user/#{veilTestUserId}",
       "body": {
         "user": {
-          "id": "#{grafanaAdminUserId}",
-          "email": "admin@grafana.com",
-          "firstName": "Admin",
+          "id": "#{veilTestUserId}",
+          "email": "test@veil.com",
+          "firstName": "Test",
           "lastName": "User",
           "password": "password123",
           "active": true
@@ -118,22 +79,22 @@
     },
     {
       "method": "POST",
-      "url": "/api/user/registration/#{grafanaAdminUserId}",
+      "url": "/api/user/registration/#{veilTestUserId}",
       "body": {
         "registration": {
-          "applicationId": "#{applicationId}",
-          "roles": ["grafana-admin"]
+          "applicationId": "#{veilApplicationId}",
+          "roles": ["user"]
         }
       }
     },
     {
       "method": "POST",
-      "url": "/api/user/#{grafanaEditorUserId}",
+      "url": "/api/user/#{veilSellerUserId}",
       "body": {
         "user": {
-          "id": "#{grafanaEditorUserId}",
-          "email": "editor@grafana.com",
-          "firstName": "Editor",
+          "id": "#{veilSellerUserId}",
+          "email": "seller@veil.com",
+          "firstName": "Seller",
           "lastName": "User",
           "password": "password123",
           "active": true
@@ -142,57 +103,11 @@
     },
     {
       "method": "POST",
-      "url": "/api/user/registration/#{grafanaEditorUserId}",
+      "url": "/api/user/registration/#{veilSellerUserId}",
       "body": {
         "registration": {
-          "applicationId": "#{applicationId}",
-          "roles": ["grafana-editor"]
-        }
-      }
-    },
-    {
-      "method": "POST",
-      "url": "/api/user/#{grafanaViewerUserId}",
-      "body": {
-        "user": {
-          "id": "#{grafanaViewerUserId}",
-          "email": "viewer@grafana.com",
-          "firstName": "Viewer",
-          "lastName": "User",
-          "password": "password123",
-          "active": true
-        }
-      }
-    },
-    {
-      "method": "POST",
-      "url": "/api/user/registration/#{grafanaViewerUserId}",
-      "body": {
-        "registration": {
-          "applicationId": "#{applicationId}",
-          "roles": ["grafana-viewer"]
-        }
-      }
-    },
-    {
-      "method": "POST",
-      "url": "/api/webhook/#{grafanaRegistrationWebhookId}",
-      "body": {
-        "webhook": {
-          "id": "#{grafanaRegistrationWebhookId}",
-          "description": "Webhook for new user registrations to the Grafana application.",
-          "url": "http://webhook-service:3001/webhook/user-registered",
-          "connectTimeout": 1000,
-          "readTimeout": 1000,
-          "global": false,
-          "tenantConfiguration": {
-            "#{defaultTenantId}": {
-              "enabled": true
-            }
-          },
-          "eventsEnabled": {
-            "user.login.success": true
-          }
+          "applicationId": "#{veilApplicationId}",
+          "roles": ["seller", "user"]
         }
       }
     }

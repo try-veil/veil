@@ -86,7 +86,7 @@ export class FusionAuthService {
         },
         registration: {
           applicationId: this.config.applicationId,
-          roles: userData.role ? [userData.role] : ['buyer'], // Default to buyer role
+          roles: userData.role ? [userData.role] : ['user'], // Default to user role
         },
         sendSetPasswordEmail: false,
         skipRegistrationVerification: true,

@@ -528,3 +528,35 @@ func (s *APIStore) GetAPIByID(id uint) (*models.APIConfig, error) {
 	}
 	return &api, nil
 }
+
+// UpdateKeyStatusByValue updates an API key status directly by its value
+// This is used by the NATS sync subscriber to update key status from platform-api events
+func (s *APIStore) UpdateKeyStatusByValue(keyValue string, isActive bool) error {
+	s.logger.Info("updating API key status by value",
+		zap.String("key", keyValue[:min(15, len(keyValue))]+"..."),
+		zap.Bool("is_active", isActive))
+
+	result := s.db.Model(&models.APIKey{}).
+		Where("key = ?", keyValue).
+		Update("is_active", isActive)
+
+	if result.Error != nil {
+		s.logger.Error("failed to update API key status",
+			zap.Error(result.Error),
+			zap.String("key", keyValue[:min(15, len(keyValue))]+"..."))
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		s.logger.Warn("API key not found in database",
+			zap.String("key", keyValue[:min(15, len(keyValue))]+"..."))
+		return fmt.Errorf("API key not found")
+	}
+
+	s.logger.Info("successfully updated API key status",
+		zap.String("key", keyValue[:min(15, len(keyValue))]+"..."),
+		zap.Bool("is_active", isActive),
+		zap.Int64("rows_affected", result.RowsAffected))
+
+	return nil
+}

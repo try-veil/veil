@@ -97,6 +97,10 @@ Veil is a monorepo containing multiple packages:
 ### Key Technical Details
 
 - **Caddy Integration**: Veil operates as a Caddy module with custom handler (`veil_handler`)
+- **Port Configuration**:
+  - Port 2019: Caddy admin API
+  - Port 2020: Veil management API (onboarding, configuration)
+  - Port 2021: Veil proxy (dynamically onboarded API routes)
 - **Database**: SQLite for Caddy module, PostgreSQL for platform API
 - **Authentication**: Subscription key validation via `X-Subscription-Key` header
 - **Build System**: Go modules with xcaddy for Caddy, Bun for TypeScript services

@@ -1,6 +1,7 @@
 import { Elysia, t } from 'elysia';
 import { db, apiKeys, apiSubscriptions, apis, users } from '../db';
 import { authMiddleware } from '../middleware/auth';
+import { fusionAuthService } from '../services/fusionauth-service';
 import { createApiKeySchema, updateApiKeySchema, paginationSchema } from '../validation/schemas';
 import { AuthUtils } from '../utils/auth';
 import { eq, and, desc, count } from 'drizzle-orm';
@@ -10,25 +11,30 @@ export const apiKeyRoutes = new Elysia({ prefix: '/api-keys' })
   .use(authMiddleware)
   .get('/', async ({ query, headers, set }) => {
     try {
-      // Get user from headers directly
-      const token = headers.authorization?.replace('Bearer ', '');
-      if (!token) {
+      // WORKAROUND: Inline auth check (same as marketplace)
+      const authHeader = headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
         set.status = 401;
-        return { success: false, message: 'No token provided' };
+        return { success: false, message: 'Authentication required' };
       }
 
-      const payload = AuthUtils.verifyToken(token);
-      if (!payload) {
+      const token = authHeader.substring(7);
+      const validationResult = await fusionAuthService.validateToken(token);
+
+      if (!validationResult.valid || !validationResult.user) {
         set.status = 401;
-        return { success: false, message: 'Invalid token' };
+        return { success: false, message: 'Invalid or expired token' };
       }
+
+      const fusionAuthUser = validationResult.user;
 
       const [user] = await db.select({
         id: users.id,
         role: users.role,
-      }).from(users).where(eq(users.id, payload.userId)).limit(1);
+        email: users.email,
+      }).from(users).where(eq(users.email, fusionAuthUser.email)).limit(1);
 
-      if (!user) {
+      if (!user || !user.id) {
         set.status = 401;
         return { success: false, message: 'User not found' };
       }
@@ -100,25 +106,30 @@ export const apiKeyRoutes = new Elysia({ prefix: '/api-keys' })
   })
   .post('/subscription/:subscriptionUid', async ({ params: { subscriptionUid }, body, headers, set }) => {
     try {
-      // Get user from headers directly
-      const token = headers.authorization?.replace('Bearer ', '');
-      if (!token) {
+      // WORKAROUND: Inline auth check
+      const authHeader = headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
         set.status = 401;
-        return { success: false, message: 'No token provided' };
+        return { success: false, message: 'Authentication required' };
       }
 
-      const payload = AuthUtils.verifyToken(token);
-      if (!payload) {
+      const token = authHeader.substring(7);
+      const validationResult = await fusionAuthService.validateToken(token);
+
+      if (!validationResult.valid || !validationResult.user) {
         set.status = 401;
-        return { success: false, message: 'Invalid token' };
+        return { success: false, message: 'Invalid or expired token' };
       }
+
+      const fusionAuthUser = validationResult.user;
 
       const [user] = await db.select({
         id: users.id,
         role: users.role,
-      }).from(users).where(eq(users.id, payload.userId)).limit(1);
+        email: users.email,
+      }).from(users).where(eq(users.email, fusionAuthUser.email)).limit(1);
 
-      if (!user) {
+      if (!user || !user.id) {
         set.status = 401;
         return { success: false, message: 'User not found' };
       }
@@ -171,20 +182,42 @@ export const apiKeyRoutes = new Elysia({ prefix: '/api-keys' })
       // Generate API key
       const keyValue = AuthUtils.generateApiKey();
 
-      const [newApiKey] = await db.insert(apiKeys).values({
+      const [insertedKey] = await db.insert(apiKeys).values({
         subscriptionId: subscription.id,
         keyValue,
         name: validatedData.name,
         expiresAt: validatedData.expiresAt ? new Date(validatedData.expiresAt) : null,
-      }).returning({
+      }).returning();
+
+      // Fetch the complete API key with subscription and API details
+      const [newApiKey] = await db.select({
         id: apiKeys.id,
         uid: apiKeys.uid,
         keyValue: apiKeys.keyValue,
         name: apiKeys.name,
         isActive: apiKeys.isActive,
+        lastUsed: apiKeys.lastUsed,
         expiresAt: apiKeys.expiresAt,
         createdAt: apiKeys.createdAt,
-      });
+        subscription: {
+          id: apiSubscriptions.id,
+          uid: apiSubscriptions.uid,
+          status: apiSubscriptions.status,
+          requestsUsed: apiSubscriptions.requestsUsed,
+          requestsLimit: apiSubscriptions.requestsLimit,
+        },
+        api: {
+          id: apis.id,
+          uid: apis.uid,
+          name: apis.name,
+          endpoint: apis.endpoint,
+        },
+      })
+      .from(apiKeys)
+      .innerJoin(apiSubscriptions, eq(apiKeys.subscriptionId, apiSubscriptions.id))
+      .innerJoin(apis, eq(apiSubscriptions.apiId, apis.id))
+      .where(eq(apiKeys.id, insertedKey.id))
+      .limit(1);
 
       // Get API info for gateway registration
       const [apiInfo] = await db.select({

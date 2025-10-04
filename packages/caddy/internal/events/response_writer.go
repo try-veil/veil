@@ -1,6 +1,8 @@
 package events
 
 import (
+	"bufio"
+	"net"
 	"net/http"
 	"time"
 )
@@ -33,6 +35,21 @@ func (rr *ResponseRecorder) Write(data []byte) (int, error) {
 	n, err := rr.ResponseWriter.Write(data)
 	rr.ResponseSize += int64(n)
 	return n, err
+}
+
+// Flush implements http.Flusher if the underlying writer supports it
+func (rr *ResponseRecorder) Flush() {
+	if flusher, ok := rr.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}
+
+// Hijack implements http.Hijacker if the underlying writer supports it
+func (rr *ResponseRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	if hijacker, ok := rr.ResponseWriter.(http.Hijacker); ok {
+		return hijacker.Hijack()
+	}
+	return nil, nil, http.ErrNotSupported
 }
 
 // GetResponseTime returns the time elapsed since the recorder was created

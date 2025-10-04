@@ -29,7 +29,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
         password: validatedData.password,
         firstName: validatedData.firstName,
         lastName: validatedData.lastName,
-        role: 'buyer',
+        role: validatedData.role || 'user',
       });
 
       if (!fusionAuthResult.success) {
@@ -46,7 +46,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
         password: '', // Empty password since auth is handled by FusionAuth
         firstName: validatedData.firstName,
         lastName: validatedData.lastName,
-        role: 'buyer',
+        role: validatedData.role || 'user',
         fusionAuthId: fusionAuthResult.user!.id,
         isActive: true,
       }).returning({
@@ -97,12 +97,17 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
       email: t.String(),
       password: t.String(),
       firstName: t.String(),
-      lastName: t.String()
+      lastName: t.String(),
+      role: t.Optional(t.Union([
+        t.Literal('user'),
+        t.Literal('seller'),
+        t.Literal('admin')
+      ]))
     }),
     detail: {
       tags: ['Auth'],
       summary: 'Register a new user',
-      description: 'Create a new user account with email and password'
+      description: 'Create a new user account with email and password. Optional role parameter defaults to "user".'
     }
   })
   .post('/login', async ({ body, set }) => {
@@ -137,7 +142,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
           password: '', // Empty password since auth is handled by FusionAuth
           firstName: fusionAuthUser.firstName,
           lastName: fusionAuthUser.lastName,
-          role: fusionAuthUser.roles[0] || 'buyer',
+          role: fusionAuthUser.roles[0] || 'user',
           fusionAuthId: fusionAuthUser.id,
           isActive: true,
         }).returning();

@@ -9,7 +9,7 @@ export const users = pgTable('users', {
   password: varchar('password', { length: 255 }).notNull(),
   firstName: varchar('first_name', { length: 100 }).notNull(),
   lastName: varchar('last_name', { length: 100 }).notNull(),
-  role: varchar('role', { length: 20 }).default('buyer').notNull(), // 'buyer', 'seller', 'admin'
+  role: varchar('role', { length: 20 }).default('user').notNull(), // 'user', 'seller', 'admin'
   fusionAuthId: varchar('fusion_auth_id', { length: 255 }).unique(),
   isActive: boolean('is_active').default(true).notNull(),
   emailVerified: boolean('email_verified').default(false).notNull(),
@@ -64,7 +64,6 @@ export const apiSubscriptions = pgTable('api_subscriptions', {
   uid: uuid('uid').defaultRandom().unique().notNull(),
   userId: integer('user_id').references(() => users.id).notNull(),
   apiId: integer('api_id').references(() => apis.id).notNull(),
-  pricingModelId: integer('pricing_model_id'), // Will add reference after pricingModels is defined
   status: varchar('status', { length: 20 }).default('active').notNull(), // 'active', 'suspended', 'cancelled'
   startDate: timestamp('start_date').defaultNow().notNull(),
   endDate: timestamp('end_date'),
@@ -76,7 +75,6 @@ export const apiSubscriptions = pgTable('api_subscriptions', {
   userIdx: index('subscriptions_user_idx').on(table.userId),
   apiIdx: index('subscriptions_api_idx').on(table.apiId),
   statusIdx: index('subscriptions_status_idx').on(table.status),
-  pricingModelIdx: index('subscriptions_pricing_model_idx').on(table.pricingModelId),
 }));
 
 // API Keys table
