@@ -35,6 +35,7 @@
     "elysia": "latest",
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.2",
+    "nats": "^2.29.3",
     "postgres": "^3.4.3",
     "uuid": "^9.0.1",
     "zod": "^3.22.4"

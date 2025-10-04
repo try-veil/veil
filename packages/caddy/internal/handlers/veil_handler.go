@@ -21,6 +21,7 @@ import (
 	"github.com/try-veil/veil/packages/caddy/internal/store"
 
 	"github.com/google/uuid"
+	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -33,6 +34,7 @@ type VeilHandler struct {
 	Config          *config.VeilConfig `json:"-"`
 	store           *store.APIStore
 	eventQueue      events.UsageEventQueue
+	natsConn        *nats.Conn
 	logger          *zap.Logger
 	ctx             caddy.Context
 }
@@ -119,9 +121,35 @@ func (h *VeilHandler) Provision(ctx caddy.Context) error {
 		h.eventQueue = nil
 	}
 
+	// Initialize NATS connection for credit consumption tracking
+	enableNatsEvents := os.Getenv("ENABLE_NATS_EVENTS")
+	if enableNatsEvents == "true" || enableNatsEvents == "1" {
+		natsURL := os.Getenv("NATS_URL")
+		if natsURL == "" {
+			natsURL = "nats://localhost:4222" // Default NATS URL
+		}
+
+		nc, err := nats.Connect(natsURL)
+		if err != nil {
+			h.logger.Warn("failed to connect to NATS, credit consumption tracking disabled",
+				zap.Error(err),
+				zap.String("nats_url", natsURL))
+			h.natsConn = nil
+		} else {
+			h.natsConn = nc
+			h.logger.Info("NATS connection established for credit consumption tracking",
+				zap.String("nats_url", natsURL),
+				zap.String("status", nc.Status().String()))
+		}
+	} else {
+		h.logger.Info("NATS credit tracking disabled (set ENABLE_NATS_EVENTS=true to enable)")
+		h.natsConn = nil
+	}
+
 	h.logger.Info("VeilHandler provisioned successfully",
 		zap.String("db_path", h.DBPath),
-		zap.Bool("event_streaming_enabled", h.eventQueue != nil))
+		zap.Bool("event_streaming_enabled", h.eventQueue != nil),
+		zap.Bool("nats_enabled", h.natsConn != nil))
 
 	return nil
 }
@@ -132,6 +160,10 @@ func (h *VeilHandler) Stop() error {
 		if err := h.eventQueue.Stop(); err != nil {
 			h.logger.Error("failed to stop event queue", zap.Error(err))
 		}
+	}
+	if h.natsConn != nil {
+		h.natsConn.Close()
+		h.logger.Info("NATS connection closed")
 	}
 	return nil
 }
@@ -613,21 +645,24 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 		return nil
 	}
 
-	// Check if method is allowed
-	methodAllowed := false
-	for _, method := range api.Methods {
-		if method.Method == r.Method {
-			methodAllowed = true
-			break
+	// Check if method is allowed (if methods are specified)
+	// If no methods are specified, allow all methods
+	if len(api.Methods) > 0 {
+		methodAllowed := false
+		for _, method := range api.Methods {
+			if method.Method == r.Method {
+				methodAllowed = true
+				break
+			}
 		}
-	}
 
-	if !methodAllowed {
-		h.logger.Debug("method not allowed",
-			zap.String("path", r.URL.Path),
-			zap.String("method", r.Method))
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return nil
+		if !methodAllowed {
+			h.logger.Debug("method not allowed",
+				zap.String("path", r.URL.Path),
+				zap.String("method", r.Method))
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return nil
+		}
 	}
 
 	// Check required headers
@@ -679,6 +714,83 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 			h.logger.Debug("failed to enqueue usage event",
 				zap.Error(enqueueErr),
 				zap.String("api_path", r.URL.Path))
+		}
+
+		// Publish to NATS for credit consumption tracking (fire-and-forget)
+		if h.natsConn != nil {
+			eventJSON, err := json.Marshal(usageEvent)
+			if err != nil {
+				h.logger.Debug("failed to marshal usage event for NATS",
+					zap.Error(err),
+					zap.String("api_path", r.URL.Path))
+			} else {
+				// Fire-and-forget publish to NATS
+				if err := h.natsConn.Publish("credit.events", eventJSON); err != nil {
+					h.logger.Debug("failed to publish event to NATS",
+						zap.Error(err),
+						zap.String("api_path", r.URL.Path))
+				}
+			}
+		}
+
+		return err
+	}
+
+	// If no event queue is enabled, check if NATS is available for credit tracking
+	if h.natsConn != nil {
+		h.logger.Info("NATS credit tracking enabled - processing request",
+			zap.String("api_path", r.URL.Path),
+			zap.String("method", r.Method))
+
+		// Wrap response writer to capture response details
+		recorder := events.NewResponseRecorder(w)
+
+		// Calculate request size
+		requestSize := r.ContentLength
+		if requestSize < 0 {
+			requestSize = 0
+		}
+
+		// Process the request
+		err := next.ServeHTTP(recorder, r)
+
+		// Create usage event for NATS
+		usageEvent := events.UsageEvent{
+			ID:             uuid.New().String(),
+			APIPath:        r.URL.Path,
+			SubscriptionKey: apiKey,
+			Method:         r.Method,
+			ResponseTime:   recorder.GetResponseTime().Milliseconds(),
+			StatusCode:     recorder.StatusCode,
+			Success:        recorder.IsSuccess(),
+			Timestamp:      time.Now(),
+			RequestSize:    requestSize,
+			ResponseSize:   recorder.ResponseSize,
+		}
+
+		// Publish to NATS (fire-and-forget)
+		h.logger.Info("Publishing event to NATS",
+			zap.String("event_id", usageEvent.ID),
+			zap.String("subscription_key", usageEvent.SubscriptionKey[:15]+"..."),
+			zap.Int("status_code", usageEvent.StatusCode))
+
+		eventJSON, marshalErr := json.Marshal(usageEvent)
+		if marshalErr != nil {
+			h.logger.Error("failed to marshal usage event for NATS",
+				zap.Error(marshalErr),
+				zap.String("api_path", r.URL.Path))
+		} else {
+			h.logger.Info("Publishing to NATS topic credit.events",
+				zap.Int("payload_size", len(eventJSON)))
+
+			if publishErr := h.natsConn.Publish("credit.events", eventJSON); publishErr != nil {
+				h.logger.Error("failed to publish event to NATS",
+					zap.Error(publishErr),
+					zap.String("api_path", r.URL.Path))
+			} else {
+				h.logger.Info("Successfully published event to NATS",
+					zap.String("event_id", usageEvent.ID))
+			}
 		}
 
 		return err
