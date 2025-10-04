@@ -47,7 +47,7 @@ RUN mkdir -p /data/caddy /config \
 COPY --from=builder /build/veil /usr/bin/veil
 
 # Copy Caddyfile
-COPY Caddyfile /etc/caddy/Caddyfile
+COPY packages/caddy/Caddyfile /etc/caddy/Caddyfile
 
 # Set working directory
 WORKDIR /data
