@@ -39,6 +39,15 @@ type VeilHandler struct {
 	ctx             caddy.Context
 }
 
+// KeySyncEvent represents a key status synchronization event from platform-api
+// This matches the event structure published by the credit worker
+type KeySyncEvent struct {
+	KeyValue  string `json:"key_value"`
+	IsActive  bool   `json:"is_active"`
+	Timestamp string `json:"timestamp"`
+	Reason    string `json:"reason"`
+}
+
 // CaddyModule returns the Caddy module information.
 func (VeilHandler) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
@@ -140,6 +149,9 @@ func (h *VeilHandler) Provision(ctx caddy.Context) error {
 			h.logger.Info("NATS connection established for credit consumption tracking",
 				zap.String("nats_url", natsURL),
 				zap.String("status", nc.Status().String()))
+
+			// Start key sync subscriber to receive status updates from platform-api
+			go h.subscribeToKeySyncEvents()
 		}
 	} else {
 		h.logger.Info("NATS credit tracking disabled (set ENABLE_NATS_EVENTS=true to enable)")
@@ -166,6 +178,57 @@ func (h *VeilHandler) Stop() error {
 		h.logger.Info("NATS connection closed")
 	}
 	return nil
+}
+
+// subscribeToKeySyncEvents subscribes to key.sync events and updates API key status in the database
+// This allows platform-api to synchronize key status changes (like quota exhaustion) to Caddy's cache
+func (h *VeilHandler) subscribeToKeySyncEvents() {
+	if h.natsConn == nil {
+		h.logger.Error("cannot subscribe to key sync events - no NATS connection")
+		return
+	}
+
+	h.logger.Info("subscribing to key sync events on topic 'key.sync'")
+
+	// Subscribe to key.sync topic
+	sub, err := h.natsConn.Subscribe("key.sync", func(msg *nats.Msg) {
+		// Decode the sync event
+		var syncEvent KeySyncEvent
+		if err := json.Unmarshal(msg.Data, &syncEvent); err != nil {
+			h.logger.Error("failed to decode key sync event",
+				zap.Error(err),
+				zap.String("data", string(msg.Data)))
+			return
+		}
+
+		h.logger.Info("received key sync event",
+			zap.String("key", syncEvent.KeyValue[:min(15, len(syncEvent.KeyValue))]+"..."),
+			zap.Bool("is_active", syncEvent.IsActive),
+			zap.String("reason", syncEvent.Reason),
+			zap.String("timestamp", syncEvent.Timestamp))
+
+		// Update key status in database
+		if err := h.store.UpdateKeyStatusByValue(syncEvent.KeyValue, syncEvent.IsActive); err != nil {
+			h.logger.Error("failed to update key status from sync event",
+				zap.Error(err),
+				zap.String("key", syncEvent.KeyValue[:min(15, len(syncEvent.KeyValue))]+"..."),
+				zap.Bool("is_active", syncEvent.IsActive))
+		} else {
+			h.logger.Info("successfully synchronized key status from platform-api",
+				zap.String("key", syncEvent.KeyValue[:min(15, len(syncEvent.KeyValue))]+"..."),
+				zap.Bool("is_active", syncEvent.IsActive),
+				zap.String("reason", syncEvent.Reason))
+		}
+	})
+
+	if err != nil {
+		h.logger.Error("failed to subscribe to key sync events",
+			zap.Error(err))
+		return
+	}
+
+	h.logger.Info("successfully subscribed to key sync events",
+		zap.String("subject", sub.Subject))
 }
 
 // ErrKeyInactive is returned when an API key is found but is inactive (exhausted quota)
