@@ -224,7 +224,6 @@ export class APIRepository {
     }
 
     const results = await query;
-    console.log('Repository query results:', results.length, 'APIs found');
 
     // Get methods and headers for each API
     const apiIds = results.map(r => r.api.id);
@@ -260,10 +259,17 @@ export class APIRepository {
 
     // Combine data
     const apisWithDetails: APIWithDetails[] = results.map(result => {
-      console.log('API Repository - Seller data for API', result.api.name, ':', result.seller);
+      // Handle null seller gracefully
+      const seller = result.seller || {
+        id: 0,
+        firstName: 'Unknown',
+        lastName: 'Seller',
+        email: 'unknown@example.com'
+      };
+
       return {
         ...result.api,
-        seller: result.seller,
+        seller,
         category: result.category,
         methods: methodsByApi[result.api.id] || [],
         requiredHeaders: headersByApi[result.api.id] || [],

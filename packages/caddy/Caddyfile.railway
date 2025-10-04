@@ -1,0 +1,23 @@
+{
+	order veil_handler before reverse_proxy
+	admin 0.0.0.0:2019
+	auto_https off # Disable HTTPS for testing
+	debug
+}
+
+:2020 {
+	log {
+		output stderr
+		format console
+		level DEBUG
+	}
+
+	# Global veil handler configuration with database path and subscription header
+	# Database will be stored in Railway volume mounted at /data
+	veil_handler /data/veil.db X-Subscription-Key
+
+	# Management API route - must be last
+	handle /veil/api/* {
+		veil_handler /data/veil.db X-Subscription-Key
+	}
+}

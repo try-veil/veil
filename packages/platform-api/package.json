@@ -29,6 +29,7 @@
     "@elysiajs/jwt": "^0.8.0",
     "@elysiajs/swagger": "^0.8.0",
     "@fusionauth/typescript-client": "^1.60.0",
+    "@try-veil/veil-gateway": "^0.0.1",
     "bcryptjs": "^2.4.3",
     "drizzle-orm": "^0.44.5",
     "elysia": "latest",

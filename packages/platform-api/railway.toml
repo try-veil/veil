@@ -1,0 +1,8 @@
+[build]
+builder = "RAILPACK"
+buildCommand = "echo 'No build needed - Bun runs TypeScript directly'"
+
+[deploy]
+startCommand = "bun run start"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

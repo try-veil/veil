@@ -9,13 +9,13 @@
         "@elysiajs/jwt": "^0.8.0",
         "@elysiajs/swagger": "^0.8.0",
         "@fusionauth/typescript-client": "^1.60.0",
+        "@try-veil/veil-gateway": "^0.0.1",
         "bcryptjs": "^2.4.3",
         "drizzle-orm": "^0.44.5",
         "elysia": "latest",
         "js-yaml": "^4.1.0",
         "jsonwebtoken": "^9.0.2",
         "postgres": "^3.4.3",
-        "razorpay": "^2.9.6",
         "uuid": "^9.0.1",
         "zod": "^3.22.4",
       },
@@ -105,6 +105,8 @@
     "@tokenizer/inflate": ["@tokenizer/inflate@0.2.7", "", { "dependencies": { "debug": "^4.4.0", "fflate": "^0.8.2", "token-types": "^6.0.0" } }, "sha512-MADQgmZT1eKjp06jpI2yozxaU9uVs4GzzgSL+uEq7bVcJ9V1ZXQkeGNql1fsSI0gMy1vhvNTNbUqrx+pZfJVmg=="],
 
     "@tokenizer/token": ["@tokenizer/token@0.3.0", "", {}, "sha512-OvjF+z51L3ov0OyAU0duzsYuvO01PH7x4t6DJx+guahgTnBHkhJdG7soQeTSFLWN3efnHyibZ4Z8l2EuWwJN3A=="],
+
+    "@try-veil/veil-gateway": ["@try-veil/veil-gateway@0.0.1", "", { "dependencies": { "axios": "^1.6.0" } }, "sha512-nIb/y04P7UC9I0hojZLSKYRdQ0X8IFR+Qh70rnf6ZL7njc5IXgbgQ6qma/9yIsmrJFjbeQaQGSAZwbCjPtSUtg=="],
 
     "@types/bcryptjs": ["@types/bcryptjs@2.4.6", "", {}, "sha512-9xlo6R2qDs5uixm0bcIqCeMCE6HiQsIyel9KQySStiyqNl2tnj2mP3DX1Nf56MD6KMenNNlBBsy3LJ7gUEQPXQ=="],
 
@@ -239,8 +241,6 @@
     "postgres": ["postgres@3.4.7", "", {}, "sha512-Jtc2612XINuBjIl/QTWsV5UvE8UHuNblcO3vVADSrKsrc6RqGX6lOW1cEo3CM2v0XG4Nat8nI+YM7/f26VxXLw=="],
 
     "proxy-from-env": ["proxy-from-env@1.1.0", "", {}, "sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg=="],
-
-    "razorpay": ["razorpay@2.9.6", "", { "dependencies": { "axios": "^1.6.8" } }, "sha512-zsHAQzd6e1Cc6BNoCNZQaf65ElL6O6yw0wulxmoG5VQDr363fZC90Mp1V5EktVzG45yPyNomNXWlf4cQ3622gQ=="],
 
     "resolve-pkg-maps": ["resolve-pkg-maps@1.0.0", "", {}, "sha512-seS2Tj26TBVOC2NIc2rOe2y2ZO7efxITtLZcGSOnHHNOQ7CkiUBfw0Iw2ck6xkIhPwLhKNLS8BO+hEpngQlqzw=="],
 

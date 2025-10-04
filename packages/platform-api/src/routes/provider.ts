@@ -76,10 +76,19 @@ export const providerRoutes = new Elysia({ prefix: '/provider' })
       set.status = 201;
       return {
         success: true,
-        message: 'API created successfully',
+        message: 'API created and activated successfully! Your API is now live on the marketplace.',
         data: {
           ...api,
           gatewayUrl: api.isActive ? apiService.getGatewayURL(api.uid) : null,
+          status: 'active',
+          instructions: {
+            nextSteps: [
+              'Your API is now discoverable on the marketplace',
+              'Share your API gateway URL with potential subscribers',
+              'Monitor usage and subscriptions in your dashboard'
+            ],
+            gatewayUrl: api.isActive ? apiService.getGatewayURL(api.uid) : null
+          }
         }
       };
     } catch (error) {

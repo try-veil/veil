@@ -1,6 +1,6 @@
 {
-  "name": "@veil/nodejs-sdk",
-  "version": "1.0.0",
+  "name": "@try-veil/veil-gateway",
+  "version": "0.0.1",
   "description": "Node.js SDK for Veil API Gateway Management Server",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -54,6 +54,6 @@
     "typescript": "^5.0.0"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=18.0.0"
   }
 }

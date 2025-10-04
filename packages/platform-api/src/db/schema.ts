@@ -9,7 +9,7 @@ export const users = pgTable('users', {
   password: varchar('password', { length: 255 }).notNull(),
   firstName: varchar('first_name', { length: 100 }).notNull(),
   lastName: varchar('last_name', { length: 100 }).notNull(),
-  role: varchar('role', { length: 20 }).default('buyer').notNull(), // 'buyer', 'seller', 'admin'
+  role: varchar('role', { length: 20 }).default('user').notNull(), // 'user', 'seller', 'admin'
   fusionAuthId: varchar('fusion_auth_id', { length: 255 }).unique(),
   isActive: boolean('is_active').default(true).notNull(),
   emailVerified: boolean('email_verified').default(false).notNull(),
@@ -117,6 +117,7 @@ export const apiUsageAnalytics = pgTable('api_usage_analytics', {
   successfulRequests: integer('successful_requests').default(0).notNull(),
   failedRequests: integer('failed_requests').default(0).notNull(),
   avgResponseTime: decimal('avg_response_time', { precision: 8, scale: 2 }),
+  totalDataTransferred: integer('total_data_transferred').default(0).notNull(), // in bytes
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => ({
   subscriptionIdx: index('analytics_subscription_idx').on(table.subscriptionId),
@@ -302,4 +303,325 @@ export const webhookEvents = pgTable('webhook_events', {
   providerIdx: index('webhook_events_provider_idx').on(table.provider),
   processedIdx: index('webhook_events_processed_idx').on(table.processed),
   createdAtIdx: index('webhook_events_created_at_idx').on(table.createdAt),
+}));
+
+// Pricing Models table
+export const pricingModels = pgTable('pricing_models', {
+  id: serial('id').primaryKey(),
+  uid: uuid('uid').defaultRandom().unique().notNull(),
+  name: varchar('name', { length: 200 }).notNull(),
+  description: text('description'),
+  type: varchar('type', { length: 50 }).notNull(), // 'usage_based', 'subscription', 'freemium', 'hybrid'
+  billingCycle: varchar('billing_cycle', { length: 20 }).notNull(), // 'daily', 'weekly', 'monthly', 'yearly'
+  currency: varchar('currency', { length: 3 }).default('USD').notNull(),
+  basePrice: decimal('base_price', { precision: 10, scale: 2 }), // For subscription/hybrid models
+  configJson: text('config_json').notNull(), // JSON storage for flexible configuration
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  typeIdx: index('pricing_models_type_idx').on(table.type),
+  activeIdx: index('pricing_models_active_idx').on(table.isActive),
+}));
+
+// Pricing Tiers table
+export const pricingTiers = pgTable('pricing_tiers', {
+  id: serial('id').primaryKey(),
+  pricingModelId: integer('pricing_model_id').references(() => pricingModels.id).notNull(),
+  name: varchar('name', { length: 100 }).notNull(),
+  tierOrder: integer('tier_order').notNull(), // Ordering of tiers
+  limitRequests: integer('limit_requests'), // null = unlimited
+  pricePerUnit: decimal('price_per_unit', { precision: 10, scale: 6 }).notNull(),
+  baseFee: decimal('base_fee', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  features: text('features'), // JSON array of feature IDs
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  modelIdx: index('pricing_tiers_model_idx').on(table.pricingModelId),
+  orderIdx: index('pricing_tiers_order_idx').on(table.tierOrder),
+}));
+
+// Promotions table
+export const promotions = pgTable('promotions', {
+  id: serial('id').primaryKey(),
+  uid: uuid('uid').defaultRandom().unique().notNull(),
+  code: varchar('code', { length: 50 }).unique(),
+  name: varchar('name', { length: 200 }).notNull(),
+  description: text('description'),
+  type: varchar('type', { length: 50 }).notNull(), // 'percentage_discount', 'fixed_discount', 'tier_upgrade', 'free_trial'
+  value: decimal('value', { precision: 10, scale: 2 }).notNull(), // Discount amount or percentage
+  maxUses: integer('max_uses'), // null = unlimited
+  currentUses: integer('current_uses').default(0).notNull(),
+  validFrom: timestamp('valid_from').notNull(),
+  validUntil: timestamp('valid_until'),
+  conditions: text('conditions'), // JSON for complex conditions
+  isActive: boolean('is_active').default(true).notNull(),
+  priority: integer('priority').default(0).notNull(), // Higher priority applied first
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  codeIdx: index('promotions_code_idx').on(table.code),
+  activeIdx: index('promotions_active_idx').on(table.isActive),
+  validFromIdx: index('promotions_valid_from_idx').on(table.validFrom),
+  validUntilIdx: index('promotions_valid_until_idx').on(table.validUntil),
+}));
+
+// Billing Periods table
+export const billingPeriods = pgTable('billing_periods', {
+  id: serial('id').primaryKey(),
+  uid: uuid('uid').defaultRandom().unique().notNull(),
+  subscriptionId: integer('subscription_id').references(() => apiSubscriptions.id).notNull(),
+  pricingModelId: integer('pricing_model_id').references(() => pricingModels.id).notNull(),
+  startDate: timestamp('start_date').notNull(),
+  endDate: timestamp('end_date').notNull(),
+  status: varchar('status', { length: 20 }).default('active').notNull(), // 'active', 'closed', 'cancelled'
+  usageSnapshot: text('usage_snapshot'), // JSON snapshot of usage metrics
+  calculatedAmount: decimal('calculated_amount', { precision: 10, scale: 2 }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  subscriptionIdx: index('billing_periods_subscription_idx').on(table.subscriptionId),
+  statusIdx: index('billing_periods_status_idx').on(table.status),
+  dateIdx: index('billing_periods_date_idx').on(table.startDate, table.endDate),
+}));
+
+// Invoices table
+export const invoices = pgTable('invoices', {
+  id: serial('id').primaryKey(),
+  uid: uuid('uid').defaultRandom().unique().notNull(),
+  invoiceNumber: varchar('invoice_number', { length: 50 }).unique().notNull(),
+  subscriptionId: integer('subscription_id').references(() => apiSubscriptions.id).notNull(),
+  billingPeriodId: integer('billing_period_id').references(() => billingPeriods.id),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  status: varchar('status', { length: 20 }).default('draft').notNull(), // 'draft', 'pending', 'paid', 'overdue', 'cancelled'
+  currency: varchar('currency', { length: 3 }).default('USD').notNull(),
+
+  // Amounts
+  subtotal: decimal('subtotal', { precision: 10, scale: 2 }).notNull(),
+  discountAmount: decimal('discount_amount', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  taxAmount: decimal('tax_amount', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  totalAmount: decimal('total_amount', { precision: 10, scale: 2 }).notNull(),
+
+  // Breakdown stored as JSON
+  breakdown: text('breakdown').notNull(), // JSON array of line items
+  appliedPromotions: text('applied_promotions'), // JSON array of promotions applied
+
+  // Dates
+  issueDate: timestamp('issue_date').defaultNow().notNull(),
+  dueDate: timestamp('due_date').notNull(),
+  paidDate: timestamp('paid_date'),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  subscriptionIdx: index('invoices_subscription_idx').on(table.subscriptionId),
+  userIdx: index('invoices_user_idx').on(table.userId),
+  statusIdx: index('invoices_status_idx').on(table.status),
+  dueDateIdx: index('invoices_due_date_idx').on(table.dueDate),
+  invoiceNumberIdx: index('invoices_number_idx').on(table.invoiceNumber),
+}));
+
+// Subscription Pricing History (track pricing changes)
+export const subscriptionPricingHistory = pgTable('subscription_pricing_history', {
+  id: serial('id').primaryKey(),
+  subscriptionId: integer('subscription_id').references(() => apiSubscriptions.id).notNull(),
+  pricingModelId: integer('pricing_model_id').references(() => pricingModels.id).notNull(),
+  changetype: varchar('change_type', { length: 50 }).notNull(), // 'upgrade', 'downgrade', 'initial', 'renewal'
+  oldPricingModelId: integer('old_pricing_model_id').references(() => pricingModels.id),
+  effectiveDate: timestamp('effective_date').notNull(),
+  prorationCredit: decimal('proration_credit', { precision: 10, scale: 2 }).default('0.00'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  subscriptionIdx: index('sub_pricing_history_subscription_idx').on(table.subscriptionId),
+  effectiveDateIdx: index('sub_pricing_history_date_idx').on(table.effectiveDate),
+}));
+
+// Relations for new tables
+export const pricingModelsRelations = relations(pricingModels, ({ many }) => ({
+  tiers: many(pricingTiers),
+  billingPeriods: many(billingPeriods),
+  pricingHistory: many(subscriptionPricingHistory),
+}));
+
+export const pricingTiersRelations = relations(pricingTiers, ({ one }) => ({
+  pricingModel: one(pricingModels, {
+    fields: [pricingTiers.pricingModelId],
+    references: [pricingModels.id],
+  }),
+}));
+
+export const promotionsRelations = relations(promotions, ({ many }) => ({
+  // Will be linked through applied_promotions JSON
+}));
+
+export const billingPeriodsRelations = relations(billingPeriods, ({ one, many }) => ({
+  subscription: one(apiSubscriptions, {
+    fields: [billingPeriods.subscriptionId],
+    references: [apiSubscriptions.id],
+  }),
+  pricingModel: one(pricingModels, {
+    fields: [billingPeriods.pricingModelId],
+    references: [pricingModels.id],
+  }),
+  invoices: many(invoices),
+}));
+
+export const invoicesRelations = relations(invoices, ({ one }) => ({
+  subscription: one(apiSubscriptions, {
+    fields: [invoices.subscriptionId],
+    references: [apiSubscriptions.id],
+  }),
+  user: one(users, {
+    fields: [invoices.userId],
+    references: [users.id],
+  }),
+  billingPeriod: one(billingPeriods, {
+    fields: [invoices.billingPeriodId],
+    references: [billingPeriods.id],
+  }),
+}));
+
+export const subscriptionPricingHistoryRelations = relations(subscriptionPricingHistory, ({ one }) => ({
+  subscription: one(apiSubscriptions, {
+    fields: [subscriptionPricingHistory.subscriptionId],
+    references: [apiSubscriptions.id],
+  }),
+  pricingModel: one(pricingModels, {
+    fields: [subscriptionPricingHistory.pricingModelId],
+    references: [pricingModels.id],
+  }),
+  oldPricingModel: one(pricingModels, {
+    fields: [subscriptionPricingHistory.oldPricingModelId],
+    references: [pricingModels.id],
+  }),
+}));
+
+// Approval System tables
+export const approvals = pgTable('approvals', {
+  id: serial('id').primaryKey(),
+  uid: uuid('uid').defaultRandom().unique().notNull(),
+  type: varchar('type', { length: 50 }).notNull(), // 'api_submission', 'provider_registration', etc.
+  entityId: varchar('entity_id', { length: 255 }).notNull(), // UID of the entity being approved
+  entityType: varchar('entity_type', { length: 50 }).notNull(), // 'api', 'user', 'subscription', etc.
+  status: varchar('status', { length: 20 }).default('pending').notNull(), // 'pending', 'approved', 'rejected', 'escalated', 'expired'
+  priority: varchar('priority', { length: 20 }).default('medium').notNull(), // 'low', 'medium', 'high', 'urgent'
+  requestedBy: integer('requested_by').references(() => users.id).notNull(),
+  assignedTo: integer('assigned_to').references(() => users.id),
+  processedBy: integer('processed_by').references(() => users.id),
+  data: text('data'), // JSON data specific to the approval type
+  reason: text('reason').notNull(),
+  attachments: text('attachments'), // JSON array of attachment URLs
+  tags: text('tags'), // JSON array of tags
+  expectedResolution: timestamp('expected_resolution'),
+  processedAt: timestamp('processed_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  typeIdx: index('approvals_type_idx').on(table.type),
+  entityIdx: index('approvals_entity_idx').on(table.entityType, table.entityId),
+  statusIdx: index('approvals_status_idx').on(table.status),
+  priorityIdx: index('approvals_priority_idx').on(table.priority),
+  requestedByIdx: index('approvals_requested_by_idx').on(table.requestedBy),
+  assignedToIdx: index('approvals_assigned_to_idx').on(table.assignedTo),
+  expectedResolutionIdx: index('approvals_expected_resolution_idx').on(table.expectedResolution),
+}));
+
+export const approvalComments = pgTable('approval_comments', {
+  id: serial('id').primaryKey(),
+  uid: uuid('uid').defaultRandom().unique().notNull(),
+  approvalId: integer('approval_id').references(() => approvals.id).notNull(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  content: text('content').notNull(),
+  isInternal: boolean('is_internal').default(false).notNull(),
+  attachments: text('attachments'), // JSON array of attachment URLs
+  mentionedUsers: text('mentioned_users'), // JSON array of user IDs
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  approvalIdx: index('approval_comments_approval_idx').on(table.approvalId),
+  userIdx: index('approval_comments_user_idx').on(table.userId),
+  createdAtIdx: index('approval_comments_created_at_idx').on(table.createdAt),
+}));
+
+export const approvalHistory = pgTable('approval_history', {
+  id: serial('id').primaryKey(),
+  approvalId: integer('approval_id').references(() => approvals.id).notNull(),
+  action: varchar('action', { length: 50 }).notNull(), // 'created', 'assigned', 'status_changed', 'escalated', etc.
+  performedBy: integer('performed_by').references(() => users.id).notNull(),
+  fromValue: text('from_value'), // Previous value (JSON)
+  toValue: text('to_value'), // New value (JSON)
+  metadata: text('metadata'), // Additional context (JSON)
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  approvalIdx: index('approval_history_approval_idx').on(table.approvalId),
+  actionIdx: index('approval_history_action_idx').on(table.action),
+  performedByIdx: index('approval_history_performed_by_idx').on(table.performedBy),
+  createdAtIdx: index('approval_history_created_at_idx').on(table.createdAt),
+}));
+
+// Relations for approval tables
+export const approvalsRelations = relations(approvals, ({ one, many }) => ({
+  requester: one(users, {
+    fields: [approvals.requestedBy],
+    references: [users.id],
+    relationName: 'approvalRequester',
+  }),
+  assignee: one(users, {
+    fields: [approvals.assignedTo],
+    references: [users.id],
+    relationName: 'approvalAssignee',
+  }),
+  processor: one(users, {
+    fields: [approvals.processedBy],
+    references: [users.id],
+    relationName: 'approvalProcessor',
+  }),
+  comments: many(approvalComments),
+  history: many(approvalHistory),
+}));
+
+export const approvalCommentsRelations = relations(approvalComments, ({ one }) => ({
+  approval: one(approvals, {
+    fields: [approvalComments.approvalId],
+    references: [approvals.id],
+  }),
+  user: one(users, {
+    fields: [approvalComments.userId],
+    references: [users.id],
+  }),
+}));
+
+export const approvalHistoryRelations = relations(approvalHistory, ({ one }) => ({
+  approval: one(approvals, {
+    fields: [approvalHistory.approvalId],
+    references: [approvals.id],
+  }),
+  performer: one(users, {
+    fields: [approvalHistory.performedBy],
+    references: [users.id],
+  }),
+}));
+
+// Event Queue table for reliable event processing with retries
+export const eventQueue = pgTable('event_queue', {
+  id: serial('id').primaryKey(),
+  type: varchar('type', { length: 100 }).notNull(),
+  payload: text('payload').notNull(), // JSON payload
+  priority: varchar('priority', { length: 20 }).default('normal').notNull(), // 'high', 'normal', 'low'
+  status: varchar('status', { length: 20 }).default('pending').notNull(), // 'pending', 'processing', 'completed', 'failed', 'dead_letter'
+  attempts: integer('attempts').default(0).notNull(),
+  maxAttempts: integer('max_attempts').default(5).notNull(),
+  nextRetryAt: timestamp('next_retry_at'),
+  error: text('error'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  processedAt: timestamp('processed_at'),
+}, (table) => ({
+  typeIdx: index('event_queue_type_idx').on(table.type),
+  statusIdx: index('event_queue_status_idx').on(table.status),
+  priorityIdx: index('event_queue_priority_idx').on(table.priority),
+  nextRetryAtIdx: index('event_queue_next_retry_at_idx').on(table.nextRetryAt),
+  createdAtIdx: index('event_queue_created_at_idx').on(table.createdAt),
+  statusRetryIdx: index('event_queue_status_retry_idx').on(table.status, table.nextRetryAt),
 }));

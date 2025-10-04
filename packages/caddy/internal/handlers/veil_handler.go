@@ -49,19 +49,20 @@ func (VeilHandler) CaddyModule() caddy.ModuleInfo {
 // UnmarshalCaddyfile implements caddyfile.Unmarshaler.
 func (h *VeilHandler) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 	for d.Next() {
-		if !d.NextArg() {
-			return d.ArgErr()
-		}
-		h.DBPath = d.Val()
+		// Get all arguments
+		args := d.RemainingArgs()
 
-		if !d.NextArg() {
+		// Need at least 2 arguments: db_path and subscription_key
+		if len(args) < 2 {
 			return d.ArgErr()
 		}
-		h.SubscriptionKey = d.Val()
+
+		h.DBPath = args[0]
+		h.SubscriptionKey = args[1]
 
 		// Optional third argument for events endpoint
-		if d.NextArg() {
-			h.EventsEndpoint = d.Val()
+		if len(args) >= 3 {
+			h.EventsEndpoint = args[2]
 		}
 	}
 	return nil
@@ -93,22 +94,35 @@ func (h *VeilHandler) Provision(ctx caddy.Context) error {
 		return fmt.Errorf("failed to run database migrations: %v", err)
 	}
 
-	// Initialize event queue with default endpoint if not provided
-	eventsEndpoint := h.EventsEndpoint
-	if eventsEndpoint == "" {
-		eventsEndpoint = "http://localhost:3000/api/v1/usage/events"
-	}
+	// Check if event streaming is enabled via environment variable
+	enableEventStreaming := os.Getenv("ENABLE_EVENT_STREAMING")
+	if enableEventStreaming == "true" || enableEventStreaming == "1" {
+		// Determine which event queue implementation to use
+		if h.EventsEndpoint != "" {
+			// Use HTTP event queue if endpoint is explicitly configured
+			h.eventQueue = events.NewHTTPEventQueue(h.EventsEndpoint, h.logger)
+			h.logger.Info("initializing HTTP event queue",
+				zap.String("endpoint", h.EventsEndpoint))
+		} else {
+			// Use slog-based event queue (RFC recommended pattern)
+			h.eventQueue = events.NewSlogEventQueue(h.logger)
+			h.logger.Info("initializing structured logging event queue (stdout)")
+		}
 
-	h.eventQueue = events.NewHTTPEventQueue(eventsEndpoint, h.logger)
-	if err := h.eventQueue.Start(); err != nil {
-		h.logger.Warn("failed to start event queue", zap.Error(err))
-		// Don't fail the entire handler if event queue fails to start
+		// Start the event queue - errors are non-fatal
+		if err := h.eventQueue.Start(); err != nil {
+			h.logger.Warn("failed to start event queue, disabling event streaming",
+				zap.Error(err))
+			h.eventQueue = nil
+		}
+	} else {
+		h.logger.Info("event streaming disabled (set ENABLE_EVENT_STREAMING=true to enable)")
 		h.eventQueue = nil
 	}
 
 	h.logger.Info("VeilHandler provisioned successfully",
 		zap.String("db_path", h.DBPath),
-		zap.String("events_endpoint", h.EventsEndpoint))
+		zap.Bool("event_streaming_enabled", h.eventQueue != nil))
 
 	return nil
 }
@@ -194,28 +208,34 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 	// Remove any wildcards from the path for the rewrite pattern
 	apiPathForRewrite := strings.TrimSuffix(strings.TrimSuffix(api.Path, "*"), "/")
 
-	// Simply extract the last path segment
-	pathParts := strings.Split(apiPathForRewrite, "/")
-	var lastSegment string
-	if len(pathParts) > 0 {
-		lastSegment = pathParts[len(pathParts)-1]
+	// Extract the upstream path from the upstream URL
+	upstreamPath := "/"
+	if parsedUpstream, err := url.Parse(api.Upstream); err == nil && parsedUpstream.Path != "" {
+		upstreamPath = parsedUpstream.Path
 	}
 
 	h.logger.Debug("generating rewrite pattern",
 		zap.String("original_path", api.Path),
 		zap.String("rewrite_path", apiPathForRewrite),
-		zap.String("last_segment", lastSegment))
+		zap.String("upstream_path", upstreamPath))
 
-	// Create a rewrite rule with a direct replacement without capture groups
+	// Create a rewrite rule that strips the API ID prefix and replaces with upstream path
+	// The regex captures everything after the API ID prefix
+	// IMPORTANT: Use $1 (not ${1}) for regex backreference - Caddy's path_regexp expects this format
+	replacePath := upstreamPath + "$1"
 	rewriteConfig := fmt.Sprintf(`"rewrite": {
 		"method": "GET",
 		"path_regexp": [
 			{
-				"find": "^%s",
-				"replace": "/%s"
+				"find": "^%s(.*)",
+				"replace": "%s"
 			}
 		]
-	},`, apiPathForRewrite, lastSegment)
+	},`, apiPathForRewrite, replacePath)
+
+	h.logger.Debug("generated rewrite config",
+		zap.String("replace_path", replacePath),
+		zap.String("rewrite_config", rewriteConfig))
 
 	// Get the list of methods from the API config
 	methodsList := []string{}
@@ -285,6 +305,9 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 		"terminal": true
 	}`, methodsJSON, apiPathForMatching, transportConfig, rewriteConfig, h.getUpstreamDialAddress(api.Upstream), h.getUpstreamHost(api.Upstream))
 
+	h.logger.Debug("generated route JSON before unmarshal",
+		zap.String("newRouteJSON", newRouteJSON))
+
 	var newRoute map[string]interface{}
 	if err := json.Unmarshal([]byte(newRouteJSON), &newRoute); err != nil {
 		h.logger.Error("failed to unmarshal new route",
@@ -328,7 +351,7 @@ func (h *VeilHandler) updateCaddyfile(api models.APIConfig) error {
 		return fmt.Errorf("servers section not found in config")
 	}
 
-	// Get srv1 (onboarded APIs server)
+	// Get srv1 (onboarded APIs server on port 2021)
 	srv1, ok := servers["srv1"].(map[string]interface{})
 	if !ok {
 		h.logger.Error("srv1 not found in config")
@@ -669,10 +692,11 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 			ResponseSize:   recorder.ResponseSize,
 		}
 
-		// Enqueue the event (non-blocking)
-		if err := h.eventQueue.Enqueue(usageEvent); err != nil {
-			h.logger.Warn("failed to enqueue usage event",
-				zap.Error(err),
+		// Enqueue the event (non-blocking, fire-and-forget)
+		// Errors are logged but never propagated to prevent impacting proxy flow
+		if enqueueErr := h.eventQueue.Enqueue(usageEvent); enqueueErr != nil {
+			h.logger.Debug("failed to enqueue usage event",
+				zap.Error(enqueueErr),
 				zap.String("api_path", r.URL.Path))
 		}
 
