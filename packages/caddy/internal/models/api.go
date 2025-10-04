@@ -9,11 +9,15 @@ import (
 // APIKey represents an API key for accessing an API
 type APIKey struct {
 	gorm.Model
-	APIConfigID uint       `json:"api_config_id" gorm:"index"`
-	Key         string     `json:"key" gorm:"uniqueIndex;not null"`
-	Name        string     `json:"name" gorm:"not null"`
-	IsActive    *bool      `json:"is_active,omitempty" gorm:"default:true"`
-	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
+	APIConfigID    uint       `json:"api_config_id" gorm:"index"`
+	SubscriptionID *uint      `json:"subscription_id,omitempty" gorm:"index"` // Link to subscription in platform-api
+	Key            string     `json:"key" gorm:"uniqueIndex;not null"`
+	Name           string     `json:"name" gorm:"not null"`
+	IsActive       *bool      `json:"is_active,omitempty" gorm:"default:true"`
+	ExpiresAt      *time.Time `json:"expires_at,omitempty"`
+	RequestsUsed   int64      `json:"requests_used" gorm:"default:0"`    // Track usage locally
+	RequestsLimit  int64      `json:"requests_limit" gorm:"default:0"`   // Quota limit
+	SubscriptionStatus string  `json:"subscription_status" gorm:"default:'active'"` // active, suspended, cancelled
 }
 
 // APIParameter represents a parameter configuration for an API

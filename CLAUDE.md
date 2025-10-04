@@ -116,3 +116,9 @@ Veil is a monorepo containing multiple packages:
 - Bun runtime for platform-api
 - Node.js 14+ for SDKs and logging services
 - SQLite and PostgreSQL databases
+
+
+
+## Development process
+
+- When making any changes for any task, in ./progress/{task}.md, keep an updated log of your todo list, your plan for executing the todo list as a basic overview for a reviewer. keep checking off/adding/updating items as you come across more things you need to account for while working on the task at hand. Only start working on a task after the initial plan stored in progress has been reviewed and accepted. This rule is non-negotiable for anything where you would be making code changes.

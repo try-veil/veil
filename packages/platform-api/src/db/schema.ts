@@ -283,3 +283,23 @@ export const apiAllowedMethodsRelations = relations(apiAllowedMethods, ({ one })
     references: [apis.id],
   }),
 }));
+
+// Webhook Events table - for storing and processing payment provider webhooks
+export const webhookEvents = pgTable('webhook_events', {
+  id: serial('id').primaryKey(),
+  eventId: varchar('event_id', { length: 255 }).unique().notNull(),
+  provider: varchar('provider', { length: 50 }).notNull(), // 'razorpay', 'stripe', 'paypal'
+  eventType: varchar('event_type', { length: 100 }).notNull(), // 'payment.captured', 'subscription.charged', etc.
+  payload: text('payload').notNull(), // JSON payload from webhook
+  processed: boolean('processed').default(false).notNull(),
+  processedAt: timestamp('processed_at'),
+  retryCount: integer('retry_count').default(0).notNull(),
+  lastError: text('last_error'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  eventIdIdx: index('webhook_events_event_id_idx').on(table.eventId),
+  providerIdx: index('webhook_events_provider_idx').on(table.provider),
+  processedIdx: index('webhook_events_processed_idx').on(table.processed),
+  createdAtIdx: index('webhook_events_created_at_idx').on(table.createdAt),
+}));

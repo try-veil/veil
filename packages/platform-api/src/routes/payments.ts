@@ -469,10 +469,10 @@ export const paymentRoutes = new Elysia({ prefix: '/payments' })
   })
 
   // Webhook endpoint for payment providers
-  .post('/webhook/:provider', async ({ params, body, headers, set }) => {
+  .post('/webhook/:provider', async ({ params, body, headers, set, request }) => {
     try {
       const { provider } = params;
-      
+
       if (!['stripe', 'paypal', 'razorpay', 'square', 'coinbase'].includes(provider)) {
         set.status = 400;
         return {
@@ -482,11 +482,26 @@ export const paymentRoutes = new Elysia({ prefix: '/payments' })
       }
 
       // Get signature from headers (provider-specific)
-      const signature = headers['stripe-signature'] || 
-                       headers['paypal-transmission-sig'] || 
-                       headers['x-webhook-signature'];
+      let signature = '';
+      if (provider === 'razorpay') {
+        signature = headers['x-razorpay-signature'] || '';
+      } else if (provider === 'stripe') {
+        signature = headers['stripe-signature'] || '';
+      } else if (provider === 'paypal') {
+        signature = headers['paypal-transmission-sig'] || '';
+      } else {
+        signature = headers['x-webhook-signature'] || '';
+      }
 
-      await paymentService.handleWebhook(provider, body, signature);
+      if (!signature) {
+        console.warn(`No signature found for ${provider} webhook`);
+      }
+
+      // For Razorpay, we need to pass the raw body string for signature verification
+      // Elysia already parses the body, so we'll pass the stringified version
+      const webhookPayload = provider === 'razorpay' ? JSON.stringify(body) : body;
+
+      await paymentService.handleWebhook(provider, webhookPayload, signature);
 
       return {
         success: true,
@@ -494,7 +509,7 @@ export const paymentRoutes = new Elysia({ prefix: '/payments' })
       };
     } catch (error) {
       console.error('Webhook processing error:', error);
-      
+
       if (error instanceof Error && error.message === 'Invalid webhook signature') {
         set.status = 401;
         return {

@@ -1,6 +1,7 @@
 import { PaymentRepository, CreatePaymentData, UpdatePaymentData, PaymentWithDetails, PaymentFilters } from '../repositories/payment-repository';
 import { SubscriptionRepository } from '../repositories/subscription-repository';
 import { APIRepository } from '../repositories/api-repository';
+import { RazorpayProvider } from './payment-providers/razorpay-provider';
 
 export interface PaymentProvider {
   name: string;
@@ -230,9 +231,19 @@ export class PaymentService {
     this.paymentRepository = new PaymentRepository();
     this.subscriptionRepository = new SubscriptionRepository();
     this.apiRepository = new APIRepository();
-    
+
     // Initialize payment providers
     this.providers = new Map();
+
+    // Add Razorpay as the primary payment provider
+    try {
+      this.providers.set('razorpay', new RazorpayProvider());
+      console.log('Razorpay provider initialized');
+    } catch (error) {
+      console.error('Failed to initialize Razorpay provider:', error);
+    }
+
+    // Keep mock providers for fallback/testing
     this.providers.set('stripe', new StripeProvider());
     this.providers.set('paypal', new PayPalProvider());
   }
@@ -658,6 +669,10 @@ export class PaymentService {
 
       // Handle different event types
       switch (eventType) {
+        // Razorpay events
+        case 'payment.authorized':
+        case 'payment.captured':
+        // Stripe events
         case 'payment.succeeded':
         case 'payment_intent.succeeded':
           if (payment.status !== 'completed') {
@@ -666,17 +681,38 @@ export class PaymentService {
           }
           break;
 
+        // Razorpay/Stripe payment failures
         case 'payment.failed':
         case 'payment_intent.payment_failed':
           if (payment.status !== 'failed') {
-            const failureReason = payload.data?.object?.last_payment_error?.message || 'Payment failed';
+            const failureReason = payload.data?.object?.last_payment_error?.message ||
+                                 payload.payload?.payment?.entity?.error_description ||
+                                 'Payment failed';
             await this.paymentRepository.markFailed(payment.id, failureReason);
             console.log(`Webhook: Payment failed - ${payment.uid}`);
           }
           break;
 
+        // Razorpay subscription events
+        case 'subscription.charged':
+          console.log(`Webhook: Subscription charged - ${payment.uid}`);
+          if (payment.status !== 'completed') {
+            await this.paymentRepository.markCompleted(payment.id, paymentId);
+          }
+          break;
+
+        case 'subscription.cancelled':
+          console.log(`Webhook: Subscription cancelled - ${payment.uid}`);
+          break;
+
+        // Razorpay refund events
+        case 'refund.created':
+        case 'refund.processed':
+          console.log(`Webhook: Refund processed for payment - ${payment.uid}`);
+          break;
+
+        // Stripe dispute
         case 'charge.dispute.created':
-          // Handle chargeback/dispute
           console.log(`Webhook: Dispute created for payment - ${payment.uid}`);
           break;
 

@@ -19,6 +19,7 @@ import (
 	"github.com/try-veil/veil/packages/caddy/internal/events"
 	"github.com/try-veil/veil/packages/caddy/internal/models"
 	"github.com/try-veil/veil/packages/caddy/internal/store"
+	"github.com/try-veil/veil/packages/caddy/internal/validators"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -123,6 +124,7 @@ func (h *VeilHandler) Stop() error {
 }
 
 // validateAPIKey checks if the provided API key is valid for the given path
+// Now includes subscription status and quota validation
 func (h *VeilHandler) validateAPIKey(path string, apiKey string) (*models.APIConfig, error) {
 	if apiKey == "" {
 		return nil, fmt.Errorf("no API key provided")
@@ -138,17 +140,18 @@ func (h *VeilHandler) validateAPIKey(path string, apiKey string) (*models.APICon
 		return nil, fmt.Errorf("API not found for path: %s", path)
 	}
 
-	// Validate API key
-	valid := false
-	for _, key := range api.APIKeys {
-		if key.Key == apiKey && *key.IsActive {
-			valid = true
-			break
-		}
+	// Use SubscriptionValidator for comprehensive validation
+	validator := validators.NewSubscriptionValidator(h.store.GetDB())
+
+	// Validate API key, subscription status, and quota
+	validatedKey, err := validator.ValidateAPIKey(apiKey)
+	if err != nil {
+		return nil, fmt.Errorf("API key validation failed: %v", err)
 	}
 
-	if !valid {
-		return nil, fmt.Errorf("invalid API key")
+	// Ensure the key belongs to this API config
+	if validatedKey.APIConfigID != api.ID {
+		return nil, fmt.Errorf("API key does not belong to this API")
 	}
 
 	return api, nil
@@ -586,7 +589,13 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 		h.logger.Debug("API key validation failed",
 			zap.String("path", r.URL.Path),
 			zap.Error(err))
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+
+		// Check if quota exceeded to return 429
+		if strings.Contains(err.Error(), "quota exceeded") {
+			http.Error(w, "Quota Exceeded", http.StatusTooManyRequests)
+		} else {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		}
 		return nil
 	}
 
@@ -636,6 +645,16 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 		// Process the request
 		err := next.ServeHTTP(recorder, r)
 
+		// Increment usage counter for successful requests
+		if recorder.IsSuccess() {
+			validator := validators.NewSubscriptionValidator(h.store.GetDB())
+			if err := validator.IncrementUsage(apiKey); err != nil {
+				h.logger.Warn("failed to increment usage counter",
+					zap.Error(err),
+					zap.String("api_key", apiKey))
+			}
+		}
+
 		// Create usage event
 		usageEvent := events.UsageEvent{
 			ID:             uuid.New().String(),
@@ -660,7 +679,22 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 		return err
 	}
 
-	return next.ServeHTTP(w, r)
+	// If no event queue, still increment usage
+	validator := validators.NewSubscriptionValidator(h.store.GetDB())
+
+	// Process the request
+	err = next.ServeHTTP(w, r)
+
+	// Increment usage counter (we assume successful if no error)
+	if err == nil {
+		if incErr := validator.IncrementUsage(apiKey); incErr != nil {
+			h.logger.Warn("failed to increment usage counter",
+				zap.Error(incErr),
+				zap.String("api_key", apiKey))
+		}
+	}
+
+	return err
 }
 
 // handleManagementAPI handles the management API endpoints

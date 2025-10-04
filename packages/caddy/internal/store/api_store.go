@@ -24,6 +24,11 @@ func NewAPIStore(db *gorm.DB) *APIStore {
 	}
 }
 
+// GetDB returns the database instance
+func (s *APIStore) GetDB() *gorm.DB {
+	return s.db
+}
+
 // CreateAPI creates a new API configuration in the database
 func (s *APIStore) CreateAPI(config *models.APIConfig) error {
 	s.logger.Info("creating new API configuration",

@@ -21,6 +21,7 @@ import { analyticsRoutes } from "./routes/analytics";
 import { approvalRoutes } from "./routes/approvals";
 import { usageRoutes } from "./routes/usage";
 import { quotaRoutes } from "./routes/quota";
+import { gatewayRoutes } from "./routes/gateway";
 
 const app = new Elysia()
   // Add middleware
@@ -47,6 +48,7 @@ const app = new Elysia()
         { name: 'Approvals', description: 'Approval workflow endpoints' },
         { name: 'Usage', description: 'API usage tracking and analytics endpoints' },
         { name: 'Quota', description: 'API quota management and monitoring endpoints' },
+        { name: 'Gateway', description: 'Gateway validation and sync endpoints for Caddy' },
       ],
       servers: [
         {
@@ -92,6 +94,7 @@ const app = new Elysia()
       .use(approvalRoutes)
       .use(usageRoutes)
       .use(quotaRoutes)
+      .use(gatewayRoutes)
   )
   
   // 404 handler
