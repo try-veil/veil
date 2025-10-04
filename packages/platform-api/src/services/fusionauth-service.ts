@@ -134,7 +134,7 @@ export class FusionAuthService {
 
       const response = await this.client.login(request);
 
-      if (response.wasSuccessful() && response.response.token && response.response.user) {
+      if (response.wasSuccessful() && response.response?.token && response.response?.user) {
         const user = this.mapFusionAuthUser(response.response.user);
         return {
           success: true,
@@ -181,7 +181,7 @@ export class FusionAuthService {
         });
       }
 
-      if (response.wasSuccessful() && response.response.jwt) {
+      if (response.wasSuccessful() && response.response?.jwt) {
         // Get user info from the JWT claims
         const jwt = response.response.jwt;
 
@@ -227,7 +227,7 @@ export class FusionAuthService {
 
       const response = await this.client.exchangeRefreshTokenForJWT(request);
 
-      if (response.wasSuccessful() && response.response.token) {
+      if (response.wasSuccessful() && response.response?.token) {
         return {
           success: true,
           tokens: {
@@ -269,7 +269,7 @@ export class FusionAuthService {
     try {
       const response = await this.client.retrieveUser(userId);
 
-      if (response.wasSuccessful() && response.response.user) {
+      if (response.wasSuccessful() && response.response?.user) {
         const user = this.mapFusionAuthUser(response.response.user);
         return { success: true, user };
       } else {
