@@ -1,0 +1,32 @@
+{
+  "name": "@veil/pax",
+  "version": "1.0.0",
+  "description": "Payment gateway and proxy service for Veil",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist",
+    "test": "bun test",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "@elysiajs/bearer": "^0.8.0",
+    "@elysiajs/cors": "^0.8.0",
+    "@elysiajs/jwt": "^0.8.0",
+    "@elysiajs/swagger": "^0.8.0",
+    "drizzle-orm": "^0.44.5",
+    "elysia": "latest",
+    "postgres": "^3.4.3",
+    "razorpay": "^2.9.6",
+    "uuid": "^9.0.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/uuid": "^9.0.7",
+    "bun-types": "latest",
+    "drizzle-kit": "^0.31.4"
+  },
+  "module": "src/index.js"
+}
