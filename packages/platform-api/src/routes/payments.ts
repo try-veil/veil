@@ -472,7 +472,7 @@ export const paymentRoutes = new Elysia({ prefix: '/payments' })
   .post('/webhook/:provider', async ({ params, body, headers, set }) => {
     try {
       const { provider } = params;
-      
+
       if (!['stripe', 'paypal', 'razorpay', 'square', 'coinbase'].includes(provider)) {
         set.status = 400;
         return {
@@ -482,9 +482,17 @@ export const paymentRoutes = new Elysia({ prefix: '/payments' })
       }
 
       // Get signature from headers (provider-specific)
-      const signature = headers['stripe-signature'] || 
-                       headers['paypal-transmission-sig'] || 
-                       headers['x-webhook-signature'];
+      let signature: string | undefined;
+
+      if (provider === 'razorpay') {
+        signature = headers['x-razorpay-signature'] as string;
+      } else if (provider === 'stripe') {
+        signature = headers['stripe-signature'] as string;
+      } else if (provider === 'paypal') {
+        signature = headers['paypal-transmission-sig'] as string;
+      } else {
+        signature = headers['x-webhook-signature'] as string;
+      }
 
       await paymentService.handleWebhook(provider, body, signature);
 
@@ -494,7 +502,7 @@ export const paymentRoutes = new Elysia({ prefix: '/payments' })
       };
     } catch (error) {
       console.error('Webhook processing error:', error);
-      
+
       if (error instanceof Error && error.message === 'Invalid webhook signature') {
         set.status = 401;
         return {

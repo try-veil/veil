@@ -23,10 +23,12 @@ import { usageRoutes } from "./routes/usage";
 import { quotaRoutes } from "./routes/quota";
 import { pricingRoutes } from "./routes/pricing";
 import { eventRoutes } from "./routes/events";
+import { walletRoutes, ledgerRoutes } from "./routes/wallet";
 import { pricingService } from "./services/pricing/pricing-service";
 import { jobScheduler } from "./jobs/scheduler";
 import { startEventQueue, stopEventQueue } from "./services/event-handlers";
 import { creditWorker } from "./jobs/credit-worker";
+import { creditDeductionWorker } from "./jobs/credit-deduction-worker";
 import { natsClient } from "./services/nats-client";
 
 const app = new Elysia()
@@ -46,6 +48,8 @@ const app = new Elysia()
         { name: 'Provider', description: 'API provider management endpoints' },
         { name: 'Subscriptions', description: 'Subscription management endpoints' },
         { name: 'Payments', description: 'Payment processing endpoints' },
+        { name: 'Wallet', description: 'User wallet and credit management endpoints' },
+        { name: 'Ledger', description: 'Double-entry ledger and accounting endpoints' },
         { name: 'Analytics', description: 'Analytics and reporting endpoints' },
         { name: 'Seller', description: 'Seller dashboard endpoints' },
         { name: 'API Keys', description: 'API key management endpoints' },
@@ -93,6 +97,8 @@ const app = new Elysia()
       .use(providerRoutes)
       .use(subscriptionRoutes)
       .use(paymentRoutes)
+      .use(walletRoutes)
+      .use(ledgerRoutes)
       .use(analyticsRoutes)
       .use(sellerRoutes)
       .use(apiKeyRoutes)
@@ -134,11 +140,21 @@ async function initializeServices() {
     // Start credit consumption worker (NATS-based)
     try {
       await creditWorker.start();
-      console.log('✅ Credit worker started');
+      console.log('✅ Credit worker started (subscription-based tracking)');
     } catch (error) {
       console.error('⚠️  Credit worker failed to start:', error);
-      console.log('   Credit consumption tracking will be disabled');
+      console.log('   Subscription-based tracking will be disabled');
       // Continue startup even if credit worker fails
+    }
+
+    // Start credit deduction worker (wallet-based credit system)
+    try {
+      await creditDeductionWorker.start();
+      console.log('✅ Credit deduction worker started (wallet-based credit system)');
+    } catch (error) {
+      console.error('⚠️  Credit deduction worker failed to start:', error);
+      console.log('   Wallet-based credit deduction will be disabled');
+      // Continue startup even if worker fails
     }
 
   } catch (error) {
@@ -169,6 +185,7 @@ process.on('SIGINT', async () => {
   stopEventQueue();
   jobScheduler.stop();
   await creditWorker.stop();
+  await creditDeductionWorker.stop();
   await natsClient.close();
   app.stop();
   process.exit(0);
@@ -179,6 +196,7 @@ process.on('SIGTERM', async () => {
   stopEventQueue();
   jobScheduler.stop();
   await creditWorker.stop();
+  await creditDeductionWorker.stop();
   await natsClient.close();
   app.stop();
   process.exit(0);

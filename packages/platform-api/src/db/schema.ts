@@ -605,3 +605,199 @@ export const eventQueue = pgTable('event_queue', {
   createdAtIdx: index('event_queue_created_at_idx').on(table.createdAt),
   statusRetryIdx: index('event_queue_status_retry_idx').on(table.status, table.nextRetryAt),
 }));
+
+// Double-Entry Ledger System
+
+// Ledger Accounts (Chart of Accounts)
+export const ledgerAccounts = pgTable('ledger_accounts', {
+  id: serial('id').primaryKey(),
+  uid: uuid('uid').defaultRandom().unique().notNull(),
+  code: varchar('code', { length: 50 }).unique().notNull(), // Account code (e.g., "1000", "2000", "3000")
+  name: varchar('name', { length: 200 }).notNull(),
+  type: varchar('type', { length: 50 }).notNull(), // 'asset', 'liability', 'equity', 'revenue', 'expense'
+  subtype: varchar('subtype', { length: 50 }), // 'current_asset', 'fixed_asset', 'current_liability', etc.
+  parentAccountId: integer('parent_account_id').references(() => ledgerAccounts.id),
+  normalBalance: varchar('normal_balance', { length: 10 }).notNull(), // 'debit' or 'credit'
+  currency: varchar('currency', { length: 3 }).default('INR').notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  isSystemAccount: boolean('is_system_account').default(false).notNull(), // System-managed accounts
+  description: text('description'),
+  metadata: text('metadata'), // JSON for additional account details
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  codeIdx: index('ledger_accounts_code_idx').on(table.code),
+  typeIdx: index('ledger_accounts_type_idx').on(table.type),
+  parentIdx: index('ledger_accounts_parent_idx').on(table.parentAccountId),
+  activeIdx: index('ledger_accounts_active_idx').on(table.isActive),
+}));
+
+// Ledger Transactions (Transaction Headers)
+export const ledgerTransactions = pgTable('ledger_transactions', {
+  id: serial('id').primaryKey(),
+  uid: uuid('uid').defaultRandom().unique().notNull(),
+  transactionNumber: varchar('transaction_number', { length: 50 }).unique().notNull(),
+  transactionDate: timestamp('transaction_date').notNull(),
+  type: varchar('type', { length: 50 }).notNull(), // 'payment', 'credit_purchase', 'refund', 'adjustment', etc.
+  status: varchar('status', { length: 20 }).default('posted').notNull(), // 'draft', 'posted', 'voided'
+  description: text('description').notNull(),
+  referenceType: varchar('reference_type', { length: 50 }), // 'payment', 'invoice', 'wallet_transaction'
+  referenceId: varchar('reference_id', { length: 255 }), // UID of the referenced entity
+  userId: integer('user_id').references(() => users.id),
+  createdBy: integer('created_by').references(() => users.id),
+  voidedBy: integer('voided_by').references(() => users.id),
+  voidedAt: timestamp('voided_at'),
+  voidReason: text('void_reason'),
+  metadata: text('metadata'), // JSON for additional transaction details
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  numberIdx: index('ledger_transactions_number_idx').on(table.transactionNumber),
+  dateIdx: index('ledger_transactions_date_idx').on(table.transactionDate),
+  typeIdx: index('ledger_transactions_type_idx').on(table.type),
+  statusIdx: index('ledger_transactions_status_idx').on(table.status),
+  referenceIdx: index('ledger_transactions_reference_idx').on(table.referenceType, table.referenceId),
+  userIdx: index('ledger_transactions_user_idx').on(table.userId),
+}));
+
+// Ledger Entries (Double-Entry Records)
+export const ledgerEntries = pgTable('ledger_entries', {
+  id: serial('id').primaryKey(),
+  uid: uuid('uid').defaultRandom().unique().notNull(),
+  transactionId: integer('transaction_id').references(() => ledgerTransactions.id).notNull(),
+  accountId: integer('account_id').references(() => ledgerAccounts.id).notNull(),
+  entryType: varchar('entry_type', { length: 10 }).notNull(), // 'debit' or 'credit'
+  amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
+  currency: varchar('currency', { length: 3 }).default('INR').notNull(),
+  description: text('description'),
+  metadata: text('metadata'), // JSON for additional entry details
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  transactionIdx: index('ledger_entries_transaction_idx').on(table.transactionId),
+  accountIdx: index('ledger_entries_account_idx').on(table.accountId),
+  entryTypeIdx: index('ledger_entries_type_idx').on(table.entryType),
+  transactionAccountIdx: index('ledger_entries_trans_acct_idx').on(table.transactionId, table.accountId),
+}));
+
+// User Wallets (Credit/Balance Management)
+export const userWallets = pgTable('user_wallets', {
+  id: serial('id').primaryKey(),
+  uid: uuid('uid').defaultRandom().unique().notNull(),
+  userId: integer('user_id').references(() => users.id).notNull().unique(),
+  balance: decimal('balance', { precision: 15, scale: 2 }).default('0.00').notNull(),
+  currency: varchar('currency', { length: 3 }).default('INR').notNull(),
+  ledgerAccountId: integer('ledger_account_id').references(() => ledgerAccounts.id), // Link to ledger account
+  isActive: boolean('is_active').default(true).notNull(),
+  lockedBalance: decimal('locked_balance', { precision: 15, scale: 2 }).default('0.00').notNull(), // For pending transactions
+  metadata: text('metadata'), // JSON for additional wallet details
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index('user_wallets_user_idx').on(table.userId),
+  activeIdx: index('user_wallets_active_idx').on(table.isActive),
+}));
+
+// Wallet Transactions (Wallet Transaction History)
+export const walletTransactions = pgTable('wallet_transactions', {
+  id: serial('id').primaryKey(),
+  uid: uuid('uid').defaultRandom().unique().notNull(),
+  walletId: integer('wallet_id').references(() => userWallets.id).notNull(),
+  type: varchar('type', { length: 50 }).notNull(), // 'credit', 'debit', 'refund', 'adjustment'
+  amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
+  balanceBefore: decimal('balance_before', { precision: 15, scale: 2 }).notNull(),
+  balanceAfter: decimal('balance_after', { precision: 15, scale: 2 }).notNull(),
+  currency: varchar('currency', { length: 3 }).default('INR').notNull(),
+  status: varchar('status', { length: 20 }).default('completed').notNull(), // 'pending', 'completed', 'failed', 'cancelled'
+  description: text('description').notNull(),
+  referenceType: varchar('reference_type', { length: 50 }), // 'payment', 'subscription', 'manual_adjustment'
+  referenceId: varchar('reference_id', { length: 255 }), // UID of the referenced entity
+  ledgerTransactionId: integer('ledger_transaction_id').references(() => ledgerTransactions.id), // Link to ledger transaction
+  paymentRecordId: integer('payment_record_id').references(() => paymentRecords.id),
+  metadata: text('metadata'), // JSON for additional transaction details
+  createdBy: integer('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  walletIdx: index('wallet_transactions_wallet_idx').on(table.walletId),
+  typeIdx: index('wallet_transactions_type_idx').on(table.type),
+  statusIdx: index('wallet_transactions_status_idx').on(table.status),
+  referenceIdx: index('wallet_transactions_reference_idx').on(table.referenceType, table.referenceId),
+  createdAtIdx: index('wallet_transactions_created_at_idx').on(table.createdAt),
+  ledgerTxIdx: index('wallet_transactions_ledger_tx_idx').on(table.ledgerTransactionId),
+}));
+
+// Relations for Ledger and Wallet tables
+export const ledgerAccountsRelations = relations(ledgerAccounts, ({ one, many }) => ({
+  parentAccount: one(ledgerAccounts, {
+    fields: [ledgerAccounts.parentAccountId],
+    references: [ledgerAccounts.id],
+    relationName: 'accountHierarchy',
+  }),
+  childAccounts: many(ledgerAccounts, {
+    relationName: 'accountHierarchy',
+  }),
+  entries: many(ledgerEntries),
+  userWallets: many(userWallets),
+}));
+
+export const ledgerTransactionsRelations = relations(ledgerTransactions, ({ one, many }) => ({
+  user: one(users, {
+    fields: [ledgerTransactions.userId],
+    references: [users.id],
+    relationName: 'userTransactions',
+  }),
+  creator: one(users, {
+    fields: [ledgerTransactions.createdBy],
+    references: [users.id],
+    relationName: 'transactionCreator',
+  }),
+  voider: one(users, {
+    fields: [ledgerTransactions.voidedBy],
+    references: [users.id],
+    relationName: 'transactionVoider',
+  }),
+  entries: many(ledgerEntries),
+  walletTransactions: many(walletTransactions),
+}));
+
+export const ledgerEntriesRelations = relations(ledgerEntries, ({ one }) => ({
+  transaction: one(ledgerTransactions, {
+    fields: [ledgerEntries.transactionId],
+    references: [ledgerTransactions.id],
+  }),
+  account: one(ledgerAccounts, {
+    fields: [ledgerEntries.accountId],
+    references: [ledgerAccounts.id],
+  }),
+}));
+
+export const userWalletsRelations = relations(userWallets, ({ one, many }) => ({
+  user: one(users, {
+    fields: [userWallets.userId],
+    references: [users.id],
+  }),
+  ledgerAccount: one(ledgerAccounts, {
+    fields: [userWallets.ledgerAccountId],
+    references: [ledgerAccounts.id],
+  }),
+  transactions: many(walletTransactions),
+}));
+
+export const walletTransactionsRelations = relations(walletTransactions, ({ one }) => ({
+  wallet: one(userWallets, {
+    fields: [walletTransactions.walletId],
+    references: [userWallets.id],
+  }),
+  ledgerTransaction: one(ledgerTransactions, {
+    fields: [walletTransactions.ledgerTransactionId],
+    references: [ledgerTransactions.id],
+  }),
+  paymentRecord: one(paymentRecords, {
+    fields: [walletTransactions.paymentRecordId],
+    references: [paymentRecords.id],
+  }),
+  creator: one(users, {
+    fields: [walletTransactions.createdBy],
+    references: [users.id],
+  }),
+}));

@@ -29,6 +29,13 @@
       "when": 1759310602137,
       "tag": "0003_new_santa_claus",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1759663864255,
+      "tag": "0004_first_night_thrasher",
+      "breakpoints": true
     }
   ]
 }

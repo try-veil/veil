@@ -1,8 +1,12 @@
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
 import { PaymentRepository, CreatePaymentData, UpdatePaymentData, PaymentWithDetails, PaymentFilters } from '../repositories/payment-repository';
 import { SubscriptionRepository } from '../repositories/subscription-repository';
 import { APIRepository } from '../repositories/api-repository';
 import { pricingService } from './pricing/pricing-service';
 import { PricingRepository } from '../repositories/pricing-repository';
+import { ledgerService } from './ledger-service';
+import { walletService } from './wallet-service';
 
 export interface PaymentProvider {
   name: string;
@@ -174,7 +178,7 @@ class PayPalProvider implements PaymentProvider {
 
   async createPayment(data: PaymentProviderRequest): Promise<PaymentProviderResponse> {
     const paymentId = `PAYPAL_${Math.random().toString(36).substring(2, 15).toUpperCase()}`;
-    
+
     return {
       success: true,
       paymentId,
@@ -186,7 +190,7 @@ class PayPalProvider implements PaymentProvider {
 
   async processPayment(data: ProcessPaymentProviderRequest): Promise<PaymentProviderResponse> {
     const success = Math.random() > 0.05; // 95% success rate
-    
+
     return {
       success,
       paymentId: data.paymentId,
@@ -197,7 +201,7 @@ class PayPalProvider implements PaymentProvider {
 
   async refundPayment(data: RefundPaymentProviderRequest): Promise<RefundProviderResponse> {
     const refundId = `PAYPAL_REFUND_${Math.random().toString(36).substring(2, 15).toUpperCase()}`;
-    
+
     return {
       success: true,
       refundId,
@@ -222,6 +226,183 @@ class PayPalProvider implements PaymentProvider {
   }
 }
 
+class RazorpayProvider implements PaymentProvider {
+  name = 'razorpay';
+  private client: Razorpay;
+
+  constructor() {
+    const keyId = process.env.RAZORPAY_KEY_ID || '';
+    const keySecret = process.env.RAZORPAY_KEY_SECRET || '';
+
+    if (!keyId || !keySecret) {
+      console.warn('Razorpay credentials not configured. Using test mode.');
+    }
+
+    this.client = new Razorpay({
+      key_id: keyId,
+      key_secret: keySecret,
+    });
+  }
+
+  async createPayment(data: PaymentProviderRequest): Promise<PaymentProviderResponse> {
+    try {
+      // Create Razorpay order
+      const order = await this.client.orders.create({
+        amount: Math.round(data.amount * 100), // Convert to paise (smallest currency unit)
+        currency: data.currency || 'INR',
+        receipt: `rcpt_${Date.now()}`,
+        notes: data.metadata || {},
+      });
+
+      return {
+        success: true,
+        paymentId: order.id,
+        status: 'pending',
+        clientSecret: order.id, // Razorpay uses order ID as the client-side identifier
+        metadata: {
+          provider: 'razorpay',
+          orderId: order.id,
+          amount: order.amount,
+          currency: order.currency,
+        }
+      };
+    } catch (error: any) {
+      console.error('Razorpay order creation failed:', error);
+      return {
+        success: false,
+        paymentId: '',
+        status: 'failed',
+        message: error.message || 'Failed to create Razorpay order',
+      };
+    }
+  }
+
+  async processPayment(data: ProcessPaymentProviderRequest): Promise<PaymentProviderResponse> {
+    try {
+      // In Razorpay, payment is verified via webhook or signature verification
+      // The paymentToken contains razorpay_payment_id from client
+      const paymentId = data.paymentToken;
+
+      // Fetch payment details from Razorpay
+      const payment = await this.client.payments.fetch(paymentId);
+
+      if (payment.status === 'captured' || payment.status === 'authorized') {
+        return {
+          success: true,
+          paymentId: payment.id,
+          status: 'completed',
+          message: 'Payment verified successfully',
+          metadata: {
+            razorpayOrderId: payment.order_id,
+            razorpayPaymentId: payment.id,
+            method: payment.method,
+          }
+        };
+      } else {
+        return {
+          success: false,
+          paymentId: payment.id,
+          status: 'failed',
+          message: `Payment status: ${payment.status}`,
+        };
+      }
+    } catch (error: any) {
+      console.error('Razorpay payment processing failed:', error);
+      return {
+        success: false,
+        paymentId: data.paymentId,
+        status: 'failed',
+        message: error.message || 'Failed to process Razorpay payment',
+      };
+    }
+  }
+
+  async refundPayment(data: RefundPaymentProviderRequest): Promise<RefundProviderResponse> {
+    try {
+      const refundAmount = data.amount ? Math.round(data.amount * 100) : undefined;
+
+      const refund = await this.client.payments.refund(data.paymentId, {
+        amount: refundAmount,
+        notes: {
+          reason: data.reason,
+        },
+      });
+
+      return {
+        success: true,
+        refundId: refund.id,
+        amount: refund.amount / 100, // Convert from paise to rupees
+        status: refund.status === 'processed' ? 'completed' : 'pending',
+        message: 'Refund initiated successfully',
+      };
+    } catch (error: any) {
+      console.error('Razorpay refund failed:', error);
+      return {
+        success: false,
+        refundId: '',
+        amount: 0,
+        status: 'failed',
+        message: error.message || 'Failed to process refund',
+      };
+    }
+  }
+
+  async getPaymentStatus(paymentId: string): Promise<PaymentStatusResponse> {
+    try {
+      const payment = await this.client.payments.fetch(paymentId);
+
+      let status: PaymentStatusResponse['status'] = 'pending';
+      if (payment.status === 'captured' || payment.status === 'authorized') {
+        status = 'completed';
+      } else if (payment.status === 'failed') {
+        status = 'failed';
+      } else if (payment.status === 'refunded') {
+        status = 'refunded';
+      }
+
+      return {
+        paymentId: payment.id,
+        status,
+        amount: payment.amount / 100, // Convert from paise
+        currency: payment.currency,
+        processedAt: payment.created_at ? new Date(payment.created_at * 1000) : undefined,
+        failureReason: payment.error_description,
+      };
+    } catch (error: any) {
+      console.error('Failed to fetch Razorpay payment status:', error);
+      return {
+        paymentId,
+        status: 'failed',
+        amount: 0,
+        currency: 'INR',
+        failureReason: error.message || 'Failed to fetch payment status',
+      };
+    }
+  }
+
+  validateWebhook(payload: any, signature: string): boolean {
+    try {
+      const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || '';
+
+      if (!webhookSecret) {
+        console.warn('Razorpay webhook secret not configured');
+        return false;
+      }
+
+      // Razorpay webhook signature verification
+      const expectedSignature = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(JSON.stringify(payload))
+        .digest('hex');
+
+      return expectedSignature === signature;
+    } catch (error) {
+      console.error('Razorpay webhook validation failed:', error);
+      return false;
+    }
+  }
+}
+
 export class PaymentService {
   private paymentRepository: PaymentRepository;
   private subscriptionRepository: SubscriptionRepository;
@@ -239,6 +420,7 @@ export class PaymentService {
     this.providers = new Map();
     this.providers.set('stripe', new StripeProvider());
     this.providers.set('paypal', new PayPalProvider());
+    this.providers.set('razorpay', new RazorpayProvider());
   }
 
   /**
@@ -521,7 +703,22 @@ export class PaymentService {
           providerResponse.paymentId
         );
 
-        // TODO: Update subscription status, activate API keys, send confirmation email
+        // Create ledger entries for completed payment
+        await this.createPaymentLedgerEntries(payment, parseFloat(payment.amount));
+
+        // Add credits to user wallet if it's a credit purchase
+        if (payment.metadata && typeof payment.metadata === 'object' && 'creditPurchase' in payment.metadata) {
+          await walletService.addCredits({
+            userId: payment.user.id,
+            amount: payment.amount,
+            description: `Credit purchase via payment ${payment.uid}`,
+            referenceType: 'payment',
+            referenceId: payment.uid,
+            paymentRecordId: payment.id,
+            metadata: { paymentProvider: payment.paymentProvider },
+          });
+        }
+
         console.log(`Payment completed: ${payment.uid}`);
       } else {
         await this.paymentRepository.markFailed(
@@ -711,10 +908,12 @@ export class PaymentService {
 
       // Handle different event types
       switch (eventType) {
+        // Stripe events
         case 'payment.succeeded':
         case 'payment_intent.succeeded':
           if (payment.status !== 'completed') {
             await this.paymentRepository.markCompleted(payment.id, paymentId);
+            await this.createPaymentLedgerEntries(payment, parseFloat(payment.amount));
             console.log(`Webhook: Payment completed - ${payment.uid}`);
           }
           break;
@@ -726,6 +925,44 @@ export class PaymentService {
             await this.paymentRepository.markFailed(payment.id, failureReason);
             console.log(`Webhook: Payment failed - ${payment.uid}`);
           }
+          break;
+
+        // Razorpay events
+        case 'payment.captured':
+        case 'order.paid':
+          if (payment.status !== 'completed') {
+            await this.paymentRepository.markCompleted(payment.id, paymentId);
+            await this.createPaymentLedgerEntries(payment, parseFloat(payment.amount));
+
+            // Add credits to wallet if this was a credit purchase
+            if (payment.metadata && typeof payment.metadata === 'object' && 'creditPurchase' in payment.metadata) {
+              await walletService.addCredits({
+                userId: payment.user.id,
+                amount: payment.amount,
+                description: `Credit purchase via Razorpay payment ${payment.uid}`,
+                referenceType: 'payment',
+                referenceId: payment.uid,
+                paymentRecordId: payment.id,
+                metadata: { paymentProvider: payment.paymentProvider },
+              });
+            }
+
+            console.log(`Webhook: Razorpay payment captured - ${payment.uid}`);
+          }
+          break;
+
+        case 'payment.failed':
+          if (payment.status !== 'failed') {
+            const failureReason = payload.payload?.payment?.entity?.error_description || 'Payment failed';
+            await this.paymentRepository.markFailed(payment.id, failureReason);
+            console.log(`Webhook: Razorpay payment failed - ${payment.uid}`);
+          }
+          break;
+
+        case 'refund.created':
+        case 'payment.refunded':
+          // Handle refund
+          console.log(`Webhook: Refund created for payment - ${payment.uid}`);
           break;
 
         case 'charge.dispute.created':
@@ -772,6 +1009,91 @@ export class PaymentService {
     } catch (error) {
       console.error('Error cleaning up pending payments:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Create ledger entries for a completed payment
+   */
+  private async createPaymentLedgerEntries(payment: PaymentWithDetails, amount: number) {
+    try {
+      // Get ledger accounts
+      const paymentGatewayAccount = await ledgerService.getAccountByCode('1100'); // Razorpay Payment Gateway
+      const revenueAccount = await ledgerService.getAccountByCode('4100'); // Credit Purchase Revenue
+
+      if (!paymentGatewayAccount || !revenueAccount) {
+        console.warn('Ledger accounts not found for payment entries. Skipping ledger entry creation.');
+        return;
+      }
+
+      // Calculate payment gateway fees (example: 2% + 0.30)
+      const gatewayFeePercent = 0.02;
+      const gatewayFeeFixed = 0.30;
+      const gatewayFee = (amount * gatewayFeePercent) + gatewayFeeFixed;
+      const netAmount = amount - gatewayFee;
+
+      // Create payment received ledger transaction
+      await ledgerService.createTransaction({
+        transactionDate: new Date(),
+        type: 'payment_received',
+        description: `Payment received via ${payment.paymentProvider} - ${payment.uid}`,
+        referenceType: 'payment',
+        referenceId: payment.uid,
+        userId: payment.user.id,
+        entries: [
+          {
+            accountId: paymentGatewayAccount.id,
+            entryType: 'debit',
+            amount: amount.toFixed(2),
+            description: `Payment received from user ${payment.user.id}`,
+          },
+          {
+            accountId: revenueAccount.id,
+            entryType: 'credit',
+            amount: amount.toFixed(2),
+            description: 'Revenue from credit purchase',
+          },
+        ],
+        metadata: {
+          paymentProvider: payment.paymentProvider,
+          paymentId: payment.uid,
+          grossAmount: amount,
+          gatewayFee,
+          netAmount,
+        },
+      });
+
+      // Create gateway fee expense entry if applicable
+      if (gatewayFee > 0) {
+        const gatewayFeeAccount = await ledgerService.getAccountByCode('5000'); // Payment Gateway Fees
+        if (gatewayFeeAccount) {
+          await ledgerService.createTransaction({
+            transactionDate: new Date(),
+            type: 'payment_gateway_fee',
+            description: `Payment gateway fee for ${payment.uid}`,
+            referenceType: 'payment',
+            referenceId: payment.uid,
+            userId: payment.user.id,
+            entries: [
+              {
+                accountId: gatewayFeeAccount.id,
+                entryType: 'debit',
+                amount: gatewayFee.toFixed(2),
+                description: `${payment.paymentProvider} gateway fee`,
+              },
+              {
+                accountId: paymentGatewayAccount.id,
+                entryType: 'credit',
+                amount: gatewayFee.toFixed(2),
+                description: 'Gateway fee deducted',
+              },
+            ],
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error creating payment ledger entries:', error);
+      // Don't throw - we don't want to fail the payment if ledger entry fails
     }
   }
 }
