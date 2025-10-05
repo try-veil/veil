@@ -90,32 +90,48 @@ export const proxyRoutes = new Elysia({ prefix: '/proxy' })
   .guard({}, (app) =>
     app
       .use(userRateLimitMiddleware)
-      .resolve(async ({ headers, query, set }) => {
+      .derive(({ headers, query }) => {
         // Extract API key from header or query
-        const apiKey =
-          headers['x-api-key'] ||
-          (query as any).api_key;
-
+        const apiKey = headers['x-api-key'] || (query as any).api_key;
+        return { apiKey };
+      })
+      .onBeforeHandle(({ apiKey, set }) => {
         if (!apiKey) {
           set.status = 401;
-          throw new Error('Missing API key. Provide via X-API-Key header or api_key query parameter');
+          return {
+            success: false,
+            error: 'Missing API key',
+            message: 'Provide API key via X-API-Key header or api_key query parameter'
+          };
         }
 
-        // Mock API key format: sk_live_userid_keyid
+        // Mock API key format: sk_live_userid_keyid or sk_test_userid_keyid
         const keyParts = (apiKey as string).split('_');
         if (keyParts.length < 4 || keyParts[0] !== 'sk' || (keyParts[1] !== 'live' && keyParts[1] !== 'test')) {
           set.status = 401;
-          throw new Error('Invalid API key format');
+          return {
+            success: false,
+            error: 'Invalid API key format',
+            message: 'API key must be in format: sk_live_userid_keyid or sk_test_userid_keyid'
+          };
         }
 
         const userId = parseInt(keyParts[2]);
         if (isNaN(userId)) {
           set.status = 401;
-          throw new Error('Invalid API key');
+          return {
+            success: false,
+            error: 'Invalid API key',
+            message: 'User ID in API key is invalid'
+          };
         }
+      })
+      .resolve(({ apiKey }) => {
+        // Parse API key for userId
+        const keyParts = (apiKey as string).split('_');
+        const userId = parseInt(keyParts[2]);
 
         return {
-          apiKey: apiKey as string,
           userId,
           subscriptionId: undefined as number | undefined,
           apiKeyId: undefined as number | undefined,

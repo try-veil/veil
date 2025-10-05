@@ -70,14 +70,15 @@ export function createRateLimiter(config: RateLimitConfig) {
  * Default: 100 requests per minute per user
  */
 export const userRateLimitMiddleware = new Elysia({ name: 'user-rate-limit' })
-  .derive(({ headers, query }) => {
+  .derive(({ headers }) => {
     // Extract user ID from context (will be set by auth middleware)
     // For now, we'll use IP address as a fallback
     const forwarded = headers['x-forwarded-for'];
     const ip = forwarded ? forwarded.split(',')[0] : headers['x-real-ip'] || 'unknown';
     return { clientIp: ip };
   })
-  .onBeforeHandle(({ clientIp, set }) => {
+  .onAfterHandle(({ clientIp, set }) => {
+    // Apply rate limiting after request is handled
     const rateLimiter = createRateLimiter({
       maxRequests: 100,
       windowMs: 60 * 1000, // 1 minute
@@ -86,10 +87,13 @@ export const userRateLimitMiddleware = new Elysia({ name: 'user-rate-limit' })
 
     const result = rateLimiter(clientIp);
 
-    // Set rate limit headers
-    set.headers['x-ratelimit-limit'] = result.limit.toString();
-    set.headers['x-ratelimit-remaining'] = result.remaining.toString();
-    set.headers['x-ratelimit-reset'] = new Date(result.resetAt).toISOString();
+    // Always set rate limit headers
+    set.headers = {
+      ...set.headers,
+      'X-RateLimit-Limit': result.limit.toString(),
+      'X-RateLimit-Remaining': result.remaining.toString(),
+      'X-RateLimit-Reset': new Date(result.resetAt).toISOString(),
+    };
 
     if (!result.allowed) {
       set.status = 429;

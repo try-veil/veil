@@ -11,18 +11,28 @@ export const authMiddleware = new Elysia()
     })
   )
   .use(bearer())
-  .derive(async ({ bearer, jwt, set }) => {
+  .onBeforeHandle(async ({ bearer, jwt, set }) => {
     if (!bearer) {
       set.status = 401;
-      throw new Error('Missing authorization token');
+      return {
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing authorization token'
+      };
     }
 
     const payload = await jwt.verify(bearer);
     if (!payload) {
       set.status = 401;
-      throw new Error('Invalid or expired token');
+      return {
+        success: false,
+        error: 'Unauthorized',
+        message: 'Invalid or expired token'
+      };
     }
-
+  })
+  .derive(async ({ bearer, jwt }) => {
+    const payload = await jwt.verify(bearer);
     return {
       user: payload as { id: number; userId?: number; email: string; role?: string },
     };
@@ -54,11 +64,13 @@ export const optionalAuth = new Elysia()
 // Admin-only middleware
 export const adminMiddleware = new Elysia()
   .use(authMiddleware)
-  .derive(({ user, set }) => {
-    if (!user.role || user.role !== 'admin') {
+  .onBeforeHandle(({ user, set }) => {
+    if (!user || !user.role || user.role !== 'admin') {
       set.status = 403;
-      throw new Error('Admin access required');
+      return {
+        success: false,
+        error: 'Forbidden',
+        message: 'Admin access required'
+      };
     }
-
-    return { user };
   });
