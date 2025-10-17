@@ -181,7 +181,9 @@ async function handlePaymentFailure(entity: any) {
 }
 
 async function handleOrderPaid(entity: any) {
-  const orderId = entity.id;
+  // For order.paid event, entity is the payment, not the order
+  // The order ID is in entity.order_id
+  const orderId = entity.order_id || entity.id;
 
   const payment = await paymentRepository.findByProviderOrderId(orderId);
 

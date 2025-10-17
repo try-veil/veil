@@ -1,16 +1,40 @@
 import { Elysia, t } from 'elysia';
 import { PaymentService } from '../services/payment-service';
-import { authMiddleware } from '../middleware/auth';
+import { jwt } from '@elysiajs/jwt';
+import { config } from '../config';
 
 const paymentService = new PaymentService();
 
+// Helper to extract and verify user from JWT
+async function authenticateRequest(request: any, jwtPlugin: any, set: any) {
+  const authHeader = request.headers.get('authorization');
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    set.status = 401;
+    return { error: { success: false, error: 'Missing authorization token' }, user: null };
+  }
+
+  const token = authHeader.substring(7);
+  const user = await jwtPlugin.verify(token);
+
+  if (!user) {
+    set.status = 401;
+    return { error: { success: false, error: 'Invalid token' }, user: null };
+  }
+
+  return { error: null, user };
+}
+
 export const paymentRoutes = new Elysia({ prefix: '/payments' })
-  .use(authMiddleware)
+  .use(jwt({ name: 'jwt', secret: config.jwt.secret }))
   .post(
     '/create',
-    async ({ body, user }) => {
+    async ({ body, jwt: jwtPlugin, set, request }: any) => {
+      const { error, user } = await authenticateRequest(request, jwtPlugin, set);
+      if (error) return error;
+
       const payment = await paymentService.createPayment({
-        userId: user.userId,
+        userId: (user as any).userId || (user as any).id,
         amount: body.amount,
         currency: body.currency || 'INR',
         provider: body.provider || 'razorpay',
@@ -40,7 +64,10 @@ export const paymentRoutes = new Elysia({ prefix: '/payments' })
   )
   .post(
     '/process',
-    async ({ body, user }) => {
+    async ({ body, jwt: jwtPlugin, set, request }: any) => {
+      const { error, user } = await authenticateRequest(request, jwtPlugin, set);
+      if (error) return error;
+
       const result = await paymentService.processPayment({
         paymentUid: body.paymentUid,
         paymentToken: body.paymentToken,
@@ -69,7 +96,10 @@ export const paymentRoutes = new Elysia({ prefix: '/payments' })
   )
   .post(
     '/refund',
-    async ({ body, user }) => {
+    async ({ body, jwt: jwtPlugin, set, request }: any) => {
+      const { error, user } = await authenticateRequest(request, jwtPlugin, set);
+      if (error) return error;
+
       const refund = await paymentService.refundPayment({
         paymentUid: body.paymentUid,
         amount: body.amount,
@@ -96,8 +126,11 @@ export const paymentRoutes = new Elysia({ prefix: '/payments' })
   )
   .get(
     '/:paymentUid',
-    async ({ params, user }) => {
-      const payment = await paymentService.getPayment(params.paymentUid, user.userId);
+    async ({ params, jwt: jwtPlugin, set, request }: any) => {
+      const { error, user } = await authenticateRequest(request, jwtPlugin, set);
+      if (error) return error;
+
+      const payment = await paymentService.getPayment(params.paymentUid, (user as any).userId || (user as any).id);
 
       return {
         success: true,
@@ -117,7 +150,10 @@ export const paymentRoutes = new Elysia({ prefix: '/payments' })
   )
   .get(
     '/:paymentUid/status',
-    async ({ params, user }) => {
+    async ({ params, jwt: jwtPlugin, set, request }: any) => {
+      const { error, user } = await authenticateRequest(request, jwtPlugin, set);
+      if (error) return error;
+
       const status = await paymentService.getPaymentStatus(params.paymentUid);
 
       return {
@@ -138,9 +174,12 @@ export const paymentRoutes = new Elysia({ prefix: '/payments' })
   )
   .get(
     '/',
-    async ({ query, user }) => {
+    async ({ query, jwt: jwtPlugin, set, request }: any) => {
+      const { error, user } = await authenticateRequest(request, jwtPlugin, set);
+      if (error) return error;
+
       const payments = await paymentService.getUserPayments(
-        user.userId,
+        (user as any).userId || (user as any).id,
         query.limit || 50,
         query.offset || 0
       );
@@ -164,9 +203,12 @@ export const paymentRoutes = new Elysia({ prefix: '/payments' })
   )
   .get(
     '/analytics/summary',
-    async ({ query, user }) => {
+    async ({ query, jwt: jwtPlugin, set, request }: any) => {
+      const { error, user } = await authenticateRequest(request, jwtPlugin, set);
+      if (error) return error;
+
       const analytics = await paymentService.getAnalytics(
-        user.userId,
+        (user as any).userId || (user as any).id,
         query.fromDate ? new Date(query.fromDate) : undefined,
         query.toDate ? new Date(query.toDate) : undefined
       );

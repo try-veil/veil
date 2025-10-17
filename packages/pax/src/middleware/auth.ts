@@ -3,7 +3,7 @@ import { bearer } from '@elysiajs/bearer';
 import { jwt } from '@elysiajs/jwt';
 import { config } from '../config';
 
-export const authMiddleware = new Elysia()
+export const authMiddleware = new Elysia({ name: 'auth' })
   .use(
     jwt({
       name: 'jwt',
@@ -11,9 +11,14 @@ export const authMiddleware = new Elysia()
     })
   )
   .use(bearer())
-  .onBeforeHandle(async ({ bearer, jwt, set }) => {
+  .onBeforeHandle(async ({ bearer, jwt, set, request }: any) => {
+    console.log('🔍 Auth middleware executing');
+    console.log('🔍 Bearer present:', bearer ? 'YES' : 'NO');
+    console.log('🔍 Auth header:', request.headers.get('authorization'));
+
     if (!bearer) {
       set.status = 401;
+      console.log('❌ No bearer token - returning 401');
       return {
         success: false,
         error: 'Unauthorized',
@@ -21,20 +26,34 @@ export const authMiddleware = new Elysia()
       };
     }
 
+    console.log('🔑 Verifying JWT token...');
     const payload = await jwt.verify(bearer);
+    console.log('📦 JWT payload result:', payload);
+
     if (!payload) {
       set.status = 401;
+      console.log('❌ JWT verification failed - returning 401');
       return {
         success: false,
         error: 'Unauthorized',
         message: 'Invalid or expired token'
       };
     }
+
+    console.log('✅ JWT verified successfully!');
   })
-  .derive(async ({ bearer, jwt }) => {
+  .resolve(async ({ bearer, jwt }: any) => {
+    console.log('🔄 Resolve middleware - extracting user');
+    if (!bearer) {
+      console.log('⚠️ No bearer in resolve');
+      return { user: null };
+    }
+
     const payload = await jwt.verify(bearer);
+    console.log('👤 User payload in resolve:', payload);
+
     return {
-      user: payload as { id: number; userId?: number; email: string; role?: string },
+      user: payload ? (payload as { id: number; userId?: number; email: string; role?: string }) : null
     };
   });
 
