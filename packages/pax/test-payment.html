@@ -1,230 +1,246 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Razorpay Test Payment</title>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 700px;
-            margin: 50px auto;
-            padding: 20px;
-        }
-        .payment-details {
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-        }
-        .token-input {
-            background: #e3f2fd;
-            padding: 20px;
-            border-radius: 5px;
-            margin: 20px 0;
-            border: 2px solid #2196f3;
-        }
-        .token-input input {
-            width: 100%;
-            padding: 10px;
-            font-family: monospace;
-            font-size: 12px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-            margin: 10px 0;
-        }
-        button {
-            background: #3399cc;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px;
-        }
-        button:hover {
-            background: #2277aa;
-        }
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-        .test-cards {
-            background: #fff3cd;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-            border: 1px solid #ffc107;
-        }
-        code {
-            background: #e9ecef;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 12px;
-        }
-        .loading {
-            color: #666;
-            font-style: italic;
-        }
-        .hidden {
-            display: none;
-        }
-        .error {
-            background: #f8d7da;
-            padding: 15px;
-            border-radius: 5px;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-        }
-        .success {
-            background: #d4edda;
-            padding: 15px;
-            border-radius: 5px;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 700px;
+        margin: 50px auto;
+        padding: 20px;
+      }
+      .payment-details {
+        background: #f5f5f5;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 20px 0;
+      }
+      .token-input {
+        background: #e3f2fd;
+        padding: 20px;
+        border-radius: 5px;
+        margin: 20px 0;
+        border: 2px solid #2196f3;
+      }
+      .token-input input {
+        width: 100%;
+        padding: 10px;
+        font-family: monospace;
+        font-size: 12px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        margin: 10px 0;
+      }
+      button {
+        background: #3399cc;
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        font-size: 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        background: #2277aa;
+      }
+      button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+      .test-cards {
+        background: #fff3cd;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 20px 0;
+        border: 1px solid #ffc107;
+      }
+      code {
+        background: #e9ecef;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 12px;
+      }
+      .loading {
+        color: #666;
+        font-style: italic;
+      }
+      .hidden {
+        display: none;
+      }
+      .error {
+        background: #f8d7da;
+        padding: 15px;
+        border-radius: 5px;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+      }
+      .success {
+        background: #d4edda;
+        padding: 15px;
+        border-radius: 5px;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <h1>🧪 Razorpay Test Payment (Generic)</h1>
-    <p>This page automatically creates a new payment order each time you load it.</p>
+    <p>
+      This page automatically creates a new payment order each time you load it.
+    </p>
 
     <!-- Token Input Section -->
     <div id="tokenSection" class="token-input">
-        <h3>Step 1: Authentication</h3>
-        <p>Generate a token first:</p>
-        <code>bun generate-token.js 1 test@example.com</code>
+      <h3>Step 1: Authentication</h3>
+      <p>Generate a token first:</p>
+      <code>bun generate-token.js 1 test@example.com</code>
 
-        <p style="margin-top: 15px;">Then paste the token here:</p>
-        <input type="text" id="tokenInput" placeholder="Paste your JWT token here...">
-        <button onclick="createPaymentOrder()">🔐 Create Payment Order</button>
+      <p style="margin-top: 15px">Then paste the token here:</p>
+      <input
+        type="text"
+        id="tokenInput"
+        placeholder="Paste your JWT token here..."
+      />
+      <button onclick="createPaymentOrder()">🔐 Create Payment Order</button>
 
-        <p style="font-size: 12px; color: #666; margin-top: 10px;">
-            Or add token to URL: <code>?token=YOUR_TOKEN_HERE</code>
-        </p>
+      <p style="font-size: 12px; color: #666; margin-top: 10px">
+        Or add token to URL: <code>?token=YOUR_TOKEN_HERE</code>
+      </p>
     </div>
 
     <!-- Payment Details Section (hidden until order is created) -->
     <div id="paymentSection" class="hidden">
-        <div class="payment-details">
-            <h3>Step 2: Payment Details</h3>
-            <p><strong>Order ID:</strong> <code id="orderId">-</code></p>
-            <p><strong>Payment UID:</strong> <code id="paymentUid">-</code></p>
-            <p><strong>Amount:</strong> <span id="amount">-</span></p>
-            <p><strong>Currency:</strong> <span id="currency">-</span></p>
-            <p><strong>Status:</strong> <span id="status">pending</span></p>
-        </div>
+      <div class="payment-details">
+        <h3>Step 2: Payment Details</h3>
+        <p><strong>Order ID:</strong> <code id="orderId">-</code></p>
+        <p><strong>Payment UID:</strong> <code id="paymentUid">-</code></p>
+        <p><strong>Amount:</strong> <span id="amount">-</span></p>
+        <p><strong>Currency:</strong> <span id="currency">-</span></p>
+        <p><strong>Status:</strong> <span id="status">pending</span></p>
+      </div>
 
-        <div class="test-cards">
-            <h3>💳 Test Card Details (Use These)</h3>
-            <p><strong>Successful Payment:</strong></p>
-            <ul>
-                <li>Card Number: <code>4111 1111 1111 1111</code></li>
-                <li>CVV: <code>123</code></li>
-                <li>Expiry: <code>12/25</code> (any future date)</li>
-                <li>Name: Any name</li>
-            </ul>
+      <div class="test-cards">
+        <h3>💳 Test Card Details (Use These)</h3>
+        <p><strong>Successful Payment:</strong></p>
+        <ul>
+          <li>Card Number: <code>4111 1111 1111 1111</code></li>
+          <li>CVV: <code>123</code></li>
+          <li>Expiry: <code>12/25</code> (any future date)</li>
+          <li>Name: Any name</li>
+        </ul>
 
-            <p><strong>Failed Payment (to test failure):</strong></p>
-            <ul>
-                <li>Card Number: <code>4000 0000 0000 0002</code></li>
-            </ul>
-        </div>
+        <p><strong>Failed Payment (to test failure):</strong></p>
+        <ul>
+          <li>Card Number: <code>4000 0000 0000 0002</code></li>
+        </ul>
+      </div>
 
-        <button id="payButton" onclick="startPayment()">💰 Pay Now</button>
-        <button onclick="location.reload()">🔄 Create New Order</button>
+      <button id="payButton" onclick="startPayment()">💰 Pay Now</button>
+      <button onclick="location.reload()">🔄 Create New Order</button>
     </div>
 
     <!-- Status Messages -->
-    <div id="statusMessage" style="margin-top: 20px;"></div>
+    <div id="statusMessage" style="margin-top: 20px"></div>
 
     <script>
-        let paymentData = null;
-        const API_BASE = 'http://localhost:3002/api/v1';
-        const RAZORPAY_KEY = 'rzp_test_RPKLANvY0lxQKK';
+      let paymentData = null;
+      const API_BASE = "http://localhost:3002/api/v1";
+      const RAZORPAY_KEY = "rzp_test_RPKLANvY0lxQKK";
 
-        // Check for token in URL on page load
-        window.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const tokenFromUrl = urlParams.get('token');
+      // Check for token in URL on page load
+      window.addEventListener("DOMContentLoaded", () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tokenFromUrl = urlParams.get("token");
 
-            if (tokenFromUrl) {
-                document.getElementById('tokenInput').value = tokenFromUrl;
-                // Auto-create order if token in URL
-                createPaymentOrder();
-            }
-        });
+        if (tokenFromUrl) {
+          document.getElementById("tokenInput").value = tokenFromUrl;
+          // Auto-create order if token in URL
+          createPaymentOrder();
+        }
+      });
 
-        async function createPaymentOrder() {
-            const token = document.getElementById('tokenInput').value.trim();
+      async function createPaymentOrder() {
+        const token = document.getElementById("tokenInput").value.trim();
 
-            if (!token) {
-                showError('Please enter a JWT token');
-                return;
-            }
-
-            showLoading('Creating payment order...');
-
-            try {
-                const response = await fetch(`${API_BASE}/payments/create`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        amount: 100,
-                        currency: 'INR',
-                        description: 'Test Payment - Razorpay Integration'
-                    })
-                });
-
-                const result = await response.json();
-
-                if (!response.ok || !result.success) {
-                    throw new Error(result.error || 'Failed to create payment order');
-                }
-
-                paymentData = result.data;
-                displayPaymentDetails(paymentData);
-
-                // Hide token section, show payment section
-                document.getElementById('tokenSection').classList.add('hidden');
-                document.getElementById('paymentSection').classList.remove('hidden');
-
-                showSuccess('✅ Payment order created! You can now proceed to pay.');
-
-            } catch (error) {
-                showError(`Failed to create payment order: ${error.message}`);
-                console.error('Error:', error);
-            }
+        if (!token) {
+          showError("Please enter a JWT token");
+          return;
         }
 
-        function displayPaymentDetails(data) {
-            document.getElementById('orderId').textContent = data.providerOrderId || '-';
-            document.getElementById('paymentUid').textContent = data.uid || '-';
-            document.getElementById('amount').textContent = `₹${(data.amount / 100).toFixed(2)}`;
-            document.getElementById('currency').textContent = data.currency || 'INR';
-            document.getElementById('status').textContent = data.status || 'pending';
+        showLoading("Creating payment order...");
+
+        try {
+          const response = await fetch(`${API_BASE}/payments/create`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              amount: 100,
+              currency: "INR",
+              description: "Test Payment - Razorpay Integration",
+            }),
+          });
+
+          const result = await response.json();
+
+          console.log("🆕 NEW Order Response:", {
+            timestamp: new Date().toISOString(),
+            orderId: result.data?.orderId,
+            paymentUid: result.data?.paymentUid,
+            fullResponse: result,
+          });
+
+          if (!response.ok || !result.success) {
+            throw new Error(result.error || "Failed to create payment order");
+          }
+
+          paymentData = result.data;
+          displayPaymentDetails(paymentData);
+
+          // Hide token section, show payment section
+          document.getElementById("tokenSection").classList.add("hidden");
+          document.getElementById("paymentSection").classList.remove("hidden");
+
+          showSuccess("✅ Payment order created! You can now proceed to pay.");
+        } catch (error) {
+          showError(`Failed to create payment order: ${error.message}`);
+          console.error("Error:", error);
+        }
+      }
+
+      function displayPaymentDetails(data) {
+        document.getElementById("orderId").textContent = data.orderId || "-";
+        document.getElementById("paymentUid").textContent =
+          data.paymentUid || "-";
+        document.getElementById("amount").textContent = `₹${data.amount.toFixed(
+          2
+        )}`;
+        document.getElementById("currency").textContent =
+          data.currency || "INR";
+        document.getElementById("status").textContent = "pending";
+      }
+
+      function startPayment() {
+        if (!paymentData) {
+          showError("No payment order found. Please create one first.");
+          return;
         }
 
-        function startPayment() {
-            if (!paymentData) {
-                showError('No payment order found. Please create one first.');
-                return;
-            }
+        const options = {
+          key: RAZORPAY_KEY,
+          amount: paymentData.amount * 100, // Convert rupees to paise
+          currency: paymentData.currency || "INR",
+          name: "Veil PAX",
+          description: paymentData.description || "Test Payment",
+          order_id: paymentData.orderId, // Use orderId instead of providerOrderId
+          handler: function (response) {
+            console.log("✅ Payment Success:", response);
 
-            const options = {
-                key: RAZORPAY_KEY,
-                amount: paymentData.amount, // amount in paise
-                currency: paymentData.currency || 'INR',
-                name: "Veil PAX",
-                description: paymentData.description || "Test Payment",
-                order_id: paymentData.providerOrderId,
-                handler: function(response) {
-                    console.log("✅ Payment Success:", response);
-
-                    showSuccess(`
+            showSuccess(`
                         <h3>✅ Payment Successful!</h3>
                         <p><strong>Payment ID:</strong> <code>${response.razorpay_payment_id}</code></p>
                         <p><strong>Order ID:</strong> <code>${response.razorpay_order_id}</code></p>
@@ -238,28 +254,28 @@
                         </p>
                     `);
 
-                    document.getElementById('payButton').disabled = true;
-                },
-                modal: {
-                    ondismiss: function() {
-                        showError('❌ Payment cancelled by user');
-                    }
-                },
-                prefill: {
-                    name: "Test User",
-                    email: "test@example.com",
-                    contact: "9999999999"
-                },
-                theme: {
-                    color: "#3399cc"
-                }
-            };
+            document.getElementById("payButton").disabled = true;
+          },
+          modal: {
+            ondismiss: function () {
+              showError("❌ Payment cancelled by user");
+            },
+          },
+          prefill: {
+            name: "Test User",
+            email: "test@example.com",
+            contact: "9999999999",
+          },
+          theme: {
+            color: "#3399cc",
+          },
+        };
 
-            const rzp = new Razorpay(options);
+        const rzp = new Razorpay(options);
 
-            rzp.on('payment.failed', function(response) {
-                console.log("❌ Payment Failed:", response.error);
-                showError(`
+        rzp.on("payment.failed", function (response) {
+          console.log("❌ Payment Failed:", response.error);
+          showError(`
                     <h3>❌ Payment Failed</h3>
                     <p><strong>Error:</strong> ${response.error.description}</p>
                     <p><strong>Code:</strong> ${response.error.code}</p>
@@ -267,57 +283,95 @@
                         <button onclick="startPayment()">🔄 Try Again</button>
                     </p>
                 `);
-            });
+        });
 
-            rzp.open();
-        }
+        rzp.open();
+      }
 
-        function showLoading(message) {
-            document.getElementById('statusMessage').innerHTML = `
+      function showLoading(message) {
+        document.getElementById("statusMessage").innerHTML = `
                 <div class="loading">${message}</div>
             `;
-        }
+      }
 
-        function showSuccess(message) {
-            document.getElementById('statusMessage').innerHTML = `
+      function showSuccess(message) {
+        document.getElementById("statusMessage").innerHTML = `
                 <div class="success">${message}</div>
             `;
-        }
+      }
 
-        function showError(message) {
-            document.getElementById('statusMessage').innerHTML = `
+      function showError(message) {
+        document.getElementById("statusMessage").innerHTML = `
                 <div class="error">${message}</div>
             `;
-        }
+      }
     </script>
 
-    <hr style="margin: 40px 0;">
+    <hr style="margin: 40px 0" />
 
     <h3>📋 How This Works</h3>
     <ol>
-        <li><strong>Generate Token:</strong> Run <code>bun generate-token.js 1 test@example.com</code></li>
-        <li><strong>Paste Token:</strong> Enter the token above and click "Create Payment Order"</li>
-        <li><strong>API Call:</strong> Page automatically calls <code>POST /api/v1/payments/create</code></li>
-        <li><strong>Fresh Order:</strong> A new Razorpay order is created each time</li>
-        <li><strong>Pay:</strong> Click "Pay Now" and use test card <code>4111 1111 1111 1111</code></li>
-        <li><strong>Webhook:</strong> Razorpay sends webhook to your app automatically</li>
-        <li><strong>Verify:</strong> Check PAX logs and ngrok interface</li>
+      <li>
+        <strong>Generate Token:</strong> Run
+        <code>bun generate-token.js 1 test@example.com</code>
+      </li>
+      <li>
+        <strong>Paste Token:</strong> Enter the token above and click "Create
+        Payment Order"
+      </li>
+      <li>
+        <strong>API Call:</strong> Page automatically calls
+        <code>POST /api/v1/payments/create</code>
+      </li>
+      <li>
+        <strong>Fresh Order:</strong> A new Razorpay order is created each time
+      </li>
+      <li>
+        <strong>Pay:</strong> Click "Pay Now" and use test card
+        <code>4111 1111 1111 1111</code>
+      </li>
+      <li>
+        <strong>Webhook:</strong> Razorpay sends webhook to your app
+        automatically
+      </li>
+      <li><strong>Verify:</strong> Check PAX logs and ngrok interface</li>
     </ol>
 
     <h3>🔍 Where to Look</h3>
     <ul>
-        <li><strong>PAX Service Terminal:</strong> Look for webhook processing messages</li>
-        <li><strong>ngrok Terminal:</strong> Look for POST requests to <code>/api/v1/webhooks/razorpay</code></li>
-        <li><strong>ngrok Web UI:</strong> <a href="http://127.0.0.1:4040" target="_blank">http://127.0.0.1:4040</a> - see full request/response</li>
+      <li>
+        <strong>PAX Service Terminal:</strong> Look for webhook processing
+        messages
+      </li>
+      <li>
+        <strong>ngrok Terminal:</strong> Look for POST requests to
+        <code>/api/v1/webhooks/razorpay</code>
+      </li>
+      <li>
+        <strong>ngrok Web UI:</strong>
+        <a href="http://127.0.0.1:4040" target="_blank"
+          >http://127.0.0.1:4040</a
+        >
+        - see full request/response
+      </li>
     </ul>
 
     <h3>✨ Features</h3>
     <ul>
-        <li>✅ <strong>Generic & Reusable:</strong> No hardcoded order IDs</li>
-        <li>✅ <strong>Auto-creates orders:</strong> Fresh order every time</li>
-        <li>✅ <strong>URL parameter support:</strong> Add <code>?token=YOUR_TOKEN</code> to auto-start</li>
-        <li>✅ <strong>Easy testing:</strong> Click "Create New Order" button to test multiple payments</li>
-        <li>✅ <strong>Full flow testing:</strong> Tests create → pay → webhook complete flow</li>
+      <li>✅ <strong>Generic & Reusable:</strong> No hardcoded order IDs</li>
+      <li>✅ <strong>Auto-creates orders:</strong> Fresh order every time</li>
+      <li>
+        ✅ <strong>URL parameter support:</strong> Add
+        <code>?token=YOUR_TOKEN</code> to auto-start
+      </li>
+      <li>
+        ✅ <strong>Easy testing:</strong> Click "Create New Order" button to
+        test multiple payments
+      </li>
+      <li>
+        ✅ <strong>Full flow testing:</strong> Tests create → pay → webhook
+        complete flow
+      </li>
     </ul>
-</body>
+  </body>
 </html>

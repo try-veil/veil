@@ -1,5 +1,5 @@
-import Razorpay from 'razorpay';
-import crypto from 'crypto';
+import Razorpay from "razorpay";
+import crypto from "crypto";
 import {
   PaymentProvider,
   PaymentProviderRequest,
@@ -8,11 +8,11 @@ import {
   PaymentProviderResponse,
   RefundProviderResponse,
   PaymentStatusResponse,
-} from '../../types';
-import { config } from '../../config';
+} from "../../types";
+import { config } from "../../config";
 
 export class RazorpayProvider implements PaymentProvider {
-  name = 'razorpay';
+  name = "razorpay";
   private razorpay: Razorpay;
   private webhookSecret: string;
 
@@ -20,7 +20,9 @@ export class RazorpayProvider implements PaymentProvider {
     const { keyId, keySecret, webhookSecret } = config.razorpay;
 
     if (!keyId || !keySecret) {
-      throw new Error('Razorpay credentials not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables.');
+      throw new Error(
+        "Razorpay credentials not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables."
+      );
     }
 
     this.webhookSecret = webhookSecret;
@@ -30,13 +32,15 @@ export class RazorpayProvider implements PaymentProvider {
       key_secret: keySecret,
     });
 
-    console.log('✅ RazorpayProvider initialized successfully');
+    console.log("✅ RazorpayProvider initialized successfully");
   }
 
   /**
    * Create a Razorpay order for payment
    */
-  async createPayment(data: PaymentProviderRequest): Promise<PaymentProviderResponse> {
+  async createPayment(
+    data: PaymentProviderRequest
+  ): Promise<PaymentProviderResponse> {
     try {
       // Convert amount to paise (Razorpay uses smallest currency unit)
       const amountInPaise = Math.round(data.amount * 100);
@@ -48,30 +52,45 @@ export class RazorpayProvider implements PaymentProvider {
         notes: data.metadata || {},
       };
 
+      console.log("🔄 Creating NEW Razorpay order with options:", {
+        amount: orderOptions.amount,
+        currency: orderOptions.currency,
+        receipt: orderOptions.receipt,
+        timestamp: new Date().toISOString(),
+      });
+
       const order = await this.razorpay.orders.create(orderOptions);
 
-      console.log('Razorpay order created:', order.id);
+      console.log(
+        "✅ Razorpay order created:",
+        order.id,
+        "at",
+        new Date().toISOString()
+      );
 
       return {
         success: true,
         paymentId: order.id,
-        status: 'pending',
+        status: "pending",
         clientSecret: order.id, // Razorpay uses order ID as reference
         metadata: {
-          provider: 'razorpay',
+          provider: "razorpay",
           orderId: order.id,
           amount: order.amount,
           currency: order.currency,
         },
       };
     } catch (error) {
-      console.error('Razorpay order creation failed:', error);
+      console.error("Razorpay order creation failed:", error);
 
       return {
         success: false,
-        paymentId: '',
-        status: 'failed',
-        message: error instanceof Error ? error.message : 'Failed to create Razorpay order',
+        paymentId: "",
+        status: "failed",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to create Razorpay order",
       };
     }
   }
@@ -80,7 +99,9 @@ export class RazorpayProvider implements PaymentProvider {
    * Process/capture a payment
    * In Razorpay, payment is captured after successful authorization
    */
-  async processPayment(data: ProcessPaymentProviderRequest): Promise<PaymentProviderResponse> {
+  async processPayment(
+    data: ProcessPaymentProviderRequest
+  ): Promise<PaymentProviderResponse> {
     try {
       // Verify payment signature if provided
       if (data.additionalData?.razorpay_signature) {
@@ -94,8 +115,8 @@ export class RazorpayProvider implements PaymentProvider {
           return {
             success: false,
             paymentId: data.paymentToken,
-            status: 'failed',
-            message: 'Invalid payment signature',
+            status: "failed",
+            message: "Invalid payment signature",
           };
         }
       }
@@ -103,12 +124,12 @@ export class RazorpayProvider implements PaymentProvider {
       // Fetch payment details to confirm
       const payment = await this.razorpay.payments.fetch(data.paymentToken);
 
-      if (payment.status === 'captured' || payment.status === 'authorized') {
+      if (payment.status === "captured" || payment.status === "authorized") {
         return {
           success: true,
           paymentId: payment.id,
-          status: 'completed',
-          message: 'Payment processed successfully',
+          status: "completed",
+          message: "Payment processed successfully",
           metadata: {
             razorpayPaymentId: payment.id,
             orderId: payment.order_id,
@@ -116,29 +137,30 @@ export class RazorpayProvider implements PaymentProvider {
             status: payment.status,
           },
         };
-      } else if (payment.status === 'failed') {
+      } else if (payment.status === "failed") {
         return {
           success: false,
           paymentId: payment.id,
-          status: 'failed',
-          message: payment.error_description || 'Payment failed',
+          status: "failed",
+          message: payment.error_description || "Payment failed",
         };
       } else {
         return {
           success: false,
           paymentId: payment.id,
-          status: 'pending',
-          message: 'Payment is still processing',
+          status: "pending",
+          message: "Payment is still processing",
         };
       }
     } catch (error) {
-      console.error('Razorpay payment processing failed:', error);
+      console.error("Razorpay payment processing failed:", error);
 
       return {
         success: false,
         paymentId: data.paymentId,
-        status: 'failed',
-        message: error instanceof Error ? error.message : 'Payment processing failed',
+        status: "failed",
+        message:
+          error instanceof Error ? error.message : "Payment processing failed",
       };
     }
   }
@@ -146,17 +168,21 @@ export class RazorpayProvider implements PaymentProvider {
   /**
    * Verify Razorpay payment signature
    */
-  verifyPaymentSignature(orderId: string, paymentId: string, signature: string): boolean {
+  verifyPaymentSignature(
+    orderId: string,
+    paymentId: string,
+    signature: string
+  ): boolean {
     try {
       const text = `${orderId}|${paymentId}`;
       const expectedSignature = crypto
-        .createHmac('sha256', config.razorpay.keySecret)
+        .createHmac("sha256", config.razorpay.keySecret)
         .update(text)
-        .digest('hex');
+        .digest("hex");
 
       return expectedSignature === signature;
     } catch (error) {
-      console.error('Payment signature verification failed:', error);
+      console.error("Payment signature verification failed:", error);
       return false;
     }
   }
@@ -164,7 +190,9 @@ export class RazorpayProvider implements PaymentProvider {
   /**
    * Refund a payment
    */
-  async refundPayment(data: RefundPaymentProviderRequest): Promise<RefundProviderResponse> {
+  async refundPayment(
+    data: RefundPaymentProviderRequest
+  ): Promise<RefundProviderResponse> {
     try {
       const refundOptions: any = {
         payment_id: data.paymentId,
@@ -179,26 +207,30 @@ export class RazorpayProvider implements PaymentProvider {
         refundOptions.notes = { reason: data.reason };
       }
 
-      const refund = await this.razorpay.payments.refund(data.paymentId, refundOptions);
+      const refund = await this.razorpay.payments.refund(
+        data.paymentId,
+        refundOptions
+      );
 
-      console.log('Razorpay refund created:', refund.id);
+      console.log("Razorpay refund created:", refund.id);
 
       return {
         success: true,
         refundId: refund.id,
         amount: refund.amount / 100, // Convert from paise to currency
-        status: refund.status === 'processed' ? 'completed' : 'pending',
-        message: 'Refund processed successfully',
+        status: refund.status === "processed" ? "completed" : "pending",
+        message: "Refund processed successfully",
       };
     } catch (error) {
-      console.error('Razorpay refund failed:', error);
+      console.error("Razorpay refund failed:", error);
 
       return {
         success: false,
-        refundId: '',
+        refundId: "",
         amount: data.amount || 0,
-        status: 'failed',
-        message: error instanceof Error ? error.message : 'Refund processing failed',
+        status: "failed",
+        message:
+          error instanceof Error ? error.message : "Refund processing failed",
       };
     }
   }
@@ -210,21 +242,21 @@ export class RazorpayProvider implements PaymentProvider {
     try {
       const payment = await this.razorpay.payments.fetch(paymentId);
 
-      let status: PaymentStatusResponse['status'] = 'pending';
+      let status: PaymentStatusResponse["status"] = "pending";
 
       switch (payment.status) {
-        case 'captured':
-        case 'authorized':
-          status = 'completed';
+        case "captured":
+        case "authorized":
+          status = "completed";
           break;
-        case 'failed':
-          status = 'failed';
+        case "failed":
+          status = "failed";
           break;
-        case 'refunded':
-          status = 'refunded';
+        case "refunded":
+          status = "refunded";
           break;
         default:
-          status = 'pending';
+          status = "pending";
       }
 
       return {
@@ -232,11 +264,13 @@ export class RazorpayProvider implements PaymentProvider {
         status,
         amount: payment.amount / 100, // Convert from paise
         currency: payment.currency,
-        processedAt: payment.captured_at ? new Date(payment.captured_at * 1000) : undefined,
+        processedAt: payment.captured_at
+          ? new Date(payment.captured_at * 1000)
+          : undefined,
         failureReason: payment.error_description,
       };
     } catch (error) {
-      console.error('Failed to fetch payment status:', error);
+      console.error("Failed to fetch payment status:", error);
       throw error;
     }
   }
@@ -247,31 +281,32 @@ export class RazorpayProvider implements PaymentProvider {
   validateWebhook(payload: any, signature: string): boolean {
     try {
       if (!this.webhookSecret) {
-        console.error('Webhook secret not configured');
+        console.error("Webhook secret not configured");
         return false;
       }
 
       // Razorpay sends the raw body as the payload for signature verification
-      const payloadString = typeof payload === 'string' ? payload : JSON.stringify(payload);
+      const payloadString =
+        typeof payload === "string" ? payload : JSON.stringify(payload);
 
       // Generate expected signature
       const expectedSignature = crypto
-        .createHmac('sha256', this.webhookSecret)
+        .createHmac("sha256", this.webhookSecret)
         .update(payloadString)
-        .digest('hex');
+        .digest("hex");
 
       // Compare signatures
       const isValid = expectedSignature === signature;
 
       if (!isValid) {
-        console.error('Webhook signature validation failed');
-        console.debug('Expected:', expectedSignature);
-        console.debug('Received:', signature);
+        console.error("Webhook signature validation failed");
+        console.debug("Expected:", expectedSignature);
+        console.debug("Received:", signature);
       }
 
       return isValid;
     } catch (error) {
-      console.error('Webhook validation error:', error);
+      console.error("Webhook validation error:", error);
       return false;
     }
   }
@@ -280,7 +315,7 @@ export class RazorpayProvider implements PaymentProvider {
    * Create a subscription plan
    */
   async createSubscriptionPlan(planData: {
-    period: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    period: "daily" | "weekly" | "monthly" | "yearly";
     interval: number;
     amount: number;
     currency: string;
@@ -291,17 +326,17 @@ export class RazorpayProvider implements PaymentProvider {
         period: planData.period,
         interval: planData.interval,
         item: {
-          name: planData.description || 'API Subscription',
+          name: planData.description || "API Subscription",
           amount: Math.round(planData.amount * 100), // Convert to paise
           currency: planData.currency.toUpperCase(),
           description: planData.description,
         },
       });
 
-      console.log('Razorpay plan created:', plan.id);
+      console.log("Razorpay plan created:", plan.id);
       return plan;
     } catch (error) {
-      console.error('Failed to create subscription plan:', error);
+      console.error("Failed to create subscription plan:", error);
       throw error;
     }
   }
@@ -327,10 +362,10 @@ export class RazorpayProvider implements PaymentProvider {
         notes: subscriptionData.notes,
       });
 
-      console.log('Razorpay subscription created:', subscription.id);
+      console.log("Razorpay subscription created:", subscription.id);
       return subscription;
     } catch (error) {
-      console.error('Failed to create subscription:', error);
+      console.error("Failed to create subscription:", error);
       throw error;
     }
   }
