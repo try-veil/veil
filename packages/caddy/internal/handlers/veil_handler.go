@@ -22,6 +22,7 @@ import (
 	"github.com/try-veil/veil/packages/caddy/internal/validators"
 
 	"github.com/google/uuid"
+	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -34,8 +35,18 @@ type VeilHandler struct {
 	Config          *config.VeilConfig `json:"-"`
 	store           *store.APIStore
 	eventQueue      events.UsageEventQueue
+	natsConn        *nats.Conn
 	logger          *zap.Logger
 	ctx             caddy.Context
+}
+
+// KeySyncEvent represents a key status synchronization event from platform-api
+// This matches the event structure published by the credit worker
+type KeySyncEvent struct {
+	KeyValue  string `json:"key_value"`
+	IsActive  bool   `json:"is_active"`
+	Timestamp string `json:"timestamp"`
+	Reason    string `json:"reason"`
 }
 
 // CaddyModule returns the Caddy module information.
@@ -48,13 +59,15 @@ func (VeilHandler) CaddyModule() caddy.ModuleInfo {
 
 // UnmarshalCaddyfile implements caddyfile.Unmarshaler.
 func (h *VeilHandler) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
+	// The directive name is already consumed when UnmarshalCaddyfile is called,
+	// but we use a for loop with d.Next() to handle multiple occurrences
 	for d.Next() {
 		// Get all arguments
 		args := d.RemainingArgs()
 
 		// Need at least 2 arguments: db_path and subscription_key
 		if len(args) < 2 {
-			return d.ArgErr()
+			return d.Errf("expected at least 2 arguments (db_path, subscription_key), got %d", len(args))
 		}
 
 		h.DBPath = args[0]
@@ -64,7 +77,18 @@ func (h *VeilHandler) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 		if len(args) >= 3 {
 			h.EventsEndpoint = args[2]
 		}
+
+		// Ensure no extra arguments beyond the first 3
+		if len(args) > 3 {
+			return d.Errf("expected at most 3 arguments, got %d", len(args))
+		}
+
+		// Reject any block configuration as this directive doesn't support it
+		for d.NextBlock(d.Nesting()) {
+			return d.Err("veil_handler directive does not support block configuration")
+		}
 	}
+
 	return nil
 }
 
@@ -120,9 +144,38 @@ func (h *VeilHandler) Provision(ctx caddy.Context) error {
 		h.eventQueue = nil
 	}
 
+	// Initialize NATS connection for credit consumption tracking
+	enableNatsEvents := os.Getenv("ENABLE_NATS_EVENTS")
+	if enableNatsEvents == "true" || enableNatsEvents == "1" {
+		natsURL := os.Getenv("NATS_URL")
+		if natsURL == "" {
+			natsURL = "nats://localhost:4222" // Default NATS URL
+		}
+
+		nc, err := nats.Connect(natsURL)
+		if err != nil {
+			h.logger.Warn("failed to connect to NATS, credit consumption tracking disabled",
+				zap.Error(err),
+				zap.String("nats_url", natsURL))
+			h.natsConn = nil
+		} else {
+			h.natsConn = nc
+			h.logger.Info("NATS connection established for credit consumption tracking",
+				zap.String("nats_url", natsURL),
+				zap.String("status", nc.Status().String()))
+
+			// Start key sync subscriber to receive status updates from platform-api
+			go h.subscribeToKeySyncEvents()
+		}
+	} else {
+		h.logger.Info("NATS credit tracking disabled (set ENABLE_NATS_EVENTS=true to enable)")
+		h.natsConn = nil
+	}
+
 	h.logger.Info("VeilHandler provisioned successfully",
 		zap.String("db_path", h.DBPath),
-		zap.Bool("event_streaming_enabled", h.eventQueue != nil))
+		zap.Bool("event_streaming_enabled", h.eventQueue != nil),
+		zap.Bool("nats_enabled", h.natsConn != nil))
 
 	return nil
 }
@@ -134,8 +187,66 @@ func (h *VeilHandler) Stop() error {
 			h.logger.Error("failed to stop event queue", zap.Error(err))
 		}
 	}
+	if h.natsConn != nil {
+		h.natsConn.Close()
+		h.logger.Info("NATS connection closed")
+	}
 	return nil
 }
+
+// subscribeToKeySyncEvents subscribes to key.sync events and updates API key status in the database
+// This allows platform-api to synchronize key status changes (like quota exhaustion) to Caddy's cache
+func (h *VeilHandler) subscribeToKeySyncEvents() {
+	if h.natsConn == nil {
+		h.logger.Error("cannot subscribe to key sync events - no NATS connection")
+		return
+	}
+
+	h.logger.Info("subscribing to key sync events on topic 'key.sync'")
+
+	// Subscribe to key.sync topic
+	sub, err := h.natsConn.Subscribe("key.sync", func(msg *nats.Msg) {
+		// Decode the sync event
+		var syncEvent KeySyncEvent
+		if err := json.Unmarshal(msg.Data, &syncEvent); err != nil {
+			h.logger.Error("failed to decode key sync event",
+				zap.Error(err),
+				zap.String("data", string(msg.Data)))
+			return
+		}
+
+		h.logger.Info("received key sync event",
+			zap.String("key", syncEvent.KeyValue[:min(15, len(syncEvent.KeyValue))]+"..."),
+			zap.Bool("is_active", syncEvent.IsActive),
+			zap.String("reason", syncEvent.Reason),
+			zap.String("timestamp", syncEvent.Timestamp))
+
+		// Update key status in database
+		if err := h.store.UpdateKeyStatusByValue(syncEvent.KeyValue, syncEvent.IsActive); err != nil {
+			h.logger.Error("failed to update key status from sync event",
+				zap.Error(err),
+				zap.String("key", syncEvent.KeyValue[:min(15, len(syncEvent.KeyValue))]+"..."),
+				zap.Bool("is_active", syncEvent.IsActive))
+		} else {
+			h.logger.Info("successfully synchronized key status from platform-api",
+				zap.String("key", syncEvent.KeyValue[:min(15, len(syncEvent.KeyValue))]+"..."),
+				zap.Bool("is_active", syncEvent.IsActive),
+				zap.String("reason", syncEvent.Reason))
+		}
+	})
+
+	if err != nil {
+		h.logger.Error("failed to subscribe to key sync events",
+			zap.Error(err))
+		return
+	}
+
+	h.logger.Info("successfully subscribed to key sync events",
+		zap.String("subject", sub.Subject))
+}
+
+// ErrKeyInactive is returned when an API key is found but is inactive (exhausted quota)
+var ErrKeyInactive = fmt.Errorf("API key is inactive due to exhausted quota")
 
 // validateAPIKey checks if the provided API key is valid for the given path
 // Now includes subscription status and quota validation
@@ -154,18 +265,26 @@ func (h *VeilHandler) validateAPIKey(path string, apiKey string) (*models.APICon
 		return nil, fmt.Errorf("API not found for path: %s", path)
 	}
 
-	// Use SubscriptionValidator for comprehensive validation
-	validator := validators.NewSubscriptionValidator(h.store.GetDB())
 
-	// Validate API key, subscription status, and quota
-	validatedKey, err := validator.ValidateAPIKey(apiKey)
-	if err != nil {
-		return nil, fmt.Errorf("API key validation failed: %v", err)
+	// Validate API key and check if it's active
+	keyFound := false
+	keyActive := false
+	for _, key := range api.APIKeys {
+		if key.Key == apiKey {
+			keyFound = true
+			if key.IsActive != nil && *key.IsActive {
+				keyActive = true
+			}
+			break
+		}
 	}
 
-	// Ensure the key belongs to this API config
-	if validatedKey.APIConfigID != api.ID {
-		return nil, fmt.Errorf("API key does not belong to this API")
+	if !keyFound {
+		return nil, fmt.Errorf("invalid API key")
+	}
+
+	if !keyActive {
+		return nil, ErrKeyInactive
 	}
 
 	return api, nil
@@ -613,30 +732,33 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 			zap.String("path", r.URL.Path),
 			zap.Error(err))
 
-		// Check if quota exceeded to return 429
-		if strings.Contains(err.Error(), "quota exceeded") {
-			http.Error(w, "Quota Exceeded", http.StatusTooManyRequests)
+		// Return 429 for inactive keys (exhausted quota), 401 for invalid keys
+		if err == ErrKeyInactive {
+			http.Error(w, "Too Many Requests: API key quota exhausted", http.StatusTooManyRequests)
 		} else {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		}
 		return nil
 	}
 
-	// Check if method is allowed
-	methodAllowed := false
-	for _, method := range api.Methods {
-		if method.Method == r.Method {
-			methodAllowed = true
-			break
+	// Check if method is allowed (if methods are specified)
+	// If no methods are specified, allow all methods
+	if len(api.Methods) > 0 {
+		methodAllowed := false
+		for _, method := range api.Methods {
+			if method.Method == r.Method {
+				methodAllowed = true
+				break
+			}
 		}
-	}
 
-	if !methodAllowed {
-		h.logger.Debug("method not allowed",
-			zap.String("path", r.URL.Path),
-			zap.String("method", r.Method))
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return nil
+		if !methodAllowed {
+			h.logger.Debug("method not allowed",
+				zap.String("path", r.URL.Path),
+				zap.String("method", r.Method))
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return nil
+		}
 	}
 
 	// Check required headers
@@ -698,6 +820,83 @@ func (h *VeilHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 			h.logger.Debug("failed to enqueue usage event",
 				zap.Error(enqueueErr),
 				zap.String("api_path", r.URL.Path))
+		}
+
+		// Publish to NATS for credit consumption tracking (fire-and-forget)
+		if h.natsConn != nil {
+			eventJSON, err := json.Marshal(usageEvent)
+			if err != nil {
+				h.logger.Debug("failed to marshal usage event for NATS",
+					zap.Error(err),
+					zap.String("api_path", r.URL.Path))
+			} else {
+				// Fire-and-forget publish to NATS
+				if err := h.natsConn.Publish("credit.events", eventJSON); err != nil {
+					h.logger.Debug("failed to publish event to NATS",
+						zap.Error(err),
+						zap.String("api_path", r.URL.Path))
+				}
+			}
+		}
+
+		return err
+	}
+
+	// If no event queue is enabled, check if NATS is available for credit tracking
+	if h.natsConn != nil {
+		h.logger.Info("NATS credit tracking enabled - processing request",
+			zap.String("api_path", r.URL.Path),
+			zap.String("method", r.Method))
+
+		// Wrap response writer to capture response details
+		recorder := events.NewResponseRecorder(w)
+
+		// Calculate request size
+		requestSize := r.ContentLength
+		if requestSize < 0 {
+			requestSize = 0
+		}
+
+		// Process the request
+		err := next.ServeHTTP(recorder, r)
+
+		// Create usage event for NATS
+		usageEvent := events.UsageEvent{
+			ID:             uuid.New().String(),
+			APIPath:        r.URL.Path,
+			SubscriptionKey: apiKey,
+			Method:         r.Method,
+			ResponseTime:   recorder.GetResponseTime().Milliseconds(),
+			StatusCode:     recorder.StatusCode,
+			Success:        recorder.IsSuccess(),
+			Timestamp:      time.Now(),
+			RequestSize:    requestSize,
+			ResponseSize:   recorder.ResponseSize,
+		}
+
+		// Publish to NATS (fire-and-forget)
+		h.logger.Info("Publishing event to NATS",
+			zap.String("event_id", usageEvent.ID),
+			zap.String("subscription_key", usageEvent.SubscriptionKey[:15]+"..."),
+			zap.Int("status_code", usageEvent.StatusCode))
+
+		eventJSON, marshalErr := json.Marshal(usageEvent)
+		if marshalErr != nil {
+			h.logger.Error("failed to marshal usage event for NATS",
+				zap.Error(marshalErr),
+				zap.String("api_path", r.URL.Path))
+		} else {
+			h.logger.Info("Publishing to NATS topic credit.events",
+				zap.Int("payload_size", len(eventJSON)))
+
+			if publishErr := h.natsConn.Publish("credit.events", eventJSON); publishErr != nil {
+				h.logger.Error("failed to publish event to NATS",
+					zap.Error(publishErr),
+					zap.String("api_path", r.URL.Path))
+			} else {
+				h.logger.Info("Successfully published event to NATS",
+					zap.String("event_id", usageEvent.ID))
+			}
 		}
 
 		return err

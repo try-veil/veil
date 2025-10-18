@@ -24,14 +24,17 @@ jobs:
           go-version: "1.23"  # Specify the Go version you want to use
 
       - name: Get dependencies
+        working-directory: ./packages/caddy
         run: |
           make setup  # Use the Makefile to set up dependencies
 
       - name: Build Caddy Module
+        working-directory: ./packages/caddy
         run: |
           go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest  # Install xcaddy
           make build  # Use the Makefile to build the Caddy module
 
       - name: Run End-to-End Tests
+        working-directory: ./packages/caddy
         run: |
           make test-e2e  # Use the Makefile to run end-to-end tests

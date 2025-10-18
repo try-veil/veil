@@ -23,7 +23,8 @@ WORKDIR /build
 COPY packages/caddy/ ./packages/caddy/
 
 # Build the custom Caddy binary with Veil module
-RUN CGO_ENABLED=1 xcaddy build \
+# Pin to v2.7.6 to match go.mod and ensure compatibility with Go 1.23
+RUN CGO_ENABLED=1 xcaddy build v2.7.6 \
     --with github.com/try-veil/veil/packages/caddy=./packages/caddy \
     --output veil
 
@@ -47,7 +48,7 @@ RUN mkdir -p /data/caddy /config \
 COPY --from=builder /build/veil /usr/bin/veil
 
 # Copy Caddyfile
-COPY Caddyfile /etc/caddy/Caddyfile
+COPY packages/caddy/Caddyfile /etc/caddy/Caddyfile
 
 # Set working directory
 WORKDIR /data

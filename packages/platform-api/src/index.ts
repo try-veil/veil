@@ -27,10 +27,12 @@ import { eventRoutes } from "./routes/events";
 import { pricingService } from "./services/pricing/pricing-service";
 import { jobScheduler } from "./jobs/scheduler";
 import { startEventQueue, stopEventQueue } from "./services/event-handlers";
+import { creditWorker } from "./jobs/credit-worker";
+import { natsClient } from "./services/nats-client";
 
 const app = new Elysia()
   // Add middleware
-  .use(customCors(['http://localhost:3001', 'http://localhost:3000']))
+  .use(customCors(config.cors.origins))
   .use(swagger({
     documentation: {
       info: {
@@ -132,6 +134,16 @@ async function initializeServices() {
     jobScheduler.start();
     console.log('✅ Job scheduler started');
 
+    // Start credit consumption worker (NATS-based)
+    try {
+      await creditWorker.start();
+      console.log('✅ Credit worker started');
+    } catch (error) {
+      console.error('⚠️  Credit worker failed to start:', error);
+      console.log('   Credit consumption tracking will be disabled');
+      // Continue startup even if credit worker fails
+    }
+
   } catch (error) {
     console.error('❌ Failed to initialize services:', error);
     // Don't fail startup if pricing service initialization fails
@@ -152,21 +164,25 @@ async function initializeServices() {
 
 console.log(`📊 Environment: ${config.nodeEnv}`);
 console.log(`🔗 Database URL: ${config.database.url.replace(/:[^:]*@/, ':****@')}`);
-console.log(`🔒 CORS Origin: http://localhost:3001,http://localhost:3000`);
+console.log(`🔒 CORS Origins: ${config.cors.origins.join(', ')}`);
 
 // Graceful shutdown
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('\n🛑 Shutting down server gracefully...');
   stopEventQueue();
   jobScheduler.stop();
+  await creditWorker.stop();
+  await natsClient.close();
   app.stop();
   process.exit(0);
 });
 
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   console.log('\n🛑 Shutting down server gracefully...');
   stopEventQueue();
   jobScheduler.stop();
+  await creditWorker.stop();
+  await natsClient.close();
   app.stop();
   process.exit(0);
 });
