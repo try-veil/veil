@@ -1,95 +1,189 @@
 import { Elysia } from 'elysia';
-import { bearer } from '@elysiajs/bearer';
-import { jwt } from '@elysiajs/jwt';
-import { config } from '../config';
+import { fusionAuthService } from '../services/fusionauth-service';
+import { db, users } from '../db';
+import { eq } from 'drizzle-orm';
 
-export const authMiddleware = new Elysia({ name: 'auth' })
-  .use(
-    jwt({
-      name: 'jwt',
-      secret: config.jwt.secret,
-    })
-  )
-  .use(bearer())
-  .onBeforeHandle(async ({ bearer, jwt, set, request }: any) => {
-    console.log('🔍 Auth middleware executing');
-    console.log('🔍 Bearer present:', bearer ? 'YES' : 'NO');
-    console.log('🔍 Auth header:', request.headers.get('authorization'));
+export interface AuthContext {
+  user: {
+    id: number;
+    uid: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+    isActive: boolean;
+    fusionAuthId: string | null;
+  };
+}
 
-    if (!bearer) {
+// Helper function to extract Bearer token
+function extractBearerToken(authHeader?: string): string | null {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+  return authHeader.substring(7);
+}
+
+// Helper function to get user from FusionAuth token
+async function getUserFromHeaders(headers: any): Promise<AuthContext['user']> {
+  const token = extractBearerToken(headers.authorization);
+
+  if (!token) {
+    throw new Error('No token provided');
+  }
+
+  // Validate token with FusionAuth
+  const validationResult = await fusionAuthService.validateToken(token);
+
+  if (!validationResult.valid || !validationResult.user) {
+    throw new Error('Invalid or expired token');
+  }
+
+  const fusionAuthUser = validationResult.user;
+
+  // Get local user data by FusionAuth ID or email
+  let [localUser] = await db.select({
+    id: users.id,
+    uid: users.uid,
+    email: users.email,
+    firstName: users.firstName,
+    lastName: users.lastName,
+    role: users.role,
+    isActive: users.isActive,
+    fusionAuthId: users.fusionAuthId,
+  }).from(users)
+    .where(eq(users.email, fusionAuthUser.email))
+    .limit(1);
+
+  // If user doesn't exist locally, create them
+  if (!localUser) {
+    const [newUser] = await db.insert(users).values({
+      email: fusionAuthUser.email,
+      firstName: fusionAuthUser.firstName,
+      lastName: fusionAuthUser.lastName,
+      role: fusionAuthUser.roles[0] || 'user', // Use first role or default to user
+      fusionAuthId: fusionAuthUser.id,
+      isActive: true,
+      password: '', // Empty password since auth is handled by FusionAuth
+    }).returning({
+      id: users.id,
+      uid: users.uid,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      role: users.role,
+      isActive: users.isActive,
+      fusionAuthId: users.fusionAuthId,
+    });
+
+    localUser = newUser;
+  } else {
+    // Update FusionAuth ID if it's missing
+    if (!localUser.fusionAuthId) {
+      await db.update(users)
+        .set({ fusionAuthId: fusionAuthUser.id })
+        .where(eq(users.id, localUser.id));
+
+      localUser.fusionAuthId = fusionAuthUser.id || null;
+    }
+  }
+
+  if (!localUser.isActive) {
+    throw new Error('User account is deactivated');
+  }
+
+  // Ensure all required fields are present
+  if (!localUser.id || !localUser.email) {
+    throw new Error('User data is incomplete');
+  }
+
+  return localUser;
+}
+
+console.log('🔐 Auth middleware initialized and ready');
+
+export const authMiddleware = new Elysia()
+  .onBeforeHandle(async ({ headers, set, request, store }) => {
+    try {
+      console.log('🔐 Auth middleware EXECUTING for:', request.method, request.url);
+      console.log('Auth middleware - headers.authorization:', headers.authorization ? 'Present' : 'Missing');
+      if (headers.authorization) {
+        console.log('Auth middleware - token preview:', headers.authorization.substring(0, 30) + '...');
+      }
+
+      const user = await getUserFromHeaders(headers);
+      console.log('Auth middleware - user found:', user ? `id: ${user.id}, email: ${user.email}` : 'null');
+
+      if (!user) {
+        console.error('🔴 Auth middleware - user is null/undefined, blocking request');
+        set.status = 401;
+        return {
+          success: false,
+          message: 'Authentication required'
+        };
+      }
+
+      console.log('✅ Auth middleware - user authenticated:', user.email, 'role:', user.role);
+      // Store user in store so routes can access it via derive
+      (store as any).user = user;
+    } catch (error: any) {
+      console.error('🔴 Auth middleware - error:', error.message);
+      console.error('Auth middleware - error details:', error);
       set.status = 401;
-      console.log('❌ No bearer token - returning 401');
       return {
         success: false,
-        error: 'Unauthorized',
-        message: 'Missing authorization token'
+        message: 'Authentication failed',
+        error: error.message
       };
     }
-
-    console.log('🔑 Verifying JWT token...');
-    const payload = await jwt.verify(bearer);
-    console.log('📦 JWT payload result:', payload);
-
-    if (!payload) {
-      set.status = 401;
-      console.log('❌ JWT verification failed - returning 401');
-      return {
-        success: false,
-        error: 'Unauthorized',
-        message: 'Invalid or expired token'
-      };
-    }
-
-    console.log('✅ JWT verified successfully!');
   })
-  .resolve(async ({ bearer, jwt }: any) => {
-    console.log('🔄 Resolve middleware - extracting user');
-    if (!bearer) {
-      console.log('⚠️ No bearer in resolve');
-      return { user: null };
-    }
-
-    const payload = await jwt.verify(bearer);
-    console.log('👤 User payload in resolve:', payload);
-
+  .derive(({ store, request }) => {
+    // Expose the user from store to route handlers
+    console.log('🔍 Auth middleware .derive() EXECUTING for:', request.url);
+    console.log('🔍 Store.user value:', (store as any).user ? 'PRESENT' : 'UNDEFINED');
+    const derivedUser = (store as any).user;
+    console.log('🔍 Returning user to route:', derivedUser ? `id: ${derivedUser.id}` : 'UNDEFINED');
     return {
-      user: payload ? (payload as { id: number; userId?: number; email: string; role?: string }) : null
+      user: derivedUser
     };
   });
 
-export const optionalAuth = new Elysia()
-  .use(
-    jwt({
-      name: 'jwt',
-      secret: config.jwt.secret,
+export const requireRole = (requiredRoles: string[]) => {
+  return new Elysia()
+    .onBeforeHandle(async ({ headers, set, store }) => {
+      try {
+        const user = await getUserFromHeaders(headers);
+
+        if (!requiredRoles.includes(user.role)) {
+          console.error('🔴 Role check failed - user role:', user.role, 'required:', requiredRoles);
+          set.status = 403;
+          return {
+            success: false,
+            message: 'Insufficient permissions'
+          };
+        }
+
+        console.log('✅ Role check passed - user role:', user.role);
+        (store as any).user = user;
+      } catch (error: any) {
+        console.error('🔴 Role requirement middleware - error:', error.message);
+        if (error.message === 'Insufficient permissions') {
+          set.status = 403;
+          return {
+            success: false,
+            message: 'Insufficient permissions'
+          };
+        } else {
+          set.status = 401;
+          return {
+            success: false,
+            message: 'Authentication failed',
+            error: error.message
+          };
+        }
+      }
     })
-  )
-  .use(bearer())
-  .derive(async ({ bearer, jwt }) => {
-    if (!bearer) {
-      return { user: null };
-    }
-
-    const payload = await jwt.verify(bearer);
-    if (!payload) {
-      return { user: null };
-    }
-
-    return {
-      user: payload as { id: number; userId?: number; email: string; role?: string },
-    };
-  });
-
-// Admin-only middleware
-export const adminMiddleware = new Elysia()
-  .use(authMiddleware)
-  .onBeforeHandle(({ user, set }) => {
-    if (!user || !user.role || user.role !== 'admin') {
-      set.status = 403;
-      return {
-        success: false,
-        error: 'Forbidden',
-        message: 'Admin access required'
-      };
-    }
-  });
+    .derive(({ store }) => {
+      return { user: (store as any).user };
+    });
+};

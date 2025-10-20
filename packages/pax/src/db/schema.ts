@@ -1,6 +1,26 @@
 import { pgTable, serial, varchar, text, timestamp, boolean, integer, uuid, decimal, index, jsonb } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
+// Users table (SHARED with platform-api)
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  uid: uuid('uid').defaultRandom().unique().notNull(),
+  email: varchar('email', { length: 255 }).unique().notNull(),
+  password: varchar('password', { length: 255 }).notNull(),
+  firstName: varchar('first_name', { length: 100 }).notNull(),
+  lastName: varchar('last_name', { length: 100 }).notNull(),
+  role: varchar('role', { length: 20 }).default('user').notNull(), // 'user', 'seller', 'admin'
+  fusionAuthId: varchar('fusion_auth_id', { length: 255 }).unique(),
+  isActive: boolean('is_active').default(true).notNull(),
+  emailVerified: boolean('email_verified').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  emailIdx: index('users_email_idx').on(table.email),
+  uidIdx: index('users_uid_idx').on(table.uid),
+  fusionAuthIdIdx: index('users_fusion_auth_id_idx').on(table.fusionAuthId),
+}));
+
 // Payment Gateway Transactions table
 export const paymentTransactions = pgTable('payment_transactions', {
   id: serial('id').primaryKey(),
@@ -523,4 +543,11 @@ export const usageRecordsRelations = relations(usageRecords, ({ one }) => ({
     fields: [usageRecords.pricingModelId],
     references: [pricingModels.id],
   }),
+}));
+
+// Users relations
+export const usersRelations = relations(users, ({ many }) => ({
+  paymentTransactions: many(paymentTransactions),
+  creditAccounts: many(creditAccounts),
+  usageRecords: many(usageRecords),
 }));
